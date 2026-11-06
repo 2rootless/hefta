@@ -1,0 +1,406 @@
+/* Grundstil der App. Werte kommen aus design/tokens.css, nie fest im Code. */
+@import '../../design/tokens.css';
+@import './schrift.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: calc(17 * var(--px));
+  line-height: calc(24 * var(--px));
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Große Schrift (design/stil-c.md): Alle Schriftgrößen und Zeilenhöhen stehen als Vielfaches von --px.
+ * Auf dem iPhone kommt die Textgröße aus den Einstellungen nur über die Systemschrift an; ihre Grundgröße
+ * ist 17 px, das gleicht 1rem / 17 aus. Bei Standardeinstellung bleibt alles pixelgleich. Ab 200 % wächst
+ * sie nicht weiter, sonst bräche die Oberfläche auseinander. Kleiner als im Entwurf wird sie nie: Unter
+ * 16 px zoomt das iPhone beim Antippen eines Felds in die Seite.
+ */
+:root {
+  --px: 1px;
+}
+
+@supports (font: -apple-system-body) {
+  @media (hover: none) {
+    /* :root wie oben, nicht html: Sonst gewinnt das 1px oben, und die Einstellung kommt nie an. */
+    :root {
+      font: -apple-system-body;
+      font-family: var(--font-sans);
+      --px: clamp(1px, calc(1rem / 17), 2px);
+    }
+  }
+}
+
+/* Lange Wörter schieben keinen Kasten über den Rand (C24); getrennt wird an weichen Trennstellen (C2). */
+body {
+  overflow-wrap: break-word;
+}
+
+/* Sichtbarer Ring: 3 px in ink, 2 px Abstand in der Farbe der Fläche. */
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+/* Der Titel bekommt den Fokus nach einem Seitenwechsel nur für Screenreader. */
+h1[tabindex='-1']:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Schnelles Tippen soll nicht zoomen. Mit zwei Fingern vergrößern geht weiter (Barrierefreiheit). */
+* {
+  touch-action: manipulation;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    /* 0s statt einer Mini-Dauer: Sonst würde jede Änderung (auch der Themenwechsel) zu einem
+       Übergang, und wer im selben Moment liest, sähe noch den alten Wert. */
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Statt Schieben ein kurzes Überblenden. */
+  .einblenden {
+    animation-duration: 150ms !important;
+  }
+}
+
+/* Wiederkehrende Textstile aus design/tokens.json (Gruppe „App“). */
+.display {
+  margin: 0;
+  font-size: calc(34 * var(--px));
+  line-height: calc(36 * var(--px));
+  font-weight: 800;
+  font-stretch: 112%;
+  letter-spacing: -1px;
+  overflow-wrap: break-word;
+}
+
+.lead {
+  margin: 6px 0 0;
+  font-size: calc(16 * var(--px));
+  line-height: calc(22 * var(--px));
+  color: var(--ink-muted);
+}
+
+.titel {
+  margin: 0;
+  font-size: calc(24 * var(--px));
+  line-height: calc(28 * var(--px));
+  font-weight: 800;
+  font-stretch: 108%;
+  letter-spacing: -0.4px;
+}
+
+/* Textlink (design/bausteine/Button.md): ohne Fläche, unterstrichen, mindestens tap-target hoch. */
+.textlink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: calc(15 * var(--px));
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+/* Liste in einer surface-Gruppe mit Haarlinien (Checklistenzeile, Einrichtung). */
+.gruppe {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.gruppe > li + li {
+  border-top: 1px solid var(--line);
+}
+
+/* Eingabefeld */
+.eingabe {
+  display: grid;
+  gap: var(--space-1);
+  font-size: calc(14 * var(--px));
+  line-height: calc(18 * var(--px));
+  font-weight: 700;
+}
+
+.eingabe input {
+  /* Eingabefelder haben von Haus aus eine Mindestbreite und schieben sonst das Formular auseinander. */
+  width: 100%;
+  min-width: 0;
+  min-height: var(--slot-height);
+  padding: 0 var(--space-4);
+  border: 1.5px solid var(--control-border);
+  border-radius: var(--radius-slot);
+  background: var(--surface);
+  font-size: calc(17 * var(--px));
+  font-weight: 400;
+}
+
+/* Safari gibt Datums- und Monatsfeldern eine eigene Mindestbreite: Sie ragten rechts aus dem Blatt und
+   ließen es seitlich verschieben (gefunden im iOS-Simulator). */
+input[type='date'],
+input[type='month'] {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  /* Ohne die eigene Darstellung säße der Wert sonst oben im Feld. */
+  line-height: calc(var(--slot-height) - 3px);
+}
+
+input[type='date']::-webkit-date-and-time-value,
+input[type='month']::-webkit-date-and-time-value {
+  min-height: calc(var(--slot-height) - 3px);
+  text-align: left;
+}
+
+/* Auswahl-Chips (Entwurf 4-upload: Monatswahl) */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-5);
+  border: 2px solid var(--control-border);
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--ink);
+  font-size: calc(16 * var(--px));
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chip[aria-pressed='true'],
+.chip[aria-checked='true'] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--ground);
+}
+
+/* Stil C: Abschnitt mit Überschrift über weißen Gruppen (design/mappe-erstellen-einstellungen.md). */
+.abschnitt {
+  margin: 22px var(--space-4) 0;
+}
+
+.abschnitt > h2 {
+  margin: 0 var(--space-1) 8px;
+  font-size: calc(17 * var(--px));
+  line-height: calc(22 * var(--px));
+  font-weight: 800;
+}
+
+.zeilen {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border-radius: 20px;
+  background: var(--surface);
+}
+
+.zeilen > li + li {
+  border-top: 1px solid var(--track);
+}
+
+/* Zeile einer Gruppe: Titel fett, Unterzeile leise, rechts Wert oder Pfeil. */
+.listenzeile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 16px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.listenzeile:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.listenzeile .tx {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.listenzeile b {
+  font-size: calc(16 * var(--px));
+  line-height: calc(21 * var(--px));
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.listenzeile small {
+  font-size: calc(13 * var(--px));
+  line-height: calc(17 * var(--px));
+  color: var(--ink-muted);
+}
+
+.listenzeile .wert {
+  flex-shrink: 0;
+  font-size: calc(15 * var(--px));
+  color: var(--ink-muted);
+}
+
+.listenzeile .pfeil {
+  display: inline-flex;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+/* Zwei Kästchen nebeneinander („Drin“ und „Größe“, „Jetzt in der App“ und „Im Backup“). */
+.vergleich {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.vergleich > div {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--surface);
+  font-size: calc(14 * var(--px));
+  line-height: calc(20 * var(--px));
+}
+
+.vergleich b {
+  display: block;
+  margin-bottom: 2px;
+  font-size: calc(13 * var(--px));
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+
+/* Fehlerzeile unter einem Feld, mit „!“ (S4, S7). */
+.fehlzeile {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0 0;
+  font-size: calc(14 * var(--px));
+  line-height: calc(19 * var(--px));
+  font-weight: 700;
+}
+
+.fehlzeile::before {
+  content: '!';
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--ground);
+  font-size: calc(12 * var(--px));
+}
+
+/* Bewegung (design/README.md): kurz und ruhig, 150 bis 250 ms, ausklingend. Bei „Bewegung
+   reduzieren“ kürzt die Regel oben alles auf praktisch null. Nur Deckkraft, damit feste Leisten
+   im Bildschirm fest bleiben (transform würde sie mitbewegen). */
+.einblenden {
+  animation: einblenden 180ms ease-out;
+}
+
+@keyframes einblenden {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Tippen fühlbar machen: Knöpfe geben kurz nach. Farben wechseln ohne Übergang, sonst liefe beim
+   Wechsel zwischen hellem und dunklem Thema jede Schrift kurz mit zu wenig Kontrast. */
+.chip:active {
+  transform: scale(0.97);
+}
+
+/* Monat einer Seite im großen Bild (Hochladen, Aufteilen). */
+.seiten-monat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-4);
+  font-size: calc(15 * var(--px));
+  font-weight: 700;
+}
+
+.seiten-monat select {
+  min-height: var(--tap-target);
+  padding: 0 12px;
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}

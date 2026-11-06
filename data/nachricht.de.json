@@ -1,0 +1,26 @@
+{
+  "stand": "2026-11-05",
+  "hinweis": "Wortlisten für die Nachricht ans Inserat (design/nachricht-ans-inserat.md). Abgleich von Wörtern auf dem Gerät. Daten, damit sie nach den Testpersonen nachgezogen werden können. Bezugsfassung der Erkennung; jede Änderung mit einem Fall in nachricht-faelle.de.json.",
+  "frage": "\\b(bitte(?! beachten)|geben sie|nennen sie|senden sie|schicken sie|teilen sie .{0,20}mit|mit der anfrage|bei der anfrage|angaben zu[mr]?|benötig\\w*|brauchen wir|erforderlich|ob (sie|du|ihr)|wie viele|ab wann|wir bitten|anzugeben|mitteilen)\\b|\\?",
+  "angaben": [
+    { "id": "adresse", "text": "Adresse", "schritt": "besichtigung", "muster": "\\b(anschrift|adresse|wohnort|wohnhaft)\\b" },
+    { "id": "einzug", "text": "Einzug ab", "imSatz": "Einzugstermin", "schritt": "will_wohnung", "muster": "\\b(einzug|einzugstermin|einzugsdatum|ab wann|mietbeginn|wann (sie|du|ihr) einziehen)\\b" },
+    { "id": "personen", "text": "Wer einzieht", "imSatz": "Personenzahl", "schritt": "will_wohnung", "muster": "\\b(anzahl (der )?personen|personenzahl|wie viele personen|haushaltsgröße|mit wem)\\b" },
+    { "id": "beruf", "text": "Beruf und Arbeitgeber", "schritt": "will_wohnung", "muster": "\\b(beruf|arbeitgeber|tätigkeit|beschäftigung|angestellt)\\b" },
+    { "id": "einkommen", "text": "Einkommen", "schritt": "will_wohnung", "muster": "\\b(einkommen|gehalt|verdienst|nettoeinkommen|gehaltsnachweis)\\b" },
+    { "id": "haustiere", "text": "Haustiere", "imSatz": "Haustieren", "schritt": "will_wohnung", "muster": "\\b(haustier(e|en)?|hunde?|katzen?|tiere)\\b", "nicht": "\\b(keine?|ohne)\\b[^.?!]*\\b(haustier|hund|katze|tiere)" }
+  ],
+  "unzulaessig": [
+    { "text": "Ausweiskopie", "muster": "\\b((personal)?ausweiskopie|kopie (des|ihres|eures) (personal)?ausweises|(personal)?ausweis (mitschicken|beifügen|anhängen|senden))\\b" },
+    { "text": "Familienstand", "muster": "\\bfamilienstand\\b" },
+    { "text": "Staatsangehörigkeit", "muster": "\\b(staatsangehörigkeit|nationalität|herkunft)\\b" },
+    { "text": "Religion", "muster": "\\b(religion|konfession)\\b" },
+    { "text": "SCHUFA-Datenkopie", "muster": "\\bdatenkopie\\b" }
+  ],
+  "wege": [
+    { "id": "formular", "muster": "\\b(auf unserer (web)?seite|unser (online-)?formular|bewerbungsformular|über unser portal|bewerbermanagement|bewerben sie sich (unter|auf|über unser(e|er|em)?)|link zur bewerbung)\\b" },
+    { "id": "mail", "muster": "\\b(per (e-?)mail an|an (folgende )?(e-?)mail(adresse)?|schicken sie .{0,40}(unterlagen|mappe|bewerbung) an)\\b|@[a-z0-9.-]+\\.[a-z]{2,}" },
+    { "id": "besichtigung", "muster": "\\b(offene besichtigung|sammelbesichtigung|einfach vorbeikommen|ohne anmeldung|open house)\\b" },
+    { "id": "mappe", "muster": "\\b(bewerbungsmappe|bewerbungsunterlagen|unterlagen (mitbringen|mitschicken|beifügen|anhängen)|mit (allen|vollständigen) unterlagen|kurzbewerbung)\\b" }
+  ]
+}

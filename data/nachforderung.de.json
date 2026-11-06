@@ -1,0 +1,32 @@
+{
+  "stand": "2026-11-05",
+  "hinweis": "Vorlage der Mail „Für den Vertrag anfordern“ auf der Vermieter-Seite (design/nachforderung.md). Platzhalter in {…}. Die Fragen folgen dem Musterbogen C.4 bis C.6, die Unterlagen der Orientierungshilfe C.2 und C.3.",
+  "betreff": "Ihre Bewerbung um {wohnung}: Zusage und Unterlagen für den Vertrag",
+  "wohnungOhne": "die Wohnung",
+  "anrede": "Guten Tag {namen},",
+  "zusage": "wir haben uns für Sie entschieden und möchten den Mietvertrag mit Ihnen schließen.",
+  "fehltKopf": "Dafür brauchen wir noch:",
+  "fehltZeile": "– Von {namen}: {was}.",
+  "buergt": "{name} (bürgt)",
+  "liegtBei": "Die üblichen Unterlagen für den Vertrag liegen Ihrer Mappe schon bei.",
+  "posten": {
+    "selbstauskunft": "die Selbstauskunft nach dem Musterbogen der Datenschutzkonferenz",
+    "einkommen": "einen Nachweis über das Monatseinkommen, zum Beispiel eine Lohn- oder Gehaltsabrechnung, Kontoauszüge oder den Einkommensteuerbescheid",
+    "bonitaet": "einen Bonitätsnachweis für Vermieter, zum Beispiel den SCHUFA-BonitätsCheck; nicht die Datenkopie nach Art. 15 DSGVO",
+    "buergschaftserklaerung": "die Bürgschaftserklärung, im Original mit Unterschrift"
+  },
+  "schwaerzen": "Auf Einkommensnachweisen dürfen nicht erforderliche Angaben geschwärzt werden.",
+  "fragenKopf": "Bitte beantworten Sie außerdem die drei Fragen des Musterbogens für diesen Schritt:",
+  "fragen": [
+    "ob Sie im bestehenden Mietverhältnis für zwei aufeinanderfolgende Monate mit mehr als einer Monatsmiete im Rückstand waren,",
+    "ob Sie innerhalb von mehr als zwei Monaten mit mindestens zwei Monatsmieten im Rückstand waren,",
+    "ob Ihr letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags rechtswirksam gekündigt oder eine solche Pflichtverletzung rechtskräftig festgestellt wurde."
+  ],
+  "frageZeile": "– {frage}",
+  "fragenApp": "Wenn Sie Ihre Mappe mit {app} erstellt haben, ergänzen Sie die Antworten in der Selbstauskunft und schicken die Mappe neu.",
+  "original": "Die Bürgschaftserklärung von {namen} brauchen wir im Original mit Unterschrift, spätestens zur Vertragsunterzeichnung.",
+  "nichtNoetig": "Nicht nötig sind eine Ausweiskopie, die SCHUFA-Datenkopie und eine Bescheinigung über Mietschuldenfreiheit.",
+  "loeschen": "Was wir für das Mietverhältnis nicht brauchen, löschen wir nach dem Vertragsschluss.",
+  "gruss": "Freundliche Grüße",
+  "absender": "[Ihr Name]"
+}

@@ -1,0 +1,83 @@
+/* Mappe — generated from tokens.json */
+:root, [data-theme="light"] {
+  --ground: #f5f6fa;
+  --surface: #ffffff;
+  --track: #e4e6ef;
+  --line: #dfe1ea;
+  --control-border: #7a7c94;
+  --ink: #191a2c;
+  --ink-muted: #4c4e66;
+  --on-person: #191a2c;
+  --on-person-muted: #33354a;
+  --person-1: #ff8466;
+  --person-2: #b8e07c;
+  --person-3: #c8abff;
+  --person-4: #e3b25a;
+  --person-5: #ffadc9;
+  --person-6: #c9a189;
+  --person-child: #ffffff;
+  --stone: #ffffff;
+  --slot-fill: rgba(255, 255, 255, 0.72);
+  --action: #191a2c;
+  --on-action: #ffffff;
+  --focus: #191a2c;
+  --shadow-card: 0 12px 28px rgba(25, 26, 44, 0.12), 0 1px 3px rgba(25, 26, 44, 0.06);
+  --shadow-card-quiet: 0 8px 18px rgba(25, 26, 44, 0.08);
+  --shadow-chip: 0 4px 10px rgba(25, 26, 44, 0.12);
+  --shadow-goal: 0 10px 24px rgba(25, 26, 44, 0.16);
+  --shadow-sheet: 0 -4px 24px rgba(25, 26, 44, 0.12);
+}
+[data-theme="dark"] {
+  --ground: #14151f;
+  --surface: #1f2030;
+  --track: #2c2e40;
+  --line: #34364a;
+  --control-border: #7d8099;
+  --ink: #f1f2f8;
+  --ink-muted: #a9abc2;
+  --on-person: #191a2c;
+  --on-person-muted: #33354a;
+  --person-1: #ff8466;
+  --person-2: #b8e07c;
+  --person-3: #c8abff;
+  --person-4: #e3b25a;
+  --person-5: #ffadc9;
+  --person-6: #c9a189;
+  --person-child: #ffffff;
+  --stone: #ffffff;
+  --slot-fill: rgba(255, 255, 255, 0.78);
+  --action: #f1f2f8;
+  --on-action: #191a2c;
+  --focus: #f1f2f8;
+  --shadow-card: 0 12px 28px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-card-quiet: 0 8px 18px rgba(0, 0, 0, 0.35);
+  --shadow-chip: 0 4px 10px rgba(0, 0, 0, 0.4);
+  --shadow-goal: 0 10px 24px rgba(0, 0, 0, 0.5);
+  --shadow-sheet: 0 -4px 24px rgba(0, 0, 0, 0.5);
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+  --radius-sm: 6px;
+  --radius-slot: 16px;
+  --radius-goal: 20px;
+  --radius-card: 22px;
+  --radius-full: 999px;
+  --tap-target: 44px;
+  --slot-height: 52px;
+  --plus-size: 30px;
+  --lane-main: 10px;
+  --lane-side: 7px;
+  --road: 22px;
+  --stone-size: 26px;
+  --card-main: 171px;
+  --content-width: 560px;
+  --pdf-margin: 20mm;
+  --font-sans: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+}

@@ -1,0 +1,382 @@
+{
+  "schema": 1,
+  "land": "DE",
+  "stand": "2026-10-30",
+  "status": "Entwurf aus der Recherche (Lauf 1). Vor der Veröffentlichung fachlich prüfen. Keine Rechtsberatung.",
+  "grundlage": [
+    {"titel": "DSK: Orientierungshilfe Mieterselbstauskunft, Anlage Musterfragebogen", "version": "2.0", "stand": "2026-01", "url": "https://www.datenschutzkonferenz-online.de/media/oh/OH_Einholung_von_Selbstauskuenften_Mietinteressenten_V2_Anhang.pdf"},
+    {"titel": "DSK: Orientierungshilfe zur Einholung von Selbstauskünften bei Mietinteressent:innen", "version": "2.0", "stand": "2026-01", "url": "https://www.datenschutzkonferenz-online.de/media/oh/OH_Einholung_von_Selbstauskuenften_Mietinteressenten_V2.pdf"},
+    {"titel": "deutschland-rechner: Mieterselbstauskunft nach DSK 2026", "url": "https://www.deutschland-rechner.de/mieterselbstauskunft"}
+  ],
+
+  "etiketten": {
+    "ueblich": {"text": "Üblich", "beschreibung": "Vermieter erwarten das fast immer; gehört in jede Mappe."},
+    "kann_helfen": {"text": "Kann helfen", "beschreibung": "Freiwillig, verbessert oft den Eindruck."},
+    "meist_unnoetig": {"text": "Meist unnötig", "beschreibung": "Die Datenschutzbehörden halten das für unzulässig, oder es ist ungeeignet. Wird gespeichert, geht aber standardmäßig nicht mit."}
+  },
+
+  "schritte": [
+    {"id": "besichtigung", "intern": "A", "text": "Anfrage oder Besichtigung", "kurz": "Besichtigung"},
+    {"id": "will_wohnung", "intern": "B", "text": "Ich will die Wohnung"},
+    {"id": "zusage", "intern": "C", "text": "Zusage, vor dem Vertrag", "kurz": "Zusage"}
+  ],
+
+  "rollen": {
+    "hauptmieter": {"text": "Hauptmieter", "textWeiblich": "Hauptmieterin", "textNeutral": "Hauptmietpartei", "unterlagen": true, "karte": "haupt"},
+    "mitmieter": {"text": "Mitmieter", "textWeiblich": "Mitmieterin", "textNeutral": "Mitmietpartei", "unterlagen": true, "karte": "haupt"},
+    "buerge": {"text": "Bürge", "textWeiblich": "Bürgin", "textNeutral": "bürgt", "unterlagen": true, "karte": "zusatz"},
+    "weitere_erwachsene": {"text": "Weitere Erwachsene", "unterlagen": false, "nurAnzahl": true},
+    "kind": {"text": "Kind", "textMehrzahl": "Kinder", "unterlagen": false, "nurAnzahl": true}
+  },
+
+  "lebenssituationen": {
+    "angestellt": {"text": "Angestellt"},
+    "selbststaendig": {"text": "Selbstständig oder freiberuflich"},
+    "studierend_azubi": {
+      "text": "Im Studium oder in Ausbildung",
+      "arten": {
+        "studium": {"text": "Im Studium", "beruf": "Studiengang", "arbeitgeber": "Hochschule"},
+        "ausbildung": {"text": "In Ausbildung", "beruf": "Ausbildungsberuf", "arbeitgeber": "Ausbildungsbetrieb"}
+      }
+    },
+    "rente": {"text": "In Rente"},
+    "leistungsbezug": {"text": "Miete zahlt eine öffentliche Stelle"},
+    "sonstiges": {"text": "Etwas anderes"}
+  },
+
+  "dokumenttypen": [
+    {
+      "id": "selbstauskunft",
+      "warumErlaubt": "Name und eine Kontaktangabe schon bei der Anfrage. Der Rest erst, wenn du die Wohnung willst, und manche Fragen erst bei der Zusage.",
+      "warumUeblich": "Fast alle Vermieter fragen danach. Üblich ist ein Bogen je Vertragspartei.",
+      "warumGutZuWissen": ["{app} fragt nur, was der Musterbogen der Datenschutzkonferenz vorsieht. Familienstand, Staatsangehörigkeit oder Religion gehören nicht dazu."],
+      "hilfe": "Ein kurzes Formular, das du hier ausfüllst.",
+      "text": "Selbst­auskunft",
+      "symbol": "form",
+      "etikett": "ueblich",
+      "schritt": "will_wohnung",
+      "rollen": ["hauptmieter", "mitmieter", "buerge"],
+      "inAppErstellt": true,
+      "reihenfolge": 10,
+      "hinweis": "Eine pro Vertragspartei, nicht ein Bogen für alle."
+    },
+    {
+      "id": "gehaltsnachweis",
+      "erkennen": {"nameErwartet": true, "passt": ["entgeltabrechnung", "gehaltsabrechnung", "verdienstabrechnung", "lohnabrechnung"], "passtNicht": [{"woerter": ["lohnsteuerbescheinigung"], "anzeige": "Lohnsteuerbescheinigung", "hinweis": "Gebraucht werden meist die Abrechnungen der letzten drei Monate."}]},
+      "warumErlaubt": "Eigentlich erst kurz vor dem Vertrag, wenn du die Zusage hast. Was für die Entscheidung nicht nötig ist, darfst du schwärzen.",
+      "warumUeblich": "In Großstädten fragen viele Vermieter trotzdem früher. Üblich sind die letzten drei Monate.",
+      "warumGutZuWissen": ["Manche Vermieter nehmen statt der Abrechnungen auch Kontoauszüge mit dem Gehaltseingang.", "{app} erinnert dich, wenn ein neuer Monat da sein kann."],
+      "wechselBraucht": "Gehalts­nachweise der letzten drei Monate",
+      "wechselBleibt": "Die Gehalts­nachweise bleiben gespeichert und kommen nicht mehr in die Mappe.",
+      "hilfe": "Die letzten drei Monate. Neuester zuerst.",
+      "text": "Gehalts­nachweise",
+      "textEinzeln": "Gehalts­nachweis",
+      "symbol": "euro",
+      "etikett": "ueblich",
+      "schritt": "zusage",
+      "rollen": ["hauptmieter", "mitmieter", "buerge"],
+      "situationen": ["angestellt"],
+      "serie": {"anzahl": 3, "einheit": "monat"},
+      "datum": "abrechnungsmonat",
+      "fristen": {"hinweis": "naechster_monat_faellig", "warnungTage": 90},
+      "schwaerzenVorschlagen": true,
+      "alternative": "Kontoauszüge mit Gehaltseingang",
+      "varianten": [{"id": "gehaltsabrechnung", "text": "Gehaltsabrechnung"}, {"id": "kontoauszug", "text": "Kontoauszug"}],
+      "reihenfolge": 20
+    },
+    {
+      "id": "einkommen_selbststaendig",
+      "warumErlaubt": "Erst kurz vor dem Vertrag, wenn du die Zusage hast.",
+      "warumUeblich": "Üblich sind der letzte Einkommensteuerbescheid und eine aktuelle BWA, GuV oder EÜR. Oft braucht es mehrere Nachweise.",
+      "warumGutZuWissen": ["{app} erinnert dich nach einem Jahr an einen neueren Nachweis."],
+      "wechselBraucht": "einen Einkommensnachweis, etwa den letzten Steuerbescheid",
+      "wechselBleibt": "Der Einkommensnachweis bleibt gespeichert und kommt nicht mehr in die Mappe.",
+      "hilfe": "Letzter Steuerbescheid, aktuelle BWA oder EÜR.",
+      "text": "Einkommens­nachweis",
+      "symbol": "euro",
+      "etikett": "ueblich",
+      "schritt": "zusage",
+      "rollen": ["hauptmieter", "mitmieter", "buerge"],
+      "situationen": ["selbststaendig"],
+      "beispiele": ["Letzter Einkommensteuerbescheid", "Aktuelle BWA", "GuV oder EÜR"],
+      "mehrere": true,
+      "datum": "ausstellungsdatum",
+      "fristen": {"hinweisTage": 365},
+      "fristQuelle": "eigene Annahme",
+      "reihenfolge": 20
+    },
+    {
+      "id": "einkommen_ausbildung",
+      "erkennen": {"passtNicht": [], "varianten": {"beide": "beides", "wenn": {"bafoeg": ["bafög", "ausbildungsförderung", "bundesausbildungsförderungsgesetz"], "unterhalt": ["unterhaltszahlung", "unterhaltszahlungen", "unterhaltsnachweis", "unterhaltsbescheinigung", "kindesunterhalt"]}}},
+      "warumErlaubt": "Erst kurz vor dem Vertrag, wenn du die Zusage hast.",
+      "warumUeblich": "Üblich ist der BAföG-Bescheid oder der Ausbildungsvertrag.",
+      "warumGutZuWissen": ["{app} erinnert dich nach einem Jahr an einen neueren Nachweis."],
+      "wechselBraucht": "einen BAföG-Bescheid oder Ausbildungsvertrag",
+      "wechselBleibt": "Der Nachweis bleibt gespeichert und kommt nicht mehr in die Mappe.",
+      "hilfe": "Der aktuelle BAföG-Bescheid oder dein Ausbildungsvertrag.",
+      "text": "BAföG-Bescheid oder Ausbildungs­vertrag",
+      "varianten": [
+        {"id": "bafoeg", "text": "BAföG-Bescheid"},
+        {"id": "unterhalt", "text": "Unterhaltsnachweis"},
+        {"id": "beides", "text": "BAföG und Unterhalt"},
+        {"id": "ausbildungsvertrag", "text": "Ausbildungsvertrag"},
+        {"id": "anderes", "text": "Anderer Nachweis"}
+      ],
+      "jeVariante": true,
+      "jeArt": {
+        "studium": {
+          "text": "BAföG oder Unterhalt",
+          "wechselBraucht": "einen BAföG-Bescheid, einen Unterhaltsnachweis oder beides",
+          "wechselBleibt": "Der Nachweis bleibt gespeichert und kommt nicht mehr in die Mappe.",
+          "hilfe": "Dein aktueller BAföG-Bescheid, ein Nachweis über Unterhalt oder beides.",
+          "varianten": [
+            {"id": "bafoeg", "text": "BAföG-Bescheid"},
+            {"id": "unterhalt", "text": "Unterhaltsnachweis"},
+            {"id": "beides", "text": "BAföG und Unterhalt"},
+            {"id": "stipendium", "text": "Stipendium"},
+            {"id": "anderes", "text": "Anderer Nachweis"}
+          ]
+        },
+        "ausbildung": {
+          "text": "Ausbildungs­vertrag",
+          "wechselBraucht": "einen Ausbildungsvertrag oder eine Abrechnung der Vergütung",
+          "wechselBleibt": "Der Ausbildungsvertrag bleibt gespeichert und kommt nicht mehr in die Mappe.",
+          "hilfe": "Dein Ausbildungsvertrag oder eine aktuelle Abrechnung der Vergütung.",
+          "varianten": [
+            {"id": "ausbildungsvertrag", "text": "Ausbildungsvertrag"},
+            {"id": "verguetung", "text": "Abrechnung der Vergütung"},
+            {"id": "unterhalt", "text": "Unterhaltsnachweis"},
+            {"id": "anderes", "text": "Anderer Nachweis"}
+          ]
+        }
+      },
+      "symbol": "euro",
+      "etikett": "ueblich",
+      "schritt": "zusage",
+      "rollen": ["hauptmieter", "mitmieter"],
+      "situationen": ["studierend_azubi"],
+      "datum": "ausstellungsdatum",
+      "fristen": {"hinweisTage": 365},
+      "fristQuelle": "eigene Annahme",
+      "hinweis": "Oft hilft eine Bürgschaft.",
+      "reihenfolge": 20
+    },
+    {
+      "id": "rentenbescheid",
+      "warumErlaubt": "Erst kurz vor dem Vertrag, wenn du die Zusage hast.",
+      "warumUeblich": "Üblich ist der aktuelle Rentenbescheid.",
+      "warumGutZuWissen": ["{app} erinnert dich nach einem Jahr an einen neueren Nachweis."],
+      "wechselBraucht": "den aktuellen Rentenbescheid",
+      "wechselBleibt": "Der Rentenbescheid bleibt gespeichert und kommt nicht mehr in die Mappe.",
+      "hilfe": "Der aktuelle Bescheid der Rentenversicherung.",
+      "text": "Renten­bescheid",
+      "symbol": "euro",
+      "etikett": "ueblich",
+      "schritt": "zusage",
+      "rollen": ["hauptmieter", "mitmieter", "buerge"],
+      "situationen": ["rente"],
+      "datum": "ausstellungsdatum",
+      "fristen": {"hinweisTage": 365},
+      "fristQuelle": "eigene Annahme",
+      "reihenfolge": 20
+    },
+    {
+      "id": "mietuebernahme_amt",
+      "warumErlaubt": "Erst kurz vor dem Vertrag, wenn du die Zusage hast.",
+      "warumUeblich": "Vermieter erwarten die Zusage der Stelle, dass sie die Miete übernimmt.",
+      "warumGutZuWissen": ["Zahlt die Stelle die Miete vollständig direkt, entfallen nach dem Musterbogen (B.5) die Fragen zum Einkommen."],
+      "wechselBraucht": "den Nachweis der Mietübernahme",
+      "wechselBleibt": "Der Nachweis bleibt gespeichert und kommt nicht mehr in die Mappe.",
+      "hilfe": "Die Zusage der Stelle, dass sie die Miete übernimmt.",
+      "text": "Nachweis der Miet­übernahme",
+      "symbol": "euro",
+      "etikett": "ueblich",
+      "schritt": "zusage",
+      "rollen": ["hauptmieter", "mitmieter"],
+      "situationen": ["leistungsbezug"],
+      "datum": "ausstellungsdatum",
+      "hinweis": "Gebraucht wird die Zusage der Stelle, dass sie die Miete übernimmt.",
+      "reihenfolge": 20
+    },
+    {
+      "id": "einkommen_sonstig",
+      "warumErlaubt": "Erst kurz vor dem Vertrag, wenn du die Zusage hast.",
+      "warumUeblich": "Für diese Fälle gibt es keine feste Regel. Nimm, was dein Einkommen am besten zeigt.",
+      "warumGutZuWissen": ["Du gibst dem Nachweis selbst einen Namen, damit der Vermieter weiß, was er sieht."],
+      "wechselBraucht": "einen Nachweis, der das Einkommen zeigt",
+      "wechselBleibt": "Der Nachweis bleibt gespeichert und kommt nicht mehr in die Mappe.",
+      "hilfe": "Ein Nachweis, der dein Einkommen zeigt.",
+      "text": "Sonstiger Einkommens­nachweis",
+      "symbol": "euro",
+      "etikett": "ueblich",
+      "schritt": "zusage",
+      "rollen": ["hauptmieter", "mitmieter", "buerge"],
+      "situationen": ["sonstiges"],
+      "freierName": true,
+      "datum": "ausstellungsdatum",
+      "reihenfolge": 20
+    },
+    {
+      "id": "bonitaet",
+      "erkennen": {"nameErwartet": true, "nurSeitenMit": {"woerter": ["zertifikat", "bonitätszertifikat", "prüfcode"], "hinweis": "Nur die Seite für den Vermieter ist ausgewählt. Die andere ist für dich: Mit dem Kreis nimmst du sie dazu."}, "pruefcode": ["prüfcode", "bonitätscheck"], "passt": ["bonitätscheck", "bonitätsauskunft", "mieterauskunft"], "passtNicht": [{"woerter": ["datenkopie"], "anzeige": "Datenkopie", "hinweis": "Vermieter brauchen meist die Auskunft für Vermieter."}]},
+      "warumErlaubt": "Eigentlich erst kurz vor dem Vertrag, wenn du die Zusage hast.",
+      "warumUeblich": "In Großstädten fragen viele Vermieter trotzdem früher. Mitschicken ist üblich und kann deine Chancen verbessern.",
+      "warumGutZuWissen": ["Eine gesetzliche Gültigkeit gibt es nicht. Die 60 Tage beim SCHUFA-BonitätsCheck gelten für den Prüfcode, mit dem der Vermieter die Echtheit prüft. Viele Vermieter nehmen eine Auskunft bis drei Monate, manche wollen sie neuer.", "Gebraucht wird die Auskunft für Vermieter, zum Beispiel der SCHUFA-BonitätsCheck, nicht die kostenlose Datenkopie.", "{app} sagt dir, wann der Prüfcode abläuft, und zählt die Auskunft nach drei Monaten als zu alt."],
+      "hilfe": "Die Auskunft für Vermieter, nicht die kostenlose Datenkopie.",
+      "hilfeAndere": "die Auskunft für Vermieter (SCHUFA-BonitätsCheck), nicht die kostenlose Datenkopie. Meist nicht älter als drei Monate.",
+      "text": "Bonitäts­nachweis",
+      "symbol": "shield",
+      "etikett": "ueblich",
+      "schritt": "zusage",
+      "rollen": ["hauptmieter", "mitmieter", "buerge"],
+      "datum": "ausstellungsdatum",
+      "fristen": {"hinweisTage": 55, "hinweisArt": "info", "pruefcodeTage": 60, "warnungTage": 90},
+      "hinweis": "Gebraucht wird die Auskunft für Vermieter, nicht die kostenlose Datenkopie.",
+      "kosten": "SCHUFA-BonitätsCheck 29,95 €, Prüfcode 60 Tage gültig",
+      "reihenfolge": 30
+    },
+    {
+      "id": "mietzahlung",
+      "artikel": "die",
+      "mehrzahl": true,
+      "nieVerlangbar": true,
+      "marktueblichWennHochgeladen": true,
+      "warumErlaubt": "Verlangen kann sie kein Vermieter: Dein bisheriger Vermieter muss keine Bescheinigung ausstellen.",
+      "warumUeblich": "Freiwillig mitgeschickt, machen sie oft einen guten Eindruck.",
+      "warumGutZuWissen": ["Statt einer Bescheinigung gehen auch Kontoauszüge mit den Mietzahlungen der letzten drei bis sechs Monate. Andere Buchungen darfst du unkenntlich machen.", "Hast du sie hochgeladen, gehen sie bei „Marktüblich“ mit. Hast du keine, fehlt auch nichts."],
+      "hilfe": "Bescheinigung vom jetzigen Vermieter oder Kontoauszüge mit der Miete.",
+      "kurz": "Vom jetzigen Vermieter",
+      "text": "Mietschulden­freiheit oder Mietzahlungs­nachweis",
+      "textKurz": "Miet­zahlungen",
+      "symbol": "key",
+      "etikett": "kann_helfen",
+      "schritt": "zusage",
+      "rollen": ["hauptmieter", "mitmieter"],
+      "datum": "ausstellungsdatum",
+      "fristen": {"warnungTage": 180},
+      "alternative": "Kontoauszüge mit Mietzahlungen",
+      "varianten": [{"id": "bescheinigung", "text": "Bescheinigung"}, {"id": "kontoauszug", "text": "Kontoauszug"}],
+      "hinweis": "Freiwillig. Statt einer Bescheinigung gehen auch Kontoauszüge mit den Mietzahlungen.",
+      "reihenfolge": 40
+    },
+    {
+      "id": "buergschaftserklaerung",
+      "artikel": "die",
+      "warumErlaubt": "Erst kurz vor dem Vertrag, wenn du die Zusage hast.",
+      "warumUeblich": "Vermieter fragen vor allem danach, wenn das Einkommen knapp ist.",
+      "warumGutZuWissen": ["Bürgschaft und Kaution zusammen dürfen grundsätzlich höchstens drei Nettokaltmieten betragen, außer die Bürgschaft wurde freiwillig angeboten.", "Die Bürgschaft gilt nur mit Unterschrift auf Papier. Bring das Original zur Vertragsunterzeichnung mit. In {app} liegt nur der Scan."],
+      "hilfe": "Unterschrieben auf Papier, hier nur der Scan.",
+      "hilfeAndere": "unterschrieben auf Papier, für die Mappe reicht ein Scan.",
+      "text": "Bürgschafts­erklärung",
+      "symbol": "form",
+      "etikett": "ueblich",
+      "schritt": "zusage",
+      "rollen": ["buerge"],
+      "papierOriginal": true,
+      "datum": "ausstellungsdatum",
+      "hinweis": "Die Bürgschaft gilt nur mit Unterschrift auf Papier. Bring das Original zur Vertragsunterzeichnung mit.",
+      "reihenfolge": 5
+    },
+    {
+      "id": "anschreiben",
+      "text": "Anschreiben",
+      "symbol": "form",
+      "etikett": "kann_helfen",
+      "ebene": "bewerbung",
+      "inAppErstellt": true,
+      "spaeter": true,
+      "reihenfolge": 1
+    },
+    {
+      "id": "empfehlung_vorvermieter",
+      "artikel": "die",
+      "nieVerlangbar": true,
+      "warumErlaubt": "Verlangen kann sie kein Vermieter. Auch die Frage nach den Kontaktdaten deines bisherigen Vermieters halten die Datenschutzbehörden für unzulässig.",
+      "warumUeblich": "Freiwillig mitgeschickt, macht sie oft einen guten Eindruck.",
+      "warumGutZuWissen": ["Ein paar Zeilen vom bisherigen Vermieter reichen."],
+      "hilfe": "Ein paar Zeilen vom bisherigen Vermieter.",
+      "kurz": "Vom bisherigen Vermieter",
+      "text": "Empfehlung des Vor­vermieters",
+      "symbol": "form",
+      "etikett": "kann_helfen",
+      "schritt": "zusage",
+      "rollen": ["hauptmieter", "mitmieter"],
+      "datum": "ausstellungsdatum",
+      "reihenfolge": 50
+    },
+    {
+      "id": "wbs",
+      "text": "Wohn­berechtigungs­schein",
+      "symbol": "form",
+      "etikett": "ueblich",
+      "ebene": "bewerbung",
+      "bedingung": "sozialwohnung",
+      "schritt": "will_wohnung",
+      "hinweis": "Ob ein WBS vorliegt, darf schon bei der Besichtigung gefragt werden.",
+      "reihenfolge": 15
+    },
+    {
+      "id": "ausweiskopie",
+      "warumErlaubt": "Eine Kopie gar nicht. Den Ausweis zeigst du vor, etwa bei der Unterschrift unter den Vertrag.",
+      "warumUeblich": "Manche Portale fragen trotzdem danach. Ob du sie schickst, entscheidest du.",
+      "warumGutZuWissen": ["{app} speichert die Kopie, schickt sie aber nicht mit. In „Eigene Auswahl“ kannst du sie dazunehmen."],
+      "hilfe": "Vorzeigen genügt meist.",
+      "kurz": "Vorzeigen genügt",
+      "text": "Ausweis­kopie",
+      "symbol": "form",
+      "etikett": "meist_unnoetig",
+      "rollen": ["hauptmieter", "mitmieter", "buerge"],
+      "hinweis": "Den Ausweis zeigst du am besten nur vor. Eine Kopie muss nicht in die Mappe.",
+      "reihenfolge": 90
+    },
+    {
+      "id": "schufa_datenkopie",
+      "warumErlaubt": "Die kostenlose Datenkopie gar nicht. Verlangt werden darf nur eine Auskunft für Vermieter.",
+      "warumUeblich": "Manche fragen trotzdem danach. Die Datenkopie ist aber nicht der Nachweis für Vermieter.",
+      "warumGutZuWissen": ["Gebraucht wird die Auskunft für Vermieter. In {app} steht sie als Bonitätsnachweis."],
+      "hilfe": "Ist nicht der Nachweis für Vermieter.",
+      "kurz": "Ist nicht der Nachweis für Vermieter",
+      "text": "SCHUFA-Daten­kopie",
+      "symbol": "shield",
+      "etikett": "meist_unnoetig",
+      "rollen": ["hauptmieter", "mitmieter", "buerge"],
+      "hinweis": "Die kostenlose Datenkopie ist nicht der Nachweis für Vermieter. Gebraucht wird die Auskunft für Vermieter.",
+      "reihenfolge": 91
+    }
+  ],
+
+  "selbstauskunftFelder": [
+    {"id": "name", "text": "Name", "schritt": "besichtigung", "pdfText": "Name"},
+    {"id": "kontakt", "text": "Eine Kontaktangabe", "schritt": "besichtigung", "pdfText": "Telefon oder E-Mail"},
+    {"id": "wbs_vorhanden", "text": "WBS liegt vor", "schritt": "besichtigung", "bedingung": "sozialwohnung", "pdfText": "Wohnberechtigungsschein"},
+    {"id": "personenzahl", "text": "Anzahl der einziehenden Personen", "schritt": "will_wohnung", "pdfText": "Personen, die einziehen", "nichtFuer": ["buerge"]},
+    {"id": "beruf", "text": "Beruf", "schritt": "will_wohnung", "pdfText": "Beruf"},
+    {"id": "arbeitgeber", "text": "Arbeitgeber", "schritt": "will_wohnung", "pdfText": "Arbeitgeber"},
+    {"id": "nettoeinkommen", "text": "Nettoeinkommen oder Bestätigung eines Mindestbetrags", "schritt": "will_wohnung", "entfaelltBei": ["leistungsbezug"], "pdfText": "Einkommen im Monat, netto"},
+    {"id": "haustiere", "text": "Haustiere (ohne Kleintiere in Käfigen)", "schritt": "will_wohnung", "pdfText": "Haustiere", "nichtFuer": ["buerge"]},
+    {"id": "insolvenz", "text": "Laufendes Insolvenzverfahren", "schritt": "will_wohnung", "pdfText": "Laufendes Insolvenzverfahren"},
+    {"id": "raeumungstitel", "text": "Räumungstitel in den letzten 5 Jahren", "schritt": "will_wohnung", "pdfText": "Räumungstitel in den letzten fünf Jahren"},
+    {"id": "mietrueckstaende", "text": "Erhebliche Mietrückstände oder Kündigung wegen Pflichtverletzung, mit Möglichkeit zur Stellungnahme", "schritt": "zusage", "pdfText": "Mietrückstände von mehr als einer Monatsmiete in zwei Monaten nacheinander oder von zwei Monatsmieten, oder Kündigung wegen Pflichtverletzung"}
+  ],
+
+  "nieAbfragen": [
+    "ausweiskopie", "familienstand", "staatsangehoerigkeit", "religion", "vorstrafen",
+    "schwangerschaft_kinderwunsch", "kontakt_vorvermieter", "beschaeftigungsdauer", "geburtsdatum"
+  ],
+
+  "vermieter": {"einkommen": ["gehaltsnachweis", "einkommen_selbststaendig", "einkommen_ausbildung", "rentenbescheid", "mietuebernahme_amt", "einkommen_sonstig"], "erwartet": {"vertrag": [{"typ": "selbstauskunft", "text": "Selbst­auskunft", "schritt": "will_wohnung"}, {"anforderung": "einkommen", "text": "Einkommens­nachweis", "schritt": "zusage"}, {"typ": "bonitaet", "text": "Bonitäts­nachweis", "schritt": "zusage"}], "buerge": [{"typ": "selbstauskunft", "text": "Selbst­auskunft", "schritt": "zusage"}, {"anforderung": "einkommen", "text": "Einkommens­nachweis", "schritt": "zusage"}, {"typ": "bonitaet", "text": "Bonitäts­nachweis", "schritt": "zusage"}, {"typ": "buergschaftserklaerung", "text": "Bürgschafts­erklärung", "schritt": "zusage"}]}, "schritte": {"besichtigung": {"ueblich": "zur Besichtigung üblich", "gehoert": "zur Besichtigung"}, "will_wohnung": {"ueblich": "ab dem Mietwunsch üblich", "gehoert": "zum Mietwunsch"}, "zusage": {"ueblich": "vor dem Vertrag üblich", "gehoert": "zum Vertrag"}}, "gruppeEntscheidung": "Für den Vertrag, nach Ihrer Entscheidung", "gruppeNichtNoetig": "Nicht nötig", "hinweise": {"buergschaftserklaerung": "Eine Bürgschaft gilt nur mit Unterschrift auf Papier (§ 766 BGB). Das Original gehört zur Vertrags­unterzeichnung.", "ausweiskopie": "Eine Ausweiskopie halten die Datenschutzbehörden für unzulässig (DSK, Abschnitt A). Nach ihrer Orientierungs­hilfe genügt für die Identität der vorgezeigte Ausweis.", "schufa_datenkopie": "Das ist die Datenkopie nach Art. 15 DSGVO, keine Auskunft für Vermieter. Nach der Orientierungs­hilfe der Datenschutz­konferenz (Abschnitt C) wird sie nicht angefordert, weil sie mehr enthält als nötig.", "mietzahlung": "Von den Bewerbern beigelegt. Nach der Orientierungs­hilfe (Abschnitt C) kann eine Mietschulden­freiheits­bescheinigung nicht verlangt werden, weil frühere Vermieter sie nicht ausstellen müssen.", "empfehlung_vorvermieter": "Von den Bewerbern beigelegt."}, "pruefwege": {"bonitaet": {"name": "Verifizierungs­code", "tage": 60, "adresse": "meineSCHUFA.de/check", "url": "https://www.meineschufa.de/check", "quelle": "Muster des SCHUFA-BonitätsChecks", "stand": "2022, abgerufen im November 2026"}}},
+
+  "exportModi": {
+    "alles": {"text": "Alles", "beschreibung": "Alles Übliche und alles, was helfen kann.", "enthaelt": ["ueblich", "kann_helfen"], "meistUnnoetig": "nie"},
+    "marktueblich": {"text": "Marktüblich", "beschreibung": "Was der Markt verlangt.", "standard": true, "enthaelt": ["ueblich"], "meistUnnoetig": "einzeln_zuschaltbar"},
+    "datensparsam": {"text": "Datensparsam", "beschreibung": "Nur, was in diesem Bewerbungsschritt nötig ist.", "nachSchritt": true},
+    "eigene_auswahl": {"text": "Eigene Auswahl", "beschreibung": "Du entscheidest Unterlage für Unterlage.", "startetAus": "marktueblich"}
+  },
+
+  "erinnerungen": {
+    "nochNichtStummTage": 7,
+    "maxFragenProMonat": 2,
+    "abrechnungMeistStandard": "ende",
+    "abrechnungMeistHinweis": "Später Standardwert; genauer Tag wird beim Testen festgelegt."
+  }
+}

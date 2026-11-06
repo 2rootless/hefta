@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-vermieter/
+coverage/
+test-results/
+playwright-report/
+.DS_Store
+Thumbs.db
+ausgabe/
+
+# Pakete für das Design (aus docs/ erzeugt, nicht einchecken)
+design-sync/

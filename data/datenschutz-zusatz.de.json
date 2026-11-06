@@ -1,0 +1,20 @@
+{
+  "_kommentar": "Ergänzung zum Generatortext: Die Gratisfassung des Generators kennt weder Cloudflare noch eine App, die nur auf dem Gerät speichert. Vom Auftraggeber am 6.11.2026 freigegeben.",
+  "titel": "Zuerst das Wichtigste zu {app}",
+  "einleitung": "Der Text weiter unten ist allgemein gehalten. Hier steht, was für {app} konkret gilt.",
+  "stand": "Stand 6. November 2026.",
+  "abschnitte": [
+    {
+      "titel": "Ihre Angaben und Unterlagen",
+      "text": "Die App speichert Angaben und Unterlagen nur im Speicher Ihres Browsers auf Ihrem Gerät. Es gibt kein Konto und keinen Server mit diesen Daten, und wir haben darauf keinen Zugriff. Etwas verlässt Ihr Gerät nur, wenn Sie es selbst teilen oder herunterladen. Die Vermieter-Seite liest Mappen nur in Ihrem Browser und speichert nichts."
+    },
+    {
+      "titel": "Hosting bei Cloudflare",
+      "text": "App und Vermieter-Seite werden über Cloudflare Pages ausgeliefert, einen Dienst der Cloudflare, Inc., USA. Beim Laden verarbeitet Cloudflare technisch notwendige Daten wie die IP-Adresse und den Zeitpunkt des Abrufs, um die Dateien auszuliefern und den Dienst abzusichern. Das kann auch in den USA geschehen. Cloudflare stützt solche Übermittlungen nach eigenen Angaben auf das EU-U.S. Data Privacy Framework und auf Standardvertragsklauseln. Rechtsgrundlage ist das berechtigte Interesse an einer sicheren Auslieferung (Art. 6 Abs. 1 lit. f DSGVO). Ihre Angaben und Unterlagen werden dabei nie übertragen."
+    },
+    {
+      "titel": "Keine Cookies, keine Analyse",
+      "text": "{app} setzt keine Cookies und bindet keine Dienste Dritter ein. {app} zählt nicht, was Sie in der App tun. Was wir sehen, sind die Summen des Hostings: wie oft eine Seite am Tag geladen wurde, ohne Kennung und ohne Verlauf."
+    }
+  ]
+}

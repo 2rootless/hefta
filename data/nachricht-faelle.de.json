@@ -1,0 +1,47 @@
+{
+  "stand": "2026-11-05",
+  "hinweis": "Fälle für die Erkennung im Inseratstext (data/nachricht.de.json): Text, erwartetes Ergebnis und warum der Fall dasteht. Neuer Fall, neue Zeile; src/domain/nachricht.test.ts prüft alle. angaben stehen in der Reihenfolge der Wortliste. Nur für die Tests, wird nicht mit der App ausgeliefert.",
+  "faelle": [
+    { "name": "nichts", "text": "Schöne 3-Zimmer-Wohnung in Altona, Balkon, ab sofort. Bei Interesse melden Sie sich gern.", "angaben": [], "unzulaessig": [], "wege": [], "warum": "Die Hälfte der Inserate verlangt nichts." },
+    { "name": "kontakt", "text": "Bitte geben Sie bei der Anfrage Ihren vollständigen Namen, Ihre Telefonnummer und Ihre aktuelle Anschrift an.", "angaben": ["adresse"], "unzulaessig": [], "wege": [], "warum": "Name und Telefon gehen immer mit, nur die Anschrift kommt dazu." },
+    { "name": "einkommen", "text": "Bitte nennen Sie uns Name, Adresse, Telefonnummer und Angaben zum Einkommen sowie die Anzahl der Personen, die einziehen.", "angaben": ["adresse", "personen", "einkommen"], "unzulaessig": [], "wege": [], "warum": "Mehrere Angaben in einem Satz." },
+    { "name": "formular", "text": "Bewerben Sie sich bitte ausschließlich über unser Bewerbungsformular auf unserer Webseite. Anfragen über das Portal werden nicht beantwortet.", "angaben": [], "unzulaessig": [], "wege": ["formular"], "warum": "Eigenes Formular: Die Nachricht hilft dann nicht." },
+    { "name": "mail", "text": "Senden Sie Ihre Bewerbungsunterlagen bitte direkt an vermietung@beispiel-hausverwaltung.de.", "angaben": [], "unzulaessig": [], "wege": ["mail", "mappe"], "warum": "Mailadresse und Unterlagen." },
+    { "name": "besichtigung", "text": "Offene Besichtigung am Samstag von 10 bis 12 Uhr, einfach vorbeikommen. Selbstauskunft bitte vor Ort ausfüllen.", "angaben": [], "unzulaessig": [], "wege": ["besichtigung"], "warum": "Offene Besichtigung: Es braucht keine Anfrage." },
+    { "name": "unzulaessig", "text": "Bitte senden Sie uns mit der Anfrage eine Ausweiskopie, Ihren Familienstand und Ihre Staatsangehörigkeit.", "angaben": [], "unzulaessig": ["Ausweiskopie", "Familienstand", "Staatsangehörigkeit"], "wege": [], "warum": "Was die Datenschutzbehörden für unzulässig halten, geht nie mit." },
+
+    { "name": "auskunft", "text": "Haustiere nach Absprache. Einzug ab sofort möglich. Rauchen in der Wohnung nicht gestattet. Zum Besichtigungstermin bitte den Personalausweis mitbringen.", "angaben": [], "unzulaessig": [], "wege": [], "warum": "Auskünfte des Inserats sind keine Fragen." },
+    { "name": "lang", "text": "Wir bitten um Angaben zu Beruf und Arbeitgeber, zum Nettoeinkommen, dem gewünschten Einzugstermin und ob Sie Haustiere haben. Besichtigungen finden nach Vereinbarung statt.", "angaben": ["einzug", "beruf", "einkommen", "haustiere"], "unzulaessig": [], "wege": [], "warum": "Eine lange Bitte, ohne „bitte“ am Anfang." },
+    { "name": "auskunft-und-frage", "text": "Helle 2,5-Zimmer-Wohnung im 2. OG. Einbauküche, Südbalkon. Kaltmiete 980 €. Haustiere nach Absprache. Bitte nennen Sie uns in Ihrer Anfrage Ihren Beruf und Arbeitgeber, Ihr Nettoeinkommen und den gewünschten Einzugstermin. Besichtigungen nach Vereinbarung.", "angaben": ["einzug", "beruf", "einkommen"], "unzulaessig": [], "wege": [], "warum": "Fund in PN9: Die Katze bleibt ungesagt, wenn nur eine Auskunft von Haustieren spricht." },
+    { "name": "nur-auskuenfte", "text": "Keine Haustiere. Rauchen nicht gestattet. Einzug ab sofort.", "angaben": [], "unzulaessig": [], "wege": [], "warum": "Kein Satz erbittet etwas." },
+
+    { "name": "doppelpunkt", "text": "Bitte nennen Sie uns: Beruf, Einkommen und Einzugstermin. Haustiere nach Absprache.", "angaben": ["einzug", "beruf", "einkommen"], "unzulaessig": [], "wege": [], "warum": "Die Bitte gilt über den Doppelpunkt hinaus, bis der Satz endet." },
+    { "name": "doppelpunkt-liste", "text": "Wir benötigen folgende Angaben:\n- Beruf\n- Einkommen\n\nHaustiere nach Absprache.", "angaben": ["beruf", "einkommen"], "unzulaessig": [], "wege": [], "warum": "Liste mit Spiegelstrichen; die Bitte endet mit dem Absatz." },
+    { "name": "doppelpunkt-ohne-bitte", "text": "Ausstattung: Balkon, Keller. Haustiere nach Absprache.", "angaben": [], "unzulaessig": [], "wege": [], "warum": "Ein Doppelpunkt allein bittet um nichts." },
+    { "name": "semikolon", "text": "Haustiere nach Absprache; bitte nennen Sie Ihren Beruf.", "angaben": ["beruf"], "unzulaessig": [], "wege": [], "warum": "Das Semikolon trennt wie ein Punkt." },
+
+    { "name": "keine-haustiere", "text": "Bitte keine Haustiere.", "angaben": [], "unzulaessig": [], "wege": [], "warum": "Das Inserat schließt sie aus und fragt nicht." },
+    { "name": "keine-hunde-katzen", "text": "Bitte keine Hunde oder Katzen.", "angaben": [], "unzulaessig": [], "wege": [], "warum": "Der Ausschluss gilt für alles Aufgezählte." },
+    { "name": "anmerkung", "text": "Bitte beachten Sie, dass Haustiere nur nach Absprache erlaubt sind.", "angaben": [], "unzulaessig": [], "wege": [], "warum": "Eine Anmerkung ist keine Bitte." },
+    { "name": "anmerkung-doppelpunkt", "text": "Bitte beachten Sie: Haustiere nach Absprache.", "angaben": [], "unzulaessig": [], "wege": [], "warum": "Auch nicht mit Doppelpunkt." },
+
+    { "name": "fragezeichen", "text": "Haben Sie Haustiere?", "angaben": ["haustiere"], "unzulaessig": [], "wege": [], "warum": "Ein Fragezeichen fragt." },
+    { "name": "mehrzahl", "text": "Haben Sie Hunde oder Katzen?", "angaben": ["haustiere"], "unzulaessig": [], "wege": [], "warum": "Auch in der Mehrzahl." },
+    { "name": "angaben-zum", "text": "Wir freuen uns über Angaben zum Einkommen.", "angaben": ["einkommen"], "unzulaessig": [], "wege": [], "warum": "„Angaben zu“ auch als „zum“ und „zur“." },
+    { "name": "benoetigt", "text": "Benötigt werden Beruf und Einkommen.", "angaben": ["beruf", "einkommen"], "unzulaessig": [], "wege": [], "warum": "„benötigen“ auch als „benötigt“." },
+    { "name": "duzen", "text": "Schreib uns kurz, ob du Haustiere hast.", "angaben": ["haustiere"], "unzulaessig": [], "wege": [], "warum": "Private Inserate duzen oft." },
+
+    { "name": "raucher", "text": "Bitte teilen Sie uns mit, ob Sie Raucher sind.", "angaben": [], "unzulaessig": [], "wege": [], "warum": "Raucher ist kein Feld, was Hefta nicht kennt, steht nicht in der Liste." },
+    { "name": "bonitaet", "text": "Bitte Bonitätsnachweis mitschicken.", "angaben": [], "unzulaessig": [], "wege": [], "warum": "Bonität ist kein Einkommen: Der Betrag bleibt ungesagt." },
+
+    { "name": "ausweis-beifuegen", "text": "Bitte Personalausweis beifügen.", "angaben": [], "unzulaessig": ["Ausweiskopie"], "wege": [], "warum": "Beigefügt ist es eine Kopie, auch mit dem langen Wort." },
+    { "name": "ausweis-mitschicken", "text": "Bitte Ausweis mitschicken.", "angaben": [], "unzulaessig": ["Ausweiskopie"], "wege": [], "warum": "Mitgeschickt ebenso." },
+    { "name": "ausweis-kopie", "text": "Bitte eine Kopie Ihres Personalausweises.", "angaben": [], "unzulaessig": ["Ausweiskopie"], "wege": [], "warum": "Ausdrücklich eine Kopie." },
+    { "name": "ausweis-vorzeigen", "text": "Bitte Personalausweis zur Besichtigung mitbringen.", "angaben": [], "unzulaessig": [], "wege": [], "warum": "Zum Vorzeigen ist er nicht unzulässig." },
+
+    { "name": "portal-melden", "text": "Bitte melden Sie sich über das Portal.", "angaben": [], "unzulaessig": [], "wege": [], "warum": "Wer im Portal schreibt, braucht genau diese Nachricht." },
+    { "name": "portal-bewerben", "text": "Bewerben Sie sich über das Portal.", "angaben": [], "unzulaessig": [], "wege": [], "warum": "Ebenso." },
+    { "name": "unser-portal", "text": "Bewerben Sie sich über unser Portal.", "angaben": [], "unzulaessig": [], "wege": ["formular"], "warum": "„unser“ Portal ist das eigene Formular." },
+    { "name": "unsere-webseite", "text": "Bewerben Sie sich über unsere Webseite.", "angaben": [], "unzulaessig": [], "wege": ["formular"], "warum": "Ebenso die eigene Webseite." }
+  ]
+}

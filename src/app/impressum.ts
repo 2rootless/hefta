@@ -1,0 +1,16 @@
+import TEXT from '../../data/impressum.de.html?raw';
+
+// Das Impressum kommt aus dem Datenschutz-Generator (Gratisfassung, 5.11.2026) und steht unverändert in
+// data/impressum.de.html, ein Test prüft die Prüfsumme. Der Hinweis auf den Generator ist Bedingung der
+// Gratisfassung und bleibt stehen. Ändert sich die Anschrift, kommt ein neuer Text aus dem Generator.
+
+/**
+ * Der Text für eine Seite, die schon „Impressum“ als Überschrift hat: ohne die eigene Hauptüberschrift, die
+ * Abschnitte eine Ebene unter der Seite. Am Wortlaut ändert sich nichts.
+ */
+export function impressumHtml(ebene: 3 | 4): string {
+  return TEXT.replaceAll('\r\n', '\n')
+    .replace(/<h1>.*?<\/h1>\n?/, '')
+    .replaceAll('<h2 ', `<h${ebene} `)
+    .replaceAll('</h2>', `</h${ebene}>`);
+}

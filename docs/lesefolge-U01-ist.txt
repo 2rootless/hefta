@@ -1,0 +1,35 @@
+Zugänglichkeitsbaum aus Chromium (Szenario 01-standard). Das ist NICHT VoiceOver.
+
+- main:
+  - link "Einstellungen":
+    - /url: "#/einstellungen"
+  - heading "Hallo Max." [level=1]
+  - 'link "Haushalt bearbeiten: Max, Lea und ein Kind."':
+    - /url: "#/haushalt"
+  - paragraph: Noch zwei Dinge, dann seid ihr startklar.
+  - status
+  - 'img "Fortschritt: neun von elf Unterlagen aktuell, zwei offen."'
+  - heading "Im Mietvertrag" [level=2]
+  - heading "Max, Hauptmieter. Zwei von drei aktuell." [level=3]:
+    - link "Max, Hauptmieter. Zwei von drei aktuell.":
+      - /url: "#/person/p-01-standard-0"
+      - text: Max
+  - button "Gehaltsnachweis hinzufügen. Neuer Monat."
+  - heading "Lea, Mitmieterin. Alles da." [level=3]:
+    - link "Lea, Mitmieterin. Alles da.":
+      - /url: "#/person/p-01-standard-1"
+      - text: Lea
+  - heading "Bürgschaft" [level=2]
+  - paragraph: Zusätzlich, falls der Vermieter fragt
+  - heading "Petra, Bürgin, Zusatz. Drei von vier aktuell." [level=3]:
+    - link "Petra, Bürgin, Zusatz. Drei von vier aktuell.":
+      - /url: "#/person/p-01-standard-2"
+      - text: Petra
+  - button "Bonitätsnachweis hinzufügen. Fehlt noch."
+  - link "Mappe trotzdem erstellen":
+    - /url: "#/mappe"
+  - text: Letztes Backup vor 3 Tagen
+  - link "Jetzt sichern":
+    - /url: "#/einstellungen/backup"
+- link "Unterlagen hinzufügen, zwei offen":
+  - /url: "#/rutsch"

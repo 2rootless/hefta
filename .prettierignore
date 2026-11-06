@@ -1,0 +1,14 @@
+node_modules
+dist
+dist-vermieter
+package-lock.json
+design/
+docs/
+data/
+*.md
+src/pdf/fonts
+test-results
+playwright-report
+test-results
+playwright-report
+public/manifest.webmanifest

@@ -1,0 +1,30 @@
+import type { Einstellungen } from '../domain/modell';
+
+// Homescreen-Anleitung (G4b): nur in Safari auf dem iPhone und nur, wenn Hefta nicht schon vom
+// Homescreen läuft. „Später“ fragt höchstens noch einmal, beim ersten fertigen Haushalt.
+
+function iphoneSafari(): boolean {
+  const ua = navigator.userAgent;
+  return /iPhone|iPod/.test(ua) && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+}
+
+function vomHomescreen(): boolean {
+  return (
+    window.matchMedia?.('(display-mode: standalone)').matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
+/** Vor der Einrichtung: Bisher nicht beantwortet? */
+export function homescreenFragen(e: Einstellungen | null): boolean {
+  return (
+    iphoneSafari() && !vomHomescreen() && !e?.homescreenHinweisGezeigt && !e?.homescreenSpaeter
+  );
+}
+
+/** Nach der Einrichtung: einmal „Später“ gesagt, noch nicht wieder gefragt? */
+export function homescreenNochmal(e: Einstellungen | null): boolean {
+  return (
+    iphoneSafari() && !vomHomescreen() && !e?.homescreenHinweisGezeigt && !!e?.homescreenSpaeter
+  );
+}

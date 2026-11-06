@@ -1,0 +1,1596 @@
+<script lang="ts">
+  import { pruefhinweise } from '../domain/pruefhinweise';
+  import { pruefAnzeige } from '../ui/pruefTexte';
+
+  // Mappe erstellen, neu geordnet (design/mappe-erstellen-neu.md, ME1 bis ME10): zuerst die Mappe selbst
+  // mit Deckblatt, Wohnung und Satz, dann alles zum Ansehen in einer Liste, wer dabei ist, was rein soll,
+  // „Mappe anpassen“; unten „Teilen“ mit der Größe. Die Einstellungen werden gleich gespeichert.
+  import { onDestroy, onMount, untrack } from 'svelte';
+  import { daten, db, gehe } from '../app/daten.svelte';
+  import {
+    fehlendeUnterlagen,
+    zuAlteUnterlagen,
+    hinweise,
+    schluessel,
+    einstellungenNachLaden,
+    standardEinstellungen,
+    vorhanden,
+    type ExportEinstellungen,
+    type ExportModus,
+  } from '../domain/export';
+  import { adresseTeile, adresseZeilen } from '../domain/adresse';
+  import { AUSSEHEN_STANDARD, type Bewerbung } from '../domain/modell';
+  import { lateinFehlt } from '../domain/namen';
+  import {
+    dokumenttyp,
+    listenText,
+    rollenText,
+    warumInhalt,
+    type Dokumenttyp,
+    type PersonStand,
+    type UnterlagenStand,
+    ohneTrennstellen,
+  } from '../domain/regelkatalog';
+  import type { Schritt } from '../domain/selbstauskunft';
+  import { groesse, t } from '../i18n';
+  import { bewerbungLaden, bewerbungSpeichern } from '../storage/speicher';
+  import Aktionsleiste from '../ui/Aktionsleiste.svelte';
+  import Eingeklappt from '../ui/Eingeklappt.svelte';
+  import Schalter from '../ui/Schalter.svelte';
+  import Sheet from '../ui/Sheet.svelte';
+  import Symbol from '../ui/Symbol.svelte';
+  import WarumBlatt from '../ui/WarumBlatt.svelte';
+  import Zurueck from '../ui/Zurueck.svelte';
+  import { staendeAus, standardDateiname, zeichenFunde } from '../ui/mappeDaten';
+  import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
+  import { passend, TITEL } from '../ui/passend';
+  import type { MappenErgebnis } from '../ui/mappeErstellen';
+  import { bauSchluessel, gebauteMappen, schaetzungen, vorschauen } from '../ui/mappeSpeicher';
+  import type { PdfDokument } from '../pdf/pdfjs';
+  import { standText } from '../ui/texte';
+
+  const GRENZE = 5 * 1024 * 1024;
+  let warumTyp = $state<Dokumenttyp | null>(null);
+  let warumOffen = $state(false);
+  let warumKnopf = $state<HTMLElement | null>(null);
+  function warum(e: MouseEvent, typ: Dokumenttyp | undefined) {
+    if (!typ) return;
+    warumKnopf = e.currentTarget as HTMLElement;
+    warumTyp = typ;
+    warumOffen = true;
+  }
+  // Zu große Mappe: lässt sie sich verkleinern (X6c) oder nicht (X6b)? Erst geprüft, wenn es nötig ist.
+  let kleiner = $state<{ geschaetzt: number } | null>(null);
+  let kleinerGeprueft = $state(false);
+
+  async function kleinerPruefen(erg: MappenErgebnis, nummer: number) {
+    kleiner = null;
+    kleinerGeprueft = false;
+    if (erg.groesse <= GRENZE) return;
+    if (!e.kleiner) {
+      let moeglich = schaetzungen.get(erg);
+      if (moeglich === undefined) {
+        const { verkleinernMoeglich } = await import('../ui/mappeErstellen');
+        moeglich = await verkleinernMoeglich(await db(), erg);
+        schaetzungen.set(erg, moeglich);
+      }
+      if (nummer !== lauf) return; // inzwischen neu gebaut
+      kleiner = moeglich;
+    }
+    kleinerGeprueft = true;
+  }
+
+  let bewerbung = $state<Bewerbung | null>(null);
+  // Nur Adresse und Satz lösen ein neues Bauen aus, nicht jedes Speichern der Bewerbung (sonst Schleife).
+  const adresseText = $derived(bewerbung?.adresse ?? '');
+  const satzText = $derived(bewerbung?.satz ?? '');
+  let e = $state<ExportEinstellungen>(standardEinstellungen());
+  let geladen = $state(false);
+
+  const ansicht = $derived(daten.ansicht);
+  const staende = $derived(ansicht ? staendeAus(ansicht) : []);
+  // Abwählen lassen sich nur Bürgen; wer inzwischen im Vertrag steht, ist immer dabei.
+  const dabei = $derived(
+    staende.filter((s) => s.rolle !== 'buerge' || !e.ohne.includes(s.person.id)),
+  );
+  // Eigene Auswahl (X9): „meist unnötig“ steht gesammelt am Ende, nicht bei jeder Person.
+  const unnoetige = $derived(
+    dabei.flatMap((s) =>
+      s.unterlagen
+        .filter((u) => u.typ.etikett === 'meist_unnoetig')
+        .map((u) => [s, u] as [PersonStand, UnterlagenStand]),
+    ),
+  );
+  const vertrag = $derived(staende.filter((s) => s.rolle !== 'buerge'));
+  const buergen = $derived(staende.filter((s) => s.rolle === 'buerge'));
+  const liste = $derived(hinweise(staende, e));
+  // Ältere Daten oder ein Backup: Der Name steht noch nicht in lateinischen Buchstaben (K8). Mappe
+  // ersetzt ihn nicht still, also geht die Mappe erst danach raus.
+  const ohneLatein = $derived(dabei.filter((s) => lateinFehlt(s.person)));
+
+  onMount(async () => {
+    if (!daten.ansicht) return;
+    bewerbung = await bewerbungLaden(await db(), daten.ansicht.haushalt.id);
+    e = einstellungenNachLaden(bewerbung?.export, $state.snapshot(e));
+    geladen = true;
+  });
+
+  // Speichern und Vorschau neu bauen, kurz nach jeder Änderung.
+  // ME11: dieselbe Seite als „Deckblatt groß“; die Blätter für Wohnung und Satz bleiben so erreichbar.
+  let { gross = false }: { gross?: boolean } = $props();
+  let ergebnis = $state.raw<MappenErgebnis | null>(null);
+  // Bleibt stehen, bis das neue Bild da ist: kein Spinner, wenn sich etwas ändert.
+  let deckbild = $state<string | null>(null);
+  let baut = $state(false);
+  let fehler = $state(false);
+  let zeitgeber: ReturnType<typeof setTimeout> | undefined;
+  let lauf = 0;
+  // Unterlagen, die fehlen, weil sich ihre Datei nicht lesen lässt: Das darf nicht still passieren.
+  const unlesbar = $derived(baut ? [] : (ergebnis?.unlesbar ?? []));
+  // Freitext mit Zeichen, die das PDF nicht schreiben kann: Welches Feld, und dorthin führen. Der Name
+  // hat seinen eigenen Hinweis. Bleibt etwas übrig, das kein Feld erklärt, wenigstens der Text selbst.
+  const zeichen = $derived(
+    ohneLatein.length || !ansicht
+      ? []
+      : zeichenFunde(dabei, haushaltsAngabenAus(ansicht), bewerbung),
+  );
+  // PH5: nicht lesbar, fehlt, zu alt, fremde Zeichen, Prüfhinweise. Ein Ort für alles vor dem Senden. P20 steckt in den Prüfhinweisen.
+  const vorherAnsehen = $derived.by(() => {
+    const zeilen: {
+      id: string;
+      titel: string;
+      sub: string;
+      href?: string;
+      aktion?: () => void;
+    }[] = [
+      ...unlesbar.map((u) => ({
+        id: `datei-${u.name}`,
+        titel: u.name,
+        sub: t('mappe.vorherUnlesbar'),
+        href: u.href,
+      })),
+      ...ohneLatein.map((s) => ({
+        id: `latein-${s.person.id}`,
+        titel: t('mappe.lateinFehlt', { name: s.person.rufname || s.person.vorname }),
+        sub: t('mappe.lateinEintragen'),
+        href: `#/person-aendern/${s.person.id}`,
+      })),
+      ...fehlendeUnterlagen(dabei, e).map(({ person, unterlage }) => ({
+        id: `fehlt-${person.person.id}-${unterlage.typ.id}`,
+        titel: t('mappe.unlesbarName', {
+          unterlage: ohneTrennstellen(listenText(unterlage.typ)),
+          name: person.person.rufname || person.person.vorname,
+        }),
+        sub: t('person.standFehlt'),
+        href: `#/unterlage/${person.person.id}/${unterlage.typ.id}`,
+      })),
+      ...zuAlteUnterlagen(dabei, e).map(({ person, unterlage }) => ({
+        id: `alt-${person.person.id}-${unterlage.typ.id}`,
+        titel: t('mappe.unlesbarName', {
+          unterlage: ohneTrennstellen(listenText(unterlage.typ)),
+          name: person.person.rufname || person.person.vorname,
+        }),
+        sub: unterlage.grund,
+        href: `#/unterlage/${person.person.id}/${unterlage.typ.id}`,
+      })),
+    ];
+    for (const h of pruefhinweise(staende).values()) {
+      const person = dabei.find((s) => s.person.id === h.personId);
+      if (!person) continue;
+      const rufname = person.person.rufname || person.person.vorname;
+      zeilen.push({
+        id: `pruef-${h.personId}-${h.typ.id}`,
+        titel: t('mappe.unlesbarName', {
+          unterlage: ohneTrennstellen(listenText(h.typ)),
+          name: rufname,
+        }),
+        sub: pruefAnzeige(h, rufname).kurz,
+        href: `#/unterlage/${h.personId}/${h.typ.id}`,
+      });
+    }
+    for (const z of zeichen) {
+      zeilen.push({
+        id: `feld-${z.feld}`,
+        titel: z.feld,
+        sub: t('mappe.vorherZeichen'),
+        href: z.ziel === 'adresse' || z.ziel === 'satz' ? undefined : z.ziel,
+        aktion: z.ziel === 'adresse' ? adresseOeffnen : z.ziel === 'satz' ? satzOeffnen : undefined,
+      });
+    }
+    return zeilen;
+  });
+  const zuGross = $derived(!!ergebnis && !baut && ergebnis.groesse > GRENZE);
+  const zeichenFehlen = $derived(
+    ohneLatein.length || baut || zeichen.length
+      ? []
+      : (ergebnis?.ersetzt ?? []).slice(0, 3).map((text) => `„${text}“`),
+  );
+  // Die Größe zählt mit: „Vier Dinge …“, wenn sie eins davon ist. Zeichen ohne Feld sind nur eine Zeile.
+  const vorherAnzahl = $derived(
+    vorherAnsehen.length + (zeichenFehlen.length ? 1 : 0) + (zuGross ? 1 : 0),
+  );
+  const allesDa = $derived(!!ergebnis && !baut && !vorherAnzahl);
+  // Zählt Änderungen; ein Bauen gilt nur als fertig, wenn seitdem nichts mehr geändert wurde.
+  let aenderung = 0;
+
+  // Immer nur ein Bau: Zwei Mappen zugleich im Speicher sind auf dem iPhone zu viel. Kommt währenddessen
+  // eine Änderung, folgt danach genau ein weiterer.
+  let baustelle = false;
+  let nochEinmal = false;
+
+  async function bauen() {
+    if (!daten.ansicht) return;
+    if (baustelle) {
+      nochEinmal = true;
+      return;
+    }
+    baustelle = true;
+    nochEinmal = false;
+    const nummer = ++lauf;
+    const beiStart = aenderung;
+    fehler = false;
+    try {
+      const verbindung = await db();
+      const plain = $state.snapshot(e);
+      // Gespeicherten Stand nur zum Bauen nutzen, nicht in den Zustand schreiben (sonst Schleife).
+      const gespeichert = await bewerbungSpeichern(verbindung, daten.ansicht.haushalt.id, {
+        export: plain,
+      });
+      const { mappeGebaut } = await import('../ui/mappeErstellen');
+      const neu = await mappeGebaut(verbindung, daten.ansicht, gespeichert, plain);
+      if (nummer !== lauf) return;
+      if (neu !== ergebnis) {
+        ergebnis = neu;
+        await vorschau(neu);
+        void kleinerPruefen(neu, nummer);
+      }
+    } catch {
+      if (nummer === lauf) fehler = true;
+    } finally {
+      baustelle = false;
+      if (nochEinmal) void bauen();
+      else if (nummer === lauf && beiStart === aenderung) baut = false;
+    }
+  }
+
+  /** Die echte erste Seite der Mappe; bei Einzeldateien gibt es keine, dort liegen drei Blätter. */
+  async function vorschau(erg: MappenErgebnis) {
+    const schon = vorschauen.get(erg);
+    if (schon) {
+      deckbild = schon[0] ?? null;
+      return;
+    }
+    const erste = erg.dateien[0];
+    if (!erste || e.ausgabe === 'einzeln') return;
+    const { miniatur, pdfOeffnen, pdfSchliessen } = await import('../pdf/pdfjs');
+    const dok = await pdfOeffnen(new Uint8Array(await erste.arrayBuffer()));
+    const bild = await miniatur(dok, 1, 300);
+    await pdfSchliessen(dok);
+    vorschauen.set(erg, [bild]);
+    // Inzwischen eine andere Wahl: Das Bild bleibt für später, gezeigt wird das neue.
+    if (erg === ergebnis) deckbild = bild;
+  }
+
+  // Die erste Seite in voller Breite. Bleibt stehen, bis das neue Bild da ist.
+  let deckGross = $state<string | null>(null);
+  $effect(() => {
+    const erg = ergebnis;
+    const erste = erg?.dateien[0];
+    if (!gross || !erste || baut) return;
+    let abgebrochen = false;
+    void (async () => {
+      const { miniatur, pdfOeffnen, pdfSchliessen } = await import('../pdf/pdfjs');
+      const dok = await pdfOeffnen(new Uint8Array(await erste.arrayBuffer()));
+      const bild = await miniatur(dok, 1, 1100);
+      await pdfSchliessen(dok);
+      if (abgebrochen) return URL.revokeObjectURL(bild);
+      if (deckGross) URL.revokeObjectURL(deckGross);
+      deckGross = bild;
+    })();
+    return () => {
+      abgebrochen = true;
+    };
+  });
+  onDestroy(() => {
+    if (deckGross) URL.revokeObjectURL(deckGross);
+  });
+  // Vorschau groß: die ganze Mappe, bei Einzeldateien die angetippte Datei. PDF.js kommt erst beim
+  // Antippen dazu.
+  let Ansicht = $state<typeof import('../ui/SeitenAnsicht.svelte').default | null>(null);
+  let ansichtOffen = $state(false);
+  let ansichtIndex = $state(0);
+  let ansichtSeiten = $state.raw<{ dokument: PdfDokument; nummer: number; schluessel: string }[]>(
+    [],
+  );
+  let offenesPdf: PdfDokument | null = null;
+
+  async function pdfZu() {
+    if (!offenesPdf) return;
+    const { pdfSchliessen } = await import('../pdf/pdfjs');
+    void pdfSchliessen(offenesPdf);
+    offenesPdf = null;
+  }
+
+  async function ansehen(datei: File | undefined, index = 0) {
+    if (!datei) return;
+    const { pdfOeffnen } = await import('../pdf/pdfjs');
+    const modul = await import('../ui/SeitenAnsicht.svelte');
+    await pdfZu();
+    const dokument = await pdfOeffnen(new Uint8Array(await datei.arrayBuffer()));
+    offenesPdf = dokument;
+    ansichtSeiten = Array.from({ length: dokument.numPages }, (_, n) => ({
+      dokument,
+      nummer: n + 1,
+      schluessel: String(n),
+    }));
+    ansichtIndex = index;
+    Ansicht = modul.default;
+    ansichtOffen = true;
+  }
+
+  $effect(() => {
+    if (!geladen) return;
+    void JSON.stringify(e);
+    void adresseText;
+    void satzText;
+    untrack(() => {
+      aenderung++;
+      clearTimeout(zeitgeber);
+      // Schon einmal gebaut: sofort da. Gespeichert wird die Wahl trotzdem.
+      const schon = daten.ansicht
+        ? gebauteMappen.holen(bauSchluessel(daten.ansicht, bewerbung, $state.snapshot(e)))
+        : undefined;
+      if (schon) {
+        const nummer = ++lauf;
+        fehler = false;
+        baut = false;
+        ergebnis = schon;
+        void vorschau(schon);
+        void kleinerPruefen(schon, nummer);
+      } else {
+        // Ab jetzt ist die gebaute Mappe veraltet: Teilen erst wieder, wenn die neue fertig ist.
+        baut = true;
+      }
+      zeitgeber = setTimeout(() => void bauen(), 350);
+    });
+  });
+  onDestroy(() => {
+    clearTimeout(zeitgeber);
+    void pdfZu();
+  });
+
+  function buergeUmschalten(id: string) {
+    e.ohne = e.ohne.includes(id) ? e.ohne.filter((x) => x !== id) : [...e.ohne, id];
+  }
+
+  function modusSetzen(m: ExportModus) {
+    e.modus = m;
+  }
+
+  /** „Hinzufügen“ beim Hinweis ohne Bonität: eigene Auswahl wie bisher, plus Bonität (X2). */
+  function bonitaetDazu() {
+    const auswahl: Record<string, boolean> = {};
+    for (const s of staende)
+      for (const u of s.unterlagen)
+        auswahl[schluessel(s.person.id, u.typ.id)] =
+          u.typ.id === 'bonitaet' ||
+          (u.typ.schritt === 'will_wohnung' && u.typ.etikett !== 'meist_unnoetig') ||
+          (e.schritt === 'zusage' && u.typ.schritt === 'zusage');
+    e.auswahl = auswahl;
+    e.modus = 'eigene_auswahl';
+  }
+
+  // Wohnung: im Blatt eintragen (optional).
+  let adresseOffen = $state(false);
+  let adresse = $state('');
+  function adresseOeffnen() {
+    adresse = adresseText;
+    adresseOffen = true;
+  }
+  async function adresseUebernehmen() {
+    if (!daten.ansicht) return;
+    adresseOffen = false;
+    // Nichts geändert: Es käme kein neuer Bau, und die Mappe bliebe auf „wird berechnet“ stehen.
+    if (adresse.trim() === adresseText) return;
+    baut = true;
+    aenderung++;
+    bewerbung = await bewerbungSpeichern(await db(), daten.ansicht.haushalt.id, {
+      adresse: adresse.trim(),
+    });
+  }
+
+  // Der freiwillige Satz gehört zum Erstellen: Er steht auf dem Deckblatt, das man hier gleich sieht.
+  let satzOffen = $state(false);
+  let satz = $state('');
+  async function satzUebernehmen() {
+    if (!daten.ansicht) return;
+    satzOffen = false;
+    if (satz.trim() === satzText) return;
+    baut = true;
+    aenderung++;
+    bewerbung = await bewerbungSpeichern(await db(), daten.ansicht.haushalt.id, {
+      satz: satz.trim(),
+    });
+  }
+  function satzOeffnen() {
+    satz = satzText;
+    satzOffen = true;
+  }
+  const wohnung = $derived(adresseTeile(adresseZeilen(adresseText)));
+  const einzeln = $derived(e.ausgabe === 'einzeln');
+  const allein = $derived(vertrag.length === 1);
+  let listeOffen = $state(false);
+
+  // Eigene Auswahl: je Person aufklappbar. Offen ist zuerst, wo etwas fehlt, immer nur eine.
+  const auswahlListe = (s: PersonStand) =>
+    s.unterlagen.filter(
+      (u) =>
+        u.typ.id !== 'anschreiben' &&
+        u.typ.etikett !== 'meist_unnoetig' &&
+        (vorhanden(u) || u.typ.etikett === 'ueblich'),
+    );
+  function istAn(s: PersonStand, u: UnterlagenStand): boolean {
+    return (
+      vorhanden(u) &&
+      (e.auswahl[schluessel(s.person.id, u.typ.id)] ??
+        (u.typ.etikett === 'ueblich' ||
+          (u.typ.etikett === 'kann_helfen' && u.versionen.length > 0)))
+    );
+  }
+  let offenGewaehlt = $state<string | null | undefined>(undefined);
+  const offenePerson = $derived(
+    offenGewaehlt !== undefined
+      ? offenGewaehlt
+      : (dabei.find((s) => auswahlListe(s).some((u) => !vorhanden(u))) ?? dabei[0])?.person.id,
+  );
+
+  async function teilenKlick() {
+    if (!ergebnis) return;
+    const { teilen } = await import('../ui/mappeErstellen');
+    await teilen(ergebnis.dateien);
+  }
+  async function sichernKlick() {
+    if (!ergebnis) return;
+    const { sichern } = await import('../ui/mappeErstellen');
+    sichern(ergebnis.dateien);
+  }
+
+  const aussehenName = $derived.by(() => {
+    const art = (ansicht?.haushalt.mappeAussehen ?? AUSSEHEN_STANDARD).art;
+    if (art === 'schlicht') return t('mappe.aussehen.schlicht');
+    return art === 'einefarbe' ? t('mappe.aussehen.eineFarbe') : t('mappe.aussehen.personen');
+  });
+  const anpassenText = $derived(
+    einzeln
+      ? [t('mappe.einzeln'), aussehenName].join(' · ')
+      : [
+          t('mappe.eine'),
+          aussehenName,
+          // Unsichtbare Trennstelle nach jedem Unterstrich: Der Dateiname ist sonst ein zu breites Wort (C2).
+          (e.dateiname.trim()
+            ? `${e.dateiname.trim().replace(/\.pdf$/i, '')}.pdf`
+            : standardDateiname(staende, adresseText)
+          ).replaceAll('_', '_\u200b'),
+        ].join(' · '),
+  );
+  /**
+   * Höchstens zwei Zeilen, dann Auslassung (ME1): per Messung gekürzt, nicht per CSS. Ausgeblendete
+   * Zeilen lägen sonst unsichtbar über dem Stand darunter und unter der Karte heraus (C26, C3).
+   */
+  function zweiZeilen(node: HTMLElement, text: string) {
+    const setzen = (t: string) => {
+      node.textContent = `„${t}“`;
+      const zeile = parseFloat(getComputedStyle(node).lineHeight) || 19;
+      let woerter = t.split(' ');
+      while (node.scrollHeight > zeile * 2 + 2 && woerter.length > 1) {
+        woerter = woerter.slice(0, -1);
+        node.textContent = `„${woerter.join(' ')}…“`;
+      }
+    };
+    setzen(text);
+    const beobachter = new ResizeObserver(() => setzen(text));
+    beobachter.observe(node);
+    return {
+      update(neu: string) {
+        text = neu;
+        setzen(text);
+      },
+      destroy() {
+        beobachter.disconnect();
+      },
+    };
+  }
+  const leer = $derived(!!ergebnis && ergebnis.seiten <= 1 && e.ausgabe === 'eine');
+
+  const deckAlt = $derived(
+    t('mappe.deckGross.alt', {
+      wohnung:
+        [wohnung.strasse, wohnung.rest].filter(Boolean).join(', ') || t('mappe.deckGross.altOhne'),
+      wer: dabei.map((x) => x.person.rufname || x.person.vorname).join(', '),
+    }),
+  );
+</script>
+
+{#snippet auswahlZeile(s: PersonStand, u: UnterlagenStand, mitName: boolean)}
+  {@const k = schluessel(s.person.id, u.typ.id)}
+  {@const da = vorhanden(u)}
+  {@const an = istAn(s, u)}
+  <li>
+    <span class="tx">
+      <b>{listenText(u.typ)}</b>
+      <small
+        >{mitName ? `${s.person.rufname || s.person.vorname} · ` : ''}{da
+          ? standText(u)
+          : u.typ.etikett === 'ueblich'
+            ? t('mappe.fehltNoch')
+            : t('mappe.nichtHinzugefuegt')}</small
+      >
+      {#if u.typ.etikett === 'meist_unnoetig' && warumInhalt(u.typ)}
+        <button type="button" class="textlink warum" onclick={(ereignis) => warum(ereignis, u.typ)}
+          >{t('unterlage.warum')}<span class="visually-hidden"> {listenText(u.typ)}</span></button
+        >
+      {/if}
+    </span>
+    <Schalter
+      {an}
+      gesperrt={!da}
+      label="{listenText(u.typ)}, {s.person.rufname || s.person.vorname}"
+      onclick={() => (e.auswahl = { ...e.auswahl, [k]: !an })}
+    />
+  </li>
+{/snippet}
+
+{#snippet zeileInhalt(titel: string, sub: string)}
+  <span class="tx"
+    >{#if titel}<b>{titel}</b>{/if}<small>{sub}</small></span
+  >
+{/snippet}
+
+<main class="seite">
+  {#if gross && ansicht}
+    <!-- ME11: die echte erste Seite in voller Breite. Nach jeder Änderung steht sie sofort hier. -->
+    <div class="kopf"><Zurueck href="#/mappe" text={t('mappe.titel')} /></div>
+    <div class="titelblock">
+      <h1 class="display frage" use:passend={TITEL}>{t('mappe.deckGross.titel')}</h1>
+      <p class="lead">{t('mappe.deckGross.lead')}</p>
+    </div>
+    <div class="deck-gross">
+      {#if deckGross}
+        <img src={deckGross} alt={deckAlt} />
+      {:else}
+        <p class="stand-text" role="status">{t('mappe.wirdErstellt')}</p>
+      {/if}
+      <div class="deck-links">
+        <button type="button" class="textlink" onclick={adresseOeffnen}
+          >{t('mappe.wohnungAendern')}</button
+        >
+        <button type="button" class="textlink" onclick={satzOeffnen}
+          >{t('mappe.deckGross.satzAendern')}</button
+        >
+        <a class="textlink" href="#/mappe/anpassen">{t('mappe.deckGross.aussehen')}</a>
+      </div>
+      <p class="hinweis">{t('mappe.deckGross.hinweis')}</p>
+      {#if ergebnis}
+        <p class="deck-seite">{t('mappe.deckGross.seite', { gesamt: ergebnis.seiten })}</p>
+      {/if}
+    </div>
+  {:else}
+    <div class="kopf"><Zurueck href="#/" text={t('navigation.uebersicht')} /></div>
+    {#if ansicht}
+      <div class="titelblock">
+        <h1 class="display frage" use:passend={TITEL}>{t('mappe.titel')}</h1>
+      </div>
+
+      <!-- Die Mappe selbst: Adresse und Satz stehen auf dem Deckblatt, das man hier sieht. -->
+      <section class="karte" aria-label={allein ? t('mappe.karteDu') : t('mappe.karteIhr')}>
+        <div class="held">
+          {#if einzeln}
+            <button
+              type="button"
+              class="stapel"
+              aria-label={t('mappe.alsDateien')}
+              onclick={() => (listeOffen = true)}><i></i><i></i><i></i></button
+            >
+          {:else}
+            <button
+              type="button"
+              class="deck"
+              aria-label={e.deckblatt
+                ? t('mappe.deckGross.groesser')
+                : t('mappe.mappeAnsehen', { anzahl: ergebnis?.seiten ?? 0 })}
+              aria-disabled={!ergebnis}
+              onclick={() =>
+                e.deckblatt ? gehe('/mappe/deckblatt') : ansehen(ergebnis?.dateien[0], 0)}
+            >
+              {#if deckbild}<img src={deckbild} alt="" />{/if}
+            </button>
+          {/if}
+          <div class="wohnung">
+            {#if wohnung.strasse}
+              <p class="klein">{t('mappe.bewerbungUm')}</p>
+              <p class="strasse">{wohnung.strasse}</p>
+              {#if wohnung.rest}<p class="lage">{wohnung.rest}</p>{/if}
+              <button type="button" class="textlink" onclick={adresseOeffnen}
+                >{t('mappe.wohnungAendern')}</button
+              >
+            {:else}
+              <p class="klein">{t('mappe.bewerbungEine')}</p>
+              <button type="button" class="neu" onclick={adresseOeffnen}>
+                <span class="plus" aria-hidden="true"><Symbol name="plus" groesse={16} /></span>
+                {@render zeileInhalt(t('mappe.adresseEintragen'), t('mappe.adresseGross'))}
+              </button>
+            {/if}
+          </div>
+        </div>
+        {#if !einzeln}
+          <button type="button" class="linie" onclick={satzOeffnen}>
+            {#if satzText}
+              <span class="tx"
+                ><b>{allein ? t('mappe.satzDein') : t('mappe.satzEuer')}</b><small
+                  class="zwei"
+                  use:zweiZeilen={satzText}
+                ></small></span
+              >
+            {:else}
+              {@render zeileInhalt(
+                allein ? t('mappe.satzEintragenDu') : t('mappe.satzEintragen'),
+                t('mappe.satzFreiwillig'),
+              )}
+            {/if}
+            <Symbol name="weiter" groesse={18} />
+          </button>
+        {/if}
+        {#if fehler}
+          <p class="stand-text" role="alert">{t('mappe.fehler')}</p>
+        {:else if !ergebnis}
+          <p class="stand-text" role="status">{t('mappe.wirdErstellt')}</p>
+        {:else}
+          <p class="stand">
+            <span class="zahlen">
+              <span
+                >{einzeln
+                  ? t('mappe.dateien', { anzahl: ergebnis.dateien.length })
+                  : t('mappe.seiten', { anzahl: ergebnis.seiten })}</span
+              >
+              <span aria-hidden="true">·</span>
+              <span>{baut ? t('mappe.groesseWird') : groesse(ergebnis.groesse)}</span>
+            </span>
+            {#if e.kleiner && !baut}<span class="still">{t('mappe.verkleinert')}</span>{/if}
+            {#if allesDa}<span class="da"
+                ><Symbol name="haken" groesse={18} />{t('allgemein.allesDa')}</span
+              >{/if}
+          </p>
+          {#if leer}<p class="stand-text">{t('mappe.nichtsDrin')}</p>{/if}
+        {/if}
+        {#if e.kleiner}
+          <!-- Verkleinert wird nur beim Bauen; die gespeicherten Originale bleiben unberührt. -->
+          {#if baut}<p class="stand-text" role="status">{t('mappe.kleinerLaeuft')}</p>{/if}
+          <button type="button" class="textlink" onclick={() => (e.kleiner = false)}
+            >{t('mappe.kleinerZurueck')}</button
+          >
+        {/if}
+        {#if einzeln}
+          <button type="button" class="linie" onclick={() => (listeOffen = true)}>
+            {@render zeileInhalt(t('mappe.alsDateien'), t('mappe.dateienZeile'))}
+            <Symbol name="weiter" groesse={18} />
+          </button>
+        {/if}
+      </section>
+
+      <section class="abschnitt-oben">
+        <a class="karte zeile" href="#/mappe/nachricht">
+          {@render zeileInhalt(t('nachricht.titel'), t('nachricht.zeile'))}
+          <Symbol name="weiter" groesse={18} />
+        </a>
+      </section>
+
+      {#if vorherAnzahl}
+        <!-- Alles, was man vor dem Senden wissen sollte, an einer Stelle. Die Größe ist die letzte Zeile. -->
+        <section class="karte vorher" aria-label={t('mappe.vorherLabel')}>
+          <div class="vorher-kopf">
+            <span class="ic" aria-hidden="true">{unlesbar.length ? '!' : '?'}</span>
+            <p role="status">
+              <b
+                >{unlesbar.length
+                  ? t('mappe.dateiFehlt', { anzahl: unlesbar.length })
+                  : t('mappe.vorher', { anzahl: vorherAnzahl })}</b
+              >
+              <small
+                >{unlesbar.length
+                  ? t('mappe.dateiFehltUnter')
+                  : ohneLatein.length
+                    ? t('mappe.vorherLatein')
+                    : t('mappe.vorherGeht')}</small
+              >
+            </p>
+          </div>
+          <ul>
+            {#each vorherAnsehen as z (z.id)}
+              <li>
+                {#if z.href}
+                  <a class="punkt" href={z.href}>
+                    {@render zeileInhalt(z.titel, z.sub)}
+                    <Symbol name="weiter" groesse={18} />
+                  </a>
+                {:else}
+                  <button type="button" class="punkt" onclick={z.aktion}>
+                    {@render zeileInhalt(z.titel, z.sub)}
+                    <Symbol name="weiter" groesse={18} />
+                  </button>
+                {/if}
+              </li>
+            {/each}
+            {#if zeichenFehlen.length}
+              <li class="punkt still-zeile">
+                {@render zeileInhalt(
+                  '',
+                  t('mappe.zeichenFehlen', { texte: zeichenFehlen.join(', ') }),
+                )}
+              </li>
+            {/if}
+            {#if zuGross && ergebnis}
+              <li class="groesse">
+                <b>{t('mappe.zuGross', { groesse: groesse(ergebnis.groesse) })}</b>
+                <small
+                  >{t('mappe.zuGrossWarum')}
+                  {#if kleiner && !e.kleiner}{t('mappe.kleinerMoeglich', {
+                      groesse: groesse(kleiner.geschaetzt),
+                    })}{:else if kleinerGeprueft}{t('mappe.schonKlein')}{/if}</small
+                >
+                {#if kleiner && !e.kleiner}
+                  <button type="button" class="textlink" onclick={() => (e.kleiner = true)}
+                    >{t('mappe.kleinerKnopf')}</button
+                  >
+                {:else if kleinerGeprueft && !einzeln}
+                  <button type="button" class="textlink" onclick={() => (e.ausgabe = 'einzeln')}
+                    >{t('mappe.alsEinzeldateien')}</button
+                  >
+                {/if}
+              </li>
+            {/if}
+          </ul>
+        </section>
+      {/if}
+
+      {#if buergen.length}
+        <section class="abschnitt-oben">
+          <h2>{t('mappe.werDabei')}</h2>
+          <div class="marken">
+            {#each vertrag as s (s.person.id)}
+              <span
+                class="marke farbe-{s.farbe} an"
+                role="checkbox"
+                aria-checked="true"
+                aria-disabled="true"
+              >
+                <Symbol name="haken" groesse={16} />{s.person.rufname || s.person.vorname}
+              </span>
+            {/each}
+            {#each buergen as s (s.person.id)}
+              {@const an = !e.ohne.includes(s.person.id)}
+              <button
+                type="button"
+                class="marke farbe-{s.farbe}"
+                class:an
+                role="checkbox"
+                aria-checked={an}
+                onclick={() => buergeUmschalten(s.person.id)}
+              >
+                {#if an}<Symbol name="haken" groesse={16} />{/if}
+                {s.person.rufname || s.person.vorname}
+                <span class="etikett">{rollenText(s.rolle, s.bezeichnung)}</span>
+              </button>
+            {/each}
+          </div>
+          <p class="hinweis">{t('mappe.werHinweis')}</p>
+        </section>
+      {/if}
+
+      <section class="abschnitt-oben">
+        <h2>{t('mappe.wasRein')}</h2>
+        <div class="reihe" role="radiogroup" aria-label={t('mappe.wasRein')}>
+          {#each ['alles', 'marktueblich', 'datensparsam'] as const as m (m)}
+            <button
+              type="button"
+              class="chip"
+              role="radio"
+              aria-checked={e.modus === m}
+              onclick={() => modusSetzen(m)}>{t(`mappe.modus.${m}.titel`)}</button
+            >
+          {/each}
+        </div>
+        <p class="hinweis">{t(`mappe.modus.${e.modus}.text`)}</p>
+        <button
+          type="button"
+          class="linie eigene"
+          aria-current={e.modus === 'eigene_auswahl' ? 'true' : undefined}
+          onclick={() => modusSetzen('eigene_auswahl')}
+        >
+          {@render zeileInhalt(
+            e.modus === 'eigene_auswahl' ? t('mappe.eigeneGewaehlt') : t('mappe.eigeneZeile'),
+            e.modus === 'eigene_auswahl'
+              ? t('mappe.eigeneGewaehltUnter')
+              : t('mappe.eigeneZeileUnter'),
+          )}
+          <Symbol name="weiter" groesse={18} />
+        </button>
+        {#if e.modus === 'datensparsam'}
+          <p class="unter">{t('mappe.schrittLabel')}</p>
+          <div class="reihe" role="radiogroup" aria-label={t('mappe.schrittLabel')}>
+            {#each ['besichtigung', 'will_wohnung', 'zusage'] as const as sch (sch)}
+              <button
+                type="button"
+                class="chip"
+                role="radio"
+                aria-checked={e.schritt === sch}
+                onclick={() => (e.schritt = sch as Schritt)}>{t(`mappe.schritt.${sch}`)}</button
+              >
+            {/each}
+          </div>
+        {:else if e.modus === 'eigene_auswahl'}
+          <!-- Je Person aufklappbar, immer nur eine offen; „meist unnötig“ gesammelt am Ende. -->
+          {#each dabei as s (s.person.id)}
+            {@const zeilen = auswahlListe(s)}
+            {@const auf = offenePerson === s.person.id}
+            <div class="akk">
+              <button
+                type="button"
+                class="akk-kopf"
+                aria-expanded={auf}
+                onclick={() => (offenGewaehlt = auf ? null : s.person.id)}
+              >
+                <span class="fleck farbe-{s.farbe}" aria-hidden="true"></span>
+                {@render zeileInhalt(
+                  s.person.rufname || s.person.vorname,
+                  t('mappe.auswahlStand', {
+                    rolle: rollenText(s.rolle, s.bezeichnung),
+                    dabei: zeilen.filter((u) => istAn(s, u)).length,
+                    von: zeilen.length,
+                  }),
+                )}
+                <span class="pfeil" class:auf aria-hidden="true"
+                  ><Symbol name="weiter" groesse={16} /></span
+                >
+              </button>
+              {#if auf}
+                <ul class="auswahl">
+                  {#each zeilen as u (u.typ.id)}
+                    {@render auswahlZeile(s, u, false)}
+                  {/each}
+                </ul>
+              {/if}
+            </div>
+          {/each}
+          {#if unnoetige.length}
+            <div class="weitere">
+              <Eingeklappt
+                titel={t('mappe.weitereTitel')}
+                unter={t('mappe.weitereUnter', {
+                  beispiel: ohneTrennstellen(listenText(unnoetige[0]![1].typ)),
+                })}
+              >
+                <ul class="auswahl kasten">
+                  {#each unnoetige as [s, u] (`${s.person.id}.${u.typ.id}`)}
+                    {@render auswahlZeile(s, u, true)}
+                  {/each}
+                </ul>
+              </Eingeklappt>
+            </div>
+          {/if}
+        {/if}
+        {#each liste as h, i (i)}
+          {#if h.art === 'ohneBonitaet'}
+            <div class="notiz">
+              <span class="ic" aria-hidden="true">!</span>
+              <div>
+                <p>{t('mappe.ohneBonitaet')}</p>
+                <button type="button" class="textlink" onclick={bonitaetDazu}
+                  >{t('mappe.hinzufuegen')}</button
+                >
+                <button
+                  type="button"
+                  class="textlink"
+                  onclick={(ereignis) => warum(ereignis, dokumenttyp('bonitaet'))}
+                  >{t('unterlage.warum')}</button
+                >
+              </div>
+            </div>
+          {:else if h.art === 'zusageOffen'}
+            <div class="notiz">
+              <span class="ic" aria-hidden="true">!</span>
+              <div>
+                <p>{t('mappe.zusageOffen', { namen: h.namen.join(', ') })}</p>
+              </div>
+            </div>
+          {/if}
+        {/each}
+      </section>
+
+      <section class="abschnitt-oben">
+        <a class="karte zeile" href="#/mappe/anpassen">
+          {@render zeileInhalt(t('mappe.anpassen'), anpassenText)}
+          <Symbol name="weiter" groesse={18} />
+        </a>
+      </section>
+    {/if}
+  {/if}
+</main>
+{#if gross}
+  <Aktionsleiste
+    text={t('mappe.deckGross.ganze')}
+    grund={!ergebnis || baut ? t('mappe.wirdErstellt') : undefined}
+    onclick={() => ansehen(ergebnis?.dateien[0], 0)}
+  />
+{:else}
+  <Aktionsleiste
+    text={einzeln ? t('mappe.alleTeilen') : t('mappe.teilen')}
+    zusatz={ergebnis && !baut ? groesse(ergebnis.groesse) : undefined}
+    grund={ohneLatein.length
+      ? t('personSeite.grundLatein')
+      : !ergebnis || baut
+        ? t('mappe.wirdErstellt')
+        : undefined}
+    onclick={teilenKlick}
+    neben={ergebnis && !baut && !ohneLatein.length
+      ? einzeln
+        ? { text: t('mappe.alsDateien'), onclick: () => (listeOffen = true) }
+        : { text: t('mappe.alsDatei'), onclick: sichernKlick }
+      : undefined}
+  />
+{/if}
+
+{#if warumTyp}
+  <WarumBlatt bind:offen={warumOffen} typ={warumTyp} zurueck={warumKnopf} />
+{/if}
+
+{#if Ansicht}
+  <Ansicht bind:offen={ansichtOffen} bind:index={ansichtIndex} seiten={ansichtSeiten} />
+{/if}
+
+<Sheet bind:offen={adresseOffen} titel={t('mappe.adresseTitel')}>
+  <label class="eingabe">
+    {t('mappe.adresseLabel')}
+    <textarea
+      bind:value={adresse}
+      rows="2"
+      autocomplete="street-address"
+      placeholder={t('mappe.adresseBeispiel')}></textarea>
+  </label>
+  <p class="hinweis">{t('mappe.adresseHinweis')}</p>
+  <button type="button" class="knopf" onclick={adresseUebernehmen}>{t('mappe.uebernehmen')}</button>
+</Sheet>
+
+<Sheet bind:offen={satzOffen} titel={allein ? t('mappe.satzTitelDu') : t('mappe.satzTitel')}>
+  <label class="eingabe">
+    {allein ? t('mappe.satzLabelDu') : t('mappe.satzLabel')}
+    <textarea bind:value={satz} rows="3"></textarea>
+  </label>
+  <p class="hinweis">{allein ? t('mappe.satzHinweisDu') : t('mappe.satzHinweis')}</p>
+  <button type="button" class="knopf" onclick={satzUebernehmen}>{t('mappe.uebernehmen')}</button>
+</Sheet>
+
+<Sheet bind:offen={listeOffen} titel={t('mappe.alsDateien')}>
+  <ul class="dateien">
+    {#each ergebnis?.dateien ?? [] as d (d.name)}
+      <li>
+        <button
+          type="button"
+          class="datei"
+          aria-label={t('mappe.dateiAnsehen', { name: d.name })}
+          onclick={() => {
+            listeOffen = false;
+            void ansehen(d);
+          }}
+        >
+          <span>{d.name.replaceAll('_', '_​')}</span>
+          <Symbol name="weiter" groesse={16} />
+        </button>
+      </li>
+    {/each}
+  </ul>
+</Sheet>
+
+<style>
+  .seite {
+    max-width: var(--content-width);
+    min-height: 100dvh;
+    margin: 0 auto;
+    padding: calc(40px + env(safe-area-inset-top)) 0
+      max(calc(160px + env(safe-area-inset-bottom)), calc(var(--leiste-hoehe, 0px) + 16px));
+  }
+
+  .kopf {
+    min-height: var(--tap-target);
+    padding: 0 var(--space-5) 0 12px;
+  }
+
+  .titelblock {
+    padding: 6px var(--space-5) 0;
+  }
+
+  .frage {
+    margin-top: 10px;
+  }
+
+  section {
+    margin: 14px var(--space-4) 0;
+  }
+
+  .abschnitt-oben {
+    margin-top: 24px;
+  }
+
+  h2 {
+    margin: 0 var(--space-1) 8px;
+    font-size: calc(17 * var(--px));
+    line-height: calc(22 * var(--px));
+    font-weight: 800;
+  }
+
+  .hinweis {
+    margin: 8px var(--space-1) 0;
+    font-size: calc(14 * var(--px));
+    line-height: calc(19 * var(--px));
+    color: var(--ink-muted);
+  }
+
+  .unter {
+    margin: 14px var(--space-1) 6px;
+    font-size: calc(13 * var(--px));
+    line-height: calc(17 * var(--px));
+    font-weight: 700;
+  }
+
+  .karte {
+    padding: 14px;
+    border-radius: 20px;
+    background: var(--surface);
+    box-shadow: 0 8px 18px rgb(25 26 44 / 0.1);
+  }
+
+  /* Bild und Adresse nebeneinander; wird die Spalte zu schmal, rutscht die Adresse unter das Bild. */
+  .held {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px 14px;
+  }
+
+  .lead {
+    margin: 6px 0 0;
+    color: var(--ink-muted);
+  }
+  .deck-gross {
+    margin: 12px var(--space-4) 0;
+  }
+  .deck-gross img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: var(--shadow-chip);
+  }
+  .deck-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 18px;
+    margin-top: 10px;
+  }
+  .deck-seite {
+    margin: 10px 0 0;
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
+    line-height: calc(18 * var(--px));
+  }
+  .eigene {
+    border-top: 0;
+  }
+  .deck {
+    display: block;
+    flex-shrink: 0;
+    width: 92px;
+    aspect-ratio: 210 / 297;
+    padding: 0;
+    border: 0;
+    border-radius: 3px;
+    background: #fff;
+    box-shadow:
+      0 1px 3px rgb(25 26 44 / 0.22),
+      0 6px 14px rgb(25 26 44 / 0.12);
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .deck img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+  }
+
+  .stapel {
+    position: relative;
+    flex-shrink: 0;
+    width: 92px;
+    height: 122px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  .stapel i {
+    position: absolute;
+    width: 76px;
+    height: 104px;
+    border-radius: 3px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(25 26 44 / 0.22);
+  }
+
+  .stapel i:nth-child(1) {
+    left: 4px;
+    top: 12px;
+  }
+
+  .stapel i:nth-child(2) {
+    left: 10px;
+    top: 6px;
+  }
+
+  .stapel i:nth-child(3) {
+    left: 16px;
+    top: 0;
+  }
+
+  @media (max-width: 359px) {
+    .deck {
+      width: 76px;
+    }
+  }
+
+  .wohnung {
+    flex: 1 1 calc(170 * var(--px));
+    min-width: 0;
+  }
+
+  .wohnung p {
+    margin: 0;
+  }
+
+  .klein {
+    font-size: calc(13 * var(--px));
+    line-height: calc(17 * var(--px));
+    font-weight: 700;
+    color: var(--ink-muted);
+  }
+
+  .wohnung .strasse {
+    margin-top: 2px;
+    font-size: calc(19 * var(--px));
+    line-height: calc(23 * var(--px));
+    font-weight: 800;
+    font-stretch: 108%;
+    overflow-wrap: break-word;
+  }
+
+  .wohnung .lage {
+    margin-top: 2px;
+    font-size: calc(15 * var(--px));
+    line-height: calc(20 * var(--px));
+  }
+
+  .neu {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 6px;
+    padding: 10px 12px;
+    border: 2px dashed var(--ink);
+    border-radius: 14px;
+    background: none;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .plus {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--action);
+    color: var(--on-action);
+  }
+
+  .linie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 52px;
+    margin-top: 12px;
+    padding: 8px 0 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    background: none;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .tx {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tx b {
+    font-size: calc(15 * var(--px));
+    line-height: calc(19 * var(--px));
+    font-weight: 800;
+  }
+
+  .tx small {
+    font-size: calc(14 * var(--px));
+    line-height: calc(19 * var(--px));
+    color: var(--ink-muted);
+    overflow-wrap: anywhere;
+  }
+
+  .tx .zwei {
+    overflow: hidden;
+  }
+
+  .stand {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 14px;
+    margin: 10px 0 0;
+    font-size: calc(15 * var(--px));
+    line-height: calc(20 * var(--px));
+    font-weight: 700;
+  }
+
+  .zahlen {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0 5px;
+  }
+
+  .still {
+    font-weight: 500;
+    color: var(--ink-muted);
+  }
+
+  .da {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .stand-text {
+    margin: 10px 0 0;
+    font-size: calc(14 * var(--px));
+    line-height: calc(19 * var(--px));
+    color: var(--ink-muted);
+  }
+
+  .vorher {
+    border: 2px solid var(--ink);
+    box-shadow: none;
+  }
+
+  .vorher-kopf {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .vorher-kopf p {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .vorher-kopf b {
+    display: block;
+    font-size: calc(16 * var(--px));
+    line-height: calc(21 * var(--px));
+    font-weight: 800;
+  }
+
+  .vorher-kopf small {
+    display: block;
+    font-size: calc(14 * var(--px));
+    line-height: calc(19 * var(--px));
+    color: var(--ink-muted);
+  }
+
+  .ic {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    font-size: calc(13 * var(--px));
+    font-weight: 800;
+  }
+
+  .vorher ul {
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .vorher li {
+    border-top: 1px solid var(--line);
+  }
+
+  .punkt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 56px;
+    padding: 6px 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .still-zeile {
+    cursor: default;
+  }
+
+  .groesse {
+    padding-top: 8px;
+  }
+
+  .groesse b {
+    display: block;
+    font-size: calc(15 * var(--px));
+    line-height: calc(19 * var(--px));
+    font-weight: 800;
+  }
+
+  .groesse small {
+    display: block;
+    font-size: calc(14 * var(--px));
+    line-height: calc(19 * var(--px));
+    color: var(--ink-muted);
+  }
+
+  .farbe-1 {
+    --farbe: var(--person-1);
+  }
+  .farbe-2 {
+    --farbe: var(--person-2);
+  }
+  .farbe-3 {
+    --farbe: var(--person-3);
+  }
+  .farbe-4 {
+    --farbe: var(--person-4);
+  }
+
+  .farbe-5 {
+    --farbe: var(--person-5);
+  }
+
+  .farbe-6 {
+    --farbe: var(--person-6);
+  }
+
+  .marken,
+  .reihe {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .reihe .chip {
+    padding: 0 14px;
+    font-size: calc(15 * var(--px));
+    line-height: calc(19 * var(--px));
+  }
+
+  .marke {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--tap-target);
+    padding: 0 14px;
+    border: 2px dashed var(--farbe);
+    border-radius: 22px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: calc(15 * var(--px));
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .marke.an {
+    padding-left: 10px;
+    border-style: solid;
+    background: var(--farbe);
+    color: var(--on-person);
+  }
+
+  span.marke {
+    cursor: default;
+  }
+
+  .etikett {
+    padding: 0 7px;
+    border: 1.5px solid currentColor;
+    border-radius: 10px;
+    font-size: calc(11 * var(--px));
+    line-height: calc(16 * var(--px));
+    font-weight: 700;
+  }
+
+  .akk {
+    margin-top: 8px;
+    padding: 0 14px;
+    border-radius: 18px;
+    background: var(--surface);
+  }
+
+  .akk-kopf {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 56px;
+    padding: 6px 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .fleck {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--farbe);
+  }
+
+  .pfeil {
+    display: inline-flex;
+    flex-shrink: 0;
+    transform: rotate(90deg);
+    transition: transform 150ms ease-out;
+  }
+
+  .pfeil.auf {
+    transform: rotate(-90deg);
+  }
+
+  .weitere {
+    margin-top: 10px;
+  }
+
+  .auswahl {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .auswahl.kasten {
+    margin-top: 8px;
+    padding: 0 14px;
+    border-radius: 18px;
+    background: var(--surface);
+  }
+
+  .auswahl li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .auswahl.kasten li:first-child {
+    border-top: 0;
+  }
+
+  .notiz {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 12px 14px 4px;
+    border-radius: 16px;
+    background: var(--surface);
+    font-size: calc(14 * var(--px));
+    line-height: calc(19 * var(--px));
+  }
+
+  .notiz p {
+    margin: 0;
+  }
+
+  .notiz :global(.textlink + .textlink) {
+    margin-left: 16px;
+  }
+
+  .zeile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 60px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .dateien {
+    margin: 0 0 8px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .dateien li + li {
+    border-top: 1px solid var(--line);
+  }
+
+  .datei {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-height: var(--tap-target);
+    padding: 12px 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+    font-size: calc(15 * var(--px));
+    line-height: calc(20 * var(--px));
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  textarea {
+    padding: 10px 14px;
+    border: 1.5px solid var(--control-border);
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: calc(16 * var(--px));
+  }
+
+  .knopf {
+    min-height: 54px;
+    border: 0;
+    border-radius: 27px;
+    background: var(--action);
+    color: var(--on-action);
+    font-size: calc(17 * var(--px));
+    font-weight: 800;
+    cursor: pointer;
+  }
+</style>
