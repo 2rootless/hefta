@@ -152,6 +152,11 @@
     meldung = '';
     const dateien = anhaengen ? mappe?.dateien : undefined;
     if (dateien?.length) {
+      const { istApp, appTeilen } = await import('../app/plattform');
+      if (istApp()) {
+        await appTeilen(dateien, nachricht);
+        return;
+      }
       // Ein Mail-Link kann keinen Anhang tragen: Das Teilen-Blatt kann beides, ohne Titel (sonst legt
       // iOS eine Textdatei bei).
       if (navigator.canShare?.({ files: dateien, text: nachricht })) {

@@ -13,6 +13,7 @@
   import Stoerung from '../ui/Stoerung.svelte';
   import { verwaisteDateienLoeschen } from '../storage/speicher';
   import { daten, db, neuLaden, verbindungPruefen } from './daten.svelte';
+  import { pdfFenster } from './pdfFenster.svelte';
   import { fehlerBeobachten, hinweise } from './hinweise.svelte';
   import { route } from './router.svelte';
 
@@ -35,7 +36,9 @@
     auskuenfte: () => import('../screens/Selbstauskuenfte.svelte'),
     auskunft: () => import('../screens/SelbstauskunftSeite.svelte'),
     uebertragen: () => import('../screens/Uebertragen.svelte'),
+    eingang: () => import('../screens/Eingang.svelte'),
   };
+  const pdfAnsicht = () => import('../ui/PdfFenster.svelte');
 
   // Einstellungen und Backup sind selten: eigene Datei, damit der Start klein bleibt.
   const einstellungen = {
@@ -195,6 +198,10 @@
       {#await seiten.homescreen() then m}
         <m.default weiter="/rutsch" zweitesMal />
       {/await}
+    {:else if route.pfad === '/eingang'}
+      {#await seiten.eingang() then m}
+        <m.default />
+      {/await}
     {:else if route.pfad === '/einrichtung'}
       <Einrichtung />
     {:else if route.pfad === '/einrichtung/2'}
@@ -310,6 +317,12 @@
     {/if}
   </div>
 {/key}
+
+{#if pdfFenster.datei}
+  {#await pdfAnsicht() then m}
+    <m.default />
+  {/await}
+{/if}
 
 <style>
   .rueck-allein {

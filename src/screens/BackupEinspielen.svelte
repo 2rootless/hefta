@@ -6,7 +6,8 @@
   import { abschliessen, zurueckGehen } from '../app/router.svelte';
   import { tagAus } from '../domain/fristen';
   import { datum, groesse, t } from '../i18n';
-  import { BACKUP_ACCEPT, BackupFehler, backupArt } from '../storage/backup';
+  import { BackupFehler, backupAccept, backupArt } from '../storage/backup';
+  import { istApp } from '../app/plattform';
   import {
     bestandAusDb,
     sicherungEinspielen,
@@ -206,7 +207,7 @@
       <input
         type="file"
         class="visually-hidden"
-        accept={BACKUP_ACCEPT}
+        accept={backupAccept(istApp())}
         onchange={(e) => andereDatei(e.currentTarget.files?.[0])}
       />
     </label>

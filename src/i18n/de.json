@@ -340,7 +340,8 @@
       "keinPdf": "Diese Datei kann {app} nicht öffnen. Im Moment geht es mit PDFs. Papier oder ein Foto machst du in der Dateien-App über „Dokumente scannen“ zum PDF.",
       "nichtLesbar": "Diese Datei ließ sich nicht lesen. Liegt sie in iCloud, öffne sie einmal in der Dateien-App und versuch es noch einmal.",
       "platz": "Auf dem Gerät ist kaum noch Platz. Die Unterlage ist noch nicht gespeichert.",
-      "unbekannt": "Das Speichern hat nicht geklappt. Versuch es noch einmal."
+      "unbekannt": "Das Speichern hat nicht geklappt. Versuch es noch einmal.",
+      "keinPdfAndroid": "Diese Datei kann {app} nicht öffnen. Im Moment geht es mit PDFs."
     },
     "laedt": "Einen Moment …",
     "monate": "Für welchen Monat?",
@@ -1321,5 +1322,12 @@
     "stehtAufSeite": " steht auf der Seite ",
     "dateiMonateNach": " enthalten dieselbe Datei. In der Mappe steht sie einmal. Gehört jede Seite zu einem anderen Monat?",
     "doppeltKnopf": "{monat} ansehen"
+  },
+  "eingang": {
+    "titel": "Wofür ist diese Datei?",
+    "mehrere": "{anzahl} Dateien",
+    "leer": "Hier ist gerade nichts angekommen.",
+    "keinHaushalt": "Leg zuerst deinen Haushalt an. Danach kannst du die Datei noch einmal an {app} schicken.",
+    "einrichten": "Haushalt anlegen"
   }
 }

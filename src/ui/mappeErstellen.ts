@@ -2,6 +2,7 @@ import { hatPruefcode } from '../domain/pruefhinweise';
 import { AUSSEHEN_STANDARD, type MappenAussehen } from '../domain/modell';
 import { bauSchluessel, gebauteMappen, kleineDateien } from './mappeSpeicher';
 import { serienQuellen } from '../domain/aufteilen';
+import { appSichern, appTeilen, istApp } from '../app/plattform';
 import {
   auskunftAntwortenImmer,
   auskunftsSchritt,
@@ -399,6 +400,7 @@ export async function verkleinernMoeglich(
 
 /** Teilen über das System, sonst Download. Gibt false zurück, wenn abgebrochen. */
 export async function teilen(dateien: File[]): Promise<boolean> {
+  if (istApp()) return appTeilen(dateien);
   if (navigator.canShare?.({ files: dateien })) {
     try {
       await navigator.share({ files: dateien });
@@ -413,6 +415,10 @@ export async function teilen(dateien: File[]): Promise<boolean> {
 
 /** Als Datei sichern (Download), je Datei ein Link. */
 export function sichern(dateien: File[]): void {
+  if (istApp()) {
+    void appSichern(dateien);
+    return;
+  }
   for (const datei of dateien) {
     const url = URL.createObjectURL(datei);
     const a = document.createElement('a');

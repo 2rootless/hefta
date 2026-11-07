@@ -406,3 +406,13 @@ input[type='month']::-webkit-date-and-time-value {
   color: var(--ink);
   font: inherit;
 }
+
+/* In der App reicht die Seite bis unter die Statusleiste: Beim Scrollen bleibt die Zeile lesbar. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  height: env(safe-area-inset-top);
+  background: var(--ground);
+}

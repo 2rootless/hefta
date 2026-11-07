@@ -13,6 +13,8 @@ export default ts.config(
       'design/',
       'test-results/',
       'playwright-report/',
+      'ios/',
+      'android/',
     ],
   },
   js.configs.recommended,

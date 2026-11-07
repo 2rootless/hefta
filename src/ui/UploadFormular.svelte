@@ -13,6 +13,7 @@
   import { SvelteSet } from 'svelte/reactivity';
   import { daten, db, neuLaden } from '../app/daten.svelte';
   import { monatAusDateiname, monateAusDateiname } from '../domain/dateiname';
+  import { istAndroidApp } from '../app/plattform';
   import { ausstellungstag, datenFinden, monatFinden } from '../domain/datumErkennen';
   import { bewerten, monatPlus, monatsAuswahl, tagAus } from '../domain/fristen';
   import { alterGrenze } from './texte';
@@ -549,6 +550,9 @@
               : undefined,
   );
 
+  const keinPdfText = () =>
+    t(istAndroidApp() ? 'hochladen.fehler.keinPdfAndroid' : 'hochladen.fehler.keinPdf');
+
   // Zählt hoch, sobald die Dateien weg sind (ersetzt, gespeichert, Blatt zu): Was für sie noch lädt,
   // hört dann auf und ändert nichts mehr.
   let ladeLauf = 0;
@@ -604,7 +608,7 @@
         if (e instanceof PdfPasswortFehler) eintrag.gesperrt = true;
         else {
           if (lauf !== ladeLauf) return;
-          fehler = t('hochladen.fehler.keinPdf');
+          fehler = keinPdfText();
           continue;
         }
       }
@@ -657,7 +661,7 @@
       await vorschlagen(d, dateien.indexOf(d), dateien.length > 1);
     } catch (e) {
       if (e instanceof PdfPasswortFehler) d.passwortFalsch = true;
-      else fehler = t('hochladen.fehler.keinPdf');
+      else fehler = keinPdfText();
     } finally {
       beschaeftigt = false;
     }

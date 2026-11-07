@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Hefta</string>
+    <string name="title_activity_main">Hefta</string>
+    <string name="package_name">de.hefta.app</string>
+    <string name="custom_url_scheme">de.hefta.app</string>
+</resources>

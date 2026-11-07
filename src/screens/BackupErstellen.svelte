@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { appSichern, istApp } from '../app/plattform';
   // Backup erstellen (design/mappe-erstellen-einstellungen.md, Abschnitt 3, S3–S5): was drin ist,
   // mit oder ohne Passwort, dann sichern. Teilen braucht einen frischen Tipp: Dauert das Erstellen
   // zu lange, heißt der Knopf danach „Backup sichern“ und ein zweiter Tipp öffnet das Blatt.
@@ -94,6 +95,12 @@
   // Ohne title teilen, sonst legt iOS eine Textdatei bei. Ohne Teilen-Blatt: herunterladen.
   function sichern() {
     if (!datei) return;
+    if (istApp()) {
+      void appSichern([datei]).then((ok) => {
+        if (ok) void gesichert();
+      });
+      return;
+    }
     if (!navigator.canShare?.({ files: [datei] })) {
       link?.click();
       return;

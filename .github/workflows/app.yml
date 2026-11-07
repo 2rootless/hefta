@@ -1,0 +1,134 @@
+# Bau der Mieter-App für iPhone und Android (docs/18-plan-native-app.md, Aufgabe 58).
+#
+# - „pruefen“ läuft bei jedem Push auf main und auf app/**: baut Web, iOS (Simulator, ohne Signatur) und
+#   Android (Debug). Braucht keine geheimen Werte.
+# - „testflight“ läuft nur von Hand (Actions → App → Run workflow, Haken „Zu TestFlight hochladen“) und nur
+#   in der geschützten Umgebung „store“: Jeder Lauf wartet auf die Freigabe des Auftraggebers.
+#   Geheime Werte der Umgebung: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (Inhalt der .p8-Datei), APPLE_TEAM_ID.
+# - Läufe aus Forks bekommen nie geheime Werte (GitHub), und pull_request startet hier nichts.
+name: App
+
+on:
+  push:
+    branches: [main, 'app/**']
+    paths: ['src/**', 'ios/**', 'android/**', 'capacitor.config.ts', 'package*.json', '.github/workflows/app.yml']
+  workflow_dispatch:
+    inputs:
+      testflight:
+        description: Zu TestFlight hochladen
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Mit pipefail: Scheitert xcodebuild, scheitert der Schritt, auch wenn danach `tail` läuft.
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruefen-ios:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync ios
+      - name: Bauen für den Simulator, ohne Signatur
+        run: >
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release
+          -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO build | tail -n 40
+
+  pruefen-android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync android
+      - name: Debug-Bau
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug
+
+  testflight:
+    if: github.event_name == 'workflow_dispatch' && inputs.testflight && github.ref == 'refs/heads/main'
+    needs: pruefen-ios
+    runs-on: macos-15
+    timeout-minutes: 45
+    environment: store
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync ios
+      - name: Schlüssel nur für diesen Lauf ablegen
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
+          chmod 600 "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
+      - name: Archiv bauen, Xcode signiert mit dem API-Schlüssel
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: >
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release
+          -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Hefta.xcarchive"
+          -allowProvisioningUpdates
+          -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
+          -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic
+          CURRENT_PROJECT_VERSION="${{ github.run_number }}"
+          archive | tail -n 40
+      - name: Zu App Store Connect hochladen (TestFlight)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat > "$RUNNER_TEMP/export.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Hefta.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -n 40
+      - name: Schlüssel wieder löschen
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/asc"

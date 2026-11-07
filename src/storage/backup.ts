@@ -34,6 +34,9 @@ const MAGIE = new TextEncoder().encode('HEFTABAK');
  * ist, prüft danach `backupArt` am Inhalt.
  */
 export const BACKUP_ACCEPT = `.${BACKUP_ENDUNG},application/octet-stream`;
+
+/** In der App meldet Hefta `.hefta` als eigenen Dateityp an; dort graut die Auswahl alles andere aus. */
+export const backupAccept = (app: boolean) => (app ? `.${BACKUP_ENDUNG}` : BACKUP_ACCEPT);
 const FORMAT = 1;
 const KDF_PBKDF2 = 1;
 const KOPF_LAENGE = 42;

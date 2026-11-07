@@ -3,6 +3,7 @@
   // Erst ein kleines Menü „PDF auswählen“ (Entscheidung A), dann das Blatt wie im Entwurf.
   // Wird nur bei Bedarf geladen, weil es PDF.js braucht.
   import { db, neuLaden } from '../app/daten.svelte';
+  import { istAndroidApp } from '../app/plattform';
   import { nochNicht } from '../domain/fristen';
   import type { Person } from '../domain/modell';
   import { eintragenText, type UnterlagenStand } from '../domain/regelkatalog';
@@ -70,7 +71,7 @@
         }}
       />
     </label>
-    <p class="hinweis">{t('hochladen.menue.hinweis')}</p>
+    {#if !istAndroidApp()}<p class="hinweis">{t('hochladen.menue.hinweis')}</p>{/if}
     <p class="hinweis">{t('hochladen.menue.papier')}</p>
     {#if fehler}<Notiz stark><p role="alert">{fehler}</p></Notiz>{/if}
     {#if stand.status === 'bald'}

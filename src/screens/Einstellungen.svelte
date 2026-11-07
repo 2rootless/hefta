@@ -1,11 +1,12 @@
 <script lang="ts">
+  import { istApp } from '../app/plattform';
   // Einstellungen in Gruppen (design/mappe-erstellen-einstellungen.md, Abschnitt 2, S1/S2):
   // Sicherung, Speicher, App, Daten. Backup erstellen, einspielen und alles löschen sind eigene Seiten.
   import { onMount } from 'svelte';
   import { daten, db, gehe } from '../app/daten.svelte';
   import { QUELLCODE_ADRESSE } from '../app/name';
   import { tageSeit } from '../domain/zeit';
-  import { BACKUP_ACCEPT } from '../storage/backup';
+  import { backupAccept } from '../storage/backup';
   import { KATALOG_STAND } from '../domain/regelkatalog';
   import { groesse, monatName, t } from '../i18n';
   import { speicherBelegt } from '../storage/speicher';
@@ -106,7 +107,7 @@
           <input
             type="file"
             class="visually-hidden"
-            accept={BACKUP_ACCEPT}
+            accept={backupAccept(istApp())}
             onchange={(e) => backupGewaehlt(e.currentTarget.files?.[0])}
           />
         </label>
@@ -134,7 +135,7 @@
           >
         {/if}
       </li>
-      <li>
+      <li class:app={istApp()}>
         {#if homescreen}
           <div class="listenzeile">
             <span class="tx"
@@ -286,5 +287,10 @@
     height: 100%;
     border-radius: 5px;
     background: var(--ink);
+  }
+
+  /* Eine App ist schon auf dem Homescreen. */
+  .app {
+    display: none;
   }
 </style>
