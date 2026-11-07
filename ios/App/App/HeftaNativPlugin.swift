@@ -1,5 +1,6 @@
 import Capacitor
 import UIKit
+import UniformTypeIdentifiers
 
 /// Eigene Gerätefunktionen der App: PDFs von anderen Apps empfangen und Dateien über den
 /// Sichern-Dialog des Systems ablegen. Die Daten bleiben außerdem aus dem iCloud-Backup heraus.
@@ -8,10 +9,12 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
     public let identifier = "HeftaNativPlugin"
     public let jsName = "HeftaNativ"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "alsDateiSichern", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "alsDateiSichern", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "backupWaehlen", returnType: CAPPluginReturnPromise)
     ]
 
     private var sichernAufruf: CAPPluginCall?
+    private var waehlenAufruf: CAPPluginCall?
 
     override public func load() {
         ausDemBackupNehmen()
@@ -81,15 +84,42 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
         }
     }
 
+    /// Aufgabe 53: Auswahl nur für Hefta-Backups (de.hefta.backup). Die Auswahl der Web-Ansicht bietet
+    /// sonst Fotos, Kamera und alle Dateien an (TestFlight, 7.11.).
+    @objc func backupWaehlen(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            self.waehlenAufruf = call
+            let typ = UTType(exportedAs: "de.hefta.backup")
+            let dialog = UIDocumentPickerViewController(forOpeningContentTypes: [typ], asCopy: true)
+            dialog.allowsMultipleSelection = false
+            dialog.delegate = self
+            self.bridge?.viewController?.present(dialog, animated: true)
+        }
+    }
+
     public func documentPicker(
         _ controller: UIDocumentPickerViewController,
         didPickDocumentsAt urls: [URL]
     ) {
+        if let call = waehlenAufruf {
+            waehlenAufruf = nil
+            guard let url = urls.first else {
+                call.resolve([:])
+                return
+            }
+            call.resolve(["uri": url.absoluteString, "name": url.lastPathComponent])
+            return
+        }
         sichernAufruf?.resolve(["gesichert": true])
         sichernAufruf = nil
     }
 
     public func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        if let call = waehlenAufruf {
+            waehlenAufruf = nil
+            call.resolve([:])
+            return
+        }
         sichernAufruf?.resolve(["gesichert": false])
         sichernAufruf = nil
     }

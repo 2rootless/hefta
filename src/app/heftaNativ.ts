@@ -14,6 +14,8 @@ export interface HeftaNativPlugin {
     name: string;
     typ: string;
   }): Promise<{ gesichert: boolean }>;
+  /** Nur iOS: Auswahl, die nur Hefta-Backups anbietet. Leer, wenn abgebrochen. */
+  backupWaehlen(): Promise<{ uri?: string; name?: string }>;
   addListener(
     ereignis: 'eingang',
     aufruf: (daten: { dateien: EmpfangeneDatei[] }) => void,

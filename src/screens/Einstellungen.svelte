@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { istApp } from '../app/plattform';
+  import { backupKlick, istApp } from '../app/plattform';
   // Einstellungen in Gruppen (design/mappe-erstellen-einstellungen.md, Abschnitt 2, S1/S2):
   // Sicherung, Speicher, App, Daten. Backup erstellen, einspielen und alles löschen sind eigene Seiten.
   import { onMount } from 'svelte';
@@ -108,6 +108,7 @@
             type="file"
             class="visually-hidden"
             accept={backupAccept(istApp())}
+            onclick={(e) => backupKlick(e, backupGewaehlt)}
             onchange={(e) => backupGewaehlt(e.currentTarget.files?.[0])}
           />
         </label>

@@ -7,7 +7,7 @@
   import { tagAus } from '../domain/fristen';
   import { datum, groesse, t } from '../i18n';
   import { BackupFehler, backupAccept, backupArt } from '../storage/backup';
-  import { istApp } from '../app/plattform';
+  import { backupKlick, istApp } from '../app/plattform';
   import {
     bestandAusDb,
     sicherungEinspielen,
@@ -208,6 +208,7 @@
         type="file"
         class="visually-hidden"
         accept={backupAccept(istApp())}
+        onclick={(e) => backupKlick(e, andereDatei)}
         onchange={(e) => andereDatei(e.currentTarget.files?.[0])}
       />
     </label>

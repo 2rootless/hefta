@@ -13,6 +13,10 @@ export function istApp(): boolean {
   return !!bruecke()?.isNativePlatform?.();
 }
 
+export function istIosApp(): boolean {
+  return istApp() && bruecke()?.getPlatform?.() === 'ios';
+}
+
 export function istAndroidApp(): boolean {
   return istApp() && bruecke()?.getPlatform?.() === 'android';
 }
@@ -87,7 +91,31 @@ export async function appSichern(dateien: File[]): Promise<boolean> {
 }
 
 /** Eine Datei aus dem Speicher der App lesen, z. B. ein empfangenes PDF. */
-export async function appDateiLesen(uri: string, name: string): Promise<File> {
+export async function appDateiLesen(
+  uri: string,
+  name: string,
+  typ = 'application/pdf',
+): Promise<File> {
   const antwort = await fetch(bruecke()?.convertFileSrc?.(uri) ?? uri);
-  return new File([await antwort.blob()], name, { type: 'application/pdf' });
+  return new File([await antwort.blob()], name, { type: typ });
+}
+
+/**
+ * Backup wählen über iOS selbst: nur Hefta-Backups, keine Fotos, keine Kamera (Aufgabe 53). Gibt
+ * `undefined` zurück, wenn abgebrochen. Nur in der App für iOS aufrufen.
+ */
+export async function appBackupWaehlen(): Promise<File | undefined> {
+  const { HeftaNativ } = await import('./heftaNativ');
+  const { uri, name } = await HeftaNativ.backupWaehlen();
+  return uri && name ? appDateiLesen(uri, name, 'application/octet-stream') : undefined;
+}
+
+/**
+ * Klick auf die Zeile „Backup einspielen“: In der App für iOS die eigene Auswahl statt der Auswahl
+ * der Web-Ansicht.
+ */
+export function backupKlick(ereignis: MouseEvent, gewaehlt: (datei: File | undefined) => void) {
+  if (!istIosApp()) return;
+  ereignis.preventDefault();
+  void appBackupWaehlen().then(gewaehlt);
 }
