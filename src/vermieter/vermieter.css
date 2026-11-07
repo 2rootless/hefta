@@ -657,6 +657,14 @@ body {
   line-height: 18px;
   color: var(--vs-muted);
 }
+/* Zeile „Quelle“ unter einem Hinweis (Aufgabe 52): direkt darunter, etwas kleiner. */
+.vs-dh:has(+ .vs-dq) {
+  margin-bottom: 0;
+}
+.vs-dq {
+  margin-top: 2px;
+  font-size: 12px;
+}
 .vs-sec {
   margin-top: 22px;
   padding-top: 18px;
@@ -753,9 +761,56 @@ body {
   overflow-wrap: anywhere;
   max-width: 72ch;
 }
-.vs-anf .vs-akt {
+.vs-anf .vs-akt,
+.vs-abs .vs-akt {
   flex-wrap: wrap;
   margin-top: 14px;
+}
+.vs-kw {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 14px;
+  font-size: 14px;
+}
+/* Nur sehr lange Adressen brechen auch sonst um; der Normalfall bricht vor dem @. */
+.vs-kw a {
+  overflow-wrap: anywhere;
+}
+.vs-kw > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.vs-abs .vs-bitte {
+  margin: 10px 0 0;
+}
+.vs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.vs-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 22px;
+  border: 1.5px solid #7a7c94;
+  background: #fff;
+  color: var(--vs-ink);
+  font: inherit;
+  font-size: 15px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.vs-chip.on {
+  border: 2.5px solid var(--vs-ink);
+  font-weight: 700;
+}
+.vs-chip:focus-visible {
+  outline: 3px solid var(--vs-ink);
+  outline-offset: 2px;
 }
 .vs-anf-meldung {
   min-height: 21px;
@@ -1124,4 +1179,18 @@ h2:focus {
     border-radius: 0;
     padding: 12px 12px 14px;
   }
+}
+/* „Aus der Liste nehmen“: ruhiger als die Hauptaktion, darunter, was es heißt. */
+.vs-weg {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--vs-line);
+}
+.vs-btn.vs-btn-leise {
+  background: #fff;
+  color: var(--vs-ink);
+  border: 1.5px solid var(--vs-ink);
+}
+.vs-weg .vs-sub {
+  margin: 6px 0 0;
 }

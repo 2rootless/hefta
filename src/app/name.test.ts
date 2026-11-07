@@ -15,7 +15,7 @@ describe('Der Name steht an einer Stelle', () => {
 
   it('kein Satz nennt noch den alten Namen als Dienst', () => {
     const alt =
-      /(?<![Dd]ie |[Dd]er |[Ee]ine |Eure |Deine |eurer |deiner |jede |ganze |zur )\bMappe\b(?! erstellen| anpassen| ansehen| anhängen| wird erstellt| trotzdem)/;
+      /(?<![Dd]ie |[Dd]er |[Ee]ine |Eure |Deine |eurer |deiner |jede |ganze |zur |dieser )\bMappe\b(?! erstellen| anpassen| ansehen| anhängen| wird erstellt| trotzdem)/;
     const treffer = [lesen('src/i18n/de.json'), lesen('data/regelkatalog.de.json')]
       .join('\n')
       .split('\n')

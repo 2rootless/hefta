@@ -12,15 +12,19 @@
     gruppe,
     haushaltTitel,
     imVertrag,
+    mailEmpfaenger,
     NB,
     ORIENTIERUNGSHILFE,
     personenGesamt,
     pruefPunkte,
     rolleText,
     seitenText,
+    telefonLink,
     ueblichText,
     unterlageAngabe,
+    nenntDsk,
     unterlageHinweis,
+    unterlageQuelle,
     unterlageText,
     vollstaendigkeit,
   } from './regel';
@@ -32,12 +36,15 @@
     gesamt,
     breit,
     oeffnen,
+    entfernen,
   }: {
     mappe: Mappe;
     nummer: number;
     gesamt: number;
     breit: boolean;
     oeffnen: (seite: number) => void;
+    /** Nimmt die Mappe aus der Liste (Wunsch des Auftraggebers, 6.11.). */
+    entfernen: () => void;
   } = $props();
 
   const a = $derived(mappe.anhang);
@@ -46,6 +53,16 @@
   const vertrag = $derived(a ? a.haushalt.personen.filter(imVertrag) : []);
   const buergen = $derived(a ? a.haushalt.personen.filter((p) => !imVertrag(p)) : []);
   const anzahl = $derived(a ? personenGesamt(a) : 0);
+  // Aufgabe 52: Beim ersten Vorkommen auf der Seite steht, wer die Datenschutzkonferenz ist. In der Reihenfolge
+  // der Seite: je Person die drei Gruppen, danach der Abschnitt „Löschen“.
+  const ersteDsk = $derived.by(() => {
+    for (const x of stand?.personen ?? [])
+      for (const g of [1, 2, 3])
+        for (const u of x.da) if (gruppe(u, x.person) === g && nenntDsk(u)) return u;
+    return null;
+  });
+  // Fassung 3 (E17): Telefon und Mail der Kontaktperson, nur geprüft gegen Seite 1 (lesehilfePasst).
+  const kontakt = $derived(a?.haushalt.kontakt ?? null);
   const liste = (teile: string[]) =>
     teile.length > 1
       ? `${teile.slice(0, -1).join(', ')} und ${teile[teile.length - 1]}`
@@ -78,11 +95,17 @@
         <span>{t('loeschen.bitte')}</span>„{a.loeschwunsch}“
       </blockquote>
     {/if}
-    <p>{t('loeschen.text')}</p>
+    <p>{t(ersteDsk ? 'loeschen.text' : 'loeschen.textErklaert')}</p>
     <p class="vs-quelle">{t('loeschen.quelle')}</p>
     <a class="vs-lk vs-blk" href={ORIENTIERUNGSHILFE} rel="noreferrer" target="_blank"
       >{t('quelle.lesen')}</a
     >
+    <div class="vs-weg">
+      <button type="button" class="vs-btn vs-btn-leise" onclick={entfernen}
+        >{t('loeschen.entfernen')}</button
+      >
+      <p class="vs-sub">{t('loeschen.entfernenText')}</p>
+    </div>
   </section>
 {/snippet}
 
@@ -95,7 +118,8 @@
 
 {#snippet zeile(u: AnhangUnterlage)}
   {@const angabe = unterlageAngabe(u)}
-  {@const hinweis = unterlageHinweis(u)}
+  {@const hinweis = unterlageHinweis(u, u === ersteDsk)}
+  {@const quelle = unterlageQuelle(u)}
   <button type="button" class="vs-d" onclick={() => oeffnen(u.seiten[0])}>
     <span class="vs-dl">
       <b class="vs-db">{unterlageText(u)}</b>
@@ -105,6 +129,7 @@
     <svg class="vs-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
   </button>
   {#if hinweis}<p class="vs-dh">{hinweis}</p>{/if}
+  {#if quelle}<p class="vs-dh vs-dq">{quelle}</p>{/if}
 {/snippet}
 
 {#if !a || !stand || !pruefen}
@@ -158,7 +183,26 @@
                 <span class="vs-m vs-m-v" aria-hidden="true"></span>
                 <span>
                   <b>{p.name}</b>
-                  <small>{rolleText(p)}{p.kontakt ? t('mappe.kontakt') : ''}</small>
+                  <small>{rolleText(p)}{p.kontakt && !kontakt ? t('mappe.kontakt') : ''}</small>
+                  {#if p.kontakt && kontakt}
+                    <span class="vs-kw">
+                      {#if kontakt.telefon}
+                        {@const tel = telefonLink(kontakt.telefon)}
+                        {#if tel}<a class="vs-lk" href={tel}>{kontakt.telefon}</a>
+                        {:else}<span>{kontakt.telefon}</span>{/if}
+                      {/if}
+                      {#if kontakt.email}
+                        {@const an = mailEmpfaenger(kontakt.email)}
+                        <!-- Umbruch nur vor dem @, wie auf dem Deckblatt; <wbr> statt eines Zeichens, damit
+                        die Adresse beim Kopieren sauber bleibt. -->
+                        {@const [lokal, ...rest] = kontakt.email.split('@')}
+                        {#if an}<a class="vs-lk" href="mailto:{an}" aria-label={kontakt.email}
+                            >{lokal}{#if rest.length}<wbr />@{rest.join('@')}{/if}</a
+                          >
+                        {:else}<span>{kontakt.email}</span>{/if}
+                      {/if}
+                    </span>
+                  {/if}
                 </span>
               </li>
             {/each}
@@ -273,6 +317,10 @@
     {@render loeschen()}
     <a class="vs-li" href="#/mappe/{nummer}/anfordern">
       <span>{t('anfordern.titel')}<small class="vs-lis">{t('anfordern.zeile')}</small></span>
+      <svg class="vs-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+    </a>
+    <a class="vs-li" href="#/mappe/{nummer}/absagen">
+      <span>{t('absagen.titel')}<small class="vs-lis">{t('absagen.zeile')}</small></span>
       <svg class="vs-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
     </a>
     {@render schritteLink()}

@@ -30,9 +30,7 @@ describe('Wortliste der Mappe', () => {
 
   it('liest die festen Wörter wirklich aus dem Quelltext', () => {
     const woerter = festeWoerter(readFileSync('src/pdf/bewerbung.ts', 'utf8'));
-    expect(woerter).toEqual(
-      expect.arrayContaining(['Wer einzieht', 'ohne Mietvertrag', 'Bürgschaft']),
-    );
+    expect(woerter).toEqual(expect.arrayContaining(['Kontakt']));
     expect(festeWoerter("text('Probe', x)")).toEqual(['Probe']);
     // Die Muster der Fußzeile, die die Liste beschreibt, stehen so im Bau der Mappe.
     const bau = readFileSync('src/pdf/bewerbung.ts', 'utf8');

@@ -1,3 +1,4 @@
+import { BACKUP_ENDUNG } from '../app/name';
 import {
   ZipFehler,
   zipBauen,
@@ -24,6 +25,15 @@ import {
 // Dieser Aufbau bleibt: Alle je geschriebenen Backups müssen sich lesen lassen (tests/fixtures/backup).
 
 const MAGIE = new TextEncoder().encode('HEFTABAK');
+
+/**
+ * Aufgabe 53: Die Dateiauswahl für ein Backup zeigt keine Fotos und keine Kamera, sondern die Dateien.
+ * Am iPhone getestet (6.11.): Mit `.hefta` und `application/octet-stream` öffnet iOS direkt „Dateien“, das
+ * Backup ist wählbar, andere Dateien aber auch. Mit `.hefta` allein bietet iOS wieder Fotos und Kamera an,
+ * weil es die Endung nicht kennt. Ausgrauen geht am iPhone also nicht; ob eine Datei wirklich ein Backup
+ * ist, prüft danach `backupArt` am Inhalt.
+ */
+export const BACKUP_ACCEPT = `.${BACKUP_ENDUNG},application/octet-stream`;
 const FORMAT = 1;
 const KDF_PBKDF2 = 1;
 const KOPF_LAENGE = 42;

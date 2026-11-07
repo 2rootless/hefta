@@ -111,6 +111,7 @@ test('Mappe erstellen: Vorschau, Modi, Bürgin abwählen, Adresse, Download', as
     'aria-checked',
     'false',
   );
+  await expect(page.getByText('Nicht in dieser Mappe')).toBeVisible();
   await expect
     .poll(async () => Number((await seitenZahl(page).innerText()).split(' ')[0]), {
       timeout: 30_000,

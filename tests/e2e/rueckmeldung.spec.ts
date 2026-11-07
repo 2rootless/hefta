@@ -252,13 +252,15 @@ test('Mappe erstellen: Karte oben, eine Liste, Größe im Knopf, Auswahl je Pers
   await expect(page.getByRole('switch', { name: /, Max$/ })).toHaveCount(0);
   await expect(page.getByRole('switch', { name: /, Lea$/ }).first()).toBeVisible();
 
-  // Ohne Bürgen gibt es nichts zu wählen, also auch den Abschnitt nicht.
+  // Ohne Bürgen gibt es nichts zu wählen: Der Abschnitt steht trotzdem da, nur zum Ansehen (56).
   await laden(page, '11-allein', '/mappe');
   await page
     .getByText(/^\d+ Seiten?$/)
     .first()
     .waitFor({ timeout: 30000 });
-  await expect(page.getByRole('heading', { name: 'Wer ist dabei?' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Wer ist dabei?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Im Mietvertrag' })).toBeVisible();
+  await expect(page.getByRole('checkbox')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Einen Satz zu dir ergänzen/ })).toBeVisible();
   expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
 });

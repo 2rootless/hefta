@@ -75,6 +75,10 @@ const katalog = katalogRoh as unknown as {
     gruppeEntscheidung: string;
     gruppeNichtNoetig: string;
     hinweise: Record<string, string>;
+    /** Dieselben Sätze mit der Erklärung der Datenschutzkonferenz, für ihr erstes Vorkommen auf der Seite. */
+    hinweiseErklaert: Record<string, string>;
+    /** Zeile „Quelle“ mit Stand, Abschnitt und Nummer (Aufgabe 52). */
+    hinweisQuellen: Record<string, string>;
     pruefwege: Record<string, Pruefweg>;
   };
 };
@@ -253,7 +257,11 @@ export function unterlageAngabe(u: AnhangUnterlage): string {
   return u.vom ? `vom ${datumText(u.vom)}` : '';
 }
 
-export const unterlageHinweis = (u: AnhangUnterlage) => stimme.hinweise[u.typ] ?? '';
+export const unterlageHinweis = (u: AnhangUnterlage, erklaert = false) =>
+  (erklaert ? stimme.hinweiseErklaert[u.typ] : undefined) ?? stimme.hinweise[u.typ] ?? '';
+export const unterlageQuelle = (u: AnhangUnterlage) => stimme.hinweisQuellen[u.typ] ?? '';
+/** Nennt der Hinweis die Datenschutzkonferenz? Dann erklärt ihn das erste Vorkommen auf der Seite. */
+export const nenntDsk = (u: AnhangUnterlage) => u.typ in stimme.hinweiseErklaert;
 export const rolleText = (p: AnhangPerson) => katalog.rollen[p.rolle]?.textNeutral ?? 'Mietpartei';
 export const ueblichText = (f: Fehlend) => stimme.schritte[f.schritt].ueblich;
 export const gehoertText = (s: SchrittId) => stimme.schritte[s].gehoert;
@@ -266,7 +274,8 @@ export interface PruefPunkt {
 
 /**
  * Was sich prüfen lässt. Abweichung vom Entwurf: kein errechnetes „bis 19. Dezember“. Die 60 Tage stehen
- * nur in einem Muster von 2022, die Prüfseite selbst nennt keine Frist.
+ * im Muster der SCHUFA (Januar 2024, Aufgabe 49) als „60 Tagen ab Ausstellungsdatum“; das errechnete Datum
+ * (E7) kommt erst mit dem neuen Design.
  */
 export function pruefPunkte(a: HeftaAnhang): { punkte: PruefPunkt[]; quelle: string } {
   const weg = stimme.pruefwege.bonitaet!;
@@ -288,7 +297,8 @@ export function pruefPunkte(a: HeftaAnhang): { punkte: PruefPunkt[]; quelle: str
     if (u.typ === 'buergschaftserklaerung') {
       punkte.push({
         titel: `Bürgschaft von ${wer}`,
-        text: `In der Mappe liegt nur ein Scan. Gültig ist die Bürgschaft mit Unterschrift auf Papier (§${NB}766 BGB); das Original gehört zur Vertrags\u00adunterzeichnung.`,
+        // Aufgabe 52, Nachtrag k: zugeschrieben statt in der Stimme von Hefta; Quelle in der Zeile darunter.
+        text: `In der Mappe liegt nur ein Scan. Laut §${NB}766 BGB ist eine Bürgschaft nur mit schriftlicher Erklärung gültig, nicht in elektronischer Form; das Original gehört zur Vertrags\u00adunterzeichnung.`,
       });
     }
   }
@@ -301,9 +311,27 @@ export function pruefPunkte(a: HeftaAnhang): { punkte: PruefPunkt[]; quelle: str
 const ROLLEN = new Set(['hauptmieter', 'mitmieter', 'buerge']);
 const SCHRITTE = new Set(Object.keys(RANG));
 const TAG = /^\d{4}-\d{2}-\d{2}$/;
+// Seit der Veröffentlichung Pflicht (E21, Planung 06j): Kennung der Bewerbung als UUID.
+const KENNUNG = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MONAT = /^\d{4}-\d{2}$/;
 const MAX_TEXT = 200;
 const MAX_BITTE = 500;
+/** Was in einen Link `tel:` darf: Ziffern, Plus, Klammern, Leerzeichen, Punkt, Strich, Schrägstrich. */
+const TELEFON = /^\+?[\d ()./-]{3,30}$/;
+/** Eine schlichte Mailadresse, ohne Zeichen, die einen Link `mailto:` verändern könnten. */
+const MAIL = /^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,180}\.[A-Za-z]{2,24}$/;
+
+/** Link zum Anrufen, nur aus einer sauberen Nummer; sonst null und die Nummer steht als Text da. */
+export function telefonLink(telefon: string | undefined): string | null {
+  if (!telefon || !TELEFON.test(telefon.trim())) return null;
+  const ziffern = telefon.replace(/[^\d+]/g, '');
+  return ziffern.replace(/\D/g, '').length >= 3 ? `tel:${ziffern}` : null;
+}
+
+/** Die Mailadresse für `mailto:`, nur wenn sie sauber ist; sonst null. */
+export function mailEmpfaenger(email: string | undefined): string | null {
+  return email && MAIL.test(email.trim()) ? email.trim() : null;
+}
 
 const text = (v: unknown, max = MAX_TEXT): v is string =>
   typeof v === 'string' && v.trim().length > 0 && v.length <= max;
@@ -325,6 +353,8 @@ export function lesehilfePasst(a: HeftaAnhang, seiten: number, ersteSeite: strin
   const mitziehende = a.haushalt?.mitziehende;
   if (!Array.isArray(personen) || !personen.length || !Array.isArray(mitziehende)) return false;
   if (!text(a.erstellt) || !TAG.test(a.erstellt)) return false;
+  const kennung = a.bewerbung?.kennung;
+  if (typeof kennung !== 'string' || !KENNUNG.test(kennung)) return false;
   if (a.seitenzahl !== undefined && a.seitenzahl !== seiten) return false;
   if (a.schritt !== undefined && !SCHRITTE.has(a.schritt)) return false;
   if (a.loeschwunsch !== undefined && !text(a.loeschwunsch, MAX_BITTE)) return false;
@@ -341,6 +371,16 @@ export function lesehilfePasst(a: HeftaAnhang, seiten: number, ersteSeite: strin
   }
   for (const m of mitziehende) {
     if (!m || !text(m.text) || !ganz(m.anzahl, 1, 50)) return false;
+    if (m.art !== 'kind' && m.art !== 'erwachsen') return false;
+  }
+  // Fassung 3: Telefon und Mail nur, wenn sie wörtlich auf Seite 1 stehen. Eine geänderte Lesehilfe
+  // könnte sonst eine fremde Nummer oder Mail unterschieben (Bedingung 1 zu E17).
+  const k = a.haushalt.kontakt;
+  if (k !== undefined) {
+    if (!k || typeof k !== 'object' || !personen.some((p) => p?.kontakt)) return false;
+    if (k.telefon === undefined && k.email === undefined) return false;
+    for (const wert of [k.telefon, k.email])
+      if (wert !== undefined && (!text(wert, 254) || !seite.includes(blank(wert)))) return false;
   }
   const w = a.bewerbung?.wohnung;
   if (w) {

@@ -111,7 +111,7 @@ async function auftrag(teil: Partial<BewerbungAuftrag> = {}): Promise<BewerbungA
     kurz: 'Hauptstraße 12',
     adresse: ['Hauptstraße 12, 3. OG links', '22767 Hamburg'],
     satz: 'Wir sind ein ruhiges Paar mit einem Kind.',
-    mitziehende: [{ text: 'Ein Kind', anzahl: 1 }],
+    mitziehende: [{ text: 'Ein Kind', anzahl: 1, art: 'kind' }],
     kontakt: ['Max Mustermann', '0151 23456789'],
     bloecke: await bloecke(),
     deckblatt: true,
@@ -180,7 +180,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       'Hauptstraße 12',
       '3. OG links · 22767 Hamburg',
       'Wir sind ein ruhiges Paar',
-      'Wer einzieht',
+      'Im Mietvertrag',
       'Was beiliegt',
       'Max Mustermann',
       'Hauptmieter, Elektroniker',
@@ -188,7 +188,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       '3–5',
       'Bonitätsnachweis, vom 20. Oktober 2026',
       'Ein Kind',
-      'ohne Mietvertrag',
+      'Ziehen mit ein',
       'Bürgschaft',
       'Kontakt',
       'Seite 1 von 10',
@@ -516,7 +516,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
     }));
     const e = await bewerbungBauen(await auftrag({ bloecke: bloeckeLang }));
     const texte = await textJeSeite(e.bytes);
-    expect(texte[0]).toContain('Wer einzieht');
+    expect(texte[0]).toContain('Im Mietvertrag');
     expect(texte[0]).not.toContain('(Fortsetzung)');
     expect(texte[0]).toContain('Kontakt');
     expect(texte[1]).toContain('Was beiliegt (Fortsetzung)');
@@ -958,21 +958,23 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       expect(texte[1]!.replace(/\s+/g, ' ')).toContain(bitte);
     });
 
-    it('Kinder und weitere Personen sind eigene Einträge und zählen mit, Bürgen nicht', async () => {
-      const ohneKinder = await bewerbungBauen(await auftrag({ mitziehende: [] }));
-      const zahl = /(\d+) Personen?/.exec((await textJeSeite(ohneKinder.bytes))[0]!)![1];
+    it('E25: drei Gruppen, oben die Kurzform, keine Summe über die Gruppen', async () => {
       const e = await bewerbungBauen(
         await auftrag({
           mitziehende: [
-            { text: 'Zwei Kinder', anzahl: 2 },
-            { text: 'Eine weitere Person', anzahl: 1 },
+            { text: 'Zwei Kinder', anzahl: 2, art: 'kind' },
+            { text: 'Eine weitere Person', anzahl: 1, art: 'erwachsen' },
           ],
         }),
       );
       const [deck] = await textJeSeite(e.bytes);
       expect(deck).toContain('Zwei Kinder');
       expect(deck).toContain('Eine weitere Person');
-      expect(deck).toContain(`${Number(zahl) + 3} Personen`);
+      const glatt = deck!.replace(/\s+/g, ' ');
+      for (const g of ['Im Mietvertrag', 'Ziehen mit ein', 'Bürgt']) expect(glatt).toContain(g);
+      expect(glatt).toContain('zwei Kinder und eine weitere Person ziehen mit ein.');
+      expect(glatt).toContain('Eine Person bürgt.');
+      expect(glatt).not.toMatch(/\d+ Personen|Wer einzieht|ohne Mietvertrag/);
     });
 
     it('Ohne Adresse: nur „Bewerbung um eine Wohnung“; lange Straße wird kleiner, nie gekürzt', async () => {
@@ -987,13 +989,13 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
     });
   });
 
-  it('Ohne Deckblatt gibt es keinen Inhalt; ohne Inhalt heißt es nur „Wer einzieht“', async () => {
+  it('Ohne Deckblatt gibt es keinen Inhalt; ohne Inhalt stehen nur die Gruppen', async () => {
     const ohne = await bewerbungBauen(await auftrag({ deckblatt: false }));
     expect(ohne.seiten).toBe(9);
     expect((await textJeSeite(ohne.bytes))[0]).toContain('Selbstauskunft');
     const kurz = await bewerbungBauen(await auftrag({ inhaltsverzeichnis: false }));
     const [deckblatt] = await textJeSeite(kurz.bytes);
-    expect(deckblatt).toContain('Wer einzieht');
+    expect(deckblatt).toContain('Im Mietvertrag');
     expect(deckblatt).not.toContain('Wer einzieht und was beiliegt');
     expect(deckblatt).not.toContain('Gehaltsnachweise');
     const pdf = await PDFDocument.load(kurz.bytes);

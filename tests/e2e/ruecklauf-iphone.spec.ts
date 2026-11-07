@@ -123,7 +123,7 @@ test('Serie am 4. November: Es fehlt der August, nicht der November', async ({ p
 
 test('Zurück oben links tut dasselbe wie die Wischgeste', async ({ page }) => {
   await laden(page, '01-standard', '/');
-  await page.getByRole('link', { name: /Haushalt bearbeiten/ }).click();
+  await page.getByRole('link', { name: /^Haushalt bearbeiten: / }).click();
   await expect(page.getByRole('heading', { name: 'Euer Haushalt' })).toBeVisible();
   await page.getByRole('link', { name: /Ändern.*Lea/ }).click();
   await expect(page.getByLabel('Vorname')).toHaveValue('Lea');
@@ -202,10 +202,14 @@ test('Löschen und Rückgängig: Die Datei bleibt da, bis „Rückgängig“ vor
   expect(await dateien()).toBe(vorher);
 });
 
-test('Backup: Die Vorschau zählt weitere Erwachsene mit', async ({ page }) => {
+test('Backup: Die Vorschau zählt weitere Erwachsene mit (E25: als Zählung unter „Ziehen mit ein“)', async ({
+  page,
+}) => {
   await laden(page, '06-drei-erwachsene', '/einstellungen/backup');
-  await expect(page.getByText(/1 weitere Person/)).toBeVisible();
-  await expect(page.getByText(/2 Kinder/)).toBeVisible();
+  await expect(page.getByText('Ziehen mit ein')).toBeVisible();
+  await expect(page.getByText('Eine weitere Person', { exact: true })).toBeVisible();
+  await expect(page.getByText('Zwei Kinder', { exact: true })).toBeVisible();
+  await expect(page.getByText(/\d Personen/)).toHaveCount(0);
 });
 
 test('Selbstauskunft: Hinweis zum Format, Knopf zum nächsten Teil, von wem der Haushaltsteil ist', async ({
@@ -551,12 +555,14 @@ test('Backup vom ersten Start aus: danach die Übersicht, mit Bestätigung', asy
     mimeType: 'application/octet-stream',
     buffer: backup,
   });
-  await expect(page.getByText(/1 weitere Person/).last()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText('Eine weitere Person', { exact: true }).last()).toBeVisible({
+    timeout: 30_000,
+  });
   await page.getByRole('button', { name: 'Einspielen' }).click();
   await expect(page.getByRole('heading', { level: 1, name: /^Hallo|beisammen/ })).toBeVisible({
     timeout: 30_000,
   });
-  await expect(page.locator('.meldung')).toContainText('3 Personen');
+  await expect(page.locator('.meldung')).toContainText('im Mietvertrag');
   // Hinter der Übersicht liegt nichts: kein altes Standbild beim Zurückwischen.
   await expect.poll(() => page.evaluate(() => history.state?.stelle)).toBe(0);
 });

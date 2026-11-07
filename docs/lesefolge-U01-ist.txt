@@ -4,7 +4,7 @@ Zugänglichkeitsbaum aus Chromium (Szenario 01-standard). Das ist NICHT VoiceOve
   - link "Einstellungen":
     - /url: "#/einstellungen"
   - heading "Hallo Max." [level=1]
-  - 'link "Haushalt bearbeiten: Max, Lea und ein Kind."':
+  - 'link "Haushalt bearbeiten: Zwei im Mietvertrag, ein Kind zieht mit ein. Eine Person bürgt."':
     - /url: "#/haushalt"
   - paragraph: Noch zwei Dinge, dann seid ihr startklar.
   - status
@@ -19,6 +19,8 @@ Zugänglichkeitsbaum aus Chromium (Szenario 01-standard). Das ist NICHT VoiceOve
     - link "Lea, Mitmieterin. Alles da.":
       - /url: "#/person/p-01-standard-1"
       - text: Lea
+  - link "Ein Kind zieht mit ein . Braucht keine Unterlagen . Haushalt bearbeiten":
+    - /url: "#/haushalt"
   - heading "Bürgschaft" [level=2]
   - paragraph: Zusätzlich, falls der Vermieter fragt
   - heading "Petra, Bürgin, Zusatz. Drei von vier aktuell." [level=3]:

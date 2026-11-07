@@ -2,6 +2,7 @@
   // Vermieter-Seite (design/vermieter-seite.md): Eingang in Ankunftsreihenfolge und eine offene Mappe.
   // Nichts wird gespeichert: kein localStorage, keine IndexedDB, kein Service Worker.
   import { tick } from 'svelte';
+  import Absagen from './Absagen.svelte';
   import Anfordern from './Anfordern.svelte';
   import { APP_ADRESSE, QUELLCODE_ADRESSE } from '../app/name';
   import logo from '../../design/logo/hefta-logo.svg';
@@ -23,8 +24,11 @@
   let breit = $state(window.matchMedia('(min-width: 900px)').matches);
   let eingabe = $state<HTMLInputElement>();
 
-  const nummer = $derived(Number(/^#\/mappe\/(\d+)(?:\/anfordern)?$/.exec(hash)?.[1] ?? 0));
+  const nummer = $derived(
+    Number(/^#\/mappe\/(\d+)(?:\/(?:anfordern|absagen))?$/.exec(hash)?.[1] ?? 0),
+  );
   const anfordern = $derived(hash.endsWith('/anfordern'));
+  const absagen = $derived(hash.endsWith('/absagen'));
   const seite = $derived(
     hash === '#/schritte' ? 'schritte' : hash === '#/rechtliches' ? 'recht' : 'mappe',
   );
@@ -101,6 +105,14 @@
     e.preventDefault();
     ziehend = 0;
     hinzufuegen([...(e.dataTransfer?.files ?? [])]);
+  }
+
+  // Eine Mappe aus der Liste nehmen. Gespeichert ist nichts; die Datei bleibt, wo sie war.
+  function entfernen(nummer: number) {
+    mappen = mappen.filter((_, i) => i !== nummer - 1);
+    offen = 0;
+    window.location.hash =
+      mappen.length && breit ? `#/mappe/${Math.min(nummer, mappen.length)}` : '#/';
   }
 
   function leeren() {
@@ -207,6 +219,8 @@
         />
       {:else if gezeigt && anfordern && mappen[gezeigt - 1]?.anhang}
         <Anfordern anhang={mappen[gezeigt - 1]!.anhang!} nummer={gezeigt} gesamt={mappen.length} />
+      {:else if gezeigt && absagen && mappen[gezeigt - 1]?.anhang}
+        <Absagen anhang={mappen[gezeigt - 1]!.anhang!} nummer={gezeigt} gesamt={mappen.length} />
       {:else if gezeigt}
         {#key gezeigt}
           <MappeAnsicht
@@ -215,6 +229,7 @@
             gesamt={mappen.length}
             {breit}
             oeffnen={(s) => oeffnen(mappen[gezeigt - 1]!, s)}
+            entfernen={() => entfernen(gezeigt)}
           />
         {/key}
       {/if}

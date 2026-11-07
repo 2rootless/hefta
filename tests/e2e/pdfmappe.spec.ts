@@ -224,7 +224,9 @@ function auftrag(
     kurz,
     adresse: ['Hauptstraße 12, 3. OG links', '22767 Hamburg'],
     satz: 'Wir sind ein ruhiges Paar mit einem Kind und suchen ab Januar 2027 eine Wohnung für die nächsten Jahre. Alle Unterlagen liegen bei.',
-    mitziehende: [{ text: 'Ein Kind', anzahl: 1 }],
+    mitziehende: [{ text: 'Ein Kind', anzahl: 1, art: 'kind' }],
+    // Wie in der App: Mit Lesehilfe trägt jede Mappe die Kennung der Bewerbung (Pflicht seit E21).
+    kennung: '6f1c2b9e-4d7a-4c1e-9b2f-3a5d8e7c1f40',
     hinweis: true,
     aussehen: { art: 'personen' },
     kontakt: [nameText(nameImPdf(erste)), erste.kontakt.telefon, erste.kontakt.email],
@@ -435,8 +437,8 @@ const SZENARIEN: Record<string, () => Promise<BewerbungAuftrag>> = {
         kurz: 'Große Bergstraße 152',
         satz: 'Wir sind eine große Wohngemeinschaft mit zwei Kindern und suchen ab März eine Wohnung für mehrere Jahre.',
         mitziehende: [
-          { text: 'Zwei Kinder', anzahl: 2 },
-          { text: 'Eine weitere Person', anzahl: 1 },
+          { text: 'Zwei Kinder', anzahl: 2, art: 'kind' },
+          { text: 'Eine weitere Person', anzahl: 1, art: 'erwachsen' },
         ],
       },
     );

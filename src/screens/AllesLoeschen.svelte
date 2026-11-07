@@ -10,6 +10,7 @@
   import { allesLoeschen } from '../storage/speicher';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
   import Notiz from '../ui/Notiz.svelte';
+  import WerIstDabei from '../ui/WerIstDabei.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
 
   let bestand = $state<Bestand | null>(null);
@@ -32,17 +33,6 @@
     const wann =
       tage === 0 ? t('loeschenSeite.backupHeute') : t('loeschenSeite.backupVor', { anzahl: tage });
     return neu ? `${wann} ${t('loeschenSeite.seitdem', { anzahl: neu })}` : wann;
-  });
-
-  const personenText = $derived.by(() => {
-    if (!bestand) return '';
-    const personen = t('zahlen.personen', { anzahl: bestand.personen });
-    return bestand.kinder
-      ? t('loeschenSeite.personenKinder', {
-          personen,
-          kinder: t('zahlen.kinder', { anzahl: bestand.kinder }),
-        })
-      : personen;
   });
 
   let loescht = $state(false);
@@ -68,7 +58,9 @@
     <section class="abschnitt" aria-labelledby="was-weg">
       <h2 id="was-weg">{t('loeschenSeite.was')}</h2>
       <ul class="zeilen">
-        {#if bestand.personen}<li class="eintrag">{personenText}</li>{/if}
+        {#if bestand.personen || bestand.kinder || bestand.weitere}<li class="eintrag">
+            <WerIstDabei {bestand} />
+          </li>{/if}
         {#if bestand.unterlagen}<li class="eintrag">
             {t('loeschenSeite.unterlagen', { anzahl: bestand.unterlagen })}
           </li>{/if}

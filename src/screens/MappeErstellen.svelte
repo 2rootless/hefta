@@ -39,9 +39,11 @@
   import Schalter from '../ui/Schalter.svelte';
   import Sheet from '../ui/Sheet.svelte';
   import Symbol from '../ui/Symbol.svelte';
+  import WerIstDabeiAuswahl from '../ui/WerIstDabeiAuswahl.svelte';
   import WarumBlatt from '../ui/WarumBlatt.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
   import { staendeAus, standardDateiname, zeichenFunde } from '../ui/mappeDaten';
+  import { werIstDabeiKurz } from '../domain/mappeWoerter';
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
   import { passend, TITEL } from '../ui/passend';
   import type { MappenErgebnis } from '../ui/mappeErstellen';
@@ -506,7 +508,12 @@
     t('mappe.deckGross.alt', {
       wohnung:
         [wohnung.strasse, wohnung.rest].filter(Boolean).join(', ') || t('mappe.deckGross.altOhne'),
-      wer: dabei.map((x) => x.person.rufname || x.person.vorname).join(', '),
+      wer: werIstDabeiKurz({
+        vertrag: vertrag.length,
+        kinder: ansicht?.haushalt.kinder ?? 0,
+        weitere: ansicht?.haushalt.weitereErwachsene ?? 0,
+        buergen: dabei.filter((x) => x.rolle === 'buerge').length,
+      }),
     }),
   );
 </script>
@@ -752,39 +759,17 @@
         </section>
       {/if}
 
-      {#if buergen.length}
-        <section class="abschnitt-oben">
-          <h2>{t('mappe.werDabei')}</h2>
-          <div class="marken">
-            {#each vertrag as s (s.person.id)}
-              <span
-                class="marke farbe-{s.farbe} an"
-                role="checkbox"
-                aria-checked="true"
-                aria-disabled="true"
-              >
-                <Symbol name="haken" groesse={16} />{s.person.rufname || s.person.vorname}
-              </span>
-            {/each}
-            {#each buergen as s (s.person.id)}
-              {@const an = !e.ohne.includes(s.person.id)}
-              <button
-                type="button"
-                class="marke farbe-{s.farbe}"
-                class:an
-                role="checkbox"
-                aria-checked={an}
-                onclick={() => buergeUmschalten(s.person.id)}
-              >
-                {#if an}<Symbol name="haken" groesse={16} />{/if}
-                {s.person.rufname || s.person.vorname}
-                <span class="etikett">{rollenText(s.rolle, s.bezeichnung)}</span>
-              </button>
-            {/each}
-          </div>
-          <p class="hinweis">{t('mappe.werHinweis')}</p>
-        </section>
-      {/if}
+      <section class="abschnitt-oben">
+        <h2>{t('mappe.werDabei')}</h2>
+        <WerIstDabeiAuswahl
+          {vertrag}
+          {buergen}
+          kinder={ansicht?.haushalt.kinder ?? 0}
+          weitere={ansicht?.haushalt.weitereErwachsene ?? 0}
+          ohne={e.ohne}
+          umschalten={buergeUmschalten}
+        />
+      </section>
 
       <section class="abschnitt-oben">
         <h2>{t('mappe.wasRein')}</h2>
@@ -1397,7 +1382,6 @@
     --farbe: var(--person-6);
   }
 
-  .marken,
   .reihe {
     display: flex;
     flex-wrap: wrap;
@@ -1408,41 +1392,6 @@
     padding: 0 14px;
     font-size: calc(15 * var(--px));
     line-height: calc(19 * var(--px));
-  }
-
-  .marke {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-height: var(--tap-target);
-    padding: 0 14px;
-    border: 2px dashed var(--farbe);
-    border-radius: 22px;
-    background: var(--surface);
-    color: var(--ink);
-    font-size: calc(15 * var(--px));
-    font-weight: 800;
-    cursor: pointer;
-  }
-
-  .marke.an {
-    padding-left: 10px;
-    border-style: solid;
-    background: var(--farbe);
-    color: var(--on-person);
-  }
-
-  span.marke {
-    cursor: default;
-  }
-
-  .etikett {
-    padding: 0 7px;
-    border: 1.5px solid currentColor;
-    border-radius: 10px;
-    font-size: calc(11 * var(--px));
-    line-height: calc(16 * var(--px));
-    font-weight: 700;
   }
 
   .akk {

@@ -12,10 +12,10 @@ type PostenId = keyof typeof vorlage.posten;
 /** Länger werden Mail-Links in manchen Mailprogrammen unter Windows abgeschnitten. */
 export const MAIL_LINK_GRENZE = 1800;
 
-const fuellen = (text: string, werte: Record<string, string>) =>
+export const fuellen = (text: string, werte: Record<string, string>) =>
   text.replace(/\{(\w+)\}/g, (_, name: string) => werte[name] ?? '');
 
-const reihe = (namen: string[]) =>
+export const reihe = (namen: string[]) =>
   namen.length > 1
     ? `${namen.slice(0, -1).join(', ')} und ${namen[namen.length - 1]}`
     : (namen[0] ?? '');
@@ -28,16 +28,19 @@ export interface Nachforderung {
   ziel: string;
 }
 
+/** Die Wohnung, wie sie in einer Mail steht: „Hauptstraße 12, 3. OG links, 22767 Hamburg“. */
+export function wohnungText(a: HeftaAnhang): string | null {
+  const w = a.bewerbung.wohnung;
+  return w ? `${w.strasse}, ${w.rest}`.replaceAll(NB, ' ').replaceAll(' · ', ', ') : null;
+}
+
 export function nachforderung(a: HeftaAnhang): Nachforderung {
   const { ziel, personen } = vollstaendigkeit(a);
   const vertrag = personen.filter((x) => imVertrag(x.person));
   const buergen = personen.filter((x) => !imVertrag(x.person));
   const reihenfolge = [...vertrag, ...buergen];
 
-  const w = a.bewerbung.wohnung;
-  const wohnung = w
-    ? `${w.strasse}, ${w.rest}`.replaceAll(NB, ' ').replaceAll(' · ', ', ')
-    : vorlage.wohnungOhne;
+  const wohnung = wohnungText(a) ?? vorlage.wohnungOhne;
 
   // Fehlt dieselbe Unterlage mehreren, steht sie in einer Zeile mit allen Namen.
   const je = new Map<PostenId, string[]>();
@@ -90,9 +93,16 @@ export function nachforderung(a: HeftaAnhang): Nachforderung {
   return { betreff: fuellen(vorlage.betreff, { wohnung }), text: z.join('\n'), posten, ziel };
 }
 
-/** Ohne Empfänger: Die Adresse steht auf dem Deckblatt, die Lesehilfe kennt sie nicht. */
-export function mailLink(betreff: string, text: string): { href: string; nurBetreff: boolean } {
-  const kurz = `mailto:?subject=${encodeURIComponent(betreff)}`;
+/**
+ * Mit Empfänger, wenn die Lesehilfe eine saubere Mailadresse trägt (Fassung 3, E17); sonst ohne, und die
+ * Adresse steht auf dem Deckblatt.
+ */
+export function mailLink(
+  betreff: string,
+  text: string,
+  an: string | null = null,
+): { href: string; nurBetreff: boolean } {
+  const kurz = `mailto:${an ?? ''}?subject=${encodeURIComponent(betreff)}`;
   const voll = `${kurz}&body=${encodeURIComponent(text)}`;
   return voll.length > MAIL_LINK_GRENZE
     ? { href: kurz, nurBetreff: true }

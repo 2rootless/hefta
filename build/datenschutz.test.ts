@@ -4,9 +4,10 @@ import { describe, expect, it } from 'vitest';
 import { impressumHtml } from '../src/app/impressum';
 import { DATENSCHUTZ_PFAD, datenschutzHtml, datenschutzText } from './ratgeber';
 
-// Der Text kommt aus dem Datenschutz-Generator (Gratisfassung, erzeugt am 5.11.2026) und bleibt, wie er ist.
+// Der Text kommt aus dem Datenschutz-Generator (Gratisfassung, erzeugt am 5.11.2026, am 6.11.2026 neu erzeugt ohne den
+// Bereich „Zugriffsdaten und Logfiles“, Aufgabe 50) und bleibt, wie er ist.
 // Ändert er sich, ist das eine neue Fassung aus dem Generator, kein Tippfehler: Dann ändert sich auch die Summe.
-const SUMME = '4d65f34f7688233854e9cff6d94cb3d2f152d9a3403a9bda33c874f5f3b25e52';
+const SUMME = '79d3b3602fdf219e6c0821e70a2b20fc962f89ef2526e03e1596c62dab922936';
 
 describe('Datenschutzerklärung', () => {
   const text = datenschutzText();
@@ -14,6 +15,23 @@ describe('Datenschutzerklärung', () => {
   it('Der Text ist der aus dem Generator, Zeichen für Zeichen', () => {
     expect(createHash('sha256').update(text).digest('hex')).toBe(SUMME);
   });
+
+  it('Keine Frist für Logfiles: Hefta speichert keine, für Cloudflare ist keine belegt (Aufgabe 50)', () => {
+    expect(text).not.toMatch(/30 Tagen|Server-Logfiles|Erhebung von Zugriffsdaten/);
+  });
+
+  it.each(['m', 'v'] as const)(
+    'Fassung %s: Cloudflare lässt die Mailadresse stehen (email_off)',
+    (stimme) => {
+      const html = datenschutzHtml(stimme);
+      const an = html.indexOf('<!--email_off-->');
+      const aus = html.indexOf('<!--/email_off-->');
+      const mail = html.indexOf('lleyton.sekyere@pm.me');
+      expect(an).toBeGreaterThan(0);
+      expect(mail).toBeGreaterThan(an);
+      expect(aus).toBeGreaterThan(mail);
+    },
+  );
 
   it('Der Hinweis auf den Generator bleibt: Bedingung der Gratisfassung', () => {
     expect(text).toContain('Erstellt mit kostenlosem Datenschutz-Generator.de');
@@ -38,10 +56,10 @@ describe('Datenschutzerklärung', () => {
       expect(html).not.toContain('Entwurf');
     });
 
-    it('ist statisch und noch nicht für Suchmaschinen freigegeben', () => {
+    it('ist statisch und seit der Veröffentlichung für Suchmaschinen freigegeben', () => {
       expect(html).not.toMatch(/<script|\son\w+=|\sstyle=/i);
       expect(html).not.toContain('{app}');
-      expect(html).toContain('noindex');
+      expect(html).not.toContain('noindex');
     });
   });
 

@@ -1,3 +1,4 @@
+import type { Mitziehend } from '../domain/mappeWoerter';
 import type { Rolle, Tag } from '../domain/modell';
 import { adresseTeile, wohnungTeile, type WohnungTeile } from '../domain/adresse';
 import type { ExportModus } from '../domain/export';
@@ -9,13 +10,22 @@ import type { Schritt } from '../domain/selbstauskunft';
 // Läuft ohne Browser-APIs, damit es unter Node getestet werden kann.
 
 export const ANHANG_NAME = 'hefta.json';
-/** Fassung 2 seit dem 6.11.2026 (E6): Kennung der Bewerbung, Adresse in Teilen. */
-export const ANHANG_FASSUNG = 2;
+/**
+ * Fassung 2 seit dem 6.11.2026 (E6): Kennung der Bewerbung, Adresse in Teilen. Fassung 3 (E17, Aufgabe 51):
+ * Telefon und Mail der Kontaktperson, wie auf dem Deckblatt. Bis zur ersten fremden Mappe ohne Rücksicht auf
+ * ältere Fassungen (E21).
+ */
+export const ANHANG_FASSUNG = 3;
 export interface AnhangPerson {
   name: string;
   rolle: Rolle;
   /** Diese Person steht als Kontakt auf dem Deckblatt. */
   kontakt?: true;
+}
+
+export interface AnhangKontakt {
+  telefon?: string;
+  email?: string;
 }
 
 export interface AnhangUnterlage {
@@ -44,7 +54,9 @@ export interface HeftaAnhang {
   haushalt: {
     personen: AnhangPerson[];
     /** Kinder und weitere Personen ohne Vertrag, wie auf dem Deckblatt. */
-    mitziehende: { text: string; anzahl: number }[];
+    mitziehende: Mitziehend[];
+    /** Seit Fassung 3: Telefon und Mail der Person mit `kontakt`, genau wie auf dem Deckblatt. */
+    kontakt?: AnhangKontakt;
   };
   unterlagen: AnhangUnterlage[];
   /** Gesamtzahl der Seiten: So fällt auf, wenn jemand Seiten entfernt hat. */
@@ -62,7 +74,9 @@ export interface AnhangQuelle {
   adresse: string[];
   personen: { name: string; rolle?: Rolle; buerge?: boolean }[];
   kontakt: boolean;
-  mitziehende: { text: string; anzahl: number }[];
+  /** Telefon und Mail, wie sie auf dem Deckblatt stehen (Fassung 3). */
+  kontaktwege?: AnhangKontakt;
+  mitziehende: Mitziehend[];
   unterlagen: {
     person: number;
     typ?: string;
@@ -95,11 +109,15 @@ export function anhangBauen(q: AnhangQuelle): HeftaAnhang {
     rest: teile.rest.replace(/\u00a0/g, ' '),
     ...(getrennt ? { teile: getrennt } : {}),
   };
+  const telefon = q.kontakt ? q.kontaktwege?.telefon?.trim() : undefined;
+  const email = q.kontakt ? q.kontaktwege?.email?.trim() : undefined;
+  const kontakt: AnhangKontakt | null =
+    telefon || email ? { ...(telefon ? { telefon } : {}), ...(email ? { email } : {}) } : null;
   return {
     hefta: ANHANG_FASSUNG,
     erstellt: tagAus(q.datum),
     bewerbung: { ...(q.kennung ? { kennung: q.kennung } : {}), wohnung },
-    haushalt: { personen, mitziehende: q.mitziehende },
+    haushalt: { personen, mitziehende: q.mitziehende, ...(kontakt ? { kontakt } : {}) },
     unterlagen: q.unterlagen
       .filter((u) => u.typ)
       .map((u) => ({
@@ -147,6 +165,8 @@ export function anhangTexte(anhang: HeftaAnhang): string[] {
   if (w?.teile) texte.push(...Object.values(w.teile));
   for (const p of anhang.haushalt.personen) texte.push(p.name);
   for (const m of anhang.haushalt.mitziehende) texte.push(m.text);
+  if (anhang.haushalt.kontakt?.telefon) texte.push(anhang.haushalt.kontakt.telefon);
+  if (anhang.haushalt.kontakt?.email) texte.push(anhang.haushalt.kontakt.email);
   if (anhang.loeschwunsch) texte.push(anhang.loeschwunsch);
   return texte.filter(Boolean);
 }

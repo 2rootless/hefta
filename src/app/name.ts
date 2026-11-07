@@ -10,7 +10,7 @@ export const VERMIETER_ADRESSE = `https://${VERMIETER_DOMAIN}`;
 /** Der Ratgeber für Vermieter auf derselben Adresse wie die Vermieter-Seite. */
 export const VERMIETER_RATGEBER = '/welche-unterlagen-wann/';
 /** Öffentliches Repository. Erst setzen, wenn es das saubere Repository wirklich gibt. */
-export const QUELLCODE_ADRESSE: string | null = null;
+export const QUELLCODE_ADRESSE: string | null = 'https://github.com/2rootless/hefta';
 
 /** Backups. Einspielen nimmt jede Datei: Geprüft wird der Inhalt, nicht die Endung. */
 export const BACKUP_ENDUNG = 'hefta';

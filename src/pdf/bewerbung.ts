@@ -1,4 +1,10 @@
-import { personenZahl } from '../domain/mappeWoerter';
+import {
+  type Mitziehend,
+  GRUPPE_BUERGT,
+  GRUPPE_MIT,
+  GRUPPE_VERTRAG,
+  werIstDabeiSatz,
+} from '../domain/mappeWoerter';
 import fontkit from '@cantoo/fontkit';
 import {
   PDFDocument,
@@ -102,7 +108,7 @@ export interface BewerbungAuftrag {
   adresse: string[];
   satz: string;
   /** Kinder und weitere Personen ohne Vertrag, je Art ein Eintrag: „Zwei Kinder“. */
-  mitziehende: { text: string; anzahl: number }[];
+  mitziehende: Mitziehend[];
   /** „Erstellt mit …“ klein auf dem Deckblatt, dazu die Lesehilfe als Anhang. */
   hinweis?: boolean;
   /** Für die Lesehilfe. */
@@ -113,6 +119,8 @@ export interface BewerbungAuftrag {
   /** Bitte zum Löschen: der Satz, nur wenn sie an ist. Steht auf dem Deckblatt und in der Lesehilfe. */
   bitte?: string;
   kontakt: string[];
+  /** Telefon und Mail aus `kontakt` einzeln, für die Lesehilfe (Fassung 3). */
+  kontaktwege?: { telefon?: string; email?: string };
   bloecke: MappenBlock[];
   deckblatt: boolean;
   /** Steht auf dem Deckblatt; ist es aus, gibt es keins. */
@@ -562,11 +570,17 @@ function deckblattSetzen(
       if (zeichnen) text(t, x, yy, size, font, color);
     };
     let y = leisteOben - v(9);
-    schrift('Wer einzieht', px, y, f(9.5), s.bold);
-    const anzahl = vertrag.length + a.mitziehende.reduce((summe, m) => summe + m.anzahl, 0);
-    const zahl = personenZahl(anzahl);
-    schrift(zahl, px + pw - breiteVon(zahl, s.regular, f(9), s), y, f(9), s.regular, DRUCK);
-    y -= v(6.2);
+    // Wer ist dabei (E25): oben die Kurzform als Satz, darunter die drei Gruppen. Keine Summe.
+    const kurz = werIstDabeiSatz(vertrag.length, a.mitziehende, buergen.length);
+    for (const zeile of umbrechen(zeichenbar(kurz, s), s.regular, f(9), pw)) {
+      schrift(zeile, px, y, f(9), s.regular, DRUCK);
+      y -= v(4.2);
+    }
+    y -= v(2.4);
+    const gruppe = (titel: string) => {
+      schrift(titel, px, y, f(9.5), s.bold);
+      y -= v(6.2);
+    };
 
     const eintrag = (marke: (q: number, yy: number) => void, name: string, unter: string) => {
       const q = v(2.6);
@@ -612,17 +626,21 @@ function deckblattSetzen(
         borderWidth: 1,
       });
     };
+    if (vertrag.length) gruppe(GRUPPE_VERTRAG);
     for (const b of vertrag) {
       const rolle = ohneBeruf
         ? b.person.rolle
         : [b.person.rolle, b.person.beruf].filter(Boolean).join(', ');
       eintrag(quadrat(b.person), b.person.name, rolle);
     }
-    for (const m of a.mitziehende) eintrag(ring, m.text, 'ohne Mietvertrag');
+    if (a.mitziehende.length) {
+      y -= v(1.5);
+      gruppe(GRUPPE_MIT);
+    }
+    for (const m of a.mitziehende) eintrag(ring, m.text, '');
     if (buergen.length && !ohneBuergen) {
-      y -= v(3);
-      schrift('Bürgschaft', px, y, f(9.5), s.bold);
-      y -= v(6.2);
+      y -= v(1.5);
+      gruppe(GRUPPE_BUERGT);
       for (const b of buergen) eintrag(quadrat(b.person), b.person.name, b.person.rolle);
     }
     if (kontakt.length) {
@@ -1062,6 +1080,10 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
         buerge: b.person.buerge,
       })),
       kontakt: a.kontakt.some(Boolean),
+      kontaktwege: a.kontaktwege && {
+        telefon: a.kontaktwege.telefon && s.ersetzen(a.kontaktwege.telefon),
+        email: a.kontaktwege.email && s.ersetzen(a.kontaktwege.email),
+      },
       mitziehende: a.mitziehende.map((m) => ({ ...m, text: s.ersetzen(m.text) })),
       unterlagen: eintraege.map((e) => ({
         person: a.bloecke.indexOf(e.block),

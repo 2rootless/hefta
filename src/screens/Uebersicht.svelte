@@ -20,6 +20,7 @@
   import HinweisKasten from '../ui/HinweisKasten.svelte';
   import BackupZeile from '../ui/BackupZeile.svelte';
   import KarteC from '../ui/KarteC.svelte';
+  import MitziehendeZeile from '../ui/MitziehendeZeile.svelte';
   import Kopfzeile from '../ui/Kopfzeile.svelte';
   import { passend } from '../ui/passend';
 
@@ -133,7 +134,7 @@
       <h1 class="display begruessung" use:passend={BEGRUESSUNG}>
         {fertig ? t('uebersicht.fertigTitel') : t('uebersicht.hallo', { name: rufname })}
       </h1>
-      <HaushaltsZeile {vertrag} {weitere} {kinder} />
+      <HaushaltsZeile {vertrag} {weitere} {kinder} buergen={buergen.length} />
       {#if meldung}<p class="meldung" role="status">{meldung}</p>{/if}
       <p class="lead">{lead}</p>
     </div>
@@ -152,6 +153,7 @@
           pruefung={pruefung(s)}
         />
       {/each}
+      <MitziehendeZeile {kinder} {weitere} />
 
       {#if buergen.length}
         <h2 class="abschnitt" data-band="open">{t('uebersicht.abschnittBuergen')}</h2>

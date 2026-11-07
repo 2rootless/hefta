@@ -97,7 +97,6 @@ export function ratgeberHtml(stimme: Stimme): string {
     `<!doctype html>\n<html lang="de"><head><meta charset="utf-8" />` +
     `<meta name="viewport" content="width=device-width, initial-scale=1" />` +
     `<meta http-equiv="Content-Security-Policy" content="${CSP}" />` +
-    `<meta name="robots" content="noindex, nofollow" />` +
     `<title>${esc(s.h1)} | ${APP_NAME}</title><meta name="description" content="${esc(s.beschreibung)}" />` +
     `<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />` +
     `<link rel="stylesheet" href="/${RATGEBER_ORDNER}/ratgeber.css" /></head>` +
@@ -137,14 +136,15 @@ export function datenschutzHtml(stimme: Stimme): string {
     `<!doctype html>\n<html lang="de"><head><meta charset="utf-8" />` +
     `<meta name="viewport" content="width=device-width, initial-scale=1" />` +
     `<meta http-equiv="Content-Security-Policy" content="${CSP}" />` +
-    `<meta name="robots" content="noindex, nofollow" />` +
     `<title>Datenschutzerklärung | ${APP_NAME}</title>` +
     `<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />` +
     `<link rel="stylesheet" href="/${RATGEBER_ORDNER}/ratgeber.css" /></head>` +
     `<body><div class="s"><header class="vs-top"><a class="vs-brand" href="/">` +
     `<img class="vs-logo" src="/${RATGEBER_ORDNER}/logo.svg" alt="" /><span>${APP_NAME}</span></a>` +
     `<span class="vs-tr"><a class="vs-lk" href="${ziele[stimme].recht}">Impressum</a></span></header>` +
-    `<main class="ds">${haupt}</main></div></body></html>\n`
+    // Cloudflare verschleiert sonst die Mailadresse („Email Address Obfuscation“): Aus dem Text würde
+    // „[email protected]“ mit einem nachgeladenen Skript. So bleibt er Zeichen für Zeichen, auch ohne JavaScript.
+    `<!--email_off--><main class="ds">${haupt}</main><!--/email_off--></div></body></html>\n`
   );
 }
 

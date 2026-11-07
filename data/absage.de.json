@@ -1,0 +1,15 @@
+{
+  "stand": "2026-11-06",
+  "hinweis": "Vorlage der Mail „Absagen“ auf der Vermieter-Seite (design/nachforderung.md, Abschnitt Absage; Bezugsfassung absage() in design/werkzeug/vs_bau.py). Platzhalter in {…}. Die Mail nennt keinen Grund und nichts aus der Mappe (VS16).",
+  "betreff": "Ihre Bewerbung um {wohnung}: Absage",
+  "wohnungOhne": "die Wohnung",
+  "anrede": "Guten Tag {namen},",
+  "vergeben": "die Wohnung {wohnung} ist vergeben. Vielen Dank für Ihre Bewerbung und für Ihre Unterlagen.",
+  "vergebenOhne": "die Wohnung ist vergeben. Vielen Dank für Ihre Bewerbung und für Ihre Unterlagen.",
+  "geloescht": "Wir haben Ihre Unterlagen gelöscht{wunsch}. Haben Sie uns etwas auf Papier gegeben, vernichten wir es.",
+  "wunsch": ", wie Sie es sich gewünscht haben",
+  "spaeter": "Ihre Unterlagen löschen wir, sobald wir sie nicht mehr brauchen, spätestens nach sechs Monaten. Haben Sie uns etwas auf Papier gegeben, vernichten wir es dann ebenso.",
+  "erfolg": "Wir wünschen Ihnen viel Erfolg bei der Wohnungssuche.",
+  "gruss": "Freundliche Grüße",
+  "absender": "[Ihr Name]"
+}

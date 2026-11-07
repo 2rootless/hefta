@@ -56,19 +56,33 @@ Gehaltsnachweise (`dokumenttypen[1].serie`): Im Inhalt steht nach dem Namen der 
 
 Unterlagen mit Datum (`dokumenttypen[].datum` ist `ausstellungsdatum`): im Inhalt „Bonitätsnachweis, vom 20. Oktober 2026“ (I), in der Kopfzeile „Bonitätsnachweis vom 20. Oktober 2026“ (K). Ohne Datum nur der Name.
 
-## Zählungen
+## Wer ist dabei (E25)
 
-Neben „Wer einzieht“ steht die Zahl aller, die einziehen (D). Kinder und weitere Personen ohne Vertrag stehen als eigene Einträge mit der Zeile „ohne Mietvertrag“ darunter (D). Zahlen bis zwölf als Wort. Diese Wörter stehen nicht im Regelkatalog, sondern in `src/domain/mappeWoerter.ts`.
+Auf dem Deckblatt (D) oben die Kurzform als Satz, darunter drei Gruppen in dieser Reihenfolge: „Im Mietvertrag“ (mit Namen), „Ziehen mit ein“ (Kinder und weitere Erwachsene, nur gezählt) und „Bürgt“ (mit Namen). Leere Gruppen fallen weg. Keine Summe über die Gruppen. Zahlen bis zwölf als Wort. System: `design/wer-ist-dabei.md`; die Wörter stehen in `src/domain/mappeWoerter.ts`, nicht im Regelkatalog.
 
-| Anzahl | Wer einzieht | Kinder | Weitere Personen |
-| --- | --- | --- | --- |
-| 1 | 1 Person | Ein Kind | Eine weitere Person |
-| 2 | 2 Personen | Zwei Kinder | Zwei weitere Personen |
-| 3 | 3 Personen | Drei Kinder | Drei weitere Personen |
-| 4 | 4 Personen | Vier Kinder | Vier weitere Personen |
-| 5 | 5 Personen | Fünf Kinder | Fünf weitere Personen |
-| 12 | 12 Personen | Zwölf Kinder | Zwölf weitere Personen |
-| 13 | 13 Personen | 13 Kinder | 13 weitere Personen |
+| Im Mietvertrag | Kinder | Weitere | Bürgen | Kurzform |
+| --- | --- | --- | --- | --- |
+| 1 | 0 | 0 | 0 | Eine Person im Mietvertrag. |
+| 2 | 1 | 0 | 1 | Zwei im Mietvertrag, ein Kind zieht mit ein. Eine Person bürgt. |
+| 3 | 2 | 1 | 0 | Drei im Mietvertrag, zwei Kinder und eine weitere Person ziehen mit ein. |
+| 2 | 0 | 0 | 2 | Zwei im Mietvertrag. Zwei Personen bürgen. |
+| 1 | 0 | 2 | 0 | Eine Person im Mietvertrag, zwei weitere Personen ziehen mit ein. |
+
+Ausnahme (E26): Wo ein Formular oder Inserat nach der Zahl fragt, bleibt sie. In der Selbstauskunft stehen die Gruppen in Klammern dahinter, Bürgen zählen nicht mit:
+
+- Eine Person zieht ein
+- Drei Personen ziehen ein (zwei im Mietvertrag, ein Kind)
+- Vier Personen ziehen ein (eine im Mietvertrag, zwei Kinder, eine weitere Person)
+
+| Anzahl | Kinder | Weitere Personen |
+| --- | --- | --- |
+| 1 | Ein Kind | Eine weitere Person |
+| 2 | Zwei Kinder | Zwei weitere Personen |
+| 3 | Drei Kinder | Drei weitere Personen |
+| 4 | Vier Kinder | Vier weitere Personen |
+| 5 | Fünf Kinder | Fünf weitere Personen |
+| 12 | Zwölf Kinder | Zwölf weitere Personen |
+| 13 | 13 Kinder | 13 weitere Personen |
 
 ## Studium und Ausbildung
 
@@ -95,7 +109,5 @@ Unten auf jeder Seite (F), links Wohnung und Namen der Vertragsparteien, rechts 
 - Bürgschaft
 - Deckblatt
 - Kontakt
-- ohne Mietvertrag
 - Was beiliegt
 - Was beiliegt (Fortsetzung)
-- Wer einzieht

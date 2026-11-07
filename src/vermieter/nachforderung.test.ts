@@ -100,6 +100,15 @@ describe('Mail-Link', () => {
     });
   });
 
+  it('mit Empfänger, wenn die Lesehilfe eine saubere Mail trägt (Fassung 3)', () => {
+    expect(mailLink('Betreff', 'Text', 'max@example.com').href).toBe(
+      'mailto:max@example.com?subject=Betreff&body=Text',
+    );
+    expect(mailLink('Betreff', 'x'.repeat(MAIL_LINK_GRENZE), 'max@example.com').href).toBe(
+      'mailto:max@example.com?subject=Betreff',
+    );
+  });
+
   it('Wird er zu lang, öffnet er nur den Betreff', () => {
     const lang = mailLink('Betreff', 'x'.repeat(MAIL_LINK_GRENZE));
     expect(lang.nurBetreff).toBe(true);

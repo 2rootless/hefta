@@ -6,7 +6,7 @@
   import { abschliessen, zurueckGehen } from '../app/router.svelte';
   import { tagAus } from '../domain/fristen';
   import { datum, groesse, t } from '../i18n';
-  import { BackupFehler, backupArt } from '../storage/backup';
+  import { BACKUP_ACCEPT, BackupFehler, backupArt } from '../storage/backup';
   import {
     bestandAusDb,
     sicherungEinspielen,
@@ -16,12 +16,23 @@
   } from '../storage/sicherung';
   import { einstellungenAendern } from '../storage/speicher';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
-  import { bestandZeilen, einstellungenZustand } from '../ui/einstellungen.svelte';
+  import { bestandKurz, einstellungenZustand } from '../ui/einstellungen.svelte';
+  import WerIstDabei from '../ui/WerIstDabei.svelte';
   import Notiz from '../ui/Notiz.svelte';
   import { tagKurz } from '../ui/texte';
   import Zurueck from '../ui/Zurueck.svelte';
 
   const datei = $derived(einstellungenZustand.datei);
+
+  // E25: Vor dem Passwort nur Datum und „mit Passwort“. In der verschlüsselten Datei steht nichts
+  // lesbar, auch kein Datum; es kommt aus dem Dateinamen, den Hefta beim Erstellen vergibt.
+  function passwortZeile(d: File): string {
+    const m = /(\d{4})-(\d{2})-(\d{2})/.exec(d.name);
+    const tag = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+    return tag && !Number.isNaN(tag.getTime())
+      ? t('einspielenSeite.mitPasswortDatum', { datum: datum(tag), groesse: groesse(d.size) })
+      : t('einspielenSeite.mitPasswort', { groesse: groesse(d.size) });
+  }
   // Vom ersten Start aus („Ich habe ein Backup“) gibt es noch keinen Haushalt: zurück dorthin.
   const heim = $derived(daten.ansicht ? '/einstellungen' : '/');
   let verschluesselt = $state(false);
@@ -109,7 +120,7 @@
       await neuLaden();
       einstellungenZustand.datei = null;
       einstellungenZustand.meldung = t('einstellungen.eingespielt', {
-        personen: t('zahlen.personen', { anzahl: inhalt.personen }),
+        personen: bestandKurz(inhalt.bestand),
         unterlagen: t('zahlen.unterlagen', { anzahl: inhalt.unterlagen }),
         stand: tagKurz(tagAus(new Date(inhalt.erstellt))),
       });
@@ -181,7 +192,9 @@
                       datum: datum(new Date(vorschau.erstellt)),
                       groesse: groesse(datei.size),
                     })
-                  : groesse(datei.size)}</small
+                  : verschluesselt
+                    ? passwortZeile(datei)
+                    : groesse(datei.size)}</small
               ></span
             >
           </div>
@@ -193,6 +206,7 @@
       <input
         type="file"
         class="visually-hidden"
+        accept={BACKUP_ACCEPT}
         onchange={(e) => andereDatei(e.currentTarget.files?.[0])}
       />
     </label>
@@ -232,12 +246,15 @@
       <div class="vergleich">
         <div>
           <b>{t('einspielenSeite.jetzt')}</b>
-          {#if jetzt}{@const [wer, was] = bestandZeilen(jetzt)}{wer}<br />{was}{/if}
+          {#if jetzt}<WerIstDabei bestand={jetzt} />{t('zahlen.unterlagen', {
+              anzahl: jetzt.unterlagen,
+            })}{/if}
         </div>
         <div>
           <b>{t('einspielenSeite.imBackup')}</b>
-          {#if vorschau}{@const [wer, was] = bestandZeilen(vorschau.bestand)}{wer}<br
-            />{was}{:else}<span class="leise">{t('einspielenSeite.nachPasswort')}</span>{/if}
+          {#if vorschau}<WerIstDabei bestand={vorschau.bestand} />{t('zahlen.unterlagen', {
+              anzahl: vorschau.bestand.unterlagen,
+            })}{:else}<span class="leise">{t('einspielenSeite.nachPasswort')}</span>{/if}
         </div>
       </div>
       {#if !appLeer}

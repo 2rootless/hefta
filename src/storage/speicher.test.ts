@@ -647,6 +647,8 @@ describe('Backup-Vorschau und Zahlen (S6–S9, U15)', () => {
       weitere: 0,
       unterlagen: 0,
       bewerbungen: 0,
+      vertragNamen: ['Max Mustermann', 'Lea Mustermann'],
+      buergenNamen: ['Petra Mustermann'],
     });
     await expect(sicherungVorschau(datei, 'falsch')).rejects.toMatchObject({
       grund: 'passwort_falsch',

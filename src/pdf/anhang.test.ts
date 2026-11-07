@@ -27,8 +27,9 @@ async function auftrag(teil: Partial<BewerbungAuftrag> = {}): Promise<BewerbungA
     kurz: 'Hauptstraße 12',
     adresse: ['Hauptstraße 12, 3. OG links', '22767 Hamburg'],
     satz: 'Wir sind ein ruhiges Paar.',
-    mitziehende: [{ text: 'Ein Kind', anzahl: 1 }],
-    kontakt: ['Max Mustermann', '0151 23456789'],
+    mitziehende: [{ text: 'Ein Kind', anzahl: 1, art: 'kind' }],
+    kontakt: ['Max Mustermann', '0151 23456789', 'max@example.com'],
+    kontaktwege: { telefon: '0151 23456789', email: 'max@example.com' },
     bloecke: [
       {
         person: {
@@ -89,7 +90,10 @@ async function anhangAus(bytes: Uint8Array): Promise<HeftaAnhang | null> {
 describe('Lesehilfe für Vermieter (hefta.json)', () => {
   it('Regel 1, P26: Zeichen, die die Schrift nicht kennt, sind in der Lesehilfe ersetzt wie auf dem Papier', async () => {
     const satz = 'Bitte löschen 张 Sie die Unterlagen.';
-    const basis = await auftrag({ bitte: satz, mitziehende: [{ text: 'Ein 张 Kind', anzahl: 1 }] });
+    const basis = await auftrag({
+      bitte: satz,
+      mitziehende: [{ text: 'Ein 张 Kind', anzahl: 1, art: 'kind' }],
+    });
     const e = await bewerbungBauen(basis);
     const a = await anhangAus(e.bytes);
     expect(a!.loeschwunsch).toBe('Bitte löschen ? Sie die Unterlagen.');
@@ -104,8 +108,8 @@ describe('Lesehilfe für Vermieter (hefta.json)', () => {
     const e = await bewerbungBauen(await auftrag({ kennung }));
     const a = await anhangAus(e.bytes);
     expect(a).not.toBeNull();
-    // Fassung 2 (E6): Kennung der Bewerbung und die Adresse auch in Teilen.
-    expect(a!.hefta).toBe(2);
+    // Fassung 2 (E6): Kennung der Bewerbung und die Adresse auch in Teilen. Fassung 3 (E17): Kontakt.
+    expect(a!.hefta).toBe(3);
     expect(a!.erstellt).toBe('2026-11-04');
     expect(a!.bewerbung.kennung).toBe(kennung);
     expect(a!.bewerbung.wohnung).toEqual({
@@ -123,7 +127,8 @@ describe('Lesehilfe für Vermieter (hefta.json)', () => {
       { name: 'Max Mustermann', rolle: 'hauptmieter', kontakt: true },
       { name: 'Petra Mustermann', rolle: 'buerge' },
     ]);
-    expect(a!.haushalt.mitziehende).toEqual([{ text: 'Ein Kind', anzahl: 1 }]);
+    expect(a!.haushalt.mitziehende).toEqual([{ text: 'Ein Kind', anzahl: 1, art: 'kind' }]);
+    expect(a!.haushalt.kontakt).toEqual({ telefon: '0151 23456789', email: 'max@example.com' });
     expect(a!.unterlagen).toEqual([
       { person: 0, typ: 'selbstauskunft', seiten: [2, 2] },
       {
@@ -151,8 +156,30 @@ describe('Lesehilfe für Vermieter (hefta.json)', () => {
     const [deckblatt] = await textJeSeite(e.bytes);
     const glatt = deckblatt!.replace(/\s+/g, ' ');
     for (const text of anhangTexte(a)) expect(glatt).toContain(text);
-    // Telefonnummer und Mail stehen nicht im Anhang, nur „kontakt: true“.
-    expect(JSON.stringify(a)).not.toContain('0151');
+    // Seit Fassung 3 stehen Telefon und Mail im Anhang, und genau so auf dem Deckblatt.
+    expect(anhangTexte(a)).toEqual(expect.arrayContaining(['0151 23456789', 'max@example.com']));
+  });
+
+  it('Fassung 3: Kontakt nur, wenn er auf dem Deckblatt steht; was fehlt, fehlt auch hier', async () => {
+    const nurTelefon = await bewerbungBauen(
+      await auftrag({
+        kontakt: ['Max Mustermann', '0151 23456789'],
+        kontaktwege: { telefon: '0151 23456789' },
+      }),
+    );
+    expect((await anhangAus(nurTelefon.bytes))!.haushalt.kontakt).toEqual({
+      telefon: '0151 23456789',
+    });
+    const ohne = await bewerbungBauen(
+      await auftrag({ kontakt: ['Max Mustermann'], kontaktwege: undefined }),
+    );
+    expect('kontakt' in (await anhangAus(ohne.bytes))!.haushalt).toBe(false);
+    const keinKontakt = await bewerbungBauen(
+      await auftrag({ kontakt: [], kontaktwege: undefined }),
+    );
+    const k = (await anhangAus(keinKontakt.bytes))!;
+    expect('kontakt' in k.haushalt).toBe(false);
+    expect(k.haushalt.personen[0]!.kontakt).toBeUndefined();
   });
 
   it('P25, P26: Die Bitte steht zeichengleich auf dem Deckblatt und im Anhang, aus nirgends', async () => {

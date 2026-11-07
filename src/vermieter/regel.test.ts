@@ -7,6 +7,8 @@ import {
   gruppe,
   haushaltTitel,
   lesehilfePasst,
+  mailEmpfaenger,
+  telefonLink,
   monateText,
   pruefPunkte,
   seitenText,
@@ -17,16 +19,19 @@ import {
 } from './regel';
 
 const M1: HeftaAnhang = {
-  hefta: 1,
+  hefta: 3,
   erstellt: '2026-11-02',
-  bewerbung: { wohnung: { strasse: 'Hauptstraße 12', rest: '3. OG links · 22767 Hamburg' } },
+  bewerbung: {
+    kennung: '6f1c2b9e-4d7a-4c1e-9b2f-3a5d8e7c1f40',
+    wohnung: { strasse: 'Hauptstraße 12', rest: '3. OG links · 22767 Hamburg' },
+  },
   haushalt: {
     personen: [
       { name: 'Max Mustermann', rolle: 'hauptmieter', kontakt: true },
       { name: 'Lea Mustermann', rolle: 'mitmieter' },
       { name: 'Petra Mustermann', rolle: 'buerge' },
     ],
-    mitziehende: [{ text: 'Ein Kind', anzahl: 1 }],
+    mitziehende: [{ text: 'Ein Kind', anzahl: 1, art: 'kind' }],
   },
   unterlagen: [
     { person: 0, typ: 'selbstauskunft', seiten: [2, 2] },
@@ -52,7 +57,7 @@ const allein = (personen: HeftaAnhang['haushalt']['personen'], mitziehende = 0) 
     unterlagen: [],
     haushalt: {
       personen,
-      mitziehende: mitziehende ? [{ text: 'Kinder', anzahl: mitziehende }] : [],
+      mitziehende: mitziehende ? [{ text: 'Kinder', anzahl: mitziehende, art: 'kind' }] : [],
     },
   });
 
@@ -176,7 +181,7 @@ describe('Prüfen', () => {
   });
 
   it('nennt Quelle und Stand (VS10)', () => {
-    expect(quelle).toMatch(/Stand 2022/);
+    expect(quelle).toMatch(/Stand Januar 2024, abgerufen im November 2026/);
     expect(quelle).toContain('keine Rechtsberatung');
   });
 });
@@ -185,6 +190,13 @@ describe('Passt die Lesehilfe zur Mappe?', () => {
   it('nimmt eine stimmige Lesehilfe an, auch wenn die Zeilen anders brechen', () => {
     expect(lesehilfePasst(M1, 18, ERSTE)).toBe(true);
     expect(lesehilfePasst(M1, 18, 'Haupt\nstraße\u00a012 Max\nMustermann Lea Petra')).toBe(true);
+  });
+
+  it('seit der Veröffentlichung nur mit Kennung der Bewerbung (E21)', () => {
+    const ohne = { ...M1, bewerbung: { wohnung: M1.bewerbung.wohnung } };
+    expect(lesehilfePasst(ohne, 18, ERSTE)).toBe(false);
+    const falsch = { ...M1, bewerbung: { ...M1.bewerbung, kennung: 'keine-uuid' } };
+    expect(lesehilfePasst(falsch, 18, ERSTE)).toBe(false);
   });
 
   it('Seite entfernt: Die Gesamtzahl stimmt nicht mehr', () => {
@@ -230,6 +242,52 @@ describe('Passt die Lesehilfe zur Mappe?', () => {
     expect(lesehilfePasst(allein([{ name: 'Petra Mustermann', rolle: 'buerge' }]), 18, ERSTE)).toBe(
       false,
     );
+  });
+});
+
+describe('Kontakt in der Lesehilfe (Fassung 3, E17)', () => {
+  const KONTAKT = { telefon: '0170 1234567', email: 'max.mustermann@example.com' };
+  const mitKontakt = (kontakt: unknown) =>
+    ({ ...M1, haushalt: { ...M1.haushalt, kontakt } }) as unknown as HeftaAnhang;
+  const SEITE = `${ERSTE} Kontakt Max Mustermann 0170 1234567 max.mustermann@example.com`;
+
+  it('gilt, wenn Telefon und Mail wörtlich auf Seite 1 stehen, auch über einen Zeilenumbruch', () => {
+    expect(lesehilfePasst(mitKontakt(KONTAKT), 18, SEITE)).toBe(true);
+    const umbrochen = `${ERSTE} 0170 1234567 max.mustermann
+@example.com`;
+    expect(lesehilfePasst(mitKontakt(KONTAKT), 18, umbrochen)).toBe(true);
+    expect(lesehilfePasst(mitKontakt({ telefon: '0170 1234567' }), 18, SEITE)).toBe(true);
+  });
+
+  it('passt nicht, wenn eine Nummer oder Mail nicht auf Seite 1 steht: Schutz vor Fälschung', () => {
+    expect(lesehilfePasst(mitKontakt({ ...KONTAKT, telefon: '0170 9999999' }), 18, SEITE)).toBe(
+      false,
+    );
+    expect(lesehilfePasst(mitKontakt({ ...KONTAKT, email: 'betrug@example.org' }), 18, SEITE)).toBe(
+      false,
+    );
+    expect(lesehilfePasst(mitKontakt({}), 18, SEITE)).toBe(false);
+    expect(lesehilfePasst(mitKontakt('0170 1234567'), 18, SEITE)).toBe(false);
+    const ohneKontaktperson = {
+      ...M1,
+      haushalt: {
+        ...M1.haushalt,
+        personen: M1.haushalt.personen.map((p) => ({ name: p.name, rolle: p.rolle })),
+        kontakt: KONTAKT,
+      },
+    } as HeftaAnhang;
+    expect(lesehilfePasst(ohneKontaktperson, 18, SEITE)).toBe(false);
+  });
+
+  it('Links nur aus sauberen Werten', () => {
+    expect(telefonLink('0170 1234567')).toBe('tel:01701234567');
+    expect(telefonLink('+49 (0)40 123-456')).toBe('tel:+49040123456');
+    expect(telefonLink('javascript:alert(1)')).toBeNull();
+    expect(telefonLink('12')).toBeNull();
+    expect(mailEmpfaenger('max.mustermann@example.com')).toBe('max.mustermann@example.com');
+    expect(mailEmpfaenger('max@example.com?bcc=x@y.de')).toBeNull();
+    expect(mailEmpfaenger('max mustermann@example.com')).toBeNull();
+    expect(mailEmpfaenger(undefined)).toBeNull();
   });
 });
 

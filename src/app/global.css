@@ -320,7 +320,9 @@ input[type='month']::-webkit-date-and-time-value {
 /* Zwei Kästchen nebeneinander („Drin“ und „Größe“, „Jetzt in der App“ und „Im Backup“). */
 .vergleich {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* Zwei Felder nebeneinander; bei großer Schrift auf schmalen Geräten untereinander, damit Namen
+     (E25, Langform) nicht mitten im Wort brechen. 133 px passen bei 320 px und normaler Schrift noch. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(133 * var(--px))), 1fr));
   gap: 8px;
 }
 

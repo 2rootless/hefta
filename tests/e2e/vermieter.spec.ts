@@ -160,6 +160,19 @@ test('Lesehilfe passt nicht: gar nicht zeigen. Neuere Fassung: zeigen, was die S
     await pdf({ ...M2, datei: 'Fremd.pdf', ersteSeite: 'Ganz andere Leute' }),
     await pdf(M5),
     await pdf(M3),
+    // Eine ältere Fassung ist keine neuere (Fehler vom 6.11.2026).
+    await pdf({
+      ...M1,
+      datei: 'Bewerbung_Mustermann_Fassung_2.pdf',
+      anhang: {
+        ...M1.anhang,
+        hefta: 2,
+        bewerbung: {
+          ...(M1.anhang?.bewerbung as Record<string, unknown>),
+          kennung: '6f1c2b9e-4d7a-4c1e-9b2f-3a5d8e7c1f40',
+        },
+      },
+    }),
   );
   await expect(zeile(page, 1)).toContainText('Lesehilfe passt nicht zur Mappe');
   await expect(zeile(page, 1)).not.toContainText('Mustermann ');
@@ -172,6 +185,9 @@ test('Lesehilfe passt nicht: gar nicht zeigen. Neuere Fassung: zeigen, was die S
   await zeile(page, 4).click();
   await expect(haupt(page)).toContainText('keine Lesehilfe');
   await expect(haupt(page).locator('.vs-loesch')).toBeVisible();
+  await zeile(page, 5).click();
+  await expect(haupt(page).locator('.vs-was')).toBeVisible();
+  await expect(haupt(page)).not.toContainText('neueren Fassung');
 });
 
 test('Fassung der echten App: Die Mappe aus Hefta wird gelesen', async ({ page }) => {
@@ -211,21 +227,31 @@ test('Schmal: Eingang und Mappe als eigene Seiten, Zurück führt zum Eingang', 
   await expect(page.locator('.vs-row')).toHaveCount(2);
 });
 
-test('Für den Vertrag anfordern: Mail mit Zusage, Kopieren, Link ohne Empfänger (VS9)', async ({
+test('Für den Vertrag anfordern: Mail mit Zusage, Kopieren, Link mit Empfänger aus der Lesehilfe (VS9)', async ({
   page,
   context,
   browserName,
 }) => {
   await page.goto('/');
   await laden(page, await pdf(M1), await pdf(M2));
+  // Fassung 3 (E17): Telefon und Mail unter der Kontaktperson, als Links.
+  await expect(haupt(page).getByRole('link', { name: '0170 1234567' })).toHaveAttribute(
+    'href',
+    'tel:01701234567',
+  );
+  await expect(
+    haupt(page).getByRole('link', { name: 'max.mustermann@example.com' }),
+  ).toHaveAttribute('href', 'mailto:max.mustermann@example.com');
+  await expect(haupt(page)).not.toContainText('Kontakt auf dem Deckblatt');
   await page.getByRole('link', { name: /^Für den Vertrag anfordern/ }).click();
   await expect(page.getByRole('heading', { name: 'Für den Vertrag anfordern' })).toBeVisible();
   const mail = page.locator('.vs-mt');
   await expect(mail).toContainText('Guten Tag Max Mustermann und Lea Mustermann,');
   await expect(mail).toContainText('Von Lea Mustermann: einen Bonitätsnachweis');
   await expect(page.locator('.vs-anf textarea, .vs-anf input')).toHaveCount(0);
+  // Fassung 3: mit Empfänger aus der Lesehilfe.
   const link = await page.getByRole('link', { name: /Mail.?programm öffnen/ }).getAttribute('href');
-  expect(link).toMatch(/^mailto:\?subject=/);
+  expect(link).toMatch(/^mailto:max\.mustermann@example\.com\?subject=/);
   if (browserName === 'chromium') {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.getByRole('button', { name: 'Mail kopieren' }).click();
@@ -236,6 +262,62 @@ test('Für den Vertrag anfordern: Mail mit Zusage, Kopieren, Link ohne Empfänge
   await page.getByRole('link', { name: 'Zur Mappe' }).click();
   await expect(page.locator('.vs-anf')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Mappe öffnen' })).toBeVisible();
+});
+
+test('Absagen: Mail ohne Grund, Wahl „Schon gelöscht“ oder „Lösche ich später“ (VS10, VS16)', async ({
+  page,
+  context,
+  browserName,
+}) => {
+  await page.goto('/');
+  await laden(page, await pdf(M1), await pdf(M2));
+  const einstieg = page.getByRole('link', { name: /^Absagen/ });
+  await expect(einstieg).toContainText('Mail ohne Grund');
+  await einstieg.click();
+  await expect(page.getByRole('heading', { name: 'Absagen' })).toBeVisible();
+  const mail = page.locator('.vs-abs .vs-mt');
+  await expect(mail).toContainText('Guten Tag Max Mustermann und Lea Mustermann,');
+  await expect(mail).toContainText('ist vergeben.');
+  await expect(mail).toContainText('Wir haben Ihre Unterlagen gelöscht, wie Sie es sich gewünscht');
+  await expect(mail).not.toContainText('Petra');
+  await expect(page.locator('.vs-abs .vs-bitte')).toContainText('Bitte der Bewerber');
+  await expect(page.locator('.vs-abs textarea, .vs-abs input')).toHaveCount(0);
+
+  // Die Wahl ist eine Auswahl mit zwei Knöpfen, auch mit Pfeiltasten bedienbar.
+  const gruppe = page.getByRole('radiogroup', { name: 'Unterlagen' });
+  const schon = gruppe.getByRole('radio', { name: 'Schon gelöscht' });
+  const spaeter = gruppe.getByRole('radio', { name: 'Lösche ich später' });
+  await expect(schon).toHaveAttribute('aria-checked', 'true');
+  await spaeter.click();
+  await expect(spaeter).toHaveAttribute('aria-checked', 'true');
+  await expect(mail).toContainText('spätestens nach sechs Monaten');
+  await expect(mail).not.toContainText('Wir haben Ihre Unterlagen gelöscht');
+  await spaeter.press('ArrowLeft');
+  await expect(schon).toHaveAttribute('aria-checked', 'true');
+  await expect(schon).toBeFocused();
+  await expect(mail).toContainText('Wir haben Ihre Unterlagen gelöscht');
+
+  // VS16: kein Grund, nichts aus der Mappe, Absender am Ende.
+  const text = (await mail.textContent())!;
+  expect(text).not.toMatch(/\b(weil|Einkommen|Bonität|Selbstauskunft|SCHUFA|Grund)\b/);
+  expect(text.trimEnd().endsWith('[Ihr Name]')).toBe(true);
+  const link = await page.getByRole('link', { name: /Mail.?programm öffnen/ }).getAttribute('href');
+  expect(link).toMatch(/^mailto:max\.mustermann@example\.com\?subject=Ihre%20Bewerbung%20um%20/);
+  if (browserName === 'chromium') {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.getByRole('button', { name: 'Mail kopieren' }).click();
+    await expect(page.getByText('Die Mail ist kopiert.')).toBeVisible();
+    const inhalt = await page.evaluate(() => navigator.clipboard.readText());
+    expect(inhalt.replaceAll('\r\n', '\n')).toBe(text);
+  }
+  await page.getByRole('link', { name: 'Zur Mappe' }).click();
+  await expect(page.locator('.vs-abs')).toHaveCount(0);
+
+  // Ohne Bitte in der Mappe: kein „wie Sie es sich gewünscht haben“.
+  await page.evaluate(() => (window.location.hash = '#/mappe/2/absagen'));
+  await expect(mail).toContainText('Guten Tag Olena Kovalenko,');
+  await expect(mail).toContainText('Wir haben Ihre Unterlagen gelöscht. Haben');
+  await expect(page.locator('.vs-abs .vs-bitte')).toHaveCount(0);
 });
 
 test('Nichts verlässt die Seite: strenge Regel, nichts gespeichert, kein Service Worker', async ({
@@ -312,4 +394,21 @@ test('Die Probe aus dem Text stimmt: Seite laden, Netz aus, auch Scans werden ge
     await page.getByRole('button', { name: 'Fertig' }).click();
   }
   await context.setOffline(false);
+});
+
+test('Eine Mappe aus der Liste nehmen: nur diese, die nächste rückt nach (Wunsch 6.11.)', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await laden(page, await pdf(M1), await pdf(M2), await pdf(M3));
+  await zeile(page, 1).click();
+  await expect(haupt(page)).toContainText('Max und Lea Mustermann');
+  await expect(haupt(page)).toContainText(
+    'Die Datei auf Ihrem Gerät und die Mail der Bewerber löschen Sie selbst.',
+  );
+  await haupt(page).getByRole('button', { name: 'Aus der Liste nehmen' }).click();
+  await expect(page.locator('.vs-row')).toHaveCount(2);
+  await expect(page.locator('.vs-row').first()).toContainText('Olena Kovalenko');
+  await expect(page.locator('.vs-row')).not.toContainText(['Max und Lea Mustermann']);
+  await expect(page.locator('.vs-nr')).toHaveText(['1', '2']);
 });

@@ -2,11 +2,16 @@
   // Haushaltszeile (design/stil-c.md): wer einzieht, als Kreise unter der Begrüßung, immer am selben
   // Platz; die ganze Zeile führt zu „Euer Haushalt“. Bürgen stehen nicht darin, sie ziehen nicht ein.
   import type { PersonStand } from '../domain/regelkatalog';
+  import { werIstDabeiKurz } from '../domain/mappeWoerter';
   import { t } from '../i18n';
   import Symbol from './Symbol.svelte';
 
-  let { vertrag, weitere, kinder }: { vertrag: PersonStand[]; weitere: number; kinder: number } =
-    $props();
+  let {
+    vertrag,
+    weitere,
+    kinder,
+    buergen = 0,
+  }: { vertrag: PersonStand[]; weitere: number; kinder: number; buergen?: number } = $props();
 
   const rufname = (s: PersonStand) => s.person.rufname || s.person.vorname;
   const anfang = (s: PersonStand) => [...rufname(s)][0]?.toUpperCase() ?? '';
@@ -15,13 +20,8 @@
       ? [...rufname(s)].slice(0, 2).join('')
       : anfang(s);
 
-  const satz = $derived(
-    new Intl.ListFormat('de-DE', { type: 'conjunction' }).format([
-      ...vertrag.map(rufname),
-      ...(weitere ? [t('uebersicht.weiterePersonen', { anzahl: weitere })] : []),
-      ...(kinder ? [t('uebersicht.kinder', { anzahl: kinder })] : []),
-    ]),
-  );
+  // Vorgelesen wird die Kurzform aus E25, sichtbar sind nur die Kreise.
+  const satz = $derived(werIstDabeiKurz({ vertrag: vertrag.length, kinder, weitere, buergen }));
 
   // Kreise rücken bis 8 px zusammen, damit der Hinweis daneben bleibt; reicht das nicht, steht er
   // darunter. Unter 360 px immer darunter: gleicher Platz auf demselben Gerät.

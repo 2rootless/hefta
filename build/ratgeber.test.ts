@@ -32,8 +32,8 @@ describe.each(STIMMEN)('Ratgeber, Fassung %s', (stimme) => {
     expect(html).not.toContain('{app}');
   });
 
-  it('ist noch nicht für Suchmaschinen freigegeben', () => {
-    expect(html).toContain('noindex');
+  it('ist seit der Veröffentlichung für Suchmaschinen freigegeben', () => {
+    expect(html).not.toContain('noindex');
   });
 });
 

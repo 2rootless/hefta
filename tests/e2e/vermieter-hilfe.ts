@@ -29,16 +29,18 @@ export const M1: Probe = {
   datei: 'Bewerbung_Mustermann.pdf',
   seiten: 18,
   anhang: {
-    hefta: 1,
+    // Fassung 3 (E17): Telefon und Mail der Kontaktperson, wie auf Seite 1.
+    hefta: 3,
     erstellt: '2026-11-02',
-    bewerbung: { wohnung: WOHNUNG },
+    bewerbung: { kennung: '6f1c2b9e-4d7a-4c1e-9b2f-3a5d8e7c1f40', wohnung: WOHNUNG },
     haushalt: {
       personen: [
         { name: 'Max Mustermann', rolle: 'hauptmieter', kontakt: true },
         { name: 'Lea Mustermann', rolle: 'mitmieter' },
         { name: 'Petra Mustermann', rolle: 'buerge' },
       ],
-      mitziehende: [{ text: 'Ein Kind', anzahl: 1 }],
+      mitziehende: [{ text: 'Ein Kind', anzahl: 1, art: 'kind' }],
+      kontakt: { telefon: '0170 1234567', email: 'max.mustermann@example.com' },
     },
     modus: 'marktueblich',
     loeschwunsch: BITTE,
@@ -61,9 +63,9 @@ export const M2: Probe = {
   datei: 'Bewerbung_Kovalenko.pdf',
   seiten: 9,
   anhang: {
-    hefta: 1,
+    hefta: 3,
     erstellt: '2026-11-03',
-    bewerbung: { wohnung: WOHNUNG },
+    bewerbung: { kennung: '2a9d4c71-5e3b-4f80-8c16-7b2e9f0d3a55', wohnung: WOHNUNG },
     haushalt: {
       personen: [{ name: 'Olena Kovalenko', rolle: 'hauptmieter', kontakt: true }],
       mitziehende: [],
@@ -84,9 +86,9 @@ export const M4: Probe = {
   datei: 'Bewerbung_Becker_Yilmaz.pdf',
   seiten: 3,
   anhang: {
-    hefta: 1,
+    hefta: 3,
     erstellt: '2026-11-04',
-    bewerbung: { wohnung: WOHNUNG },
+    bewerbung: { kennung: '8e3f1a26-0b7c-4d95-a4e1-5c6d2b8f9e07', wohnung: WOHNUNG },
     haushalt: {
       personen: [
         { name: 'Jonas Becker', rolle: 'hauptmieter', kontakt: true },
@@ -121,18 +123,21 @@ export const M4z: Probe = {
 export const M5: Probe = {
   ...M1,
   datei: 'Bewerbung_Mustermann_neu.pdf',
-  anhang: { ...M1.anhang, hefta: 2, erstellt: '2026-11-04', zusatz: 'unbekannt' },
+  anhang: { ...M1.anhang, hefta: 4, erstellt: '2026-11-04', zusatz: 'unbekannt' },
 };
 export const M6: Probe = {
   datei: 'Bewerbung_Nguyen.pdf',
   seiten: 8,
   anhang: {
-    hefta: 1,
+    hefta: 3,
     erstellt: '2026-11-04',
-    bewerbung: { wohnung: { strasse: 'Lindenallee 3', rest: `Erdgeschoss · 20259 Hamburg` } },
+    bewerbung: {
+      kennung: 'c47b0e93-2d1f-4a68-9f35-e8a1d6c4b210',
+      wohnung: { strasse: 'Lindenallee 3', rest: `Erdgeschoss · 20259 Hamburg` },
+    },
     haushalt: {
       personen: [{ name: 'Tom Nguyen', rolle: 'hauptmieter', kontakt: true }],
-      mitziehende: [{ text: 'Zwei Kinder', anzahl: 2 }],
+      mitziehende: [{ text: 'Zwei Kinder', anzahl: 2, art: 'kind' }],
     },
     modus: 'marktueblich',
     seitenzahl: 8,
@@ -149,9 +154,10 @@ export const LANG: Probe = {
   datei: 'Bewerbung_Mueller-Luedenscheidt.pdf',
   seiten: 15,
   anhang: {
-    hefta: 1,
+    hefta: 3,
     erstellt: '2026-11-02',
     bewerbung: {
+      kennung: '5d8a2f40-9c3e-4b71-b6d2-0e4f7a1c8b93',
       wohnung: {
         strasse: 'Große Bergstraße 152',
         rest: 'Hinterhaus, 4. OG rechts · 22767 Hamburg-Altona',
@@ -164,8 +170,8 @@ export const LANG: Probe = {
         { name: 'Anna-Katharina Josephine von Hohenstein', rolle: 'buerge' },
       ],
       mitziehende: [
-        { text: 'Zwei Kinder', anzahl: 2 },
-        { text: 'Eine weitere Person', anzahl: 1 },
+        { text: 'Zwei Kinder', anzahl: 2, art: 'kind' },
+        { text: 'Eine weitere Person', anzahl: 1, art: 'erwachsen' },
       ],
     },
     modus: 'eigene_auswahl',
@@ -205,13 +211,19 @@ export async function pdf(p: Probe): Promise<Datei> {
   const a = p.anhang as
     | {
         bewerbung: { wohnung: { strasse: string } | null };
-        haushalt: { personen: { name: string }[] };
+        haushalt: { personen: { name: string }[]; kontakt?: { telefon?: string; email?: string } };
       }
     | undefined;
   const zeilen = p.ersteSeite
     ? [p.ersteSeite]
     : a
-      ? [a.bewerbung.wohnung?.strasse ?? '', ...a.haushalt.personen.map((x) => x.name)]
+      ? [
+          a.bewerbung.wohnung?.strasse ?? '',
+          ...a.haushalt.personen.map((x) => x.name),
+          ...[a.haushalt.kontakt?.telefon, a.haushalt.kontakt?.email].filter(
+            (x) => x !== undefined,
+          ),
+        ]
       : [p.datei];
   for (let i = 1; i <= p.seiten; i++) {
     const seite = dok.addPage([595, 842]);

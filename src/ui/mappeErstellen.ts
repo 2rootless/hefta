@@ -319,6 +319,9 @@ export async function mappeErstellen(
     kontakt: haupt
       ? [hauptName ?? '', haupt.kontakt.telefon, haupt.kontakt.email].filter(Boolean)
       : [],
+    kontaktwege: haupt
+      ? { telefon: haupt.kontakt.telefon || undefined, email: haupt.kontakt.email || undefined }
+      : undefined,
     bloecke: mappenBloecke,
     deckblatt: e.deckblatt,
     inhaltsverzeichnis: e.inhaltsverzeichnis,

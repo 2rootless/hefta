@@ -3,7 +3,7 @@
   // Textfeld (VS4): Wer ändern will, ändert in seinem Mailprogramm.
   import type { HeftaAnhang } from '../pdf/anhang';
   import { mailLink, nachforderung } from './nachforderung';
-  import { haushaltTitel, MUSTERBOGEN } from './regel';
+  import { haushaltTitel, mailEmpfaenger, MUSTERBOGEN } from './regel';
   import { t } from './texte';
 
   let {
@@ -17,7 +17,9 @@
   } = $props();
 
   const mail = $derived(nachforderung(anhang));
-  const link = $derived(mailLink(mail.betreff, mail.text));
+  const link = $derived(
+    mailLink(mail.betreff, mail.text, mailEmpfaenger(anhang.haushalt.kontakt?.email)),
+  );
   let meldung = $state('');
 
   async function kopieren(text: string, geklappt: string) {

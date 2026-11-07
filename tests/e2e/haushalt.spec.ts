@@ -165,7 +165,11 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await expect(
     page.getByText('Was für den ganzen Haushalt gilt, hat Max schon eingetragen.'),
   ).toBeVisible();
-  await expect(page.getByText(/Von Max: 3 Personen ziehen ein, eine Katze, Hamburg/)).toBeVisible();
+  await expect(
+    page.getByText(
+      'Von Max: Drei Personen ziehen ein (zwei im Mietvertrag, ein Kind), eine Katze, Hamburg',
+    ),
+  ).toBeVisible();
   await expect(page.getByText(/^Noch 3 Teile\.$/)).toBeVisible();
   // Alles Restliche überspringen bis zum Ende.
   const ende = page.getByRole('heading', { level: 1, name: 'Gut gemacht.' });
@@ -187,9 +191,11 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await expect(page.locator('.karte')).toHaveText([/Max/, /Lea/, /Petra/]);
   await expect(page.locator('.karte').filter({ hasText: 'Petra' })).toContainText('Zusatz');
   await expect(
-    page.getByRole('link', { name: /^Haushalt bearbeiten: .*ein Kind\.$/ }),
+    page.getByRole('link', {
+      name: 'Haushalt bearbeiten: Zwei im Mietvertrag, ein Kind zieht mit ein. Eine Person bürgt.',
+    }),
   ).toBeVisible();
-  await expect(page.getByText('Im Mietvertrag')).toBeVisible();
+  await expect(page.getByText('Im Mietvertrag', { exact: true })).toBeVisible();
   await expect(page.getByText('Bürgschaft', { exact: true })).toBeVisible();
   await expect(page.getByText('Zusätzlich, falls der Vermieter fragt')).toBeVisible();
   await expect(page.getByRole('link', { name: /^Unterlagen hinzufügen/ })).toBeVisible();
@@ -319,7 +325,10 @@ test('Backup mit Passwort: sichern, alles löschen, einspielen ergibt denselben 
   await expect(page.getByText('Noch kein Backup')).toBeVisible();
   await page.getByRole('link', { name: 'Jetzt sichern' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Backup erstellen' })).toBeVisible();
-  await expect(page.getByText(/3 Personen, 1 Kind/)).toBeVisible();
+  // E25: Langform mit Namen, keine Summe
+  await expect(page.getByText('Im Mietvertrag', { exact: true })).toBeVisible();
+  await expect(page.getByText('Ein Kind', { exact: true })).toBeVisible();
+  await expect(page.getByText('Bürgt', { exact: true })).toBeVisible();
 
   // Ungleiche Passwörter: Fehler erst nach Verlassen des zweiten Felds (S4), zu kurz sperrt.
   await page.getByLabel('Passwort', { exact: true }).fill('Sommer in Hamburg');
@@ -337,7 +346,7 @@ test('Backup mit Passwort: sichern, alles löschen, einspielen ergibt denselben 
     page.getByRole('button', { name: 'Backup sichern' }).click(),
   ]);
   expect(download.suggestedFilename()).toMatch(/^hefta-backup-\d{4}-\d{2}-\d{2}\.hefta$/);
-  const pfad = info.outputPath('hefta-backup.hefta');
+  const pfad = info.outputPath(download.suggestedFilename());
   await download.saveAs(pfad);
   await expect(page.getByRole('heading', { level: 1, name: 'Einstellungen' })).toBeVisible();
   await expect(page.getByText('Gesichert. Letztes Backup: gerade eben.')).toBeVisible();
@@ -347,7 +356,8 @@ test('Backup mit Passwort: sichern, alles löschen, einspielen ergibt denselben 
   // Alles löschen als eigener Bildschirm (S9): Zahlen, Backup ist frisch, also kein Hinweis.
   await page.getByRole('link', { name: /^Alles löschen/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Alles löschen?' })).toBeVisible();
-  await expect(page.getByText('3 Personen und 1 Kind')).toBeVisible();
+  await expect(page.getByText('Im Mietvertrag', { exact: true })).toBeVisible();
+  await expect(page.getByText('Ein Kind', { exact: true })).toBeVisible();
   await expect(page.getByText('Erst Backup erstellen')).toHaveCount(0);
   if (browserName === 'chromium') await barrierefrei(page, 'Alles löschen');
   await page.getByRole('button', { name: 'Alles endgültig löschen' }).click();
@@ -367,20 +377,29 @@ test('Backup mit Passwort: sichern, alles löschen, einspielen ergibt denselben 
   await expect(page.getByText(/Das Passwort passt nicht\. Achte auf/)).toBeVisible();
   await expect(page.getByLabel('Passwort des Backups')).toBeFocused();
   await expect(page.getByLabel('Passwort des Backups')).toHaveValue('falsch');
+  // E25: vor dem Passwort nur Datum und „mit Passwort“, keine Zählung
+  await expect(page.getByText(/^Vom .*, mit Passwort, /)).toBeVisible();
+  await expect(page.getByText('Bürgt', { exact: true })).toHaveCount(0);
   if (browserName === 'chromium') await barrierefrei(page, 'Backup einspielen');
 
   await page.getByLabel('Passwort des Backups').fill('Sommer in Hamburg');
   await page.getByLabel('Passwort des Backups').press('Enter');
-  await expect(page.getByText(/3 Personen, 1 Kind/).last()).toBeVisible();
+  await expect(page.getByText('Bürgt', { exact: true })).toHaveCount(1);
   await expect(page.getByText(/Erstellt am /)).toBeVisible();
   await page.getByRole('button', { name: 'Einspielen' }).click();
-  await expect(page.getByText(/^Eingespielt: 3 Personen, \d+ Unterlagen?, Stand \d/)).toBeVisible();
+  await expect(
+    page.getByText(
+      /^Eingespielt, Stand \d.*: \d+ Unterlagen?\. Zwei im Mietvertrag, ein Kind zieht mit ein\. Eine Person bürgt\.$/,
+    ),
+  ).toBeVisible();
 
   // Vom ersten Start aus geht es gleich auf die Übersicht: Dahinter liegt kein alter Startbildschirm.
   await expect(page.getByRole('heading', { level: 1, name: 'Hallo Max.' })).toBeVisible();
   await expect(page.locator('.karte')).toHaveCount(3);
   await expect(
-    page.getByRole('link', { name: /^Haushalt bearbeiten: .*ein Kind\.$/ }),
+    page.getByRole('link', {
+      name: 'Haushalt bearbeiten: Zwei im Mietvertrag, ein Kind zieht mit ein. Eine Person bürgt.',
+    }),
   ).toBeVisible();
   await expect(page.getByText('Letztes Backup heute')).toBeVisible();
 });

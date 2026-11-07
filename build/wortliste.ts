@@ -2,8 +2,12 @@ import { readFileSync } from 'node:fs';
 import katalogDaten from '../data/regelkatalog.de.json' with { type: 'json' };
 import {
   mitziehendeTexte,
+  personenZiehenEin,
   monatsSpanne,
-  personenZahl,
+  GRUPPE_BUERGT,
+  GRUPPE_MIT,
+  GRUPPE_VERTRAG,
+  werIstDabeiKurz,
   vomText,
 } from '../src/domain/mappeWoerter.ts';
 import {
@@ -155,16 +159,38 @@ export function wortliste(): string {
     '',
   );
 
-  z.push('## Zählungen', '');
+  z.push('## Wer ist dabei (E25)', '');
   z.push(
-    'Neben „Wer einzieht“ steht die Zahl aller, die einziehen (D). Kinder und weitere Personen ohne Vertrag stehen als eigene Einträge mit der Zeile „ohne Mietvertrag“ darunter (D). Zahlen bis zwölf als Wort. Diese Wörter stehen nicht im Regelkatalog, sondern in `src/domain/mappeWoerter.ts`.',
+    `Auf dem Deckblatt (D) oben die Kurzform als Satz, darunter drei Gruppen in dieser Reihenfolge: „${GRUPPE_VERTRAG}“ (mit Namen), „${GRUPPE_MIT}“ (Kinder und weitere Erwachsene, nur gezählt) und „${GRUPPE_BUERGT}“ (mit Namen). Leere Gruppen fallen weg. Keine Summe über die Gruppen. Zahlen bis zwölf als Wort. System: \`design/wer-ist-dabei.md\`; die Wörter stehen in \`src/domain/mappeWoerter.ts\`, nicht im Regelkatalog.`,
     '',
-    '| Anzahl | Wer einzieht | Kinder | Weitere Personen |',
-    '| --- | --- | --- | --- |',
+    '| Im Mietvertrag | Kinder | Weitere | Bürgen | Kurzform |',
+    '| --- | --- | --- | --- | --- |',
   );
+  for (const [vertrag, kinder, weitere, buergen] of [
+    [1, 0, 0, 0],
+    [2, 1, 0, 1],
+    [3, 2, 1, 0],
+    [2, 0, 0, 2],
+    [1, 0, 2, 0],
+  ] as const)
+    z.push(
+      `| ${vertrag} | ${kinder} | ${weitere} | ${buergen} | ${werIstDabeiKurz({ vertrag, kinder, weitere, buergen })} |`,
+    );
+  z.push(
+    '',
+    'Ausnahme (E26): Wo ein Formular oder Inserat nach der Zahl fragt, bleibt sie. In der Selbstauskunft stehen die Gruppen in Klammern dahinter, Bürgen zählen nicht mit:',
+    '',
+  );
+  for (const [vertrag, kinder, weitere] of [
+    [1, 0, 0],
+    [2, 1, 0],
+    [1, 2, 1],
+  ] as const)
+    z.push(`- ${personenZiehenEin({ vertrag, kinder, weitere })}`);
+  z.push('', '| Anzahl | Kinder | Weitere Personen |', '| --- | --- | --- |');
   for (const n of [1, 2, 3, 4, 5, 12, 13]) {
     const [kind, weitere] = [mitziehendeTexte(n, 0)[0]!.text, mitziehendeTexte(0, n)[0]!.text];
-    z.push(`| ${n} | ${personenZahl(n)} | ${kind} | ${weitere} |`);
+    z.push(`| ${n} | ${kind} | ${weitere} |`);
   }
   z.push('');
 

@@ -40,7 +40,6 @@ const vermieter = [
 export const vermieterCspMeta = vermieter.join('; ');
 export const vermieterHeadersFile = `/*
   Content-Security-Policy: ${[...vermieter, "frame-ancestors 'none'"].join('; ')}
-  X-Robots-Tag: noindex, nofollow
   Referrer-Policy: no-referrer
   X-Content-Type-Options: nosniff
   Cross-Origin-Opener-Policy: same-origin
@@ -53,7 +52,6 @@ export const vermieterHeadersFile = `/*
 
 export const headersFile = `/*
   Content-Security-Policy: ${cspHeader}
-  X-Robots-Tag: noindex, nofollow
   Referrer-Policy: no-referrer
   X-Content-Type-Options: nosniff
   Cross-Origin-Opener-Policy: same-origin

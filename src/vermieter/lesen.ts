@@ -1,5 +1,5 @@
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { ANHANG_NAME, anhangLesen, type HeftaAnhang } from '../pdf/anhang';
+import { ANHANG_FASSUNG, ANHANG_NAME, anhangLesen, type HeftaAnhang } from '../pdf/anhang';
 import '../pdf/stromPolyfill';
 import { lesehilfePasst } from './regel';
 import { t } from './texte';
@@ -97,7 +97,7 @@ export async function einlesen(
         sha,
         anhang: passt ? gelesen : null,
         passtNicht: !!roh && !passt,
-        neuereFassung: passt && gelesen.hefta > 1,
+        neuereFassung: passt && gelesen.hefta > ANHANG_FASSUNG,
       },
     };
   } catch (e) {

@@ -15,6 +15,7 @@
     type JaNein,
     type TeilId,
   } from '../domain/selbstauskunft';
+  import { personenZiehenEin } from '../domain/mappeWoerter';
   import { t } from '../i18n';
   import { angabenAus, type SelbstauskunftEingabe } from './selbstauskunftEingabe';
   import Symbol from './Symbol.svelte';
@@ -26,7 +27,7 @@
     du = false,
     allein = false,
     einziehendText,
-    personenGesamt,
+    gruppen,
     vonName = '',
     start = 'erster-offener',
     feld,
@@ -39,7 +40,8 @@
     allein?: boolean;
     /** z. B. „3 Personen (2 Erwachsene, 1 Kind)“. */
     einziehendText: string;
-    personenGesamt: number;
+    /** Wer einzieht, nach Gruppen (E26); Bürgen zählen nicht mit. */
+    gruppen: { vertrag: number; kinder: number; weitere: number };
     /** Wer die Haushaltsangaben eingetragen hat, wenn es jemand anderes war („Von Max: …“). */
     vonName?: string;
     /** Kommt man über ein bestimmtes Feld, öffnet sich sein Teil und der Fokus steht darin. */
@@ -224,11 +226,7 @@
       eingabe.hh.haustiere === 'ja'
         ? eingabe.hh.haustiereText.trim() || t('selbstauskunft.mitTieren')
         : t('selbstauskunft.keineTiere');
-    const text = [
-      t('selbstauskunft.personenZiehenEin', { anzahl: personenGesamt }),
-      tiere,
-      eingabe.hh.ort.trim(),
-    ]
+    const text = [personenZiehenEin(gruppen), tiere, eingabe.hh.ort.trim()]
       .filter(Boolean)
       .join(', ');
     return vonName ? t('selbstauskunft.von', { name: vonName, text }) : text;

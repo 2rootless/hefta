@@ -48,6 +48,10 @@
       "other": "und {anzahl} weitere Unterlagen"
     },
     "zusatzZeile": "Zusätzlich, falls der Vermieter fragt",
+    "mitKeineUnterlagen": {
+      "one": "Braucht keine Unterlagen",
+      "other": "Brauchen keine Unterlagen"
+    },
     "kinder": {
       "one": "ein Kind",
       "other": "{wort} Kinder"
@@ -72,7 +76,7 @@
     "abschnittBuergen": "Bürgschaft",
     "eintragenAnsage": "{unterlage} hinzufügen. {grund}.",
     "haushaltBearbeiten": "Haushalt bearbeiten",
-    "haushaltZeile": "Haushalt bearbeiten: {liste}.",
+    "haushaltZeile": "Haushalt bearbeiten: {liste}",
     "pruefen": "{unterlage} prüfen",
     "pruefenAnsage": "{unterlage}. {grund}."
   },
@@ -200,12 +204,13 @@
     "version": "Version",
     "versionWert": "{version}, Regelkatalog Stand {stand}",
     "lizenz": "Freie Software",
-    "lizenzWert": "{app} steht unter der AGPL-3.0, die Schrift Archivo unter der OFL-1.1. Alle Lizenztexte liegen der App als lizenzen.txt bei. Der Quellcode wird veröffentlicht, bevor ein Server dazukommt.",
+    "lizenzWert": "{app} steht unter der AGPL-3.0, die Schrift Archivo unter der OFL-1.1. Alle Lizenztexte liegen der App als lizenzen.txt bei. Der Quellcode steht offen auf GitHub.",
+    "quellcode": "Quellcode ansehen",
     "daten": "Daten",
     "allesLoeschen": "Alles löschen",
     "allesLoeschenHinweis": "Personen, Unterlagen und Einstellungen",
     "gesichert": "Gesichert. Letztes Backup: gerade eben.",
-    "eingespielt": "Eingespielt: {personen}, {unterlagen}, Stand {stand}."
+    "eingespielt": "Eingespielt, Stand {stand}: {unterlagen}. {personen}"
   },
   "datenschutz": {
     "kurz": "Bleibt auf deinem Gerät. Nichts wird hochgeladen."
@@ -741,10 +746,6 @@
     "ortBeispiel": "z. B. Hamburg",
     "keineTiere": "keine Haustiere",
     "mitTieren": "Haustiere",
-    "personenZiehenEin": {
-      "one": "{anzahl} Person zieht ein",
-      "other": "{anzahl} Personen ziehen ein"
-    },
     "von": "Von {name}: {text}",
     "fehltFragen": {
       "one": "1 Frage",
@@ -852,7 +853,8 @@
     "adresseHinweis": "Das liest der Vermieter: Die Adresse steht groß auf dem Deckblatt, unten auf jeder Seite und im Dateinamen. Schreib sie so wie in der Anzeige, in der zweiten Zeile Postleitzahl und Ort.",
     "uebernehmen": "Übernehmen",
     "werDabei": "Wer ist dabei?",
-    "werHinweis": "Wer im Mietvertrag steht, ist immer dabei. Bürgen kannst du für diese Bewerbung abwählen.",
+    "buergenWeglassen": "Bürgen kannst du für diese Bewerbung weglassen, zum Beispiel für die Besichtigung.",
+    "nichtInMappe": "Nicht in dieser Mappe",
     "wasRein": "Was soll rein?",
     "empfohlen": "Empfohlen",
     "modus": {
@@ -891,7 +893,7 @@
       "hinweis": "Wer einzieht und was beiliegt, kommt aus dem Haushalt und aus „Was soll rein?“.",
       "seite": "Seite 1 von {gesamt}",
       "ganze": "Ganze Mappe ansehen",
-      "alt": "Deckblatt der Mappe: Bewerbung um {wohnung}. Wer einzieht: {wer}. Was beiliegt: je Person die Unterlagen mit Seitenzahl.",
+      "alt": "Deckblatt der Mappe: Bewerbung um {wohnung}. {wer} Was beiliegt: je Person die Unterlagen mit Seitenzahl.",
       "altOhne": "eine Wohnung"
     },
     "schrittLabel": "In welchem Schritt bist du?",
@@ -1087,6 +1089,8 @@
     "titel": "Backup einspielen",
     "datei": "{name}",
     "erstellt": "Erstellt am {datum}, {groesse}",
+    "mitPasswortDatum": "Vom {datum}, mit Passwort, {groesse}",
+    "mitPasswort": "Mit Passwort, {groesse}",
     "andere": "Andere Datei wählen",
     "passwort": "Passwort des Backups",
     "falsch": "Das Passwort passt nicht. Achte auf Groß- und Kleinschreibung.",
@@ -1102,7 +1106,7 @@
     "fehler": {
       "passwort_falsch": "Das Passwort passt nicht. Achte auf Groß- und Kleinschreibung.",
       "passwort_noetig": "Dieses Backup hat ein Passwort. Trag es ein.",
-      "kein_backup": "Das ist keine Backup-Datei von {app}.",
+      "kein_backup": "Das ist kein Backup von {app}.",
       "beschaedigt": "Die Datei ist beschädigt oder unvollständig. Nimm ein anderes Backup.",
       "version_neu": "Das Backup stammt aus einer neueren Version. Aktualisiere {app} und versuch es noch einmal.",
       "zu_gross": "Das Backup ist zu groß. Dein bisheriger Stand ist unverändert.",

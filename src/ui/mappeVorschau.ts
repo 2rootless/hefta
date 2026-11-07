@@ -24,7 +24,7 @@ import { staendeAus } from './mappeDaten';
 export interface AussehenVorschau {
   /** Kopfzeile einer Unterlage. */
   kopf: string;
-  /** Deckblatt ab „Wer einzieht“ bis zur dritten Unterlage der ersten Person. */
+  /** Deckblatt ab der Kurzform „… im Mietvertrag“ bis zur dritten Unterlage der ersten Person. */
   deck: string;
   /** Wessen Kopfzeile es ist. */
   rufname: string;
@@ -54,7 +54,8 @@ async function rechterRand(
 
 async function deckAusschnitt(dokument: PdfDokument): Promise<string> {
   const stuecke = await seitenStuecke(dokument, 1);
-  const kopf = stuecke.find((st) => st.text.includes('Wer einzieht'));
+  // Seit E25 beginnt die Seitenleiste mit der Kurzform („Zwei im Mietvertrag, …“).
+  const kopf = stuecke.find((st) => /im Mietvertrag/i.test(st.text));
   if (!kopf) return seiteAusschnitt(dokument, 1, { x: 0, y: 0, breite: BREITE, hoehe: 0.3 }, PIXEL);
   // Überschrift, Name und drei Unterlagen: fünf Zeilen. Name und Rolle sind verschieden groß und
   // stehen doch in einer Zeile: Was dicht beieinander liegt, zählt als eine.

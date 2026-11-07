@@ -39,6 +39,8 @@ interface Manifest {
 
 export interface SicherungsInhalt {
   personen: number;
+  /** E25: für die Meldung nach dem Einspielen. */
+  bestand: Bestand;
   /** Unterlagen mit mindestens einer Version, wie in `Bestand`. */
   unterlagen: number;
   dateien: number;
@@ -195,6 +197,7 @@ export async function sicherungEinspielen(
   const bestand = bestandZaehlen(daten);
   return {
     personen: bestand.personen,
+    bestand,
     unterlagen: bestand.unterlagen,
     dateien: m.dateien.length,
     erstellt: m.erstellt,
@@ -209,6 +212,9 @@ export interface Bestand {
   weitere: number;
   unterlagen: number;
   bewerbungen: number;
+  /** E25: Namen nach dem Mietvertrag, in der Reihenfolge des Haushalts. */
+  vertragNamen: string[];
+  buergenNamen: string[];
 }
 
 /** Zählt aus den Datensätzen: Personen in Haushalten, Kinder, Unterlagen mit mindestens einer Version. */
@@ -220,7 +226,33 @@ export function bestandZaehlen(daten: Record<string, unknown[]>): Bestand {
   const versionen = (daten.versionen ?? []) as { dokumentId: string }[];
   const mitVersion = new Set(versionen.map((v) => v.dokumentId));
   const haushalte = (daten.haushalte ?? []) as { kinder?: number; weitereErwachsene?: number }[];
+  const personen = new Map(
+    ((daten.personen ?? []) as { id: string; vorname?: string; nachname?: string }[]).map((p) => [
+      p.id,
+      [p.vorname, p.nachname].filter(Boolean).join(' '),
+    ]),
+  );
+  const aktiv = (
+    zug as {
+      personId: string;
+      herausgenommenAm?: string | null;
+      rolle?: string;
+      reihenfolge?: number;
+    }[]
+  )
+    .filter((z) => !z.herausgenommenAm)
+    .sort((a, b) => (a.reihenfolge ?? 0) - (b.reihenfolge ?? 0));
+  const namen = (buerge: boolean) => [
+    ...new Set(
+      aktiv
+        .filter((z) => (z.rolle === 'buerge') === buerge)
+        .map((z) => personen.get(z.personId) ?? '')
+        .filter(Boolean),
+    ),
+  ];
   return {
+    vertragNamen: namen(false),
+    buergenNamen: namen(true),
     personen: new Set(zug.filter((z) => !z.herausgenommenAm).map((z) => z.personId)).size,
     kinder: haushalte.reduce((s, h) => s + (h.kinder ?? 0), 0),
     weitere: haushalte.reduce((s, h) => s + (h.weitereErwachsene ?? 0), 0),

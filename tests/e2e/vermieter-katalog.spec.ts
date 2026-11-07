@@ -52,6 +52,8 @@ interface Bild {
   fehler?: boolean;
   hash?: string;
   ziehen?: boolean;
+  /** Ein Auswahlknopf, der vor der Aufnahme gewählt wird (VS10b). */
+  waehlen?: string;
 }
 const DREI = [M1, M2, M3];
 const FUENF = [M1, M2, M3, M5, M7];
@@ -74,6 +76,14 @@ const BILDER_BREIT: Bild[] = [
   { id: 'VS9d-anfordern-lange-namen', mappen: [M1, LANG, M6], hash: '#/mappe/2/anfordern' },
   { id: 'VS9e-anfordern-ohne-selbstauskunft', mappen: [M1, LANG, M6], hash: '#/mappe/3/anfordern' },
   { id: 'VS9f-anfordern-fuer-vertrag', mappen: [M1, M2, M3, M4z], hash: '#/mappe/4/anfordern' },
+  { id: 'VS10-absagen', mappen: DREI, hash: '#/mappe/1/absagen' },
+  {
+    id: 'VS10b-absagen-spaeter',
+    mappen: DREI,
+    hash: '#/mappe/2/absagen',
+    waehlen: 'Lösche ich später',
+  },
+  { id: 'VS10c-absagen-lange-namen', mappen: [M1, LANG, M6], hash: '#/mappe/2/absagen' },
 ];
 const BILDER_SCHMAL: Bild[] = [
   { id: 'VS6a-leer' },
@@ -88,6 +98,7 @@ const BILDER_SCHMAL: Bild[] = [
   { id: 'VS6j-anfordern', mappen: DREI, hash: '#/mappe/1/anfordern' },
   { id: 'VS6k-anfordern-lange-namen', mappen: [M1, LANG, M6], hash: '#/mappe/2/anfordern' },
   { id: 'VS6l-rechtliches', hash: '#/rechtliches' },
+  { id: 'VS6m-absagen', mappen: DREI, hash: '#/mappe/1/absagen' },
 ];
 
 /** VS1 bis VS14, wie VS_JS in design/werkzeug/vs_pruef.py, mit Knöpfen statt Links in der Mappe. */
@@ -135,7 +146,18 @@ function vsPruefen(): string[] {
     if (!mail.trimEnd().endsWith('[Ihr Name]')) out.push('VS15-absender');
     if (!/Ein Hinweis, keine Rechtsberatung/.test(ohne(d))) out.push('VS15-hinweis');
   });
-  document.querySelectorAll('.vs-detail:not(.vs-wann):not(.vs-anf)').forEach((d) => {
+  // VS16 (design/nachforderung.md, Absage): wie absageBefunde() in src/vermieter/absage.ts.
+  document.querySelectorAll<HTMLElement>('.vs-abs').forEach((d) => {
+    const mail = d.querySelector<HTMLElement>('.vs-mt')!.innerText;
+    if (!/vergeben/.test(mail) || !/gelöscht|löschen/.test(mail)) out.push('VS16-kern');
+    const grund = mail.match(
+      /(?<![\p{L}])(weil|da |Einkommen|Bonität|Selbstauskunft|SCHUFA|andere Bewerber|anderen Bewerber|entschieden für|Grund)(?![\p{L}])/u,
+    );
+    if (grund) out.push('VS16-grund:' + grund[1]);
+    if (!mail.trimEnd().endsWith('[Ihr Name]')) out.push('VS16-absender');
+    if (!/Ein Hinweis, keine Rechtsberatung/.test(ohne(d))) out.push('VS16-hinweis');
+  });
+  document.querySelectorAll('.vs-detail:not(.vs-wann):not(.vs-anf):not(.vs-abs)').forEach((d) => {
     const l = d.querySelector('.vs-loesch');
     if (!l || !/Datenschutzkonferenz/.test(ohne(l))) out.push('VS5-loeschhinweis');
     if (![...d.querySelectorAll('a, button')].some((a) => a.textContent?.trim() === 'Mappe öffnen'))
@@ -208,6 +230,7 @@ async function aufbauen(page: Page, b: Bild, grossPfad: string) {
   }
   if (b.nummer) await page.evaluate((n) => (window.location.hash = `#/mappe/${n}`), b.nummer);
   if (b.hash) await page.evaluate((h) => (window.location.hash = h), b.hash);
+  if (b.waehlen) await page.getByRole('radio', { name: b.waehlen }).click();
   if (b.ziehen) {
     const dt = await page.evaluateHandle(() => {
       const d = new DataTransfer();

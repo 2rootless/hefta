@@ -157,7 +157,11 @@
         du={rolle === 'hauptmieter'}
         allein={vertragsZahl === 1 && wer.erwachsene === 1 && !wer.kinder}
         einziehendText={einziehendText(wer)}
-        personenGesamt={wer.erwachsene + wer.kinder}
+        gruppen={{
+          vertrag: vertragsZahl,
+          kinder: wer.kinder,
+          weitere: wer.erwachsene - vertragsZahl,
+        }}
         start="zu"
         {feld}
       />

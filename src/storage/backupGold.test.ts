@@ -131,6 +131,8 @@ describe('Backups aus jeder bisherigen Version', () => {
         weitere: 1,
         unterlagen: 2,
         bewerbungen: 0,
+        vertragNamen: ['Max Mustermann', 'Lea Mustermann'],
+        buergenNamen: ['Petra Mustermann'],
       });
       const db = await neueDb();
       await sicherungEinspielen(db, lesen(name), passwort);

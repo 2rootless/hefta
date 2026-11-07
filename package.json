@@ -16,6 +16,7 @@
     "test:e2e:kurz": "playwright test --grep-invert \"alle Bildschirme in Ansicht\"",
     "test:katalog": "playwright test tests/e2e/pruefkatalog.spec.ts --project chromium",
     "test:backups": "node scripts/test-backups.mjs",
+    "muster-mappen": "node scripts/muster-mappen.mjs",
     "wortliste": "vitest run build/wortliste.test.ts --mode schreiben",
     "verify": "npm run check && npm run lint && npm run test && npm run build && npm run test:e2e"
   },

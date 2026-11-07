@@ -3,7 +3,9 @@
   // Sicherung, Speicher, App, Daten. Backup erstellen, einspielen und alles löschen sind eigene Seiten.
   import { onMount } from 'svelte';
   import { daten, db, gehe } from '../app/daten.svelte';
+  import { QUELLCODE_ADRESSE } from '../app/name';
   import { tageSeit } from '../domain/zeit';
+  import { BACKUP_ACCEPT } from '../storage/backup';
   import { KATALOG_STAND } from '../domain/regelkatalog';
   import { groesse, monatName, t } from '../i18n';
   import { speicherBelegt } from '../storage/speicher';
@@ -104,6 +106,7 @@
           <input
             type="file"
             class="visually-hidden"
+            accept={BACKUP_ACCEPT}
             onchange={(e) => backupGewaehlt(e.currentTarget.files?.[0])}
           />
         </label>
@@ -190,6 +193,13 @@
           >
         </div>
       </li>
+      {#if QUELLCODE_ADRESSE}
+        <li>
+          <a class="listenzeile" href={QUELLCODE_ADRESSE} rel="noreferrer" target="_blank">
+            <span class="tx"><b>{t('einstellungen.quellcode')}</b></span>
+          </a>
+        </li>
+      {/if}
       <li>
         <a class="listenzeile" href="#/einstellungen/rechtliches">
           <span class="tx"><b>{t('rechtliches.titel')}</b></span>

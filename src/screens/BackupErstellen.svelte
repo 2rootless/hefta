@@ -16,7 +16,8 @@
   } from '../storage/sicherung';
   import { einstellungenAendern, speicherBelegt } from '../storage/speicher';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
-  import { bestandZeilen, einstellungenZustand } from '../ui/einstellungen.svelte';
+  import { einstellungenZustand } from '../ui/einstellungen.svelte';
+  import WerIstDabei from '../ui/WerIstDabei.svelte';
   import Notiz from '../ui/Notiz.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
@@ -160,7 +161,9 @@
       <div class="vergleich">
         <div>
           <b>{t('backupSeite.drin')}</b>
-          {#if bestand}{@const [wer, was] = bestandZeilen(bestand)}{wer}<br />{was}{/if}
+          {#if bestand}<WerIstDabei {bestand} />{t('zahlen.unterlagen', {
+              anzahl: bestand.unterlagen,
+            })}{/if}
         </div>
         <div>
           <b>{t('backupSeite.groesse')}</b>{t('backupSeite.ungefaehr', {
