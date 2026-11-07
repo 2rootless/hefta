@@ -82,13 +82,15 @@ describe('Regelkatalog: wer braucht was', () => {
 
   it('jede Lebenssituation bekommt genau einen Einkommensnachweis', () => {
     for (const situation of LEBENSSITUATIONEN) {
-      const einkommen = unterlagenFuer('mitmieter', situation).filter((d) => d.symbol === 'euro');
+      const einkommen = unterlagenFuer('mitmieter', situation).filter(
+        (d) => d.symbol === 'einkommen',
+      );
       expect(einkommen, situation).toHaveLength(1);
     }
   });
 
   it('ohne Lebenssituation gibt es noch keinen Einkommensnachweis', () => {
-    expect(unterlagenFuer('hauptmieter', null).some((d) => d.symbol === 'euro')).toBe(false);
+    expect(unterlagenFuer('hauptmieter', null).some((d) => d.symbol === 'einkommen')).toBe(false);
   });
 
   it('Bürge: Bürgschaftserklärung zuerst, keine Mietzahlungen', () => {
@@ -99,7 +101,7 @@ describe('Regelkatalog: wer braucht was', () => {
   });
 
   it('Studierende als Bürge haben im Katalog keinen Einkommensnachweis', () => {
-    expect(unterlagenFuer('buerge', 'studierend_azubi').some((d) => d.symbol === 'euro')).toBe(
+    expect(unterlagenFuer('buerge', 'studierend_azubi').some((d) => d.symbol === 'einkommen')).toBe(
       false,
     );
   });

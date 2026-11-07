@@ -102,7 +102,7 @@
     {/if}
   {:else}
     <span class="alles-da" aria-hidden="true"
-      ><Symbol name="haken" groesse={18} />{t('allgemein.allesDa')}</span
+      ><Symbol name="haken" groesse={20} />{t('allgemein.allesDa')}</span
     >
   {/if}
 </div>

@@ -75,7 +75,7 @@
 </script>
 
 {#snippet pfeil()}
-  <span class="pfeil" aria-hidden="true"><Symbol name="weiter" groesse={18} /></span>
+  <span class="pfeil" aria-hidden="true"><Symbol name="weiter" groesse={20} /></span>
 {/snippet}
 
 <main class="seite">

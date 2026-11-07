@@ -1,100 +1,142 @@
-// App-Symbole und Startbilder für iOS und Android aus dem Logo des Kits (design/logo), bis das Design
-// eigene liefert (B11, E28). Aufruf: node scripts/app-symbole.mjs
+// App-Symbole, Startbild und Mitteilungssymbol für iOS und Android aus dem Symbolsatz des Designs
+// (design/symbole-b11/app, B11, Liste für Code, Teil 5). Aufruf: node scripts/app-symbole.mjs
 import { chromium } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const KORALLE = '#ff8466';
-const GRUND = '#f5f6fa';
-const ZEICHEN =
-  '<path d="M20.6 22.2V17.2L16 13.2l-4.6 4v7.4c0 3.6 3 5 7 5s7-1.4 7-5V13.6L16 5.4 6.5 13.6v9.2" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" stroke="FARBE"/>';
-
-/** Zeichen auf Fläche; `skala` ist der Anteil des Zeichens an der Kante wie im Kit (0,677 bzw. 0,55). */
-const svg = (kante, { grund, farbe, skala, rund = false }) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" width="${kante}" height="${kante}" viewBox="0 0 32 32">` +
-  (grund
-    ? rund
-      ? `<circle cx="16" cy="16" r="16" fill="${grund}"/>`
-      : `<rect width="32" height="32" fill="${grund}"/>`
-    : '') +
-  `<g transform="translate(16 16) scale(${skala}) translate(-15.95 -17.5)">${ZEICHEN.replace('FARBE', farbe)}</g></svg>`;
-
-const startbild = (b, h, kante) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" width="${b}" height="${h}"><rect width="${b}" height="${h}" fill="${GRUND}"/>` +
-  `<g transform="translate(${(b - kante) / 2} ${(h - kante) / 2})">${svg(kante, {
-    grund: KORALLE,
-    farbe: '#fff',
-    skala: 0.677,
-  })
-    .replace('<svg ', '<svg x="0" y="0" ')
-    .replace('<rect width="32" height="32"', '<rect width="32" height="32" rx="7"')}</g></svg>`;
+const B11 = 'design/symbole-b11/app';
+const IOS = 'ios/App/App/Assets.xcassets';
+const RES = 'android/app/src/main/res';
+const DICHTEN = [
+  ['mdpi', 1],
+  ['hdpi', 1.5],
+  ['xhdpi', 2],
+  ['xxhdpi', 3],
+  ['xxxhdpi', 4],
+];
 
 const browser = await chromium.launch();
 const seite = await browser.newPage();
-async function png(datei, inhalt, b, h = b) {
-  await seite.setViewportSize({ width: b, height: h });
+/** Eine SVG-Datei des Designs in eine PNG der Kante `kante` rechnen; `maske` schneidet rund aus. */
+async function png(ziel, svgDatei, kante, { maske = false, farbe } = {}) {
+  let svg = fs.readFileSync(svgDatei, 'utf8');
+  if (farbe) svg = svg.replaceAll('currentColor', farbe);
+  await seite.setViewportSize({ width: kante, height: kante });
   await seite.setContent(
-    `<html><body style="margin:0;background:transparent">${inhalt}</body></html>`,
+    `<html><body style="margin:0;background:transparent"><div style="width:${kante}px;height:${kante}px;overflow:hidden;${maske ? 'border-radius:50%' : ''}">${svg.replace(/width="\d+" height="\d+"/, `width="${kante}" height="${kante}"`)}</div></body></html>`,
   );
-  fs.mkdirSync(path.dirname(datei), { recursive: true });
+  fs.mkdirSync(path.dirname(ziel), { recursive: true });
   await seite.screenshot({
-    path: datei,
+    path: ziel,
     omitBackground: true,
-    clip: { x: 0, y: 0, width: b, height: h },
+    clip: { x: 0, y: 0, width: kante, height: kante },
   });
 }
+const json = (datei, inhalt) => fs.writeFileSync(datei, JSON.stringify(inhalt, null, 2) + '\n');
 
-// iOS: eine Größe, ohne Transparenz und ohne Rundung (iOS rundet selbst).
-await png(
-  'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png',
-  svg(1024, { grund: KORALLE, farbe: '#fff', skala: 0.677 }),
-  1024,
-);
-for (const n of ['splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-2732x2732-2.png'])
-  await png(`ios/App/App/Assets.xcassets/Splash.imageset/${n}`, startbild(2732, 2732, 360), 2732);
+// iOS: App-Symbol hell, dunkel, getönt (Xcode, AppIcon mit Erscheinungen).
+const icon = `${IOS}/AppIcon.appiconset`;
+for (const f of fs.readdirSync(icon)) if (f.endsWith('.png')) fs.rmSync(`${icon}/${f}`);
+for (const art of ['hell', 'dunkel', 'getoent'])
+  fs.copyFileSync(`${B11}/ios/hefta-ios-${art}-1024.png`, `${icon}/hefta-${art}.png`);
+const bild = (datei, aussehen) => ({
+  ...(aussehen ? { appearances: [{ appearance: 'luminosity', value: aussehen }] } : {}),
+  filename: datei,
+  idiom: 'universal',
+  platform: 'ios',
+  size: '1024x1024',
+});
+json(`${icon}/Contents.json`, {
+  images: [
+    bild('hefta-hell.png'),
+    bild('hefta-dunkel.png', 'dark'),
+    bild('hefta-getoent.png', 'tinted'),
+  ],
+  info: { author: 'xcode', version: 1 },
+});
 
-// Android: Symbole je Dichte, rund, und adaptive icon (Vordergrund 108 dp, Zeichen in der sicheren Zone).
-const res = 'android/app/src/main/res';
-for (const [d, f] of [
-  ['mdpi', 1],
-  ['hdpi', 1.5],
-  ['xhdpi', 2],
-  ['xxhdpi', 3],
-  ['xxxhdpi', 4],
-]) {
-  const k = Math.round(48 * f);
+// iOS: Startbild = Marke 64 pt mittig auf --ground (Launch Screen), hell und dunkel.
+fs.rmSync(`${IOS}/Splash.imageset`, { recursive: true, force: true });
+const marke = `${IOS}/StartMarke.imageset`;
+fs.mkdirSync(marke, { recursive: true });
+const bilder = [];
+for (const [aussehen, farbe] of [
+  ['hell', '#191a2c'],
+  ['dunkel', '#f1f2f8'],
+])
+  for (const f of [1, 2, 3]) {
+    const datei = `marke-${aussehen}@${f}x.png`;
+    await png(`${marke}/${datei}`, `${B11}/start/hefta-marke-start.svg`, 64 * f, { farbe });
+    bilder.push({
+      ...(aussehen === 'dunkel'
+        ? { appearances: [{ appearance: 'luminosity', value: 'dark' }] }
+        : {}),
+      filename: datei,
+      idiom: 'universal',
+      scale: `${f}x`,
+    });
+  }
+json(`${marke}/Contents.json`, { images: bilder, info: { author: 'xcode', version: 1 } });
+const grund = `${IOS}/StartGrund.colorset`;
+fs.mkdirSync(grund, { recursive: true });
+const farbe = (hex) => ({
+  'color-space': 'srgb',
+  components: {
+    red: `0x${hex.slice(1, 3)}`,
+    green: `0x${hex.slice(3, 5)}`,
+    blue: `0x${hex.slice(5, 7)}`,
+    alpha: '1.000',
+  },
+});
+json(`${grund}/Contents.json`, {
+  colors: [
+    { color: farbe('#F5F6FA'), idiom: 'universal' },
+    {
+      appearances: [{ appearance: 'luminosity', value: 'dark' }],
+      color: farbe('#14151F'),
+      idiom: 'universal',
+    },
+  ],
+  info: { author: 'xcode', version: 1 },
+});
+
+// Android: adaptive icon (Vordergrund, einfarbig), Altformen, Startsymbol, Mitteilung.
+for (const [d, f] of DICHTEN) {
   await png(
-    `${res}/mipmap-${d}/ic_launcher.png`,
-    svg(k, { grund: KORALLE, farbe: '#fff', skala: 0.677 }),
-    k,
+    `${RES}/mipmap-${d}/ic_launcher_foreground.png`,
+    `${B11}/android/hefta-android-vordergrund-432.svg`,
+    108 * f,
   );
   await png(
-    `${res}/mipmap-${d}/ic_launcher_round.png`,
-    svg(k, { grund: KORALLE, farbe: '#fff', skala: 0.55, rund: true }),
-    k,
+    `${RES}/mipmap-${d}/ic_launcher_monochrome.png`,
+    `${B11}/android/hefta-android-einfarbig-432.svg`,
+    108 * f,
   );
-  const v = Math.round(108 * f);
+  await png(`${RES}/mipmap-${d}/ic_launcher.png`, `${B11}/android/hefta-play-512.svg`, 48 * f);
   await png(
-    `${res}/mipmap-${d}/ic_launcher_foreground.png`,
-    svg(v, { farbe: '#fff', skala: 0.45 }),
-    v,
+    `${RES}/mipmap-${d}/ic_launcher_round.png`,
+    `${B11}/android/hefta-play-512.svg`,
+    48 * f,
+    { maske: true },
   );
+  fs.mkdirSync(`${RES}/drawable-${d}`, { recursive: true });
+  fs.copyFileSync(
+    `${B11}/android/mitteilung/drawable-${d}/ic_stat_hefta.png`,
+    `${RES}/drawable-${d}/ic_stat_hefta.png`,
+  );
+  for (const lage of ['port', 'land'])
+    fs.rmSync(`${RES}/drawable-${lage}-${d}`, { recursive: true, force: true });
 }
-for (const [d, f] of [
-  ['mdpi', 1],
-  ['hdpi', 1.5],
-  ['xhdpi', 2],
-  ['xxhdpi', 3],
-  ['xxxhdpi', 4],
-]) {
-  const [b, h] = [Math.round(320 * f), Math.round(480 * f)];
-  await png(`${res}/drawable-port-${d}/splash.png`, startbild(b, h, Math.round(72 * f)), b, h);
-  await png(`${res}/drawable-land-${d}/splash.png`, startbild(h, b, Math.round(72 * f)), h, b);
+fs.rmSync(`${RES}/drawable/splash.png`, { force: true });
+// Kreis von 160 dp in Koralle gleich ins Bild: Die Hintergrundfarbe des Symbols setzt nicht jede
+// Android-Fassung um (Emulator, 7.11.).
+{
+  const svg = fs
+    .readFileSync(`${B11}/android/hefta-android-start-symbol-960.svg`, 'utf8')
+    .replace(/(<svg[^>]*>)/, '$1<circle cx="480" cy="480" r="320" fill="#ff8466"/>');
+  fs.writeFileSync(`${RES}/drawable-xxxhdpi/.start.svg`, svg);
+  await png(`${RES}/drawable-xxxhdpi/start_symbol.png`, `${RES}/drawable-xxxhdpi/.start.svg`, 960);
+  fs.rmSync(`${RES}/drawable-xxxhdpi/.start.svg`);
 }
-await png(`${res}/drawable/splash.png`, startbild(480, 800, 108), 480, 800);
-fs.writeFileSync(
-  `${res}/values/ic_launcher_background.xml`,
-  `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">${KORALLE.toUpperCase()}</color>\n</resources>\n`,
-);
 await browser.close();
-console.log('App-Symbole und Startbilder geschrieben.');
+console.log('App-Symbole, Startbilder und Mitteilungssymbol aus B11 geschrieben.');

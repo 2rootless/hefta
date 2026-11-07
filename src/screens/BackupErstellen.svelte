@@ -143,7 +143,7 @@
                   : ''}</small
               ></span
             >
-            <span class="haken" aria-hidden="true"><Symbol name="haken" groesse={18} /></span>
+            <span class="haken" aria-hidden="true"><Symbol name="haken" groesse={20} /></span>
           </div>
         </li>
       </ul>

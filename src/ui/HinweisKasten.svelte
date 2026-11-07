@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Symbol from './Symbol.svelte';
   // Kasten unter der Begrüßung (G2, G3, G5): schiebt den Inhalt nach unten, liegt nie darüber und
   // geht nicht von selbst weg. Immer nur einer: Fehler, Speicher, neue Version. Auf anderen
   // Bildschirmen zeigt die App nur den Fehler; „Neue Version“ stört dort nie (Formular, Rutsch).
@@ -33,7 +34,7 @@
           onclick={() => {
             if (art === 'fehler') hinweise.fehler = false;
             else hinweise.versionWeg = true;
-          }}>×</button
+          }}><Symbol name="schliessen" groesse={20} /></button
         >
       {/if}
       {#if art === 'fehler'}
@@ -107,8 +108,9 @@
     margin: -10px -6px 0 2px;
     border: 0;
     background: none;
+    display: grid;
+    place-items: center;
     color: var(--ink);
-    font-size: calc(22 * var(--px));
     cursor: pointer;
   }
 </style>

@@ -644,7 +644,7 @@
                 t('mappe.satzFreiwillig'),
               )}
             {/if}
-            <Symbol name="weiter" groesse={18} />
+            <Symbol name="weiter" groesse={20} />
           </button>
         {/if}
         {#if fehler}
@@ -664,7 +664,7 @@
             </span>
             {#if e.kleiner && !baut}<span class="still">{t('mappe.verkleinert')}</span>{/if}
             {#if allesDa}<span class="da"
-                ><Symbol name="haken" groesse={18} />{t('allgemein.allesDa')}</span
+                ><Symbol name="haken" groesse={20} />{t('allgemein.allesDa')}</span
               >{/if}
           </p>
           {#if leer}<p class="stand-text">{t('mappe.nichtsDrin')}</p>{/if}
@@ -679,7 +679,7 @@
         {#if einzeln}
           <button type="button" class="linie" onclick={() => (listeOffen = true)}>
             {@render zeileInhalt(t('mappe.alsDateien'), t('mappe.dateienZeile'))}
-            <Symbol name="weiter" groesse={18} />
+            <Symbol name="weiter" groesse={20} />
           </button>
         {/if}
       </section>
@@ -687,7 +687,7 @@
       <section class="abschnitt-oben">
         <a class="karte zeile" href="#/mappe/nachricht">
           {@render zeileInhalt(t('nachricht.titel'), t('nachricht.zeile'))}
-          <Symbol name="weiter" groesse={18} />
+          <Symbol name="weiter" groesse={20} />
         </a>
       </section>
 
@@ -717,12 +717,12 @@
                 {#if z.href}
                   <a class="punkt" href={z.href}>
                     {@render zeileInhalt(z.titel, z.sub)}
-                    <Symbol name="weiter" groesse={18} />
+                    <Symbol name="weiter" groesse={20} />
                   </a>
                 {:else}
                   <button type="button" class="punkt" onclick={z.aktion}>
                     {@render zeileInhalt(z.titel, z.sub)}
-                    <Symbol name="weiter" groesse={18} />
+                    <Symbol name="weiter" groesse={20} />
                   </button>
                 {/if}
               </li>
@@ -797,7 +797,7 @@
               ? t('mappe.eigeneGewaehltUnter')
               : t('mappe.eigeneZeileUnter'),
           )}
-          <Symbol name="weiter" groesse={18} />
+          <Symbol name="weiter" groesse={20} />
         </button>
         {#if e.modus === 'datensparsam'}
           <p class="unter">{t('mappe.schrittLabel')}</p>
@@ -894,7 +894,7 @@
       <section class="abschnitt-oben">
         <a class="karte zeile" href="#/mappe/anpassen">
           {@render zeileInhalt(t('mappe.anpassen'), anpassenText)}
-          <Symbol name="weiter" groesse={18} />
+          <Symbol name="weiter" groesse={20} />
         </a>
       </section>
     {/if}

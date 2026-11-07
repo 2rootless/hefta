@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Symbol from '../ui/Symbol.svelte';
   import type { AnhangUnterlage } from '../pdf/anhang';
   import Dateiname from './Dateiname.svelte';
   import type { Mappe } from './lesen';
@@ -72,7 +73,7 @@
 {#snippet zurueck()}
   {#if !breit}
     <a class="vs-back" href="#/">
-      <svg class="vs-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+      <span class="vs-ch"><Symbol name="zurueck" groesse={20} /></span>
       {t('mappe.eingang')}
     </a>
   {/if}
@@ -112,7 +113,7 @@
 {#snippet schritteLink()}
   <a class="vs-li" href="#/schritte">
     <span>{t('schritte.link')}</span>
-    <svg class="vs-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+    <span class="vs-ch"><Symbol name="weiter" groesse={16} /></span>
   </a>
 {/snippet}
 
@@ -126,7 +127,7 @@
       {#if angabe}<small class="vs-ds">{angabe}</small>{/if}
     </span>
     <span class="vs-dp">{seitenText(u.seiten)}</span>
-    <svg class="vs-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+    <span class="vs-ch"><Symbol name="weiter" groesse={16} /></span>
   </button>
   {#if hinweis}<p class="vs-dh">{hinweis}</p>{/if}
   {#if quelle}<p class="vs-dh vs-dq">{quelle}</p>{/if}
@@ -317,11 +318,11 @@
     {@render loeschen()}
     <a class="vs-li" href="#/mappe/{nummer}/anfordern">
       <span>{t('anfordern.titel')}<small class="vs-lis">{t('anfordern.zeile')}</small></span>
-      <svg class="vs-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+      <span class="vs-ch"><Symbol name="weiter" groesse={16} /></span>
     </a>
     <a class="vs-li" href="#/mappe/{nummer}/absagen">
       <span>{t('absagen.titel')}<small class="vs-lis">{t('absagen.zeile')}</small></span>
-      <svg class="vs-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+      <span class="vs-ch"><Symbol name="weiter" groesse={16} /></span>
     </a>
     {@render schritteLink()}
   </article>

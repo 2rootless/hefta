@@ -130,7 +130,7 @@
           <b>{t('unterlage.originalSichern')}</b>
           <small>{t('unterlage.originalSatz')}</small>
         </span>
-        <Symbol name="weiter" groesse={18} />
+        <Symbol name="weiter" groesse={20} />
       </button>
     </section>
     <section class="links">

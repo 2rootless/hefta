@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Symbol from '../ui/Symbol.svelte';
   import Dateiname from './Dateiname.svelte';
   import type { Mappe } from './lesen';
   import {
@@ -56,9 +57,7 @@
   <p class="vs-lw2">{t('eingang.reihenfolge')}</p>
 
   <button type="button" class="vs-drop klein" class:ziehen={ziehend > 0} onclick={waehlen}>
-    <svg class="vs-i" viewBox="0 0 24 24" aria-hidden="true"
-      ><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14" /></svg
-    >
+    <span class="vs-i"><Symbol name="hochladen" groesse={20} /></span>
     <span>
       <b>{ziehend ? t('leer.loslassen') : breit ? t('eingang.weitere') : t('leer.auswaehlen')}</b>
       <small>{breit ? t('eingang.weitereUnter') : t('eingang.waehlenUnter')}</small>
@@ -121,9 +120,7 @@
             <span class="vs-st vs-st-info"><span>{standText(a)}</span></span>
           {:else}
             <span class="vs-st vs-st-ohne">
-              <svg class="vs-i" viewBox="0 0 24 24" aria-hidden="true"
-                ><path d="M7 3.5h7l4 4v13H7z" /><path d="M14 3.5v4h4" /></svg
-              >
+              <span class="vs-i"><Symbol name="datei" groesse={20} /></span>
               <span>{t(m.passtNicht ? 'stand.passtNicht' : 'stand.ohne')}</span>
             </span>
           {/if}

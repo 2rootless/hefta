@@ -51,27 +51,17 @@
   <span class="visually-hidden">{t('uebersicht.haushaltZeile', { liste: satz })}</span>
   <span class="figuren" aria-hidden="true">
     {#each vertrag as s (s.person.id)}
-      <span class="kreis f{s.farbe}" class:zwei={kuerzel(s).length > 1}>{kuerzel(s)}</span>
+      <span class="kreis kachel f{s.farbe}" class:zwei={kuerzel(s).length > 1}>{kuerzel(s)}</span>
     {/each}
     {#each { length: weitere }, i (i)}
-      <span class="kreis lila"
-        ><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"
-          ><circle cx="12" cy="7" r="3.6" /><path
-            d="M4.8 20.5v-3.5a7.2 7.2 0 0 1 14.4 0v3.5"
-          /></svg
-        ></span
-      >
+      <span class="kreis lila"><Symbol name="person" groesse={20} /></span>
     {/each}
     {#each { length: kinder }, i (i)}
-      <span class="kreis lila kind"
-        ><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"
-          ><circle cx="12" cy="9.5" r="3.6" /><path d="M7 20v-1.8a5 5 0 0 1 10 0V20" /></svg
-        ></span
-      >
+      <span class="kreis lila kind"><Symbol name="kind" groesse={16} /></span>
     {/each}
   </span>
   <span class="hinweis" aria-hidden="true"
-    >{t('uebersicht.haushaltBearbeiten')}<Symbol name="weiter" groesse={14} /></span
+    >{t('uebersicht.haushaltBearbeiten')}<Symbol name="weiter" groesse={16} /></span
   >
 </a>
 
@@ -143,20 +133,20 @@
     background: var(--person-child);
     box-shadow:
       0 0 0 2.5px var(--ground),
-      inset 0 0 0 1.8px var(--on-person);
+      inset 0 0 0 1.6px var(--on-person);
+    color: var(--on-person);
+  }
+
+  /* Im Vertrag: Kachel statt Kreis (B11, hefta-kachel-vertrag-36), wie das Quadrat in der Mappe. */
+  .kachel {
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 16px;
   }
 
   .kind {
     width: 26px;
     height: 26px;
-  }
-
-  svg {
-    fill: none;
-    stroke: #191a2c;
-    stroke-width: 2.2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
   }
 
   .hinweis {

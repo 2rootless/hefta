@@ -27,7 +27,7 @@
     e.preventDefault();
     if (onclick) onclick();
     else zurueckGehen(oben);
-  }}><Symbol name="zurueck" groesse={18} />{anderswoher ? t('allgemein.zurueck') : text}</a
+  }}><Symbol name="zurueck" groesse={20} />{anderswoher ? t('allgemein.zurueck') : text}</a
 >
 
 <style>

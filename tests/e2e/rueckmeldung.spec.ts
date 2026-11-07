@@ -1181,7 +1181,8 @@ test('Neues Logo: Symbole, Zeichen im Kopf, Ziel offen und erreicht, Kachel beim
   await expect(page.locator('.logo img').first()).toHaveJSProperty('naturalWidth', 186);
   await expect(page.locator('svg.ziel')).not.toHaveClass(/fertig/);
   expect(await stil('svg.ziel .klammer', 'stroke-opacity')).toBe('0.18');
-  expect(await stil('svg.ziel .rahmen', 'stroke-dasharray')).toContain('5');
+  // Strichelung nach B11 (hefta-ziel-offen-56): 4 und 3,4.
+  expect(await stil('svg.ziel .rahmen', 'stroke-dasharray')).toBe('4px, 3.4px');
 
   // LG2: Alles da, das Ziel ist die Kachel.
   await laden(page, '04-fertig', '/');

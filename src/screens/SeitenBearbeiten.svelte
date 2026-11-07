@@ -270,7 +270,7 @@
         ><b>{titel}</b>{#if sub}<small>{sub}</small>{/if}</span
       >
       <!-- Der Pfeil sagt: Hier kommt noch ein Schritt. Was sofort wirkt, hat keinen (OR5). -->
-      {#if !sofort}<Symbol name="weiter" groesse={18} />{/if}
+      {#if !sofort}<Symbol name="weiter" groesse={20} />{/if}
     </button>
   </li>
 {/snippet}

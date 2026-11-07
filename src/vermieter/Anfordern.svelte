@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Symbol from '../ui/Symbol.svelte';
   // „Für den Vertrag anfordern“ (design/nachforderung.md, VS9): eine fertige Mail an die Bewerber. Kein
   // Textfeld (VS4): Wer ändern will, ändert in seinem Mailprogramm.
   import type { HeftaAnhang } from '../pdf/anhang';
@@ -39,7 +40,7 @@
   data-ziel={mail.ziel}
 >
   <a class="vs-back" href="#/mappe/{nummer}">
-    <svg class="vs-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+    <span class="vs-ch"><Symbol name="zurueck" groesse={20} /></span>
     {t('schritte.zurMappe')}
   </a>
   <p class="vs-kick">{t('anfordern.kopf', { nummer, gesamt, haushalt: haushaltTitel(anhang) })}</p>

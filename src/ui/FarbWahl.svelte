@@ -57,7 +57,7 @@
         onclick={() => tippen(f)}
       >
         {#if f === farbe}
-          <Symbol name="haken" groesse={22} />
+          <Symbol name="haken" groesse={24} />
         {:else if name}
           <span aria-hidden="true">{[...name][0]?.toUpperCase()}</span>
         {/if}

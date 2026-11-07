@@ -37,7 +37,7 @@
         <ul class="marken">
           {#each inhalt.schritte as s (s.id)}
             <li class:an={s.erlaubt}>
-              {#if s.erlaubt}<Symbol name="haken" groesse={14} />{/if}{s.text}<span
+              {#if s.erlaubt}<Symbol name="haken" groesse={16} />{/if}{s.text}<span
                 class="visually-hidden"
                 >{s.erlaubt ? t('warum.schrittJa') : t('warum.schrittNein')}</span
               >

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Symbol from '../ui/Symbol.svelte';
   // „Absagen“ (design/nachforderung.md, Abschnitt Absage, VS10; Aufgabe 38): eine fertige Mail an die
   // Bewerber, ohne Grund. Kein Textfeld (VS4): Die Wahl „Schon gelöscht“ oder „Lösche ich später“ sind
   // zwei Knöpfe als Auswahl; wer mehr ändern will, ändert in seinem Mailprogramm.
@@ -59,7 +60,7 @@
 
 <article class="sec vs-detail vs-abs" aria-label={t('absagen.titel')}>
   <a class="vs-back" href="#/mappe/{nummer}">
-    <svg class="vs-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+    <span class="vs-ch"><Symbol name="zurueck" groesse={20} /></span>
     {t('schritte.zurMappe')}
   </a>
   <p class="vs-kick">{t('anfordern.kopf', { nummer, gesamt, haushalt: haushaltTitel(anhang) })}</p>

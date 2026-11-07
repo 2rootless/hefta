@@ -36,9 +36,6 @@
     <li>
       <span>
         {t('homescreen.schritt1Vor')}
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"
-          ><path d="M12 3v12M8 7l4-4 4 4" /><path d="M6 11v9h12v-9" /></svg
-        >
         <b>{t('homescreen.teilen')}</b>
         {t('homescreen.schritt1Nach')}
       </span>
@@ -46,9 +43,6 @@
     <li>
       <span>
         {t('homescreen.schritt2Vor')}
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"
-          ><rect x="4" y="4" width="16" height="16" rx="4" /><path d="M12 8v8M8 12h8" /></svg
-        >
         <b>{t('homescreen.zumHome')}</b>.
       </span>
     </li>
@@ -129,18 +123,6 @@
 
   b {
     font-weight: 800;
-  }
-
-  .ico {
-    display: inline-block;
-    width: 18px;
-    height: 18px;
-    vertical-align: -3px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
   }
 
   .notiz {

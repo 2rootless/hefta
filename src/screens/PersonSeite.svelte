@@ -315,7 +315,7 @@
 <main class="seite">
   <div class="kopf">
     <a class="zurueck" href="#{zurueckZu}" onclick={zurueck}
-      ><Symbol name="zurueck" groesse={18} />{schritt === 'bekannt'
+      ><Symbol name="zurueck" groesse={20} />{schritt === 'bekannt'
         ? t('personSeite.zurueck')
         : t('personSeite.abbrechen')}</a
     >
@@ -421,7 +421,7 @@
                     })} · {t('personSeite.unterlagenZahl', { anzahl: zahl })}</small
                   >
                 </span>
-                <Symbol name="weiter" groesse={18} />
+                <Symbol name="weiter" groesse={20} />
               </button>
             </li>
           {/each}
@@ -468,7 +468,7 @@
       </section>
       {#if mitkommend.offen}
         <p class="info">
-          <Symbol name="info" groesse={18} /><span
+          <Symbol name="info" groesse={20} /><span
             >{t('personSeite.offenHinweis', { anzahl: mitkommend.offen })}</span
           >
         </p>

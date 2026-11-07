@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Symbol from '../ui/Symbol.svelte';
   import { impressumHtml } from '../app/impressum';
   import { t } from './texte';
 
@@ -7,7 +8,7 @@
 
 <article class="sec vs-detail vs-wann vs-recht" aria-label={t('recht.titel')}>
   <a class="vs-back" href={zurueck}>
-    <svg class="vs-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+    <span class="vs-ch"><Symbol name="zurueck" groesse={20} /></span>
     {zurueckText}
   </a>
   <h2 class="vs-t" data-titel tabindex="-1">{t('recht.titel')}</h2>

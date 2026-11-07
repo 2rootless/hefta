@@ -186,7 +186,7 @@
     <div class="inhalt">
       <div class="kopf">
         <button type="button" class="zurueck" onclick={schliessen}>
-          <span class="gedreht"><Symbol name="weiter" groesse={18} /></span>{t('allgemein.zurueck')}
+          <span class="gedreht"><Symbol name="weiter" groesse={20} /></span>{t('allgemein.zurueck')}
         </button>
         {#if seiten.length > 1}
           <span class="von">
@@ -233,7 +233,7 @@
             aria-label={t('ansicht.zurueck')}
             aria-disabled={index === 0}
             onclick={() => blaettern(-1)}
-            ><span class="gedreht"><Symbol name="weiter" groesse={18} /></span></button
+            ><span class="gedreht"><Symbol name="weiter" groesse={20} /></span></button
           >
         {/if}
         <div class="zoom" role="group" aria-label={t('ansicht.groesse')}>
@@ -255,7 +255,7 @@
             class="rund"
             aria-label={t('ansicht.weiter')}
             aria-disabled={index === seiten.length - 1}
-            onclick={() => blaettern(1)}><Symbol name="weiter" groesse={18} /></button
+            onclick={() => blaettern(1)}><Symbol name="weiter" groesse={20} /></button
           >
         {/if}
       </div>

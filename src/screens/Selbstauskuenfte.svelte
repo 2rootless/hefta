@@ -136,7 +136,7 @@
                       : t('selbstauskunft.nein')}</small
                 >
               </span>
-              <Symbol name="weiter" groesse={18} />
+              <Symbol name="weiter" groesse={20} />
             </button>
           {/if}
         </li>
@@ -167,7 +167,7 @@
                 <b>{t('selbstauskuenfte.ort')}</b>
                 <small>{hh.ort.trim() || t('selbstauskuenfte.nochOffen')}</small>
               </span>
-              <Symbol name="weiter" groesse={18} />
+              <Symbol name="weiter" groesse={20} />
             </button>
           {/if}
         </li>
@@ -197,10 +197,10 @@
               </span>
               {#if p.fertig}
                 <span class="fertig"
-                  ><Symbol name="haken" groesse={14} />{t('selbstauskuenfte.fertig')}</span
+                  ><Symbol name="haken" groesse={16} />{t('selbstauskuenfte.fertig')}</span
                 >
               {:else}
-                <Symbol name="weiter" groesse={18} />
+                <Symbol name="weiter" groesse={20} />
               {/if}
             </a>
           </li>

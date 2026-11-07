@@ -850,7 +850,7 @@
       onclick={() => umschalten(schluessel)}
     >
       <span class="ring"
-        >{#if !weggelassen.has(schluessel)}<Symbol name="haken" groesse={13} />{/if}</span
+        >{#if !weggelassen.has(schluessel)}<Symbol name="haken" groesse={16} />{/if}</span
       >
       <span aria-hidden="true">{s + 1}</span>
     </button>
@@ -875,7 +875,7 @@
 
 {#snippet weiteresPdf(klasse: string)}
   <label class={klasse}>
-    <span class="plus-kreis"><Symbol name="plus" groesse={14} /></span>
+    <span class="plus-kreis"><Symbol name="plus" groesse={16} /></span>
     {klasse === 'plus-zeile' ? t('hochladen.seiteHinzufuegen') : t('hochladen.seite')}
     {#if klasse !== 'plus-zeile'}
       <span class="visually-hidden">{t('hochladen.seiteHinzufuegen')}</span>
@@ -1138,7 +1138,7 @@
                 monate.clear();
                 monate.add(m);
               }}
-              >{#if monate.has(m)}<Symbol name="haken" groesse={13} />{/if}{monatName(
+              >{#if monate.has(m)}<Symbol name="haken" groesse={16} />{/if}{monatName(
                 m,
                 heute,
               )}</button

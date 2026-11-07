@@ -4,6 +4,7 @@
   // Die ganze Zeile führt zu „Euer Haushalt“.
   import { mitEinSatz } from '../domain/mappeWoerter';
   import { t } from '../i18n';
+  import Symbol from './Symbol.svelte';
 
   let { kinder, weitere }: { kinder: number; weitere: number } = $props();
 
@@ -15,22 +16,10 @@
   <a class="mit" href="#/haushalt" data-band="track">
     <span class="figs" aria-hidden="true">
       {#each { length: weitere }, i (i)}
-        <span class="fc er"
-          ><svg viewBox="0 0 24 24"
-            ><circle cx="12" cy="8.6" r="3.4" /><path
-              d="M5.8 19.4c.8-3.4 3.2-5.2 6.2-5.2s5.4 1.8 6.2 5.2"
-            /></svg
-          ></span
-        >
+        <span class="fc er"><Symbol name="person" groesse={16} /></span>
       {/each}
       {#each { length: kinder }, i (i)}
-        <span class="fc ki"
-          ><svg viewBox="0 0 24 24"
-            ><circle cx="12" cy="8.6" r="3.4" /><path
-              d="M5.8 19.4c.8-3.4 3.2-5.2 6.2-5.2s5.4 1.8 6.2 5.2"
-            /></svg
-          ></span
-        >
+        <span class="fc ki"><Symbol name="kind" groesse={12} /></span>
       {/each}
     </span>
     <!-- Vorgelesen: „Ein Kind zieht mit ein. Braucht keine Unterlagen. Haushalt bearbeiten“ -->
@@ -39,7 +28,7 @@
         >{unter}<span class="visually-hidden">. {t('uebersicht.haushaltBearbeiten')}</span></span
       ></span
     >
-    <span class="chev" aria-hidden="true">›</span>
+    <span class="chev" aria-hidden="true"><Symbol name="weiter" groesse={16} /></span>
   </a>
 {/if}
 
@@ -91,20 +80,6 @@
     height: 22px;
   }
 
-  svg {
-    width: 15px;
-    height: 15px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-  }
-
-  .ki svg {
-    width: 12px;
-    height: 12px;
-  }
-
   /* Reicht der Platz neben den Kreisen nicht, steht der Text darunter. */
   .mt {
     display: flex;
@@ -130,8 +105,7 @@
     top: 50%;
     right: 4px;
     color: var(--ink-muted);
-    font-size: calc(20 * var(--px));
-    line-height: 1;
+    display: flex;
     transform: translateY(-50%);
   }
 </style>

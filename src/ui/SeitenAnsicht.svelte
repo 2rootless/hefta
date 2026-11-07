@@ -263,7 +263,7 @@
           aria-label={t('ansicht.zurueck')}
           aria-disabled={index === 0}
           onclick={() => blaettern(-1)}
-          ><span class="links"><Symbol name="weiter" groesse={18} /></span></button
+          ><span class="links"><Symbol name="weiter" groesse={20} /></span></button
         >
         <div class="zoom" role="group" aria-label={t('ansicht.groesse')}>
           {#each STUFEN as s (s)}
@@ -280,7 +280,7 @@
           class="rund"
           aria-label={t('ansicht.weiter')}
           aria-disabled={index === seiten.length - 1}
-          onclick={() => blaettern(1)}><Symbol name="weiter" groesse={18} /></button
+          onclick={() => blaettern(1)}><Symbol name="weiter" groesse={20} /></button
         >
       </div>
       {#if drin && umschalten}

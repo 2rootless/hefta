@@ -138,13 +138,13 @@
         type="button"
         aria-label="{t('allgemein.weniger')}: {titel}"
         disabled={!haushalt || haushalt[feld] === 0}
-        onclick={() => zaehlen(feld, -1)}>−</button
+        onclick={() => zaehlen(feld, -1)}><Symbol name="minus" groesse={20} /></button
       >
       <b aria-live="polite">{haushalt?.[feld] ?? 0}</b>
       <button
         type="button"
         aria-label="{t('allgemein.mehr')}: {titel}"
-        onclick={() => zaehlen(feld, 1)}>+</button
+        onclick={() => zaehlen(feld, 1)}><Symbol name="plus" groesse={20} /></button
       >
     </span>
   </div>
@@ -199,7 +199,7 @@
         onclick={(e) => {
           e.preventDefault();
           zurueckGehen('/einrichtung');
-        }}><Symbol name="zurueck" groesse={18} />{t('allgemein.zurueck')}</a
+        }}><Symbol name="zurueck" groesse={20} />{t('allgemein.zurueck')}</a
       >
       <span class="zaehler-schritt">{t('allgemein.schrittVon', { schritt: 2, gesamt: 2 })}</span>
     {:else}
@@ -209,7 +209,7 @@
         onclick={(e) => {
           e.preventDefault();
           zurueckGehen('/');
-        }}><Symbol name="zurueck" groesse={18} />{t('navigation.uebersicht')}</a
+        }}><Symbol name="zurueck" groesse={20} />{t('navigation.uebersicht')}</a
       >
     {/if}
   </div>
@@ -233,7 +233,7 @@
           })}</small
         >
       </span>
-      <Symbol name="weiter" groesse={18} />
+      <Symbol name="weiter" groesse={20} />
     </a>
   {/if}
 

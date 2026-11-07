@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Symbol from '../ui/Symbol.svelte';
   // „Welche Unterlagen wann“ (VS7): dieselbe Tabelle wie der Ratgeber, darum überall dieselbe Fundstelle.
   import { VERMIETER_RATGEBER } from '../app/name';
   import { fundstelle, mitName, RATGEBER } from '../domain/ratgeber';
@@ -15,7 +16,7 @@
 
 <article class="sec vs-detail vs-wann" aria-label={t('schritte.titel')}>
   <a class="vs-back" href={zurueck}>
-    <svg class="vs-ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+    <span class="vs-ch"><Symbol name="zurueck" groesse={20} /></span>
     {zurueckText}
   </a>
   <h2 class="vs-t" data-titel tabindex="-1">{t('schritte.titel')}</h2>

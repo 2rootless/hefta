@@ -69,7 +69,7 @@
       <h1 class="display frage">{t('personLoeschen.titel', { name })}</h1>
       <p class="lead">{t('personLoeschen.lead')}</p>
     </div>
-    <p class="info"><Symbol name="info" groesse={18} /><span>{backupSatz}</span></p>
+    <p class="info"><Symbol name="info" groesse={20} /><span>{backupSatz}</span></p>
     <h2 class="liste-titel">{t('personLoeschen.was')}</h2>
     <ul class="liste">
       <li>{eintrag.person.vorname} {eintrag.person.nachname}</li>

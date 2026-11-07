@@ -10,14 +10,18 @@
     </style>
 
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
-        <item name="android:windowBackground">@color/mappe_grund</item>
+        <item name="android:windowBackground">@color/hefta_grund</item>
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
     </style>
 
 
+    <!-- Startbild nach B11: Symbol in Koralle im Kreis auf dem Grund der App, hell und dunkel. -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/hefta_grund</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/start_symbol</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/hefta_koralle</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

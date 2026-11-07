@@ -30,7 +30,7 @@
 >
   <span class="bahn" aria-hidden="true">
     <span class="knopf"
-      >{#if an}<Symbol name="haken" groesse={13} />{/if}</span
+      >{#if an}<Symbol name="haken" groesse={16} />{/if}</span
     >
   </span>
 </button>

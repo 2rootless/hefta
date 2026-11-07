@@ -37,7 +37,7 @@
     >
   {/if}
   <span class="plus" aria-hidden={ansage ? 'true' : undefined}
-    >{#if pruefen}?{:else}<Symbol name="plus" groesse={14} />{/if}</span
+    >{#if pruefen}?{:else}<Symbol name="plus" groesse={16} />{/if}</span
   >
   <span class="text" aria-hidden={ansage ? 'true' : undefined}>
     <b

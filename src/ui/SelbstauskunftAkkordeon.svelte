@@ -341,7 +341,7 @@
           <span class="nummer" aria-hidden="true">{i + 1}</span>
           <span class="teilname" class:lang={titel.length > 30}>{titel}</span>
           <small
-            >{#if teil.fertig}<Symbol name="haken" groesse={13} />{t(
+            >{#if teil.fertig}<Symbol name="haken" groesse={16} />{t(
                 'selbstauskunft.fertigMarke',
               )}{:else}{offenText(teil)}{/if}</small
           >
@@ -484,7 +484,7 @@
     {:else}
       <button type="button" class="teil zu" aria-expanded="false" onclick={() => (offen = teil.id)}>
         <span class="nummer" class:fertig={teil.fertig} aria-hidden="true"
-          >{#if teil.fertig}<Symbol name="haken" groesse={14} />{:else}{i + 1}{/if}</span
+          >{#if teil.fertig}<Symbol name="haken" groesse={16} />{:else}{i + 1}{/if}</span
         >
         <span class="tx">
           <b>{titel}</b>
@@ -493,7 +493,7 @@
         {#if teil.fertig}
           <span class="aendern">{t('selbstauskunft.aendern')}</span>
         {:else}
-          <span class="pfeil" aria-hidden="true"><Symbol name="weiter" groesse={18} /></span>
+          <span class="pfeil" aria-hidden="true"><Symbol name="weiter" groesse={20} /></span>
         {/if}
       </button>
     {/if}

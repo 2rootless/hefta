@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Symbol from './Symbol.svelte';
   // Bottom Sheet als <dialog>: Fokus bleibt im Sheet, Escape schließt, Hintergrund ist inaktiv.
   import type { Snippet } from 'svelte';
   import { t } from '../i18n';
@@ -14,7 +15,7 @@
     offen: boolean;
     titel: string;
     kopf?: Snippet;
-    /** „×“ oben rechts, 44 px. */
+    /** Schließen oben rechts, 44 px. */
     kreuz?: boolean;
     /** Beim Öffnen auf den Titel, damit Screenreader dort anfangen. */
     titelFokus?: boolean;
@@ -78,7 +79,7 @@
         type="button"
         class="kreuz"
         aria-label={t('allgemein.schliessen')}
-        onclick={() => (offen = false)}>×</button
+        onclick={() => (offen = false)}><Symbol name="schliessen" groesse={20} /></button
       >
     {/if}
     {#if kopf}<div class="kopf">{@render kopf()}</div>{/if}
@@ -144,9 +145,9 @@
     height: 44px;
     border: 0;
     background: none;
+    display: grid;
+    place-items: center;
     color: var(--ink);
-    font-size: calc(24 * var(--px));
-    line-height: 1;
     cursor: pointer;
   }
 

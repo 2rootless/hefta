@@ -106,14 +106,14 @@
     <WischZeile aktiv={loeschbar} beimLoeschen={() => unterlageWeg(u)}>
       <a class="zeile" href={ziel(u)}>
         <span class="stein stein-{steinArt(u)}" aria-hidden="true"
-          ><Symbol name={u.typ.symbol} groesse={16} /></span
+          ><Symbol name={u.typ.symbol} groesse={20} /></span
         >
         <span class="tx">
           <b>{listenText(u.typ)}</b>
           <small>{bitte(u) ?? standText(u)}</small>
           {#if ohneDatum(u)}<span class="datum-eintragen">{t('person.datumEintragen')}</span>{/if}
         </span>
-        {#if !(bearbeiten && loeschbar)}<Symbol name="weiter" groesse={18} />{/if}
+        {#if !(bearbeiten && loeschbar)}<Symbol name="weiter" groesse={20} />{/if}
       </a>
     </WischZeile>
     {#if bearbeiten && loeschbar}

@@ -127,12 +127,13 @@
     font-size: calc(13 * var(--px));
   }
 
+  /* Kachel wie das Quadrat der Person in der Mappe (B11, hefta-zeichen-vertrag-16). */
   .punkt {
     flex: none;
     width: 14px;
     height: 14px;
     margin: 0 5px;
-    border-radius: 50%;
+    border-radius: 1.5px;
     background: var(--farbe);
   }
 

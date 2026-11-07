@@ -233,7 +233,7 @@
             {/if}
           </small>
         </span>
-        {#if drin || !bearbeiten}<Symbol name="weiter" groesse={18} />{/if}
+        {#if drin || !bearbeiten}<Symbol name="weiter" groesse={20} />{/if}
       </a>
     </WischZeile>
     {#if bearbeiten && !drin}{@render loeschKnopf(v)}{/if}
@@ -355,7 +355,7 @@
                           : ''}{t('unterlage.nichtInMappe')}</small
                       >
                     </span>
-                    {#if !bearbeiten}<Symbol name="weiter" groesse={18} />{/if}
+                    {#if !bearbeiten}<Symbol name="weiter" groesse={20} />{/if}
                   </a>
                 </WischZeile>
                 {#if bearbeiten}{@render loeschKnopf(v)}{/if}

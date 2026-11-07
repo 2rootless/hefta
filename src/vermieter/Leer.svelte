@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Symbol from '../ui/Symbol.svelte';
   import { gross, wort } from './regel';
   import { t } from './texte';
 
@@ -14,9 +15,7 @@
   {#if breit}
     <div class="vs-drop gross" class:ziehen={ziehend > 0}>
       <span class="vs-dz">
-        <svg class="vs-i" viewBox="0 0 24 24" aria-hidden="true"
-          ><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14" /></svg
-        >
+        <span class="vs-i vs-i-gross"><Symbol name="hochladen" groesse={28} /></span>
       </span>
       <b>{t(ziehend ? 'leer.loslassen' : 'leer.ziehen')}</b>
       <span class="vs-dsub">{ziehend ? dateien : t('leer.ziehenUnter')}</span>
@@ -24,9 +23,7 @@
     </div>
   {:else}
     <button type="button" class="vs-drop klein" onclick={waehlen}>
-      <svg class="vs-i" viewBox="0 0 24 24" aria-hidden="true"
-        ><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14" /></svg
-      >
+      <span class="vs-i"><Symbol name="hochladen" groesse={20} /></span>
       <span><b>{t('leer.auswaehlen')}</b><small>{t('eingang.waehlenUnter')}</small></span>
     </button>
   {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Symbol from '../ui/Symbol.svelte';
   // Erster Start (design/geraet-und-stoerungen.md, G4): zugleich der Weg zurück, wenn Safari die
   // Daten gelöscht hat: Dann sieht Hefta wie neu aus, und hier steht „Ich habe ein Backup“.
   import { daten, gehe } from '../app/daten.svelte';
@@ -33,29 +34,15 @@
   </div>
   <ul class="punkte">
     <li>
-      <span class="punkt f1" aria-hidden="true">
-        <svg viewBox="0 0 24 24">
-          <circle cx="9" cy="9" r="3" /><path d="M4 19c.5-3 2.5-4.5 5-4.5s4.5 1.5 5 4.5" /><circle
-            cx="17"
-            cy="10"
-            r="2.4"
-          />
-        </svg>
-      </span>
+      <span class="punkt f1" aria-hidden="true"><Symbol name="person" groesse={24} /></span>
       {t('ersterStart.punkt1')}
     </li>
     <li>
-      <span class="punkt f2" aria-hidden="true">
-        <svg viewBox="0 0 24 24">
-          <rect x="6" y="11" width="12" height="9" rx="2" /><path d="M9 11V8a3 3 0 0 1 6 0v3" />
-        </svg>
-      </span>
+      <span class="punkt f2" aria-hidden="true"><Symbol name="schloss" groesse={24} /></span>
       {t('ersterStart.punkt2')}
     </li>
     <li>
-      <span class="punkt f3" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z" /><path d="M14 3v4h4" /></svg>
-      </span>
+      <span class="punkt f3" aria-hidden="true"><Symbol name="datei" groesse={24} /></span>
       {t('ersterStart.punkt3')}
     </li>
   </ul>
@@ -105,24 +92,15 @@
     line-height: calc(22 * var(--px));
   }
 
+  /* Kachel in Personenfarbe mit Symbol 24 (B11, hefta-kachel-figur-40). */
   .punkt {
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    color: #191a2c;
-  }
-
-  .punkt svg {
-    width: 16px;
-    height: 16px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2.4;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    width: 40px;
+    height: 40px;
+    border-radius: 6.67px;
+    color: var(--on-person);
   }
 
   .f1 {

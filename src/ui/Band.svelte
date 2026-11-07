@@ -21,6 +21,7 @@
   // Nach dem Layout und bei jeder Größenänderung misst das Band die Zeilen und zeichnet ein SVG.
   import type { Snippet } from 'svelte';
   import { steineVerteilen } from './bandPlatz';
+  import { SYMBOLE } from './symbolPfade';
   import Ziel from './Ziel.svelte';
 
   let {
@@ -71,12 +72,14 @@
   let svg: SVGSVGElement | undefined = $state();
   let haus: HTMLDivElement | undefined = $state();
 
-  const ICON: Record<string, string> = {
-    form: '<rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3"/>',
-    euro: '<path d="M11.5 4.2A4.6 4.6 0 1 0 11.5 11.8"/><path d="M3 7h6M3 9.2h6"/>',
-    shield: '<path d="M8 2l5 2v4c0 3-2.2 5-5 6-2.8-1-5-3-5-6V4z"/>',
-    key: '<circle cx="5.5" cy="8" r="2.8"/><path d="M8.3 8H14M12 8v2.4"/>',
-  };
+  // Kernform 12 px aus dem Symbolsatz (B11): im Stein, Strich 4,0 im 32er-Raster.
+  const pfade = (liste: readonly string[]) => liste.map((d) => `<path d="${d}"/>`).join('');
+  const ICON: Record<string, string> = Object.fromEntries(
+    Object.entries(SYMBOLE).map(([name, form]) => [
+      name,
+      pfade('kern' in form && form.kern ? form.kern : form.voll),
+    ]),
+  );
 
   // Sehr schmal (320 px mit großer Schrift): schmalere Spalte fürs Band, gut 20 px mehr für den Text.
   let eng = false;
@@ -124,15 +127,15 @@
   function steinZuPunkt(x: number, y: number, art: string, vorher: SteinArt, t0: number) {
     return (
       steinVergeht(x, y, art, vorher, t0) +
-      `<circle cx="${x}" cy="${y}" r="4" class="punkt" opacity="0">${animation('opacity', '0;1', t0, 0.2)}</circle>`
+      `<circle cx="${x}" cy="${y}" r="4.6" class="punkt" opacity="0">${animation('opacity', '0;1', t0, 0.2)}</circle>`
     );
   }
 
   /** Alles da: ein Haken statt einer Reihe Punkte. */
   function hakenStein(x: number, y: number, t0?: number) {
     const stein =
-      `<circle cx="${x}" cy="${y}" r="12" class="punkt"/>` +
-      `<svg aria-hidden="true" x="${x - 7}" y="${y - 7}" width="14" height="14" viewBox="0 0 16 16" class="icon haken"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg>`;
+      `<circle cx="${x}" cy="${y}" r="11.2" class="punkt alles-da"/>` +
+      `<svg aria-hidden="true" x="${x - 6}" y="${y - 6}" width="12" height="12" viewBox="0 0 32 32" class="icon haken">${ICON.haken}</svg>`;
     return t0 === undefined
       ? stein
       : `<g opacity="0">${stein}${animation('opacity', '0;1', t0 + 0.1, 0.2)}</g>`;
@@ -161,7 +164,7 @@
   }
 
   function symbol(art: string, x: number, y: number, hell = false): string {
-    return `<svg aria-hidden="true" x="${x - 6}" y="${y - 6}" width="12" height="12" viewBox="0 0 16 16" class="icon${hell ? ' hell' : ''}">${ICON[art] ?? ''}</svg>`;
+    return `<svg aria-hidden="true" x="${x - 6}" y="${y - 6}" width="12" height="12" viewBox="0 0 32 32" class="icon${hell ? ' hell' : ''}">${ICON[art] ?? ''}</svg>`;
   }
 
   function zeichnen() {
@@ -267,7 +270,7 @@
         if (zustand === 'da')
           farbig += bewegung
             ? steinZuPunkt(x, y, art, bewegung.vorher, bewegung.beginn)
-            : `<circle cx="${x}" cy="${y}" r="4" class="punkt"/>`;
+            : `<circle cx="${x}" cy="${y}" r="4.6" class="punkt"/>`;
         else if (weitere.length) farbig += mehrStein(x, y, weitere.length + 1);
         else if (zustand === 'bald')
           farbig +=
@@ -399,8 +402,15 @@
     stroke: var(--person-6);
   }
 
+  /* „da“: kleiner Punkt mit dünnem Ring (B11, 3.4), damit er auf jeder Personenfarbe steht. */
   .band :global(.punkt) {
     fill: var(--stone);
+    stroke: var(--on-person);
+    stroke-width: 1;
+  }
+
+  .band :global(.punkt.alles-da) {
+    stroke-width: 1.6;
   }
 
   .band :global(.stein-bald) {
@@ -434,7 +444,7 @@
   .band :global(.icon) {
     fill: none;
     stroke: var(--ink);
-    stroke-width: 2;
+    stroke-width: 4;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
@@ -445,7 +455,6 @@
 
   .band :global(.icon.haken) {
     stroke: var(--on-person);
-    stroke-width: 2.4;
   }
 
   .band :global(.mehr-zahl) {

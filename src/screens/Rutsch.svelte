@@ -455,7 +455,7 @@
         disabled={stand.index === 0}
         onclick={() => springen(stand.index - 1)}
       >
-        <span class="gedreht"><Symbol name="weiter" groesse={14} /></span>{t('rutsch.zurueck')}
+        <span class="gedreht"><Symbol name="weiter" groesse={16} /></span>{t('rutsch.zurueck')}
       </button>
       <!-- Vorwärts geht es unten, mit dem Satz, was aus der Unterlage wird (R5). -->
       {#if proPerson.length > 1}
@@ -593,7 +593,7 @@
               <ul class="marken">
                 {#each serie.fenster as f (f.monat)}
                   <li class:da={f.da}>
-                    {#if f.da}<Symbol name="haken" groesse={13} />{/if}{monatName(f.monat)}
+                    {#if f.da}<Symbol name="haken" groesse={16} />{/if}{monatName(f.monat)}
                   </li>
                 {/each}
               </ul>
@@ -649,7 +649,7 @@
               <div class="datei-fehler"><Notiz stark><p role="alert">{fehler}</p></Notiz></div>
             {/if}
             <label class="kachel">
-              <Symbol name="datei" groesse={26} />
+              <Symbol name="datei" groesse={28} />
               {serie
                 ? t('rutsch.serieWaehlen', { monat: monatName(serie.vorschlag) })
                 : schonDa

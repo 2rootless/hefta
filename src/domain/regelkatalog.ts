@@ -17,7 +17,19 @@ import type {
 // Etikett und in welcher Reihenfolge, steht ausschließlich dort; hier wird nur gelesen und gerechnet.
 
 export type Etikett = 'ueblich' | 'kann_helfen' | 'meist_unnoetig';
-export type Symbol = 'form' | 'euro' | 'shield' | 'key';
+/** Symbol einer Unterlage (B11, Liste für Code, Teil 3). */
+export type Symbol =
+  | 'selbstauskunft'
+  | 'einkommen'
+  | 'bonitaet'
+  | 'buergschaft'
+  | 'mietzahlungen'
+  | 'empfehlung'
+  | 'wbs'
+  | 'ausweis'
+  | 'datenkopie'
+  | 'anschreiben'
+  | 'weiteres';
 
 export interface Dokumenttyp {
   id: string;
