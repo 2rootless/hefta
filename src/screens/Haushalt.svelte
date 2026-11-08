@@ -262,7 +262,7 @@
       <div class="zielzeile" data-band-ziel></div>
     </Band>
   {:else if haushalt}
-    <section class="gruppe">
+    <section class="hh-gruppe">
       <h2>{t('uebersicht.abschnittVertrag')}</h2>
       <ul class="liste">
         {#each vertrag as m (m.person.id)}
@@ -271,11 +271,11 @@
       </ul>
       <div class="feld">{@render mitmieterFeld()}</div>
     </section>
-    <section class="gruppe">
+    <section class="hh-gruppe">
       <h2>{t('einrichtung.haushalt.abschnittOhneVertrag')}</h2>
       <div class="zaehler-kasten">{@render zaehlerBeide()}</div>
     </section>
-    <section class="gruppe">
+    <section class="hh-gruppe">
       <h2>{t('uebersicht.abschnittBuergen')}</h2>
       <p class="gruppe-satz">{t('uebersicht.zusatzZeile')}</p>
       {#if buergen.length}
@@ -595,11 +595,11 @@
   }
 
   /* Euer Haushalt: Abschnitte mit ruhigen Listen statt Karten am Band. */
-  .gruppe {
+  .hh-gruppe {
     margin: var(--space-5) var(--space-4) 0;
   }
 
-  .gruppe h2 {
+  .hh-gruppe h2 {
     margin: 0 var(--space-1) 8px;
     font-size: calc(17 * var(--px));
     line-height: calc(22 * var(--px));
@@ -681,7 +681,7 @@
     margin-left: auto;
   }
 
-  .gruppe .feld {
+  .hh-gruppe .feld {
     margin: 8px 0 0;
   }
 
