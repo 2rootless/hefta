@@ -1208,7 +1208,8 @@
     "punkt3": "Am Ende eine Mappe, wie Vermieter sie erwarten.",
     "los": "Los geht’s",
     "backup": "Ich habe ein Backup",
-    "vermieterVor": "Sie haben eine Mappe bekommen und vermieten? Öffnen Sie sie auf",
+    "vermieterFrage": "Sie haben eine Mappe bekommen und vermieten?",
+    "vermieterVor": "Öffnen Sie sie auf",
     "vermieterNach": "."
   },
   "homescreen": {

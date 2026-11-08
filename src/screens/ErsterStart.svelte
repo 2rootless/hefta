@@ -48,21 +48,25 @@
       {t('ersterStart.punkt3')}
     </li>
   </ul>
-  <!-- E42, Aufgabe 64: Wer eine Mappe bekommen hat und hefta.de statt vermieter.hefta.de eintippt,
-       landet hier. Nur im Web; die App aus dem Store bleibt, wie sie ist. Leise, ohne Rahmen. Gesiezt,
-       wie auf der Vermieterseite (Wunsch des Auftraggebers, 8.11.2026). -->
-  {#if !istApp()}
-    <p class="vermieter">
-      {t('ersterStart.vermieterVor')}
-      <a href={VERMIETER_ADRESSE}>{VERMIETER_DOMAIN}</a>{t('ersterStart.vermieterNach')}
-    </p>
-  {/if}
 </main>
 <Aktionsleiste
   text={t('ersterStart.los')}
   onclick={los}
   neben={{ text: t('ersterStart.backup'), onclick: backup }}
-/>
+>
+  <!-- E42, Aufgabe 64: Wer eine Mappe bekommen hat und hefta.de statt vermieter.hefta.de eintippt,
+       landet hier. Nur im Web; die App aus dem Store bleibt, wie sie ist. Leise, ohne Rahmen, gesiezt
+       (B15). Steht in der Leiste unter „Ich habe ein Backup“: so ist er ohne Scrollen sichtbar. -->
+  {#snippet fuss()}
+    {#if !istApp()}
+      <p class="vermieter">
+        <span class="zeile">{t('ersterStart.vermieterFrage')}</span>
+        {t('ersterStart.vermieterVor')}
+        <a href={VERMIETER_ADRESSE}>{VERMIETER_DOMAIN}</a>{t('ersterStart.vermieterNach')}
+      </p>
+    {/if}
+  {/snippet}
+</Aktionsleiste>
 
 <style>
   .start {
@@ -89,10 +93,16 @@
   }
 
   .vermieter {
-    margin: 20px var(--space-5) 0;
+    margin: 4px 0 0;
+    text-align: center;
     color: var(--ink-muted);
     font-size: calc(14 * var(--px));
     line-height: calc(20 * var(--px));
+  }
+
+  /* Frage und Aufforderung je eine Zeile (Nachricht 8.11. m). */
+  .vermieter .zeile {
+    display: block;
   }
 
   /* Tippfläche 44 px (C5), ohne die Zeile höher zu machen. */

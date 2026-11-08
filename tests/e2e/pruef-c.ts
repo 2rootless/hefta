@@ -325,7 +325,8 @@ export function pruefen() {
     // Für Screenreader steht der Satz daneben, gemessen wird das Sichtbare.
     const sichtbarerText = (c: ChildNode) =>
       !!c.textContent?.trim() && !(c instanceof Element && c.matches('.visually-hidden'));
-    const hinweis = [...l.querySelectorAll('p')].some((p) => p.textContent?.trim());
+    // Ein Zusatz ganz unten (.fuss, etwa der Hinweis für Vermieter) ist kein Grund, warum es nicht weitergeht.
+    const hinweis = [...l.querySelectorAll('p:not(.fuss p)')].some((p) => p.textContent?.trim());
     if (
       hinweis &&
       (knopf.getAttribute('aria-disabled') !== 'true' ||

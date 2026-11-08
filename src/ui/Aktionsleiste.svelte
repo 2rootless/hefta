@@ -13,6 +13,7 @@
     grund,
     neben,
     beiGrund,
+    fuss,
   }: {
     text: string;
     zusatz?: string;
@@ -27,6 +28,8 @@
     neben?: { text: string; onclick: () => void };
     /** Tipp auf den gedämpften Knopf: z. B. zum fehlenden Feld springen (D6). */
     beiGrund?: () => void;
+    /** Leiser Zusatz ganz unten in der Leiste, immer sichtbar (E42: Hinweis für Vermieter). */
+    fuss?: import('svelte').Snippet;
   } = $props();
   const grundId = $props.id();
 
@@ -131,6 +134,7 @@
     {#if neben}
       <button type="button" class="textlink neben" onclick={neben.onclick}>{neben.text}</button>
     {/if}
+    {#if fuss}<div class="fuss">{@render fuss()}</div>{/if}
   </div>
 </div>
 
