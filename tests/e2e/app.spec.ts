@@ -17,6 +17,12 @@ test('zeigt den ersten Start im Stil des Designs', async ({ page, browserName })
     'aria-disabled',
   );
   await expect(page.getByRole('button', { name: 'Ich habe ein Backup' })).toBeVisible();
+  // E42: Vermieter, die hefta.de eintippen, finden den Weg zur Vermieterseite.
+  await expect(page.getByText(/^Du hast eine Mappe bekommen und vermietest\?/)).toBeVisible();
+  await expect(page.getByRole('link', { name: 'vermieter.hefta.de' })).toHaveAttribute(
+    'href',
+    'https://vermieter.hefta.de',
+  );
 
   const stil = await page.evaluate(async () => {
     await document.fonts.ready;

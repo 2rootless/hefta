@@ -9,6 +9,8 @@
   import HinweisKasten from '../ui/HinweisKasten.svelte';
   import LogoKachel from '../ui/LogoKachel.svelte';
   import { homescreenFragen } from '../ui/homescreen';
+  import { istApp } from '../app/plattform';
+  import { VERMIETER_ADRESSE, VERMIETER_DOMAIN } from '../app/name';
 
   function los() {
     gehe(homescreenFragen(daten.einstellungen) ? '/homescreen/einrichtung' : '/einrichtung');
@@ -46,6 +48,14 @@
       {t('ersterStart.punkt3')}
     </li>
   </ul>
+  <!-- E42, Aufgabe 64: Wer eine Mappe bekommen hat und hefta.de statt vermieter.hefta.de eintippt,
+       landet hier. Nur im Web; die App aus dem Store bleibt, wie sie ist. Leise, ohne Rahmen. -->
+  {#if !istApp()}
+    <p class="vermieter">
+      {t('ersterStart.vermieterVor')}
+      <a href={VERMIETER_ADRESSE}>{VERMIETER_DOMAIN}</a>{t('ersterStart.vermieterNach')}
+    </p>
+  {/if}
 </main>
 <Aktionsleiste
   text={t('ersterStart.los')}
@@ -75,6 +85,23 @@
 
   .display {
     text-wrap: balance;
+  }
+
+  .vermieter {
+    margin: 20px var(--space-5) 0;
+    color: var(--ink-muted);
+    font-size: calc(14 * var(--px));
+    line-height: calc(20 * var(--px));
+  }
+
+  /* Tippfläche 44 px (C5), ohne die Zeile höher zu machen. */
+  .vermieter a {
+    display: inline-block;
+    padding: 12px 0;
+    margin: -12px 0;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
   .punkte {
