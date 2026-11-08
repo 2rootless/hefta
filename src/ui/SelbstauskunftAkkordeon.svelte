@@ -136,8 +136,13 @@
 
   // Die letzte Ja/Nein-Antwort schließt den Teil. Wer eine Antwort nur ändert, bleibt im Teil, und nach
   // einem Ja wartet die Erklärung darunter auf ihre Eingabe.
+  // Bei den Fragen erst, wenn alle drei beantwortet sind: Die dritte (nach der Zusage) ist nicht Pflicht,
+  // aber wer nach zwei Antworten weiterspringt, sieht sie nicht mehr. Ohne sie geht es über „Weiter“.
   function antworten(teil: TeilId, setzen: () => void, erklaeren: () => boolean) {
-    const fertig = () => stand.find((s) => s.id === teil)?.fertig;
+    const fertig = () =>
+      teil === 'fragen'
+        ? FRAGEN.every((f) => eingabe.sa[f] !== null)
+        : stand.find((s) => s.id === teil)?.fertig;
     const vorher = fertig();
     setzen();
     if (!vorher && fertig() && !erklaeren()) void weiterNach(teil);
@@ -322,7 +327,17 @@
       {/if}
       {#if teil.fertig}
         {@const naechster = naechsterOffen(teil.id)}
-        <button type="button" class="teil-weiter" onclick={() => weiterNach(teil.id)}
+        <!-- Der Fokus bleibt beim Tippen im Feld: Ginge die Tastatur erst zu, verschöbe sich die
+             Leiste unten, und das iPhone verwirft den Tipp. Danach steht er im ersten Feld des
+             nächsten Teils, etwa „Netto im Monat“. -->
+        <button
+          type="button"
+          class="teil-weiter"
+          onmousedown={(e) => e.preventDefault()}
+          onclick={() =>
+            void weiterNach(teil.id).then((neu) =>
+              neu?.querySelector<HTMLElement>('input')?.focus(),
+            )}
           >{naechster
             ? t('selbstauskunft.weiterZu', { teil: t(`selbstauskunft.teil.${naechster}`) })
             : t('selbstauskunft.teilZu')}</button

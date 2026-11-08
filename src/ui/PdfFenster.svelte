@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Ein PDF in der Seitenansicht zeigen (nur in der App, siehe pdfFenster.svelte.ts).
+  // Ein PDF in der Seitenansicht zeigen, in App und Browser (siehe pdfFenster.svelte.ts).
   import { pdfFenster } from '../app/pdfFenster.svelte';
   import { pdfOeffnen, pdfSchliessen, type PdfDokument } from '../pdf/pdfjs';
   import SeitenAnsicht from './SeitenAnsicht.svelte';

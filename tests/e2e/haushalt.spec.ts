@@ -72,7 +72,10 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
       .getByRole('radio', { name: 'Nein' })
       .click();
   }
-  // Die letzte Antwort schließt den Teil, der nächste offene geht von selbst auf (A1).
+  // Zwei Antworten reichen für „fertig“, aber der Teil bleibt offen: Die Frage nach der Zusage steht
+  // noch darunter. Weiter geht es über den Knopf; von selbst erst, wenn alle drei beantwortet sind.
+  await expect(page.getByRole('radiogroup', { name: /Mietrückstände/ })).toBeVisible();
+  await page.getByRole('button', { name: /^Weiter: / }).click();
   await expect(page.getByRole('radiogroup', { name: /Haustiere/ })).toBeVisible();
   await page
     .getByRole('radiogroup', { name: /Haustiere/ })
@@ -214,7 +217,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await expect(page.getByText('zum Haushalt')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Übersicht' })).toBeVisible();
 
-  // Selbstauskunft auf eigener Seite: ausgefüllt, als PDF ansehen öffnet die Datei.
+  // Selbstauskunft auf eigener Seite: ausgefüllt, als PDF ansehen zeigt sie in der Seitenansicht.
   await page.getByRole('link', { name: /^Selbst.?auskunft/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: /Selbst.?auskunft/ })).toBeVisible();
   await expect(page.getByText('Von Max. Änderungen werden sofort gespeichert.')).toBeVisible();
@@ -223,11 +226,15 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
     await barrierefrei(page, 'Selbstauskunft');
     await page.screenshot({ path: 'docs/screenshots/m4-selbstauskunft.png', fullPage: true });
   }
-  const [pdf] = await Promise.all([
-    page.waitForEvent('popup'),
-    page.getByRole('button', { name: 'Als PDF ansehen' }).click(),
-  ]);
-  await pdf.close();
+  // Kein neuer Tab, kein Download: die Seitenansicht von Hefta.
+  let neuerTab = false;
+  page.context().once('page', () => (neuerTab = true));
+  await page.getByRole('button', { name: 'Als PDF ansehen' }).click();
+  const ansicht = page.getByRole('dialog', { name: 'Seite 1 von 1' });
+  await expect(ansicht).toBeVisible();
+  await ansicht.getByRole('button', { name: 'Fertig' }).click();
+  await expect(ansicht).toBeHidden();
+  expect(neuerTab).toBe(false);
   await page.getByRole('button', { name: 'Fertig', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Max', exact: true })).toBeVisible();
 

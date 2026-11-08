@@ -1,6 +1,5 @@
 import { AUSSEHEN_STANDARD } from '../domain/modell';
 import { pdfZeigen } from '../app/pdfFenster.svelte';
-import { istApp } from '../app/plattform';
 import { selbstauskunftDateiname } from '../domain/dateiname';
 import type { Person, Rolle } from '../domain/modell';
 import { rollenText } from '../domain/regelkatalog';
@@ -55,17 +54,10 @@ export async function selbstauskunftDatei(
   return new File([bytes.slice()], name, { type: 'application/pdf' });
 }
 
-/** Öffnet die Datei im Browser (neuer Tab bzw. PDF-Ansicht von iOS). */
+/**
+ * Zeigt die Datei in der Seitenansicht von Hefta, in App und Browser gleich: nichts wird gespeichert,
+ * kein neuer Tab, kein Download (im Browser auf dem iPhone fragte sonst Safari, wohin damit).
+ */
 export function dateiOeffnen(datei: File): void {
-  if (istApp()) {
-    pdfZeigen(datei);
-    return;
-  }
-  const url = URL.createObjectURL(datei);
-  const link = document.createElement('a');
-  link.href = url;
-  link.target = '_blank';
-  link.rel = 'noopener';
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  pdfZeigen(datei);
 }

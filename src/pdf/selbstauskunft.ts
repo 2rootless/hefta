@@ -261,9 +261,11 @@ export function selbstauskunftZeichnen(
       );
     }
     y -= hoehe;
+    // Die Linie steht mittig zwischen den Unterlängen dieser Zeile und den Großbuchstaben der nächsten.
+    // Mit 2,4 mm lag sie auf den Großbuchstaben der nächsten Zeile, und die Reihen wirkten schief.
     seite.drawLine({
-      start: { x: x0, y: y + 2.4 * MM },
-      end: { x: x1, y: y + 2.4 * MM },
+      start: { x: x0, y: y + 5 * MM },
+      end: { x: x1, y: y + 5 * MM },
       thickness: 0.4,
       color: FARBE.linie,
     });

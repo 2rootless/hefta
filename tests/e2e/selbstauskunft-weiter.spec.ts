@@ -57,6 +57,23 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   await expect(page.getByRole('radiogroup', { name: /Haustiere/ })).toBeVisible();
   await expect(page.getByRole('radiogroup', { name: /Mietrückstände/ })).toHaveCount(0);
 
+  // Alle drei Fragen beantwortet: Erst dann geht der nächste Teil von selbst auf.
+  await page.getByRole('button', { name: /^Fragen, die Vermieter stellen dürfen/ }).click();
+  await antwort('Räumungstitel', 'Nein');
+  await expect(page.getByRole('radiogroup', { name: /Mietrückstände/ })).toBeVisible();
+  await antwort('Mietrückstände', 'Nein');
+  await expect(page.getByRole('radiogroup', { name: /Haustiere/ })).toBeVisible();
+
+  // „Weiter: Einkommen“ mit dem Fokus noch im Feld: ein Tipp genügt, der Fokus steht danach in
+  // „Netto im Monat“ (auf dem iPhone ging sonst erst die Tastatur zu und der Tipp verloren).
+  await page.getByRole('button', { name: /^Einkommen .*Ändern/ }).click();
+  await page.getByLabel('Netto im Monat').fill('');
+  await page.getByRole('button', { name: /^Kontakt .*Ändern/ }).click();
+  await page.getByLabel('E-Mail').fill('max@example.org');
+  await page.getByLabel('E-Mail').focus();
+  await page.getByRole('button', { name: 'Weiter: Einkommen' }).click();
+  await expect(page.getByLabel('Netto im Monat')).toBeFocused();
+
   // Angaben eines Teils löschen, nach einer Rückfrage; der Teil ist danach wieder offen.
   await page.getByRole('button', { name: /^Kontakt .*Ändern/ }).click();
   await page.getByRole('button', { name: 'Angaben löschen' }).click();

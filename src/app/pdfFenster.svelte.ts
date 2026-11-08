@@ -1,4 +1,4 @@
-/** In der App gibt es keinen neuen Tab für PDFs: Sie öffnen in der eigenen Seitenansicht. */
+/** PDFs öffnen in der eigenen Seitenansicht, in App und Browser: kein neuer Tab, kein Download. */
 export const pdfFenster = $state<{ datei: File | null }>({ datei: null });
 
 export function pdfZeigen(datei: File): void {
