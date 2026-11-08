@@ -38,7 +38,9 @@
     const schaetzung = await navigator.storage?.estimate?.().catch(() => undefined);
     belegt = Math.max(eigene, schaetzung?.usage ?? 0);
     frei = schaetzung?.quota ? Math.max(0, schaetzung.quota - belegt) : null;
-    dauerhaft = navigator.storage?.persisted ? await navigator.storage.persisted() : null;
+    // In der App liegt alles im Speicher der App; „dauerhaft speichern“ ist eine Frage des Browsers.
+    dauerhaft =
+      !istApp() && navigator.storage?.persisted ? await navigator.storage.persisted() : null;
   }
 
   // Breite über CSSOM, weil die Inhaltsrichtlinie keine Inline-Styles erlaubt.

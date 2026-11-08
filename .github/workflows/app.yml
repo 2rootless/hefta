@@ -26,6 +26,10 @@ on:
         description: Zu TestFlight hochladen
         type: boolean
         default: false
+      probe:
+        description: Mit der Teilen-Probe (nur für Tests, nie für den Store)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -115,6 +119,9 @@ jobs:
           mkdir -p "$RUNNER_TEMP/asc"
           printf '%s' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
           chmod 600 "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
+      - name: Teilen-Probe herausnehmen
+        if: ${{ !inputs.probe }}
+        run: node scripts/ohne-probe.mjs
       # Ohne Signatur archivieren: Automatisch signiert verlangt Xcode sonst ein Entwicklungsprofil und
       # dafür ein registriertes Gerät (Lauf vom 7.11.). Signiert wird beim Export, über den API-Schlüssel.
       - name: Archiv bauen, noch ohne Signatur

@@ -1,8 +1,8 @@
 {
-  "_kommentar": "Ergänzung zum Generatortext: Die Gratisfassung des Generators kennt weder Cloudflare noch eine App, die nur auf dem Gerät speichert. Vom Auftraggeber am 6.11.2026 freigegeben.",
+  "_kommentar": "Ergänzung zum Generatortext: Die Gratisfassung des Generators kennt weder Cloudflare noch eine App, die nur auf dem Gerät speichert. Vom Auftraggeber am 6.11.2026 freigegeben. Abschnitt „Die App für iPhone und Android“ am 8.11.2026 freigegeben.",
   "titel": "Zuerst das Wichtigste zu {app}",
   "einleitung": "Der Text weiter unten ist allgemein gehalten. Hier steht, was für {app} konkret gilt.",
-  "stand": "Stand 6. November 2026.",
+  "stand": "Stand 8. November 2026.",
   "abschnitte": [
     {
       "titel": "Ihre Angaben und Unterlagen",
@@ -11,6 +11,10 @@
     {
       "titel": "Hosting bei Cloudflare",
       "text": "App und Vermieter-Seite werden über Cloudflare Pages ausgeliefert, einen Dienst der Cloudflare, Inc., USA. Beim Laden verarbeitet Cloudflare technisch notwendige Daten wie die IP-Adresse und den Zeitpunkt des Abrufs, um die Dateien auszuliefern und den Dienst abzusichern. Das kann auch in den USA geschehen. Cloudflare stützt solche Übermittlungen nach eigenen Angaben auf das EU-U.S. Data Privacy Framework und auf Standardvertragsklauseln. Rechtsgrundlage ist das berechtigte Interesse an einer sicheren Auslieferung (Art. 6 Abs. 1 lit. f DSGVO). Ihre Angaben und Unterlagen werden dabei nie übertragen. Wir selbst speichern keine Logfiles und sehen keine einzelnen Abrufe, nur Summen. Eine feste Frist nennt Cloudflare nicht; nach seinem Vertrag zur Auftragsverarbeitung speichert Cloudflare die Daten eines Abrufs nur, solange sie für den Dienst nötig sind."
+    },
+    {
+      "titel": "Die App für iPhone und Android",
+      "text": "In der App aus dem App Store oder von Google Play liegen Angaben und Unterlagen im Speicher der App auf Ihrem Gerät, bis Sie sie löschen oder die App entfernen. Die App lädt nichts aus dem Internet und sendet nichts; Cloudflare ist dabei nicht beteiligt. Herunterladen und Updates laufen über Apple (App Store) oder Google (Google Play), die dabei Daten nach ihren eigenen Datenschutzbestimmungen verarbeiten. Haben Sie auf Ihrem Gerät erlaubt, Analysedaten mit App-Entwicklern zu teilen, stellen uns Apple oder Google Absturzberichte und zusammengefasste Zahlen bereit, etwa zu Downloads und Abstürzen, ohne Ihre Angaben und Unterlagen. Rechtsgrundlage ist das berechtigte Interesse an einer fehlerfreien App (Art. 6 Abs. 1 lit. f DSGVO)."
     },
     {
       "titel": "Keine Cookies, keine Analyse",

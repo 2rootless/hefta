@@ -4,6 +4,7 @@
   // Ein anderer Tab mit neuerer Version braucht den Speicher: gleicher Aufbau, „Neu laden“.
   import { daten, neuLaden } from '../app/daten.svelte';
   import { t } from '../i18n';
+  import { istAndroidApp, istApp } from '../app/plattform';
   import Aktionsleiste from './Aktionsleiste.svelte';
   import Logo from './Logo.svelte';
 
@@ -34,8 +35,9 @@
   {#if !andererTab}
     <ol class="schritte">
       <li>{t('stoerung.schritt1')}</li>
-      <li>{t('stoerung.schritt2')}</li>
-      <li>{t('stoerung.schritt3')}</li>
+      <!-- Privates Surfen gibt es nur im Browser; der Weg zum iPhone-Speicher nicht unter Android. -->
+      {#if !istApp()}<li>{t('stoerung.schritt2')}</li>{/if}
+      {#if !istAndroidApp()}<li>{t('stoerung.schritt3')}</li>{/if}
     </ol>
     <p class="klein">{t('stoerung.backup')}</p>
   {/if}

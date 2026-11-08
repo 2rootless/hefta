@@ -5,6 +5,9 @@
   import { t } from '../i18n';
   import { passend, TITEL } from '../ui/passend';
   import Zurueck from '../ui/Zurueck.svelte';
+  import { istApp } from '../app/plattform';
+
+  const app = istApp();
 </script>
 
 <main class="seite">
@@ -21,15 +24,21 @@
   <h2>{t('rechtliches.datenschutz')}</h2>
   <p>{t('rechtliches.kurz')}</p>
   <h3>{t('rechtliches.geraetTitel')}</h3>
-  <p>{t('rechtliches.geraetText')}</p>
+  <p>{t(app ? 'rechtliches.geraetTextApp' : 'rechtliches.geraetText')}</p>
   <h3>{t('rechtliches.backupTitel')}</h3>
   <p>{t('rechtliches.backupText')}</p>
   <h3>{t('rechtliches.teilenTitel')}</h3>
   <p>{t('rechtliches.teilenText')}</p>
-  <h3>{t('rechtliches.hostingTitel')}</h3>
-  <p>{t('rechtliches.hostingText')}</p>
+  {#if app}
+    <!-- In der App liefert nicht Cloudflare aus, sondern der Store (freigegeben am 8.11.2026). -->
+    <h3>{t('rechtliches.storeTitel')}</h3>
+    <p>{t('rechtliches.storeText')}</p>
+  {:else}
+    <h3>{t('rechtliches.hostingTitel')}</h3>
+    <p>{t('rechtliches.hostingText')}</p>
+  {/if}
   <h3>{t('rechtliches.cookiesTitel')}</h3>
-  <p>{t('rechtliches.cookiesText')}</p>
+  <p>{t(app ? 'rechtliches.cookiesTextApp' : 'rechtliches.cookiesText')}</p>
   <h3>{t('rechtliches.rechteTitel')}</h3>
   <p>{t('rechtliches.rechteText')}</p>
   <p><a class="ganz" href="/datenschutz/">{t('rechtliches.ganzeErklaerung')}</a></p>
