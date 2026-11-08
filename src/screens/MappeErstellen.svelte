@@ -453,6 +453,10 @@
   }
   async function sichernKlick() {
     if (!ergebnis) return;
+    // In der App zeigt „PDF ansehen“ die Mappe in der Seitenansicht, ohne sie zu speichern. Sichern geht
+    // dort über „Teilen“ › „In Dateien sichern“. Im Browser bleibt es der Download, den Safari öffnet.
+    const { istApp } = await import('../app/plattform');
+    if (istApp()) return ansehen(ergebnis.dateien[0]);
     const { sichern } = await import('../ui/mappeErstellen');
     sichern(ergebnis.dateien);
   }
