@@ -173,15 +173,6 @@
         </div>
       </li>
       <li>
-        <a class="listenzeile" href="#/technik-test">
-          <span class="tx"
-            ><b>{t('einstellungen.technik')}</b><small>{t('einstellungen.technikHinweis')}</small
-            ></span
-          >
-          {@render pfeil()}
-        </a>
-      </li>
-      <li>
         <div class="listenzeile">
           <span class="tx"
             ><b>{t('einstellungen.version')}</b><small
