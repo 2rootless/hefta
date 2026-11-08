@@ -49,7 +49,8 @@
     </li>
   </ul>
   <!-- E42, Aufgabe 64: Wer eine Mappe bekommen hat und hefta.de statt vermieter.hefta.de eintippt,
-       landet hier. Nur im Web; die App aus dem Store bleibt, wie sie ist. Leise, ohne Rahmen. -->
+       landet hier. Nur im Web; die App aus dem Store bleibt, wie sie ist. Leise, ohne Rahmen. Gesiezt,
+       wie auf der Vermieterseite (Wunsch des Auftraggebers, 8.11.2026). -->
   {#if !istApp()}
     <p class="vermieter">
       {t('ersterStart.vermieterVor')}
