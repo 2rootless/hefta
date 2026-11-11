@@ -5,6 +5,9 @@
 # - „testflight“ läuft nur von Hand (Actions → App → Run workflow, Haken „Zu TestFlight hochladen“) und nur
 #   in der geschützten Umgebung „store“: Jeder Lauf wartet auf die Freigabe des Auftraggebers.
 #   Geheime Werte der Umgebung: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (Inhalt der .p8-Datei), APPLE_TEAM_ID.
+# - „play“ läuft nur von Hand (Haken „AAB für Google Play bauen“), ebenfalls in „store“ (E64): baut ein
+#   signiertes Android App Bundle und legt es als Datei am Lauf ab. Hochladen in die Play Console von Hand.
+#   Geheime Werte: ANDROID_UPLOAD_KEYSTORE (Keystore als Base64), ANDROID_UPLOAD_PASSWORT, ANDROID_UPLOAD_ALIAS.
 # - Läufe aus Forks bekommen nie geheime Werte (GitHub), und pull_request startet hier nichts.
 name: App
 
@@ -28,6 +31,10 @@ on:
         default: false
       probe:
         description: Mit der Teilen-Probe (nur für Tests, nie für den Store)
+        type: boolean
+        default: false
+      play:
+        description: AAB für Google Play bauen
         type: boolean
         default: false
 
@@ -158,3 +165,47 @@ jobs:
       - name: Schlüssel wieder löschen
         if: always()
         run: rm -rf "$RUNNER_TEMP/asc"
+
+  play:
+    if: github.event_name == 'workflow_dispatch' && inputs.play && github.ref == 'refs/heads/main'
+    needs: pruefen-android
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: store
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync android
+      - name: Upload-Schlüssel nur für diesen Lauf ablegen
+        env:
+          ANDROID_UPLOAD_KEYSTORE: ${{ secrets.ANDROID_UPLOAD_KEYSTORE }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/play"
+          printf '%s' "$ANDROID_UPLOAD_KEYSTORE" | base64 -d > "$RUNNER_TEMP/play/upload.jks"
+          chmod 600 "$RUNNER_TEMP/play/upload.jks"
+      - name: AAB bauen und signieren
+        working-directory: android
+        env:
+          HEFTA_UPLOAD_KEYSTORE: ${{ runner.temp }}/play/upload.jks
+          HEFTA_UPLOAD_PASSWORT: ${{ secrets.ANDROID_UPLOAD_PASSWORT }}
+          HEFTA_UPLOAD_ALIAS: ${{ secrets.ANDROID_UPLOAD_ALIAS }}
+          HEFTA_VERSION_CODE: ${{ github.run_number }}
+        run: ./gradlew --no-daemon bundleRelease
+      - name: Schlüssel wieder löschen
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/play"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hefta-android-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 14
