@@ -46,9 +46,10 @@ defaults:
   run:
     shell: bash
 
+# Ein neuer Push bricht nur ältere Prüfläufe ab, nie einen von Hand gestarteten Lauf (TestFlight, Play).
 concurrency:
-  group: app-${{ github.ref }}
-  cancel-in-progress: true
+  group: app-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 
 jobs:
   pruefen-ios:
