@@ -121,5 +121,18 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- probe:anfang · Nur in Testbauten mit Teilen-Probe (E62); scripts/ohne-probe.mjs nimmt es heraus. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>de.hefta.app.probe</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>heftaprobe</string>
+			</array>
+		</dict>
+	</array>
+	<!-- probe:ende -->
 </dict>
 </plist>

@@ -78,7 +78,7 @@ final class ProbeViewController: UIViewController {
         let elemente = extensionContext?.inputItems as? [NSExtensionItem] ?? []
         let gruppe = DispatchGroup()
         let kopf: [String: Any] = [
-            "probe": "Hefta Teilen-Probe 1",
+            "probe": "Hefta Teilen-Probe 2",
             "zeit": ISO8601DateFormatter().string(from: Date()),
             "ios": UIDevice.current.systemVersion,
             "elemente": elemente.count,

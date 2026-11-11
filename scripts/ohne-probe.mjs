@@ -20,3 +20,14 @@ if (weg !== 3) {
 }
 writeFileSync(DATEI, nachher.join('\n'));
 console.log('ohne-probe: Probe nicht eingebettet');
+
+// Das Schema „heftaprobe“ (Safari in Hefta öffnen, E62) gibt es nur in Testbauten mit Probe.
+const PLIST = process.argv[3] ?? 'ios/App/App/Info.plist';
+const plist = readFileSync(PLIST, 'utf8');
+const ohneSchema = plist.replace(/\t<!-- probe:anfang[\s\S]*?<!-- probe:ende -->\n/, '');
+if (ohneSchema === plist || ohneSchema.includes('heftaprobe')) {
+  console.error('ohne-probe: Block „probe:anfang … probe:ende“ in der Info.plist nicht gefunden');
+  process.exit(1);
+}
+writeFileSync(PLIST, ohneSchema);
+console.log('ohne-probe: Schema heftaprobe entfernt');
