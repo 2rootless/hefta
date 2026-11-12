@@ -17,6 +17,7 @@
   import { fehlerBeobachten, hinweise } from './hinweise.svelte';
   import { route } from './router.svelte';
   import { linkWegDa } from './plattform';
+  import { wechselArt } from '../ui/wechsel';
 
   // Der Technik-Test (M0-Spike) wird nur bei Bedarf geladen, damit PDF.js nicht im Start-Bundle steckt.
   const technikTest = () => import('../spike/TechnikTest.svelte');
@@ -38,6 +39,7 @@
     heft: () => import('../screens/HeftSeite.svelte'),
     merkmal: () => import('../screens/MerkmalSeite.svelte'),
     wuensche: () => import('../screens/WuenscheSeite.svelte'),
+    anleitung: () => import('../screens/AnleitungSeite.svelte'),
     netto: () => import('../screens/NettoSeite.svelte'),
     wohnungNeu: () => import('../screens/WohnungNeu.svelte'),
     neuesHeftLink: () => import('../screens/NeuesHeftLink.svelte'),
@@ -79,6 +81,11 @@
   });
 
   const personId = $derived(route.pfad.match(/^\/person\/([\w-]+)$/)?.[1]);
+  // Bewegung beim Wechsel (Design 12.11.): Hefta 2 nach Vorgabe, alles andere blendet über wie bisher.
+  const wechselKlasse = $derived.by(() => {
+    const w = wechselArt(route.von, route.pfad, route.richtung);
+    return w === 'einblenden' ? 'einblenden' : `wechsel-${w}`;
+  });
   const heftId = $derived(route.pfad.match(/^\/heft\/([\w-]+)$/)?.[1]);
   const merkmalId = $derived(route.pfad.match(/^\/heft\/([\w-]+)\/merkmal$/)?.[1]);
   const unterlage = $derived(
@@ -185,7 +192,7 @@
   {#if hinweise.fehler && route.pfad !== '/' && route.pfad !== ''}
     <div class="stoerung-oben"><HinweisKasten nurFehler /></div>
   {/if}
-  <div class="einblenden">
+  <div class={wechselKlasse}>
     {#if route.pfad === '/technik-test'}
       {#await technikTest() then modul}
         <modul.default />
@@ -228,6 +235,10 @@
       {/await}
     {:else if route.pfad === '/wohnung-neu/kontrolle'}
       {#await seiten.heftKontrolle() then m}
+        <m.default />
+      {/await}
+    {:else if route.pfad === '/wohnung-neu/so-gehts'}
+      {#await seiten.anleitung() then m}
         <m.default />
       {/await}
     {:else if route.pfad === '/wuensche'}

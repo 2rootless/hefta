@@ -1,6 +1,13 @@
 <script lang="ts" module>
   /** Feste Plätze für eigene Grafiken (E58). Der Name ist zugleich der Dateiname in src/grafiken/. */
-  export type GrafikName = 'erster-start' | 'wohnungen-leer' | 'alles-da' | 'zusage';
+  export type GrafikName =
+    | 'erster-start'
+    | 'wohnungen-leer'
+    | 'alles-da'
+    | 'zusage'
+    | 'teilen-1'
+    | 'teilen-2'
+    | 'teilen-3';
 </script>
 
 <script lang="ts">

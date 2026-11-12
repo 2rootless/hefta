@@ -7,7 +7,8 @@
   import { onDestroy, onMount, tick } from 'svelte';
   import { daten } from '../app/daten.svelte';
   import { heftaInserat, linkAus } from '../app/heftaInserat';
-  import { gehe, zurueckGehen } from '../app/router.svelte';
+  import { gehe, route, zurueckGehen } from '../app/router.svelte';
+  import { wechselArt, wechselDauerToken } from '../ui/wechsel';
   import { t } from '../i18n';
   import Hauptbutton from '../ui/Hauptbutton.svelte';
   import { entwurf, entwurfVergessen } from '../ui/neuesHeft.svelte';
@@ -37,8 +38,10 @@
   const mitKnopf = $derived(geprueft && !feldOffen && knopfGeht !== false);
 
   /** Dauer des Aufschlagens aus den Tokens (`--bw-aufschlagen`; „Bewegung reduzieren“ regeln die Tokens). */
+  // Der Knopf erscheint erst, wenn der Bildschirm steht: nach der Dauer des Wechsels (Design 12.11.).
   function aufschlagen(): number {
-    const wert = getComputedStyle(document.documentElement).getPropertyValue('--bw-aufschlagen');
+    const token = wechselDauerToken(wechselArt(route.von, route.pfad, route.richtung));
+    const wert = getComputedStyle(document.documentElement).getPropertyValue(token);
     const ms = parseFloat(wert);
     return Number.isFinite(ms) ? (wert.trim().endsWith('ms') ? ms : ms * 1000) : 0;
   }
@@ -185,13 +188,13 @@
           ></span
         ><Symbol name="weiter" groesse={20} />
       </a>
-      <!-- E81: der bequemste Weg. Bis die Anleitung „So geht's“ kommt, nur ein Hinweis, kein Link. -->
-      <p class="weg">
+      <!-- E81: der bequemste Weg; dahinter die Anleitung „So geht's“. -->
+      <a class="weg" href="#/wohnung-neu/so-gehts">
         <span
           ><b>{t('neuesHeft.ausAppTeilen')}</b><small>{t('neuesHeft.ausAppTeilenText')}</small
           ></span
-        >
-      </p>
+        ><Symbol name="weiter" groesse={20} />
+      </a>
     </div>
 
     {#if !mitKnopf && eingabe.trim()}
@@ -339,10 +342,6 @@
 
   .weg + .weg {
     border-top: 1px solid var(--line);
-  }
-
-  p.weg {
-    margin: 0;
   }
 
   .weg {

@@ -40,6 +40,9 @@ export const entwurf = $state<{
  * Stand der Vorschau (B23 Bildschirm 2) für genau einen Link: Zurück aus der Kontrolle zeigt ihn wieder,
  * ohne neu zu laden (E72).
  */
+/** Das zuletzt angelegte Heft: Seine Zeile kommt in der Übersicht einmal mit `bw-hoch` (Zeile 6). */
+export const zuletzt = $state<{ heftId: string | null }>({ heftId: null });
+
 export const vorschauStand = $state<{
   link: string;
   zustand: 'laden' | 'ok' | 'zeit' | 'netz' | 'leer' | 'liste' | 'schon';

@@ -10,6 +10,7 @@
   import { t, type TextSchluessel } from '../i18n';
   import Symbol from './Symbol.svelte';
   import TerminKarte from './TerminKarte.svelte';
+  import { zuletzt } from './neuesHeft.svelte';
 
   let { hefte, jetzt }: { hefte: Heft[]; jetzt: Date } = $props();
 
@@ -88,7 +89,16 @@
   {@const z = zeile(h.ereignisse, h.createdAt, jetzt)}
   {@const titel = heftTitel(h)}
   {@const info = infoZeile(h, z.art)}
-  <a class="z {z.art}" href={`#/heft/${h.id}`}>
+  <!-- Bewegung beim Neuen (Zeile 6, Design 12.11.): die Zeile des eben angelegten Hefts, einmal. -->
+  <a
+    class="z {z.art}"
+    class:neu={h.id === zuletzt.heftId}
+    href={`#/heft/${h.id}`}
+    onanimationend={(e) => {
+      // Erst wenn das Steigen fertig ist; das Überblenden für „Bewegung reduzieren“ endet früher.
+      if (e.animationName === 'bw-hoch' && h.id === zuletzt.heftId) zuletzt.heftId = null;
+    }}
+  >
     <span class="k">
       <b class="ti" class:str={titel.strasse}>{titel.text}</b>
       <span class="w {z.art}">{wort(z.wort)}</span>
@@ -506,5 +516,11 @@
   .lz span {
     flex: none;
     font-size: calc(13.5 * var(--px));
+  }
+
+  .z.neu {
+    animation:
+      bw-hoch var(--bw-mittel) var(--bw-ziel) var(--bw-takt) backwards,
+      bw-blende var(--bw-nur-reduziert) var(--bw-gleich) backwards;
   }
 </style>

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { route } from '../app/router.svelte';
+  import { wechselArt } from '../ui/wechsel';
   import { haushaltsNetto } from '../domain/netto';
   // Ein Heft (B21 Fassung 4), erster Stand: Umschlag mit Titel, Adresse,
   // Eckdaten und Quelle, die Leiste „Stand x von 4“, die Besichtigung, Notizen und der Abgleich mit den
@@ -59,7 +61,8 @@
   }
 </script>
 
-<main class="seite">
+<!-- Öffnen eines Hefts: das Scharnier am Umschlag (`auf`, B21), der Rest folgt (Design 12.11.). -->
+<main class="seite" class:auf={wechselArt(route.von, route.pfad, route.richtung) === 'heft'}>
   <header class="kopf">
     <Zurueck href="#/wohnungen" text={t('heft.zurueck')} />
   </header>
@@ -174,6 +177,15 @@
 
   /* Umschlag (B16, B21 Fassung 4): Karte mit Rücken; der Rücken in der Terminfarbe, solange eine
      Besichtigung ansteht, abgelegt leise. */
+  .auf > .umschlag {
+    transform-origin: left center;
+    animation: bw-scharnier var(--bw-aufschlagen) var(--bw-ziel) backwards;
+  }
+
+  .auf > :not(.umschlag, .kopf) {
+    animation: bw-folgen var(--bw-mittel) var(--bw-ziel) var(--bw-takt) backwards;
+  }
+
   .umschlag {
     margin-top: 6px;
     padding: 0 0 14px;

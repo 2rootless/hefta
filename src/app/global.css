@@ -382,6 +382,61 @@ input[type='month']::-webkit-date-and-time-value {
   }
 }
 
+/* Wechsel der Bildschirme von Hefta 2 (Design 12.11., src/ui/wechsel.ts). Jede Bewegung hat daneben ein
+   Überblenden in --bw-nur-reduziert: Mit „Bewegung reduzieren“ sind die Dauern 0 ms, dann blendet nur das. */
+.wechsel-folgen > :is(main, .screen) {
+  animation:
+    bw-folgen var(--bw-aufschlagen) var(--bw-ziel) backwards,
+    bw-blende var(--bw-nur-reduziert) var(--bw-gleich) backwards;
+}
+
+.wechsel-blende-kurz > :is(main, .screen) {
+  animation:
+    bw-blende var(--bw-kurz) var(--bw-weich) backwards,
+    bw-blende var(--bw-nur-reduziert) var(--bw-gleich) backwards;
+}
+
+/* Nur der Inhalt bewegt sich: Feste Leisten (Tabs) dürfen nicht mitwandern. */
+.wechsel-zurueck > :is(main, .screen) {
+  animation:
+    bw-zurueck var(--bw-mittel) var(--bw-ziel) backwards,
+    bw-blende var(--bw-nur-reduziert) var(--bw-gleich) backwards;
+}
+
+/* Kontrolle und Heft bewegen ihre Teile selbst; das Ganze blendet nur bei „Bewegung reduzieren“. */
+.wechsel-werte,
+.wechsel-heft {
+  animation: bw-blende var(--bw-nur-reduziert) var(--bw-gleich) backwards;
+}
+
+@keyframes bw-folgen {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes bw-zurueck {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+@keyframes bw-hoch {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes bw-scharnier {
+  from {
+    opacity: 0.3;
+    transform: perspective(900px) rotateY(-18deg);
+  }
+}
+
 /* Bewegung im Tab „Mappe“ (B21): gemeinsame Abläufe. Dauer, Kurve und Verzögerung setzt jede Stelle
    aus den Tokens, immer mit `backwards`: Das Ende jeder Bewegung ist der Ruhezustand der Ansicht. */
 @keyframes bw-toenen {

@@ -47,9 +47,12 @@
 
   function oeffnen(k: Schluessel) {
     offen = k;
-    if (k === 'warm') ((e1 = wu.warmBis != null ? zahlText(wu.warmBis) : ''), (e2 = ''));
-    if (k === 'zimmer') ((e1 = wu.zimmerAb != null ? zahlText(wu.zimmerAb) : ''), (e2 = ''));
-    if (k === 'flaeche') ((e1 = wu.flaecheAb != null ? zahlText(wu.flaecheAb) : ''), (e2 = ''));
+    const zahlOderLeer = (n: number | null | undefined) => (n != null ? zahlText(n) : '');
+    e2 = '';
+    if (k === 'warm') e1 = zahlOderLeer(wu.warmBis);
+    if (k === 'zimmer') e1 = zahlOderLeer(wu.zimmerAb);
+    if (k === 'flaeche') e1 = zahlOderLeer(wu.flaecheAb);
+    if (k === 'grenze') e1 = zahlOderLeer(hh?.mietgrenze);
     if (k === 'weg') {
       e1 = wu.ort?.name ?? '';
       e2 = wu.ort ? zahlText(wu.ort.kmBis) : '';
@@ -58,7 +61,6 @@
       e1 = wu.einzugVon ?? '';
       e2 = wu.einzugBis ?? '';
     }
-    if (k === 'grenze') ((e1 = hh?.mietgrenze != null ? zahlText(hh.mietgrenze) : ''), (e2 = ''));
   }
 
   const nummer = (s: string) => (s.trim() ? zahl(s.replace(/[€%m²\s]/g, '')) : null);

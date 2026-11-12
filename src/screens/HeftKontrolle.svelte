@@ -7,7 +7,8 @@
   // der Leiste nur „Heft anlegen“; erst dann wird gespeichert (Lesesatz B23, E72).
   // Beträge (E78): genau wie im Inserat, mit Cent, wenn es sie nennt; gerechnet gerundet mit „ca.“.
   import { daten, db, stillLaden } from '../app/daten.svelte';
-  import { abschliessen, abschliessenMit } from '../app/router.svelte';
+  import { abschliessen, abschliessenMit, route } from '../app/router.svelte';
+  import { wechselArt } from '../ui/wechsel';
   import { heftTitel } from '../domain/heftKarte';
   import type { HeftAngaben } from '../domain/modell';
   import { monatVorher, urteile, type Urteil } from '../domain/urteile';
@@ -16,7 +17,7 @@
   import { datum as datumLesen, zahl } from '../lesen/leser';
   import { heftAnlegen } from '../storage/speicher';
   import Hauptbutton from '../ui/Hauptbutton.svelte';
-  import { entwurf, entwurfVergessen, hatEckdaten } from '../ui/neuesHeft.svelte';
+  import { entwurf, entwurfVergessen, hatEckdaten, zuletzt } from '../ui/neuesHeft.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import UrteilZeichen from '../ui/UrteilZeichen.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
@@ -356,12 +357,13 @@
     });
     await stillLaden();
     entwurfVergessen();
+    zuletzt.heftId = heft.id;
     abschliessenMit('/wohnungen', `/heft/${heft.id}`);
   }
 </script>
 
-{#snippet liste(zeilen: Zeile[])}
-  <div class="liste">
+{#snippet liste(zeilen: Zeile[], i: number)}
+  <div class="liste" style:--i={i}>
     {#each zeilen as z (z.schluessel)}
       {#if offen === z.schluessel}
         <form
@@ -452,7 +454,8 @@
   </div>
 {/snippet}
 
-<main class="seite">
+<!-- Vorschau → Kontrolle wie `werte` aus B18 (Design 12.11.): Kopf steht, die Gruppen folgen versetzt. -->
+<main class="seite" class:werte={wechselArt(route.von, route.pfad, route.richtung) === 'werte'}>
   <header class="kopf">
     <!-- B23: „Abbrechen“ beendet den ganzen Ablauf und führt zur Übersicht; nichts ist gespeichert. -->
     <Zurueck
@@ -520,14 +523,14 @@
       </div>
     {/if}
 
-    <h2 class="gr">{t('neuesHeft.gruppeMiete')}</h2>
-    {@render liste(miete)}
+    <h2 class="gr" style:--i={1}>{t('neuesHeft.gruppeMiete')}</h2>
+    {@render liste(miete, 1)}
 
-    <h2 class="gr">{t('neuesHeft.gruppeWohnung')}</h2>
-    {@render liste(wohnung)}
+    <h2 class="gr" style:--i={2}>{t('neuesHeft.gruppeWohnung')}</h2>
+    {@render liste(wohnung, 2)}
 
-    <h2 class="gr">{t('neuesHeft.gruppeBewerbung')}</h2>
-    {@render liste(bewerbung)}
+    <h2 class="gr" style:--i={3}>{t('neuesHeft.gruppeBewerbung')}</h2>
+    {@render liste(bewerbung, 3)}
 
     <p class="tipp">{t(ihr ? 'neuesHeft.tippHinweisIhr' : 'neuesHeft.tippHinweisDu')}</p>
 
@@ -626,6 +629,12 @@
     color: var(--accent-text);
     font-weight: 650;
     text-decoration: none;
+  }
+
+  /* Gruppen folgen mit `bw-hoch`, `mittel`, `ziel`, je `takt` versetzt; höchstens die ersten vier. */
+  .werte :is(.zus, .gr, .liste) {
+    animation: bw-hoch var(--bw-mittel) var(--bw-ziel) backwards;
+    animation-delay: calc(var(--bw-takt) * min(var(--i, 0), 3));
   }
 
   .gr {

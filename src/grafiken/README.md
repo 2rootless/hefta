@@ -8,6 +8,9 @@ Hier liegen die SVG-Grafiken für die festen Plätze der App (`src/ui/GrafikPlat
 | `wohnungen-leer.svg` | Tab „Wohnungen“ mit Haushalt, aber ohne Heft |
 | `alles-da.svg` | Tab „Mappe“, Kasten „Alles da“, statt des Hakens |
 | `zusage.svg` | Heft nach einer Zusage (kommt mit dem Heft nach B18) |
+| `teilen-1.svg` | Anleitung „So kommt ein Inserat zu Hefta“ (E81, B24): Inserat in der Portal-App öffnen, hochkant 9:16 |
+| `teilen-2.svg` | dieselbe Anleitung: auf „Teilen“ tippen |
+| `teilen-3.svg` | dieselbe Anleitung: Hefta im Teilen-Menü wählen |
 
 Fehlt eine Datei, steht am Platz, was heute gezeichnet ist.
 

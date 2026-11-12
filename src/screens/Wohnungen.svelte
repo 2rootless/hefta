@@ -6,6 +6,7 @@
   import { daten, gehe } from '../app/daten.svelte';
   import { VERMIETER_ADRESSE, VERMIETER_DOMAIN } from '../app/name';
   import { istApp, istIosApp } from '../app/plattform';
+  import AnleitungTeilen from '../ui/AnleitungTeilen.svelte';
   import { gruss } from '../domain/gruss';
   import { t } from '../i18n';
   import HeftUebersicht from '../ui/HeftUebersicht.svelte';
@@ -93,6 +94,7 @@
       >
       <a class="link" href="#/">{t('wohnungen.mappeBereit')}</a>
     </section>
+    {#if istApp()}<AnleitungTeilen {ihr} />{/if}
   {:else}
     <p class="sub">{t('wohnungen.subOhne')}</p>
     <h2 class="h">{t('wohnungen.ohneTitel')}</h2>
@@ -114,6 +116,8 @@
     </div>
     <GrafikPlatz name="erster-start" />
     <p class="kasten">{t('wohnungen.kasten')}</p>
+    <!-- Ohne Haushalt „ihr“ (E74.4). -->
+    {#if istApp()}<AnleitungTeilen ihr={true} />{/if}
     {#if !istApp()}
       <!-- E42: solange es keinen Haushalt gibt, gesiezt (B15). -->
       <p class="vermieter">

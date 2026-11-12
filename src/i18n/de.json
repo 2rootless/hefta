@@ -1761,5 +1761,16 @@
     "aendern": "Wünsche ändern",
     "ohneIhr": "Legt fest, was ihr sucht. Dann zeigt {app} hier, was passt.",
     "ohneDu": "Leg fest, was du suchst. Dann zeigt {app} hier, was passt."
+  },
+  "anleitung": {
+    "titel": "So kommt ein Inserat zu {app}",
+    "soGehts": "So geht's",
+    "schritt1": "Inserat in der Portal-App öffnen.",
+    "schritt2": "Auf „Teilen“ tippen.",
+    "schritt3": "{app} wählen.",
+    "mehrIhr": "Beim ersten Mal steht {app} oft erst unter „Mehr“. Dort könnt ihr es nach vorn holen.",
+    "mehrDu": "Beim ersten Mal steht {app} oft erst unter „Mehr“. Dort kannst du es nach vorn holen.",
+    "zweitIhr": "Oder: Link kopieren und hier einsetzen.",
+    "zweitDu": "Oder: Link kopieren und hier einsetzen."
   }
 }

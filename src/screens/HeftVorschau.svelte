@@ -238,7 +238,8 @@
   {:else if zustand === 'ok' || zustand === 'schon'}
     {@const alt = zustand === 'schon' ? schon : null}
     {#if !alt}<h1 class="h2">{t('vorschau.frage')}</h1>{/if}
-    <article class="karte" class:ohnefoto={!entwurf.bild || alt}>
+    <!-- Laden → fertig: Inhalt der Karte `bw-blende`, `kurz`, `weich`; nichts verschiebt sich. -->
+    <article class="karte fertig" class:ohnefoto={!entwurf.bild || alt}>
       {#if alt}
         <p class="schonsatz">
           <Symbol name="haken" groesse={16} />{t(ihr ? 'vorschau.schonIhr' : 'vorschau.schonDu', {
@@ -422,6 +423,12 @@
 
   h1 {
     margin-bottom: 12px;
+  }
+
+  .karte.fertig {
+    animation:
+      bw-blende var(--bw-kurz) var(--bw-weich) backwards,
+      bw-blende var(--bw-nur-reduziert) var(--bw-gleich) backwards;
   }
 
   .karte {

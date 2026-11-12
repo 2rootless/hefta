@@ -47,10 +47,15 @@ export const route = $state<{
   vorher: string | null;
   /** Beim Zurückgehen: wo man auf der Seite war. */
   scrollZiel: number;
+  /** Der Pfad vor diesem Wechsel und die Richtung, für die Bewegung beim Wechsel (Design 12.11.). */
+  von: string | null;
+  richtung: 'vor' | 'zurueck' | 'ersetzt' | null;
 }>({
   pfad: aktuell(),
   vorher: verlauf.stapel[verlauf.stelle - 1] ?? null,
   scrollZiel: 0,
+  von: null,
+  richtung: null,
 });
 
 // eslint-disable-next-line svelte/prefer-svelte-reactivity -- nur Buchführung, nichts zeichnet danach.
@@ -61,14 +66,18 @@ let danach: string | null = null;
 window.addEventListener('hashchange', () => {
   const pfad = aktuell();
   const alt = verlauf.stelle;
+  const vonPfad = route.pfad;
+  let richtung: 'vor' | 'zurueck' | 'ersetzt' = 'vor';
   const stelle = (history.state as { stelle?: unknown } | null)?.stelle;
   // Die Seite steht noch: Ihre Höhe gilt für die Rückkehr.
   scrollStand.set(alt, window.scrollY);
   if (naechsterErsetzt) {
     naechsterErsetzt = false;
+    richtung = 'ersetzt';
     verlauf.stapel[alt] = pfad;
     history.replaceState({ stelle: alt }, '');
   } else if (typeof stelle === 'number') {
+    richtung = stelle < alt ? 'zurueck' : 'vor';
     verlauf.stelle = stelle;
     verlauf.stapel[stelle] = pfad;
   } else {
@@ -87,6 +96,8 @@ window.addEventListener('hashchange', () => {
   }
   route.scrollZiel = verlauf.stelle < alt ? (scrollStand.get(verlauf.stelle) ?? 0) : 0;
   route.vorher = verlauf.stapel[verlauf.stelle - 1] ?? null;
+  route.von = vonPfad;
+  route.richtung = richtung;
   route.pfad = pfad;
 });
 
