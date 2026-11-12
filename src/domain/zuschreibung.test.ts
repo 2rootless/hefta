@@ -11,7 +11,13 @@ const AUSSAGE =
 
 // Sätze, die zwar so klingen, aber etwas anderes sagen. „dürfen nicht erforderliche Angaben“: Geschwärzt werden
 // darf, was nicht erforderlich ist.
-const AUSNAHMEN = new Set<string>(['data/nachforderung.de.json:schwaerzen']);
+// Ebenso „Abschicken müsst ihr selbst“ (Planung 12z): keine Aussage über Recht, sondern dass Hefta nichts
+// selbst verschickt.
+const AUSNAHMEN = new Set<string>([
+  'data/nachforderung.de.json:schwaerzen',
+  'src/i18n/de.json:heft.naechstesSatzIhr',
+  'src/i18n/de.json:heft.naechstesSatzDu',
+]);
 
 function texte(wert: unknown, pfad = ''): [string, string][] {
   if (typeof wert === 'string') return [[pfad, wert.replaceAll('­', '')]];

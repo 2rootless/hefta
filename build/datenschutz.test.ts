@@ -5,9 +5,10 @@ import { impressumHtml } from '../src/app/impressum';
 import { DATENSCHUTZ_PFAD, datenschutzHtml, datenschutzText } from './ratgeber';
 
 // Der Text kommt aus dem Datenschutz-Generator (Gratisfassung, erzeugt am 5.11.2026, am 6.11.2026 neu erzeugt ohne den
-// Bereich „Zugriffsdaten und Logfiles“, Aufgabe 50) und bleibt, wie er ist.
-// Ändert er sich, ist das eine neue Fassung aus dem Generator, kein Tippfehler: Dann ändert sich auch die Summe.
-const SUMME = '79d3b3602fdf219e6c0821e70a2b20fc962f89ef2526e03e1596c62dab922936';
+// Bereich „Zugriffsdaten und Logfiles“, Aufgabe 50; am 12.11.2026 neu erzeugt mit hallo@hefta.de, E94) und bleibt,
+// wie er ist. Ändert er sich, ist das eine neue Fassung aus dem Generator, kein Tippfehler: Dann ändert sich auch die
+// Summe.
+const SUMME = 'e7fdd0d245af4d7ee29e127aa868b5f22aadc08d79d345658f700564cb069e6f';
 
 describe('Datenschutzerklärung', () => {
   const text = datenschutzText();
@@ -26,7 +27,7 @@ describe('Datenschutzerklärung', () => {
       const html = datenschutzHtml(stimme);
       const an = html.indexOf('<!--email_off-->');
       const aus = html.indexOf('<!--/email_off-->');
-      const mail = html.indexOf('lleyton.sekyere@pm.me');
+      const mail = html.indexOf('hallo@hefta.de');
       expect(an).toBeGreaterThan(0);
       expect(mail).toBeGreaterThan(an);
       expect(aus).toBeGreaterThan(mail);
@@ -78,7 +79,7 @@ describe('Impressum', () => {
 
   it('Der Text ist der aus dem Generator, Zeichen für Zeichen', () => {
     expect(createHash('sha256').update(text).digest('hex')).toBe(
-      'a20275f7244c93c0198ee3cc181604f5f5992407186fa23ea4f2633d56ca69dc',
+      '407c7f331d3086721e252d3c0080f0bfd9fbe819adced4d0de596a3366a37133',
     );
   });
 
@@ -100,7 +101,7 @@ describe('Impressum', () => {
       'Lleyton Boateng Sekyere',
       'Friedensallee 378',
       '22761 Hamburg, Deutschland',
-      'lleyton.sekyere@pm.me',
+      'hallo@hefta.de',
     ]) {
       expect(text).toContain(angabe);
       expect(dse).toContain(angabe);

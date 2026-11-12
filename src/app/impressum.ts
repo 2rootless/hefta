@@ -1,7 +1,7 @@
 import TEXT from '../../data/impressum.de.html?raw';
 import { APP_DOMAIN } from './name';
 
-// Das Impressum kommt aus dem Datenschutz-Generator (Gratisfassung, 5.11.2026) und steht unverändert in
+// Das Impressum kommt aus dem Datenschutz-Generator (Gratisfassung, 5.11.2026, neu am 12.11.2026 mit hallo@hefta.de, E94) und steht unverändert in
 // data/impressum.de.html, ein Test prüft die Prüfsumme. Der Hinweis auf den Generator ist Bedingung der
 // Gratisfassung und bleibt stehen. Ändert sich die Anschrift, kommt ein neuer Text aus dem Generator.
 
