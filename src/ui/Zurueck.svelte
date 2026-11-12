@@ -1,8 +1,10 @@
 <script lang="ts">
   // Oben links: tut dasselbe wie die Wischgeste, eine Seite zurück. Kam man von woanders her als von der
-  // übergeordneten Seite, heißt es schlicht „Zurück“, damit der Name stimmt.
+  // übergeordneten Seite, nennt der Link die vorige Seite, wenn sie einen kurzen Namen hat, sonst heißt er
+  // „Zurück“ (Planung 12r), damit der Name stimmt.
   import { route, zurueckGehen } from '../app/router.svelte';
   import { t } from '../i18n';
+  import { seitenName } from './seitenName';
   import Symbol from './Symbol.svelte';
 
   let {
@@ -27,7 +29,10 @@
     e.preventDefault();
     if (onclick) onclick();
     else zurueckGehen(oben);
-  }}><Symbol name="zurueck" groesse={20} />{anderswoher ? t('allgemein.zurueck') : text}</a
+  }}
+  ><Symbol name="zurueck" groesse={20} />{anderswoher
+    ? (seitenName(route.vorher!) ?? t('allgemein.zurueck'))
+    : text}</a
 >
 
 <style>

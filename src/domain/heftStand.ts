@@ -143,3 +143,11 @@ export function ergebnisSetzen(
 export function hervorholen(e: HeftEreignisse): HeftEreignisse {
   return { ...e, ergebnis: null, abgelegtAm: null };
 }
+
+/**
+ * „Termin entfernen“ (E91): Der Vermieter sagt ab oder verschiebt ohne neues Datum. Das Heft fällt zurück:
+ * mit Bewerbung auf „Beworben“ (das Datum bleibt), sonst auf „Gemerkt“.
+ */
+export function terminEntfernen(e: HeftEreignisse): HeftEreignisse {
+  return { ...e, termin: null };
+}

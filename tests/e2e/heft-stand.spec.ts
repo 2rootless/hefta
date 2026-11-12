@@ -165,6 +165,29 @@ test('Termin eintragen, in den Kalender, ändern, Ergebnis und wieder hervorhole
   await page.getByRole('button', { name: 'Wieder hervorholen' }).click();
   await expect(page.getByRole('img', { name: 'Stand: Besichtigung' })).toBeVisible();
 
+  // E91: Termin entfernen, mit Rückfrage im Blatt. Danach „Beworben“ mit dem ersten Datum, und eine
+  // Absage lässt sich weiter eintragen (Bedingung des Auftraggebers).
+  await page.getByRole('link', { name: 'Termin ändern' }).click();
+  await page.getByRole('button', { name: 'Termin entfernen' }).click();
+  const blatt = page.getByRole('dialog', { name: 'Termin entfernen?' });
+  await expect(blatt).toContainText('Das Heft steht dann wieder auf „Beworben“.');
+  await expect(blatt).toContainText('Einen Eintrag in deinem Kalender löschst du dort selbst.');
+  await ganzesBild(page, 'termin-entfernen.png');
+  await blatt.getByRole('button', { name: 'Termin entfernen' }).click();
+  await expect(page.getByRole('img', { name: 'Stand: Beworben' })).toBeVisible();
+  await expect(page.getByText(/^Beworben am 5\.\sNov\., seit 3 Tagen$/)).toBeVisible();
+  await page.goBack();
+  await expect(page).not.toHaveURL(/\/termin$/);
+  await page.goForward();
+  await page.getByRole('link', { name: 'Stand selbst setzen' }).click();
+  await expect(page.getByRole('button', { name: /^Beworben/ })).toHaveAttribute(
+    'aria-current',
+    'true',
+  );
+  await page.getByRole('button', { name: /^Ergebnis/ }).click();
+  await page.getByRole('button', { name: 'Absage' }).click();
+  await expect(page.getByRole('img', { name: 'Stand: Abgelegt' })).toBeVisible();
+
   // „Gemerkt“ nimmt Termin und Bewerbung zurück.
   await page.getByRole('link', { name: 'Stand selbst setzen' }).click();
   await page.getByRole('button', { name: /^Gemerkt/ }).click();

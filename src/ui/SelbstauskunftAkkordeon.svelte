@@ -113,10 +113,9 @@
   // Zweifel am Format im Kontakt (Rückmeldung 12.11.: „E-Mail warnt nicht“): Der Knopf „Weiter“ und die
   // Taste im letzten Feld schlossen den Teil, bevor der Hinweis erscheinen konnte. Jetzt zeigt der erste
   // Schritt weiter den Hinweis, der zweite geht weiter („Du kannst es trotzdem so lassen“).
-  const zweifelKontakt = $derived(
-    (!!eingabe.telefon.trim() && !telefonSiehtGutAus(eingabe.telefon)) ||
-      (!!eingabe.email.trim() && !emailSiehtGutAus(eingabe.email)),
-  );
+  const zweifelTelefon = $derived(!!eingabe.telefon.trim() && !telefonSiehtGutAus(eingabe.telefon));
+  const zweifelEmail = $derived(!!eingabe.email.trim() && !emailSiehtGutAus(eingabe.email));
+  const zweifelKontakt = $derived(zweifelTelefon || zweifelEmail);
   let gewarntBei = $state<string | null>(null);
 
   function weiterNach(teil: TeilId): Promise<HTMLElement | null | undefined> {
@@ -530,7 +529,15 @@
           <b>{titel}</b>
           <small>{teil.fertig ? zusammenfassung(teil.id) : offenText(teil)}</small>
           {#if teil.id === 'kontakt' && zweifelKontakt}
-            <small class="zweifel">{t('selbstauskunft.formatZweifel')}</small>
+            <small class="zweifel"
+              >{t(
+                zweifelTelefon && zweifelEmail
+                  ? 'selbstauskunft.pruefenBeide'
+                  : zweifelEmail
+                    ? 'selbstauskunft.pruefenEmail'
+                    : 'selbstauskunft.pruefenTelefon',
+              )}</small
+            >
           {/if}
         </span>
         {#if teil.fertig}

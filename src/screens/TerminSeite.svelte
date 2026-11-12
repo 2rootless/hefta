@@ -7,10 +7,11 @@
   import { abschliessen } from '../app/router.svelte';
   import { tagAus } from '../domain/fristen';
   import { terminKurz } from '../domain/heftKarte';
-  import { stand, terminSetzen } from '../domain/heftStand';
+  import { stand, terminEntfernen, terminSetzen } from '../domain/heftStand';
   import { t } from '../i18n';
   import { heftAendern } from '../storage/speicher';
   import Hauptbutton from '../ui/Hauptbutton.svelte';
+  import Sheet from '../ui/Sheet.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
 
@@ -65,6 +66,18 @@
     await heftAendern(await db(), heft.id, {
       ereignisse: $state.snapshot(terminSetzen(heft.ereignisse, am, treffpunkt)),
     });
+    await stillLaden();
+    abschliessen(`/heft/${heft.id}`);
+  }
+
+  // „Termin entfernen“ (E91): nur beim Ändern, mit kurzer Rückfrage im Blatt. Danach führt „Zurück“ nicht
+  // noch einmal hierher.
+  let entfernenOffen = $state(false);
+  const ohneTermin = $derived(heft ? terminEntfernen(heft.ereignisse) : null);
+  async function entfernen() {
+    if (!heft || !ohneTermin) return;
+    await heftAendern(await db(), heft.id, { ereignisse: $state.snapshot(ohneTermin) });
+    entfernenOffen = false;
     await stillLaden();
     abschliessen(`/heft/${heft.id}`);
   }
@@ -133,9 +146,28 @@
 
     <div class="cta">
       <Hauptbutton text={t('termin.speichern')} onclick={speichern} />
+      {#if aendern}
+        <button class="leis" type="button" onclick={() => (entfernenOffen = true)}
+          >{t('termin.entfernen')}</button
+        >
+      {/if}
     </div>
   {/if}
 </main>
+
+<Sheet bind:offen={entfernenOffen} titel={t('termin.entfernenTitel')}>
+  <p class="blatt-satz">
+    {t(
+      ohneTermin && stand(ohneTermin, heute) === 'gemerkt'
+        ? 'termin.entfernenGemerkt'
+        : 'termin.entfernenBeworben',
+    )}
+  </p>
+  <Hauptbutton text={t('termin.entfernen')} onclick={entfernen} />
+  <button class="leis" type="button" onclick={() => (entfernenOffen = false)}
+    >{t('termin.abbrechen')}</button
+  >
+</Sheet>
 
 <style>
   .seite {
@@ -238,6 +270,27 @@
     margin: 8px 2px 0;
     color: var(--knapp-text);
     font-size: calc(14 * var(--px));
+  }
+
+  .leis {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    margin-top: 6px;
+    border: 0;
+    background: none;
+    color: var(--accent-text);
+    font: inherit;
+    font-size: calc(14 * var(--px));
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .blatt-satz {
+    margin: 0 0 16px;
+    color: var(--ink-muted);
   }
 
   .cta {

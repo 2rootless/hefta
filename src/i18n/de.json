@@ -909,12 +909,14 @@
     "teilZu": "Fertig",
     "telefonHinweis": "Das sieht nicht nach einer Telefonnummer aus. Du kannst es trotzdem so lassen.",
     "emailHinweis": "Das sieht nicht nach einer E-Mail-Adresse aus. Du kannst es trotzdem so lassen.",
-    "formatZweifel": "Schreibweise bitte prüfen",
     "vonWem": "Von {name} ausgefüllt. Schau kurz drüber, wenn du unsicher bist.",
     "angabenLoeschen": "Angaben löschen",
     "angabenFrage": "Angaben in diesem Teil löschen? Der Teil ist danach wieder offen.",
     "angabenFrageHaushalt": "Angaben für den ganzen Haushalt löschen? Der Teil ist danach wieder offen.",
-    "loeschen": "Löschen"
+    "loeschen": "Löschen",
+    "pruefenEmail": "E-Mail bitte prüfen",
+    "pruefenTelefon": "Telefonnummer bitte prüfen",
+    "pruefenBeide": "E-Mail und Telefonnummer bitte prüfen"
   },
   "personLoeschen": {
     "titel": "{name} ganz löschen?",
@@ -1807,7 +1809,12 @@
     "freiwillig": "freiwillig",
     "beispiel": "zum Beispiel: Klingeln bei Okafor",
     "speichern": "Termin speichern",
-    "ohneTag": "Erst einen Tag wählen."
+    "ohneTag": "Erst einen Tag wählen.",
+    "entfernen": "Termin entfernen",
+    "entfernenTitel": "Termin entfernen?",
+    "entfernenBeworben": "Das Heft steht dann wieder auf „Beworben“. Einen Eintrag in deinem Kalender löschst du dort selbst.",
+    "entfernenGemerkt": "Das Heft steht dann wieder auf „Gemerkt“. Einen Eintrag in deinem Kalender löschst du dort selbst.",
+    "abbrechen": "Abbrechen"
   },
   "standSetzen": {
     "zurueck": "Heft",

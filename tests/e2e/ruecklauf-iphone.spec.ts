@@ -242,14 +242,19 @@ test('Selbstauskunft: Hinweis zum Format, Knopf zum nächsten Teil, von wem der 
   await expect(page.getByLabel('E-Mail')).toBeVisible();
   await page.getByRole('button', { name: /^Weiter: / }).click();
   await expect(page.getByLabel('E-Mail')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /^Kontakt/ })).toContainText(
-    'Schreibweise bitte prüfen',
-  );
+  await expect(page.getByRole('button', { name: /^Kontakt/ })).toContainText('E-Mail bitte prüfen');
   // Mit der Eingabetaste im letzten Feld genauso.
   await page.getByRole('button', { name: /^Kontakt/ }).click();
   await page.getByLabel('E-Mail').fill('max@beispiel');
   await page.getByLabel('E-Mail').press('Enter');
   await expect(page.getByText(/sieht nicht nach einer E-Mail-Adresse aus/)).toBeVisible();
+  // Beide zweifelhaft: ein Satz für beide (Planung 12r).
+  await page.getByLabel('Telefon').fill('abc');
+  await page.getByRole('button', { name: /^Weiter: / }).click();
+  await page.getByRole('button', { name: /^Weiter: / }).click();
+  await expect(page.getByRole('button', { name: /^Kontakt/ })).toContainText(
+    'E-Mail und Telefonnummer bitte prüfen',
+  );
 });
 
 test('Mehrere Dateien: Eine Datei mit zwei Monaten wird je Seite geprüft und getrennt gespeichert', async ({

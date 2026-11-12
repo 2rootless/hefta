@@ -132,3 +132,20 @@ describe('Stand selbst setzen, Termin und Ergebnis (Zeile 9)', async () => {
     expect(stand(terminSetzen(z, new Date(2026, 10, 20, 9), ''), JETZT)).toBe('besichtigung');
   });
 });
+
+describe('Termin entfernen (E91)', async () => {
+  const { ergebnisSetzen, stand, terminEntfernen, terminSetzen } = await import('./heftStand');
+  const JETZT = new Date(2026, 10, 12, 10);
+  it('führt zurück auf „Beworben“ mit dem ersten Datum, danach geht eine Absage', () => {
+    const am = new Date(2026, 10, 1).toISOString();
+    const b: HeftEreignisse = { ...KEINE_EREIGNISSE, beworben: { am, weg: 'mail', sicher: true } };
+    const weg = terminEntfernen(terminSetzen(b, new Date(2026, 10, 14, 17), 'Hof'));
+    expect(stand(weg, JETZT)).toBe('beworben');
+    expect(weg.beworben?.am).toBe(am);
+    expect(stand(ergebnisSetzen(weg, 'absage', JETZT), JETZT)).toBe('abgelegt');
+    // Ohne Bewerbung: wieder „Gemerkt“.
+    expect(stand(terminEntfernen(terminSetzen(KEINE_EREIGNISSE, JETZT, '')), JETZT)).toBe(
+      'gemerkt',
+    );
+  });
+});
