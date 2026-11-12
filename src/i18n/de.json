@@ -1654,7 +1654,9 @@
     "ohneLinkIhr": "Wenn ihr keinen Link habt.",
     "ohneLinkDu": "Wenn du keinen Link hast.",
     "gelesenWar": "Gelesen: {wert}",
-    "zuruecksetzen": "Zurücksetzen"
+    "zuruecksetzen": "Zurücksetzen",
+    "ausAppTeilen": "Aus der App teilen",
+    "ausAppTeilenText": "Im Portal auf „Teilen“ tippen, dann {app} wählen."
   },
   "vorschau": {
     "zurueck": "Neues Heft",
@@ -1701,6 +1703,7 @@
     "grundUnbefristetDu": "du suchst unbefristet",
     "grundSpaetIhr": "nach eurem spätesten Termin",
     "grundSpaetDu": "nach deinem spätesten Termin",
-    "grundFrueh": "früher als gewünscht"
+    "grundFrueh": "früher als gewünscht",
+    "geteilt": "geteilt aus der App"
   }
 }

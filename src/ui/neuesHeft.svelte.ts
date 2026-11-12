@@ -1,4 +1,6 @@
 import type { InseratGelesen } from '../app/heftaInserat';
+import { linkWegDa } from '../app/plattform';
+import { gehe } from '../app/router.svelte';
 import type { HeftAngaben } from '../domain/modell';
 import { adresseAus, angabenAus } from '../lesen/angaben';
 import { adresseLesen, lesen, type Gelesen } from '../lesen/leser';
@@ -19,6 +21,8 @@ export const entwurf = $state<{
   /** Erstes Foto aus der Vorschau (B23), verkleinert als Daten-Adresse; nur im Speicher der Seite. */
   bild: string | null;
   bildHoch: boolean;
+  /** Aus einer Portal-App an Hefta geteilt (E81, B23 `quelle=teilen`). */
+  geteilt: boolean;
 }>({
   text: '',
   link: '',
@@ -29,6 +33,7 @@ export const entwurf = $state<{
   adresse: '',
   bild: null,
   bildHoch: false,
+  geteilt: false,
 });
 
 /**
@@ -63,6 +68,7 @@ export function entwurfVergessen(): void {
   entwurf.adresse = '';
   entwurf.bild = null;
   entwurf.bildHoch = false;
+  entwurf.geteilt = false;
   vorschauStand.link = '';
   vorschauStand.roh = null;
 }
@@ -91,4 +97,18 @@ export function entwurfAusVorschau(g: InseratGelesen, link: string): void {
 /** Hat das Lesen etwas gefunden, das im Kopf eines Hefts steht? */
 export function hatEckdaten(a: HeftAngaben | null): boolean {
   return !!a && (a.warm !== null || a.zimmer !== null || a.flaeche !== null);
+}
+
+/** Ein geteiltes Inserat: direkt in die Vorschau, wo man gerade ist (E81, E73). */
+export function geteiltOeffnen(link: string): void {
+  entwurfVergessen();
+  entwurf.link = link;
+  entwurf.geteilt = true;
+  if (linkWegDa()) gehe('/wohnung-neu/vorschau');
+  else {
+    // Android: Die unsichtbare Vorschau gibt es bisher nur auf dem iPhone. Dann gleich zur Kontrolle, mit
+    // Portal und Link; die Angaben trägt man ein (wie „Trotzdem anlegen“).
+    entwurfAusVorschau({ zustand: 'fehler' }, link);
+    gehe('/wohnung-neu/kontrolle');
+  }
 }

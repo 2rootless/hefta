@@ -13,14 +13,20 @@
     linkSchluessel,
     type InseratGelesen,
   } from '../app/heftaInserat';
-  import { gehe, zurueckGehen } from '../app/router.svelte';
+  import { abschliessen, ersetzen, gehe, zurueckGehen } from '../app/router.svelte';
   import { eckdaten, heftTitel } from '../domain/heftKarte';
   import type { Heft } from '../domain/modell';
   import { monatVorher, wichtigsteAbweichungen, type AbweichungsZeile } from '../domain/urteile';
   import { t } from '../i18n';
   import { portalAus, wohnungAus } from '../lesen/angaben';
   import Hauptbutton from '../ui/Hauptbutton.svelte';
-  import { entwurf, entwurfAusVorschau, hatEckdaten, vorschauStand } from '../ui/neuesHeft.svelte';
+  import {
+    entwurf,
+    entwurfAusVorschau,
+    entwurfVergessen,
+    hatEckdaten,
+    vorschauStand,
+  } from '../ui/neuesHeft.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import UrteilZeichen from '../ui/UrteilZeichen.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
@@ -88,7 +94,18 @@
   function andererLink() {
     void plugin?.vorschauAbbrechen();
     vorschauStand.link = '';
-    zurueckGehen('/wohnung-neu');
+    // Geteilt (E81): Hinter der Vorschau liegt nicht „Neues Heft“, sondern die Seite davor.
+    if (entwurf.geteilt) {
+      entwurfVergessen();
+      ersetzen('/wohnung-neu');
+    } else zurueckGehen('/wohnung-neu');
+  }
+
+  /** B23 `quelle=teilen`: oben „Abbrechen“; der ganze Ablauf endet, nichts ist gespeichert. */
+  function abbrechen() {
+    void plugin?.vorschauAbbrechen();
+    entwurfVergessen();
+    abschliessen('/wohnungen');
   }
 
   const ganzeSeite = () => void plugin?.seite({ url: link });
@@ -174,13 +191,26 @@
     entwurf.angaben ? heftTitel({ adresse: entwurf.adresse, angaben: entwurf.angaben }).text : '',
   );
   const quelle = $derived(
-    [portal, nummer ? `${t('vorschau.inserat')} ${nummer}` : null].filter(Boolean).join(' · '),
+    [
+      portal,
+      entwurf.geteilt
+        ? t('vorschau.geteilt')
+        : nummer
+          ? `${t('vorschau.inserat')} ${nummer}`
+          : null,
+    ]
+      .filter(Boolean)
+      .join(' · '),
   );
 </script>
 
 <main class="seite">
   <header class="kopf">
-    <Zurueck href="#/wohnung-neu" text={t('vorschau.zurueck')} onclick={andererLink} />
+    {#if entwurf.geteilt}
+      <Zurueck href="#/wohnungen" text={t('neuesHeft.abbrechen')} onclick={abbrechen} />
+    {:else}
+      <Zurueck href="#/wohnung-neu" text={t('vorschau.zurueck')} onclick={andererLink} />
+    {/if}
   </header>
 
   {#if zustand === 'laden'}

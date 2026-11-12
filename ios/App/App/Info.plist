@@ -121,9 +121,18 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-	<!-- probe:anfang · Nur in Testbauten mit Teilen-Probe (E62); scripts/ohne-probe.mjs nimmt es heraus. -->
 	<key>CFBundleURLTypes</key>
 	<array>
+		<!-- Teilen an Hefta (E81): Die Erweiterung HeftaTeilen öffnet die App mit hefta://teilen?link=… -->
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>de.hefta.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>hefta</string>
+			</array>
+		</dict>
+	<!-- probe:anfang · Nur in Testbauten mit Teilen-Probe (E62); scripts/ohne-probe.mjs nimmt es heraus. -->
 		<dict>
 			<key>CFBundleURLName</key>
 			<string>de.hefta.app.probe</string>
@@ -132,7 +141,7 @@
 				<string>heftaprobe</string>
 			</array>
 		</dict>
-	</array>
 	<!-- probe:ende -->
+	</array>
 </dict>
 </plist>

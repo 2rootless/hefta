@@ -16,3 +16,8 @@ mount(App, { target: ziel });
 // In der App kommt alles aus dem App-Paket; Updates laufen über den Store, nicht den Service Worker.
 if (istApp()) void import('./app/appStart').then((m) => m.appStarten());
 else void serviceWorkerAnmelden();
+
+// Browsertests mit nachgestelltem App-Weg (`__heftaInseratTest`) übergeben so ein geteiltes Inserat (E81).
+const fenster = window as unknown as { __heftaInseratTest?: unknown; __heftaTeilen?: unknown };
+if (fenster.__heftaInseratTest)
+  void import('./ui/neuesHeft.svelte').then((m) => (fenster.__heftaTeilen = m.geteiltOeffnen));

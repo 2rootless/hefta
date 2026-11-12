@@ -173,6 +173,13 @@
           ></span
         ><Symbol name="weiter" groesse={20} />
       </a>
+      <!-- E81: der bequemste Weg. Bis die Anleitung „So geht's“ kommt, nur ein Hinweis, kein Link. -->
+      <p class="weg">
+        <span
+          ><b>{t('neuesHeft.ausAppTeilen')}</b><small>{t('neuesHeft.ausAppTeilenText')}</small
+          ></span
+        >
+      </p>
     </div>
 
     {#if !mitKnopf && eingabe.trim()}
@@ -316,6 +323,14 @@
     border: 1px solid var(--line);
     border-radius: 14px;
     background: var(--surface);
+  }
+
+  .weg + .weg {
+    border-top: 1px solid var(--line);
+  }
+
+  p.weg {
+    margin: 0;
   }
 
   .weg {
