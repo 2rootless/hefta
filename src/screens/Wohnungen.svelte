@@ -52,11 +52,10 @@
     <!-- Das Logo ist Schmuck und wird nicht vorgelesen. -->
     <span class="logo" aria-hidden="true"><Logo /></span>
     <span class="platz"></span>
-    {#if mitHaushalt}
-      <a class="icb" href="#/wohnung-neu" aria-label={t('wohnungen.hinzufuegen')}
-        ><Symbol name="plus" groesse={24} /></a
-      >
-    {/if}
+    <!-- Immer da, auch ohne Haushalt: Sonst gäbe es nach dem ersten Heft keinen Weg zum zweiten. -->
+    <a class="icb" href="#/wohnung-neu" aria-label={t('wohnungen.hinzufuegen')}
+      ><Symbol name="plus" groesse={24} /></a
+    >
     <a class="icb" href="#/einstellungen" aria-label={t('navigation.einstellungen')}
       ><Symbol name="zahnrad" groesse={24} /></a
     >

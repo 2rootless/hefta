@@ -1652,7 +1652,9 @@
     "oder": "Oder",
     "textEinsetzen": "Text des Inserats einsetzen",
     "ohneLinkIhr": "Wenn ihr keinen Link habt.",
-    "ohneLinkDu": "Wenn du keinen Link hast."
+    "ohneLinkDu": "Wenn du keinen Link hast.",
+    "gelesenWar": "Gelesen: {wert}",
+    "zuruecksetzen": "Zurücksetzen"
   },
   "vorschau": {
     "zurueck": "Neues Heft",

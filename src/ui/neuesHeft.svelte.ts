@@ -11,12 +11,25 @@ export const entwurf = $state<{
   link: string;
   gelesen: Gelesen | null;
   angaben: HeftAngaben | null;
+  /** So, wie Hefta es gelesen hat, zum Zurücksetzen geänderter Angaben (Auftraggeber, 12.11.). */
+  gelesenAngaben: HeftAngaben | null;
+  gelesenAdresse: string;
   /** Adresse wie im Heft, zwei Zeilen; leer, wenn nichts gefunden. */
   adresse: string;
   /** Erstes Foto aus der Vorschau (B23), verkleinert als Daten-Adresse; nur im Speicher der Seite. */
   bild: string | null;
   bildHoch: boolean;
-}>({ text: '', link: '', gelesen: null, angaben: null, adresse: '', bild: null, bildHoch: false });
+}>({
+  text: '',
+  link: '',
+  gelesen: null,
+  angaben: null,
+  gelesenAngaben: null,
+  gelesenAdresse: '',
+  adresse: '',
+  bild: null,
+  bildHoch: false,
+});
 
 /**
  * Stand der Vorschau (B23 Bildschirm 2) für genau einen Link: Zurück aus der Kontrolle zeigt ihn wieder,
@@ -36,6 +49,8 @@ export function entwurfLesen(): void {
   entwurf.gelesen = g;
   entwurf.angaben = angabenAus(g, a, null, link || null);
   entwurf.adresse = adresseAus(a);
+  entwurf.gelesenAngaben = angabenAus(g, a, null, link || null);
+  entwurf.gelesenAdresse = entwurf.adresse;
 }
 
 export function entwurfVergessen(): void {
@@ -43,6 +58,8 @@ export function entwurfVergessen(): void {
   entwurf.link = '';
   entwurf.gelesen = null;
   entwurf.angaben = null;
+  entwurf.gelesenAngaben = null;
+  entwurf.gelesenAdresse = '';
   entwurf.adresse = '';
   entwurf.bild = null;
   entwurf.bildHoch = false;
@@ -65,6 +82,8 @@ export function entwurfAusVorschau(g: InseratGelesen, link: string): void {
   entwurf.gelesen = gelesen;
   entwurf.angaben = angabenAus(gelesen, a, titel, link);
   entwurf.adresse = adresseAus(a);
+  entwurf.gelesenAngaben = angabenAus(gelesen, a, titel, link);
+  entwurf.gelesenAdresse = entwurf.adresse;
   entwurf.bild = g.bild ?? null;
   entwurf.bildHoch = !!g.bildHoch;
 }

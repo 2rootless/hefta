@@ -188,7 +188,7 @@
     <div class="karte laden" aria-busy="true">
       <div class="bild ruhe"></div>
       <div class="t">
-        <p class="q">{kurz.split('/')[0]}</p>
+        <p class="q">{portal ?? kurz.split('/')[0]}</p>
         <span class="ph w80"></span><span class="ph w55"></span>
         <div class="eckph">
           <span class="ph"></span><span class="ph"></span><span class="ph"></span>
@@ -210,7 +210,10 @@
           })}
         </p>
       {:else if entwurf.bild}
-        <div class="bild"><img src={entwurf.bild} alt="" /></div>
+        <!-- Auftraggeber 12.11.: Tipp aufs Foto öffnet die ganze Seite. -->
+        <button class="bild" type="button" tabindex="-1" aria-hidden="true" onclick={ganzeSeite}
+          ><img src={entwurf.bild} alt="" /></button
+        >
       {/if}
       <div class="t">
         {#if quelle}<p class="q">{quelle}</p>{/if}
@@ -358,6 +361,10 @@
 
   .bild {
     display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    cursor: pointer;
     aspect-ratio: 16 / 10;
     background: var(--line);
   }
@@ -527,8 +534,9 @@
     color: var(--passt-text);
   }
 
+  /* Abstand zur festen Leiste: Ihr Übergang nach oben verdeckt sonst die letzte Zeile (iPhone, 12.11.). */
   .satz {
-    margin: 12px 2px 0;
+    margin: 12px 2px 28px;
     color: var(--ink-muted);
     font-size: calc(13 * var(--px));
   }

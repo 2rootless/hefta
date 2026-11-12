@@ -76,20 +76,46 @@
     fest: 'neuesHeft.keineMietart',
   };
 
-  function wertVon(k: keyof HeftAngaben, art: Art): string | null {
-    const v = a?.[k];
+  function wertVon(k: keyof HeftAngaben, art: Art, quelle = a): string | null {
+    const v = quelle?.[k];
     if (v === null || v === undefined || v === '') return null;
     if (art === 'geld')
-      return k === 'warm' && a?.warmCa
+      return k === 'warm' && quelle?.warmCa
         ? `ca.${NB}${eur(Math.round(v as number))}`
         : eur(v as number);
     if (art === 'flaeche')
-      return `${a?.flaecheCa ? `ca.${NB}` : ''}${zahlText(v as number)}${NB}m²`;
+      return `${quelle?.flaecheCa ? `ca.${NB}` : ''}${zahlText(v as number)}${NB}m²`;
     if (art === 'zahl') return zahlText(v as number);
     if (art === 'datum') return tag(v as string);
     if (k === 'tiere') return t(TIERE[v as string]!);
     if (k === 'mietart') return t(MIETART[v as string]!);
     return String(v);
+  }
+
+  /**
+   * Wie Hefta die Angabe gelesen hat, zum Zurücksetzen (Auftraggeber, 12.11.); undefined, wenn es nichts
+   * Gelesenes gibt.
+   */
+  function gelesenWert(z: Zeile): string | null | undefined {
+    const g = entwurf.gelesenAngaben;
+    if (!g) return undefined;
+    if (z.art === 'adresse')
+      return entwurf.gelesenAdresse.trim()
+        ? entwurf.gelesenAdresse.trim().replace('\n', ', ')
+        : (g.stadtteil ?? null);
+    return wertVon(z.schluessel as keyof HeftAngaben, z.art, g);
+  }
+
+  function zuruecksetzen(z: Zeile) {
+    const g = entwurf.gelesenAngaben;
+    if (!g || !entwurf.angaben) return;
+    if (z.art === 'adresse') entwurf.adresse = entwurf.gelesenAdresse;
+    else {
+      const k = z.schluessel as keyof HeftAngaben;
+      (entwurf.angaben as unknown as Record<string, unknown>)[k] = g[k] ?? null;
+      if (k === 'warm') entwurf.angaben.warmCa = g.warmCa;
+      if (k === 'flaeche') entwurf.angaben.flaecheCa = g.flaecheCa;
+    }
   }
 
   const miete = $derived<Zeile[]>([
@@ -398,6 +424,15 @@
           {/if}
           <span class="p"><Symbol name="weiter" groesse={16} /></span>
         </button>
+        {@const gw = gelesenWert(z)}
+        {#if gw !== undefined && gw !== z.wert}
+          <div class="gelesen">
+            <span>{t('neuesHeft.gelesenWar', { wert: gw ?? '–' })}</span>
+            <button type="button" onclick={() => zuruecksetzen(z)}
+              >{t('neuesHeft.zuruecksetzen')}</button
+            >
+          </div>
+        {/if}
       {/if}
     {/each}
   </div>
@@ -665,6 +700,28 @@
     color: var(--ink-quiet);
   }
 
+  /* Geänderte Angabe: wie gelesen, mit „Zurücksetzen“ (Auftraggeber, 12.11.). */
+  .gelesen {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 12px;
+    padding: 0 12px 6px 14px;
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
+  }
+
+  .gelesen button {
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
   .offen-z {
     display: flex;
     flex-direction: column;
@@ -699,7 +756,7 @@
   }
 
   .tipp {
-    margin: 12px 2px 14px;
+    margin: 12px 2px 28px;
     color: var(--ink-muted);
     font-size: calc(13 * var(--px));
   }
