@@ -39,18 +39,54 @@ export interface Urteil {
   abweichung: string;
 }
 
+/**
+ * Wünsche des Haushalts. Jeder Wunsch ist freiwillig (Bildschirm „Was sucht ihr?“, B23): Fehlt einer
+ * (null), gibt es für dieses Kriterium kein Urteil („ohne“).
+ */
 export interface Wuensche {
-  warmBis: number;
-  zimmerAb: number;
-  flaecheAb: number;
+  warmBis: number | null;
+  zimmerAb: number | null;
+  flaecheAb: number | null;
   /**
    * Der Ort in der Mitte, nur sein Name, etwa „UKE“ oder „Kita Sonnenschein“ (Nachricht 10.11. k:
    * ohne Präposition), mit Umkreis in km.
    */
   ort: { name: string; kmBis: number; ungefaehr?: boolean; spanne?: number } | null;
-  /** Einzug von bis, als „JJJJ-MM-TT“. */
+  /** Einzug von bis, als „JJJJ-MM-TT“; jede Grenze für sich freiwillig. */
+  einzugVon: string | null;
+  einzugBis: string | null;
+}
+
+/** Wünsche mit neutral gefüllten Lücken: So rechnet `urteile` unverändert, Lücken werden danach „ohne“. */
+interface WuenscheVoll {
+  warmBis: number;
+  zimmerAb: number;
+  flaecheAb: number;
+  ort: Wuensche['ort'];
   einzugVon: string;
   einzugBis: string;
+}
+
+function voll(wu: Wuensche): WuenscheVoll {
+  return {
+    warmBis: wu.warmBis ?? Number.POSITIVE_INFINITY,
+    zimmerAb: wu.zimmerAb ?? 0,
+    flaecheAb: wu.flaecheAb ?? 0,
+    ort: wu.ort,
+    einzugVon: wu.einzugVon ?? '0000-01-01',
+    einzugBis: wu.einzugBis ?? '9999-12-31',
+  };
+}
+
+/** Welche Kriterien ohne Wunsch sind. */
+function ohneWunsch(wu: Wuensche): Set<Urteil['kriterium']> {
+  const ohne = new Set<Urteil['kriterium']>();
+  if (wu.warmBis === null) ohne.add('Warmmiete');
+  if (wu.zimmerAb === null) ohne.add('Zimmer');
+  if (wu.flaecheAb === null) ohne.add('Fläche');
+  if (!wu.ort) ohne.add('Lage');
+  if (wu.einzugVon === null && wu.einzugBis === null) ohne.add('Einzug');
+  return ohne;
 }
 
 export interface Wohnung {
@@ -99,7 +135,14 @@ export function monatVorher(t: string): string {
   return `${jj}-${String(mm).padStart(2, '0')}-${String(Math.min(d, letzter)).padStart(2, '0')}`;
 }
 
-export function urteile(w: Wohnung, wu: Wuensche, geld: Haushaltsgeld): Urteil[] {
+export function urteile(w: Wohnung, wunsch: Wuensche, geld: Haushaltsgeld): Urteil[] {
+  const ohne = ohneWunsch(wunsch);
+  return urteileVoll(w, voll(wunsch), geld).map((u) =>
+    ohne.has(u.kriterium) ? { ...u, art: 'ohne', abweichung: '' } : u,
+  );
+}
+
+function urteileVoll(w: Wohnung, wu: WuenscheVoll, geld: Haushaltsgeld): Urteil[] {
   const r: Urteil[] = [];
   if (w.warm !== null) {
     const wt = eur(w.warm);
@@ -308,7 +351,7 @@ function rang(
   u: Urteil,
   index: number,
   w: Wohnung,
-  wu: Wuensche,
+  wu: WuenscheVoll,
   geld: Haushaltsgeld,
 ): [number, number, number, number] {
   const gruppe = u.art === 'nicht' ? 0 : 1;
@@ -349,7 +392,7 @@ export function wichtigsteAbweichungen(
 ): { zeilen: AbweichungsZeile[]; weitere: number; alle: number } {
   const u = urteile(w, wu, geld);
   const ab = u
-    .map((x, i) => ({ x, r: rang(x, i, w, wu, geld) }))
+    .map((x, i) => ({ x, r: rang(x, i, w, voll(wu), geld) }))
     .filter(({ x }) => x.art === 'nicht' || x.art === 'knapp')
     .sort((a, b) => {
       for (let i = 0; i < 4; i++) if (a.r[i] !== b.r[i]) return a.r[i]! - b.r[i]!;
@@ -374,7 +417,7 @@ export function abweichungsRang(
 ): [number, number, number, number] | null {
   const u = urteile(w, wu, geld);
   const r = u
-    .map((x, i) => ({ x, r: rang(x, i, w, wu, geld) }))
+    .map((x, i) => ({ x, r: rang(x, i, w, voll(wu), geld) }))
     .filter(({ x }) => x.art === 'nicht' || x.art === 'knapp')
     .map(({ r }) => r)
     .sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2] || a[3] - b[3]);

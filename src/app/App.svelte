@@ -37,6 +37,8 @@
     wohnungen: () => import('../screens/Wohnungen.svelte'),
     heft: () => import('../screens/HeftSeite.svelte'),
     merkmal: () => import('../screens/MerkmalSeite.svelte'),
+    wuensche: () => import('../screens/WuenscheSeite.svelte'),
+    netto: () => import('../screens/NettoSeite.svelte'),
     wohnungNeu: () => import('../screens/WohnungNeu.svelte'),
     neuesHeftLink: () => import('../screens/NeuesHeftLink.svelte'),
     heftVorschau: () => import('../screens/HeftVorschau.svelte'),
@@ -226,6 +228,14 @@
       {/await}
     {:else if route.pfad === '/wohnung-neu/kontrolle'}
       {#await seiten.heftKontrolle() then m}
+        <m.default />
+      {/await}
+    {:else if route.pfad === '/wuensche'}
+      {#await seiten.wuensche() then m}
+        <m.default />
+      {/await}
+    {:else if route.pfad === '/wuensche/netto'}
+      {#await seiten.netto() then m}
         <m.default />
       {/await}
     {:else if merkmalId}

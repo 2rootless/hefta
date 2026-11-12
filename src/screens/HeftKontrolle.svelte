@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { haushaltsNetto } from '../domain/netto';
   // „Letzte Kontrolle“ (B23 Bildschirm 4, gilt für den Weg über den Link und über den Text, Nachricht
   // 12b): oben die Zusammenfassung des Abgleichs, dann die Gruppen Miete, Wohnung, Bewerbung. Jede Angabe
   // eine Zeile: Bezeichnung klein über dem Wert, darunter das Urteil mit Grund. Ohne Wünsche fällt nur
@@ -32,7 +33,11 @@
 
   const u = $derived.by((): Urteil[] => {
     if (!a || !wu) return [];
-    return urteile(wohnungAus(a), wu, { netto: hh?.netto ?? null, grenze: null, ihr });
+    return urteile(wohnungAus(a), wu, {
+      netto: hh ? haushaltsNetto(hh, daten.ansicht?.mitglieder ?? []) : null,
+      grenze: hh?.mietgrenze ?? null,
+      ihr,
+    });
   });
   const urteilVon = (k: Urteil['kriterium']) => u.find((x) => x.kriterium === k) ?? null;
   const namen = (art: Urteil['art']) =>
@@ -260,18 +265,18 @@
     switch (ur.kriterium) {
       case 'Warmmiete':
         return t(ihr ? 'neuesHeft.grundWarmIhr' : 'neuesHeft.grundWarmDu', {
-          betrag: eur(wu.warmBis),
+          betrag: eur(wu.warmBis ?? 0),
         });
       case 'Fläche':
-        return t('neuesHeft.grundAb', { wert: `${zahlText(wu.flaecheAb)}${NB}m²` });
+        return t('neuesHeft.grundAb', { wert: `${zahlText(wu.flaecheAb ?? 0)}${NB}m²` });
       case 'Zimmer':
-        return t('neuesHeft.grundZimmer', { wert: zahlText(wu.zimmerAb) });
+        return t('neuesHeft.grundZimmer', { wert: zahlText(wu.zimmerAb ?? 0) });
       case 'Befristung':
         return t(ihr ? 'neuesHeft.grundUnbefristetIhr' : 'neuesHeft.grundUnbefristetDu');
       case 'Einzug': {
         const e = a?.einzug ?? '';
-        if (e > wu.einzugBis) return t('neuesHeft.grundSpaet');
-        return e >= monatVorher(wu.einzugVon)
+        if (e > (wu.einzugBis ?? '9999-12-31')) return t('neuesHeft.grundSpaet');
+        return e >= monatVorher(wu.einzugVon ?? '0000-01-01')
           ? t('neuesHeft.grundFrueh')
           : t('neuesHeft.grundZuFrueh');
       }
@@ -500,6 +505,11 @@
                     ><b>{t(URTEIL_WORT[art]!)}:</b> {namen(art).join(', ')}</span
                   >
                 </li>
+              {:else if hh}
+                <div class="zus">
+                  <p class="zf">{t(ihr ? 'wuensche.ohneIhr' : 'wuensche.ohneDu')}</p>
+                  <a class="wlink" href="#/wuensche">{t('wuensche.festlegen')}</a>
+                </div>
               {/if}
             {/each}
           </ul>
@@ -607,6 +617,15 @@
     margin: 0 0 6px;
     color: var(--ink-muted);
     font-size: calc(14 * var(--px));
+  }
+
+  .wlink {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent-text);
+    font-weight: 650;
+    text-decoration: none;
   }
 
   .gr {

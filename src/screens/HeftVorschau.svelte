@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { haushaltsNetto } from '../domain/netto';
   // „Ist das die Wohnung?“ (B23 Bildschirm 2, `#s=vorschau`; E72, E76, Planung 11t): Hefta lädt das
   // Inserat genau einmal unsichtbar und zeigt eine kleine Karte. Foto, Portal und Nummer, Titel, Eckdaten,
   // bis zu drei Abweichungen erst nach fertigem Lesen. „Ja, einlesen“ übernimmt nur, was hier gelesen
@@ -139,8 +140,8 @@
     const wu = hh?.wuensche;
     if (!a || !wu) return null;
     return wichtigsteAbweichungen(wohnungAus(a), wu, {
-      netto: hh?.netto ?? null,
-      grenze: null,
+      netto: hh ? haushaltsNetto(hh, daten.ansicht?.mitglieder ?? []) : null,
+      grenze: hh?.mietgrenze ?? null,
       ihr,
     });
   });
@@ -157,15 +158,18 @@
         return {
           angabe: `${k} ${w}`,
           grund: t(ihr ? 'vorschau.grundWarmIhr' : 'vorschau.grundWarmDu', {
-            betrag: eur((a.warm ?? 0) - wu.warmBis),
+            betrag: eur((a.warm ?? 0) - (wu.warmBis ?? 0)),
           }),
         };
       case 'Zimmer':
-        return { angabe: `${w} Zimmer`, grund: t('vorschau.grundAb', { wert: zahl(wu.zimmerAb) }) };
+        return {
+          angabe: `${w} Zimmer`,
+          grund: t('vorschau.grundAb', { wert: zahl(wu.zimmerAb ?? 0) }),
+        };
       case 'Fläche':
         return {
           angabe: `${k} ${w}`,
-          grund: t('vorschau.grundAb', { wert: `${zahl(wu.flaecheAb)}${NB}m²` }),
+          grund: t('vorschau.grundAb', { wert: `${zahl(wu.flaecheAb ?? 0)}${NB}m²` }),
         };
       case 'Befristung':
         return {
@@ -177,9 +181,9 @@
       case 'Einzug': {
         const e = a.einzug ?? '';
         const grund =
-          e > wu.einzugBis
+          e > (wu.einzugBis ?? '9999-12-31')
             ? t(ihr ? 'vorschau.grundSpaetIhr' : 'vorschau.grundSpaetDu')
-            : e >= monatVorher(wu.einzugVon)
+            : e >= monatVorher(wu.einzugVon ?? '0000-01-01')
               ? t('vorschau.grundFrueh')
               : t('neuesHeft.grundZuFrueh');
         return { angabe: `${k} ${w}`, grund };
@@ -260,7 +264,14 @@
       </div>
       {#if !alt}
         {#if !abgleich}
-          <p class="abg ohne">{t('vorschau.ohneWuensche')}</p>
+          <div class="abg ohne">
+            {#if hh}
+              <p>{t(ihr ? 'wuensche.ohneIhr' : 'wuensche.ohneDu')}</p>
+              <a class="wlink" href="#/wuensche">{t('wuensche.festlegen')}</a>
+            {:else}
+              <p>{t('vorschau.ohneWuensche')}</p>
+            {/if}
+          </div>
         {:else if abgleich.zeilen.length === 0}
           <p class="abg passt">
             <UrteilZeichen art="passt" groesse={16} />{t(
@@ -536,8 +547,18 @@
     margin-top: 3px;
   }
 
-  .abg.ohne {
+  .abg.ohne p {
+    margin: 0;
     color: var(--ink-muted);
+  }
+
+  .wlink {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent-text);
+    font-weight: 650;
+    text-decoration: none;
   }
 
   .punkte {

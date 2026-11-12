@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { haushaltsNetto } from '../domain/netto';
   // Ein Heft (B21 Fassung 4), erster Stand: Umschlag mit Titel, Adresse,
   // Eckdaten und Quelle, die Leiste „Stand x von 4“, die Besichtigung, Notizen und der Abgleich mit den
   // Wünschen. Fragen für die Besichtigung, Fotos und „Was hinausging“ kommen mit Schritt 8 und 9.
@@ -33,7 +34,11 @@
     const a = heft?.angaben;
     const hh = daten.ansicht?.haushalt;
     if (!a || !hh?.wuensche) return null;
-    const u = urteile(wohnungAus(a), hh.wuensche, { netto: hh.netto ?? null, grenze: null, ihr });
+    const u = urteile(wohnungAus(a), hh.wuensche, {
+      netto: haushaltsNetto(hh, daten.ansicht?.mitglieder ?? []),
+      grenze: hh.mietgrenze ?? null,
+      ihr,
+    });
     return abweichungen(u);
   });
 
@@ -134,6 +139,13 @@
             </li>
           {/each}
         </ul>
+        <a class="wlink" href="#/wuensche">{t('wuensche.aendern')}</a>
+      </section>
+    {:else if daten.ansicht}
+      <section class="teil">
+        <h2>{t(ihr ? 'heft.wuenscheIhr' : 'heft.wuenscheDu')}</h2>
+        <p class="ohne">{t(ihr ? 'wuensche.ohneIhr' : 'wuensche.ohneDu')}</p>
+        <a class="wlink" href="#/wuensche">{t('wuensche.festlegen')}</a>
       </section>
     {/if}
   {/if}
@@ -304,6 +316,20 @@
   .kommt .seg i.c {
     border-color: var(--termin);
     background: var(--termin);
+  }
+
+  .wlink {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent-text);
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .ohne {
+    margin: 0;
+    color: var(--ink-muted);
   }
 
   .teil {

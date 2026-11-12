@@ -82,6 +82,8 @@ export interface Haushalt extends Basis {
   angabenVon?: string;
   /** Version 2: Nettoeinkommen des Haushalts, selbst eingetragen; fehlt es, gilt die Summe aus den Selbstauskünften. */
   netto?: number | null;
+  /** Hefta 2: eigene Grenze für die Miete in Prozent des Nettos (E36); fehlt sie, gibt es nur den Anteil. */
+  mietgrenze?: number | null;
   /** Hefta 2: Wünsche an die Wohnung, je Haushalt (E53); fehlen sie, gibt es keine Urteile. */
   wuensche?: import('./urteile').Wuensche | null;
 }
