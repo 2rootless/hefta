@@ -93,10 +93,16 @@ final class TeilenViewController: UIViewController {
         teile.host = "teilen"
         teile.queryItems = [URLQueryItem(name: "link", value: link.absoluteString)]
         guard let ziel = teile.url else { return false }
+        // In Erweiterungen ist `UIApplication.open` gesperrt (APPLICATION_EXTENSION_API_ONLY). Die App erreicht
+        // man über die Responder-Kette und ruft `openURL:options:completionHandler:` über die Laufzeit auf;
+        // das ältere `openURL:` tut seit iOS 18 nichts mehr.
+        let auswahl = NSSelectorFromString("openURL:options:completionHandler:")
+        typealias Oeffnen = @convention(c) (AnyObject, Selector, NSURL, NSDictionary, AnyObject?) -> Void
         var glied: UIResponder? = self
         while let jetzt = glied {
-            if let app = jetzt as? UIApplication {
-                app.open(ziel, options: [:], completionHandler: nil)
+            if jetzt is UIApplication, let methode = class_getInstanceMethod(type(of: jetzt), auswahl) {
+                let oeffnen = unsafeBitCast(method_getImplementation(methode), to: Oeffnen.self)
+                oeffnen(jetzt, auswahl, ziel as NSURL, NSDictionary(), nil)
                 return true
             }
             glied = jetzt.next
