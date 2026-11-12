@@ -21,8 +21,8 @@ export interface Termin {
   ort?: string;
   /** Dauer in Minuten; sonst 15 (Erinnerung). */
   dauerMin?: number;
-  /** Erinnerung so viele Minuten vorher; sonst zum Termin. */
-  vorherMin?: number;
+  /** Erinnerungen, je so viele Minuten vor dem Beginn; ohne Angabe eine zum Termin. */
+  erinnerungenMin?: number[];
   /** Belegt die Zeit im Kalender (Besichtigung), statt sie frei zu lassen (Erinnerung). */
   belegt?: boolean;
 }
@@ -102,11 +102,13 @@ export function icsErzeugen(termine: Termin[], jetzt: Date = new Date()): string
       `DESCRIPTION:${maskieren(t.text)}`,
       ...(t.ort ? [`LOCATION:${maskieren(t.ort)}`] : []),
       t.belegt ? 'TRANSP:OPAQUE' : 'TRANSP:TRANSPARENT',
-      'BEGIN:VALARM',
-      'ACTION:DISPLAY',
-      t.vorherMin ? `TRIGGER:-PT${t.vorherMin}M` : 'TRIGGER:PT0M',
-      `DESCRIPTION:${maskieren(t.titel)}`,
-      'END:VALARM',
+      ...(t.erinnerungenMin?.length ? t.erinnerungenMin : [0]).flatMap((min) => [
+        'BEGIN:VALARM',
+        'ACTION:DISPLAY',
+        min ? `TRIGGER:-PT${min}M` : 'TRIGGER:PT0M',
+        `DESCRIPTION:${maskieren(t.titel)}`,
+        'END:VALARM',
+      ]),
       'END:VEVENT',
     );
   zeilen.push('END:VCALENDAR');
@@ -114,15 +116,30 @@ export function icsErzeugen(termine: Termin[], jetzt: Date = new Date()): string
 }
 
 /**
- * Die Besichtigung eines Hefts als Termin (Zeile 9, B21 „In den Kalender“): 30 Minuten, belegt, Erinnerung
- * eine Stunde vorher, mit Adresse und Treffpunkt. Ortszeit, wie bei den Erinnerungen.
+ * Erinnerungen an eine Besichtigung (E90): am Vorabend um 18 Uhr und eine Stunde vorher, in Minuten vor dem
+ * Beginn. Der Vorabend entfällt, wenn der Termin am Tag des Eintragens liegt oder 18 Uhr am Vorabend schon
+ * vorbei ist; dann käme die Erinnerung nie oder sofort.
  */
-export function besichtigungTermin(h: {
-  id: string;
-  titel: string;
-  adresse: string;
-  termin: { am: string; treffpunkt: string };
-}): Termin {
+export function besichtigungErinnerungen(am: Date, jetzt: Date): number[] {
+  const vorabend = new Date(am.getFullYear(), am.getMonth(), am.getDate() - 1, 18, 0);
+  const gleicherTag = tagAus(am) === tagAus(jetzt);
+  const minuten = Math.round((am.getTime() - vorabend.getTime()) / 60_000);
+  return !gleicherTag && vorabend > jetzt ? [minuten, 60] : [60];
+}
+
+/**
+ * Die Besichtigung eines Hefts als Termin (Zeile 9, B21 „In den Kalender“): 30 Minuten, belegt, Erinnerungen
+ * nach E90, mit Adresse und Treffpunkt. Ortszeit, wie bei den Erinnerungen.
+ */
+export function besichtigungTermin(
+  h: {
+    id: string;
+    titel: string;
+    adresse: string;
+    termin: { am: string; treffpunkt: string };
+  },
+  jetzt: Date = new Date(),
+): Termin {
   const am = new Date(h.termin.am);
   const zwei = (n: number) => String(n).padStart(2, '0');
   return {
@@ -133,7 +150,7 @@ export function besichtigungTermin(h: {
     text: h.termin.treffpunkt,
     ort: h.adresse.replace(/\n+/g, ', ').trim(),
     dauerMin: 30,
-    vorherMin: 60,
+    erinnerungenMin: besichtigungErinnerungen(am, jetzt),
     belegt: true,
   };
 }

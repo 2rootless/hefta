@@ -38,6 +38,13 @@ function heft(id: string, titel: string, ereignisse: Record<string, unknown>) {
   };
 }
 
+/** Wie in der App: über „Wohnungen“ ins Heft, dann heißt der Link oben „Wohnungen“. */
+async function heftOeffnen(page: Page, id: string) {
+  await page.goto('/#/wohnungen');
+  await page.reload();
+  await page.evaluate((h) => (window.location.hash = h), `#/heft/${id}`);
+}
+
 async function hefteAnlegen(page: Page, hefte: unknown[]) {
   await page.evaluate(
     (liste) =>
@@ -72,8 +79,9 @@ test('Termin eintragen, in den Kalender, ändern, Ergebnis und wieder hervorhole
       beworben: { am: tag(-3), weg: 'mail', sicher: true },
     }),
   ]);
-  await page.goto('/#/heft/muster');
-  await page.reload();
+  await heftOeffnen(page, 'muster');
+  // Der Link oben heißt wie die Seite, aus der man kam (Design 12.11.).
+  await expect(page.locator('header.kopf').getByRole('link')).toHaveText('Wohnungen');
 
   await expect(page.getByRole('img', { name: 'Stand: Beworben' })).toBeVisible();
   await expect(page.getByText(/^Beworben am 5\.\sNov\., seit 3 Tagen$/)).toBeVisible();
@@ -109,6 +117,8 @@ test('Termin eintragen, in den Kalender, ändern, Ergebnis und wieder hervorhole
   })();
   expect(ics).toContain('DTSTART:20261110T173000');
   expect(ics).toContain('DURATION:PT30M');
+  // E90: Vorabend 9.11., 18:00 bis 10.11., 17:30 und eine Stunde vorher.
+  expect(ics).toContain('TRIGGER:-PT1410M');
   expect(ics).toContain('TRIGGER:-PT60M');
   expect(ics).toContain('SUMMARY:Besichtigung: Zwei Zimmer am Park');
   expect(ics).toContain(String.raw`LOCATION:Musterweg 5\, 20000 Hamburg`);
@@ -124,6 +134,9 @@ test('Termin eintragen, in den Kalender, ändern, Ergebnis und wieder hervorhole
     'true',
   );
   await expect(page.getByLabel('Uhrzeit')).toHaveValue('17:30');
+  // Beim Ändern kein Satz zu „Besichtigung“ (Planung 12q).
+  await expect(page.getByText('Mit dem Termin steht das Heft auf')).toHaveCount(0);
+  await ganzesBild(page, 'termin-aendern.png');
   await page.getByRole('button', { name: 'Anderer Tag' }).click();
   await page.getByLabel('Datum').fill('2026-11-20');
   await page.getByRole('button', { name: 'Termin speichern' }).click();
@@ -169,8 +182,7 @@ test('Besichtigung vorbei: Ergebnis direkt im Heft (Zeile 9)', async ({ page }) 
       termin: { am: tag(-2, 17), ort: '', treffpunkt: '' },
     }),
   ]);
-  await page.goto('/#/heft/vorbei');
-  await page.reload();
+  await heftOeffnen(page, 'vorbei');
   await expect(
     page.getByText(/^Besichtigt am Fr, 6\.\sNov\. Wie ist es ausgegangen\?$/),
   ).toBeVisible();

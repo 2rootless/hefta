@@ -7,7 +7,7 @@
   import { abschliessen } from '../app/router.svelte';
   import { tagAus } from '../domain/fristen';
   import { terminKurz } from '../domain/heftKarte';
-  import { terminSetzen } from '../domain/heftStand';
+  import { stand, terminSetzen } from '../domain/heftStand';
   import { t } from '../i18n';
   import { heftAendern } from '../storage/speicher';
   import Hauptbutton from '../ui/Hauptbutton.svelte';
@@ -18,6 +18,8 @@
 
   const heft = $derived(daten.hefte.find((h) => h.id === id) ?? null);
   const heute = new Date();
+  // Ändern nur, solange das Heft auf „Besichtigung“ steht; nach einem Ergebnis ist es ein neuer Termin.
+  const aendern = $derived(!!heft && stand(heft.ereignisse, heute) === 'besichtigung');
   const TAGE = Array.from({ length: 4 }, (_, i) =>
     tagAus(new Date(heute.getFullYear(), heute.getMonth(), heute.getDate() + 1 + i)),
   );
@@ -76,8 +78,9 @@
   {#if !heft}
     <p class="sub">{t('heft.fehlt')}</p>
   {:else}
-    <h1 class="h2">{t(heft.ereignisse.termin ? 'termin.titelAendern' : 'termin.titelNeu')}</h1>
-    <p class="sub">{t('termin.sub')}</p>
+    <!-- Beim Ändern steht das Heft schon auf „Besichtigung“: kein Satz dazu (Planung 12q). -->
+    <h1 class="h2">{t(aendern ? 'termin.titelAendern' : 'termin.titelNeu')}</h1>
+    {#if !aendern}<p class="sub">{t('termin.sub')}</p>{/if}
 
     <h2 class="h3" id="termin-tag">{t('termin.tag')}</h2>
     <div class="wege" role="group" aria-labelledby="termin-tag">

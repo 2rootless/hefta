@@ -110,25 +110,44 @@ describe('Erinnerungen als Kalendereintrag (Version 2)', () => {
 });
 
 describe('Besichtigung in den Kalender (Zeile 9)', () => {
-  it('30 Minuten, belegt, Erinnerung eine Stunde vorher, mit Ort und Treffpunkt', async () => {
+  it('30 Minuten, belegt, Erinnerungen am Vorabend und eine Stunde vorher, mit Ort', async () => {
     const { besichtigungTermin, icsErzeugen } = await import('./kalender');
-    const t = besichtigungTermin({
-      id: 'linden',
-      titel: 'Altbau mit Garten',
-      adresse: 'Lindenallee 3, EG\n20259 Hamburg',
-      termin: {
-        am: new Date(2026, 10, 13, 17, 30).toISOString(),
-        treffpunkt: 'Klingeln bei Hansen',
+    const t = besichtigungTermin(
+      {
+        id: 'linden',
+        titel: 'Altbau mit Garten',
+        adresse: 'Lindenallee 3, EG\n20259 Hamburg',
+        termin: {
+          am: new Date(2026, 10, 13, 17, 30).toISOString(),
+          treffpunkt: 'Klingeln bei Hansen',
+        },
       },
-    });
+      new Date(2026, 10, 12, 10),
+    );
     expect(t.tag).toBe('2026-11-13');
     expect(t.uhrzeit).toBe('1730');
     const ics = icsErzeugen([t], new Date(2026, 10, 12));
     expect(ics).toContain('DTSTART:20261113T173000');
     expect(ics).toContain('DURATION:PT30M');
+    // Vorabend 12.11., 18:00 bis 13.11., 17:30: 23,5 Stunden.
+    expect(ics).toContain('TRIGGER:-PT1410M');
     expect(ics).toContain('TRIGGER:-PT60M');
+    expect(ics.match(/BEGIN:VALARM/g)).toHaveLength(2);
     expect(ics).toContain('TRANSP:OPAQUE');
     expect(ics).toContain(String.raw`LOCATION:Lindenallee 3\, EG\, 20259 Hamburg`);
     expect(ics).toContain('SUMMARY:Besichtigung: Altbau mit Garten');
+  });
+});
+
+describe('Erinnerungen an eine Besichtigung (E90)', () => {
+  it('entfallen am Vorabend, wenn der Termin heute ist oder 18 Uhr am Vorabend vorbei', async () => {
+    const { besichtigungErinnerungen } = await import('./kalender');
+    const termin = new Date(2026, 10, 13, 9, 0);
+    expect(besichtigungErinnerungen(termin, new Date(2026, 10, 12, 10))).toEqual([900, 60]);
+    // Am Vorabend nach 18 Uhr eingetragen: nur noch eine Stunde vorher.
+    expect(besichtigungErinnerungen(termin, new Date(2026, 10, 12, 19))).toEqual([60]);
+    // Am selben Tag eingetragen.
+    const heute = new Date(2026, 10, 12, 19);
+    expect(besichtigungErinnerungen(heute, new Date(2026, 10, 12, 8))).toEqual([60]);
   });
 });

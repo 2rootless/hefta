@@ -22,7 +22,8 @@ export interface HeftaNativPlugin {
     /** Beginn in Millisekunden seit 1970. */
     start: number;
     dauerMin: number;
-    vorherMin: number;
+    /** Erinnerungen, je in Minuten vor dem Beginn. */
+    erinnerungenMin: number[];
     ort?: string;
     notiz?: string;
   }): Promise<{ gesichert: boolean; erlaubt: boolean }>;

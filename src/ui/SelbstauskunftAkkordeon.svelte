@@ -110,7 +110,22 @@
     return [...stand.slice(i + 1), ...stand.slice(0, i + 1)].find((s) => !s.fertig)?.id ?? null;
   }
 
-  function weiterNach(teil: TeilId) {
+  // Zweifel am Format im Kontakt (Rückmeldung 12.11.: „E-Mail warnt nicht“): Der Knopf „Weiter“ und die
+  // Taste im letzten Feld schlossen den Teil, bevor der Hinweis erscheinen konnte. Jetzt zeigt der erste
+  // Schritt weiter den Hinweis, der zweite geht weiter („Du kannst es trotzdem so lassen“).
+  const zweifelKontakt = $derived(
+    (!!eingabe.telefon.trim() && !telefonSiehtGutAus(eingabe.telefon)) ||
+      (!!eingabe.email.trim() && !emailSiehtGutAus(eingabe.email)),
+  );
+  let gewarntBei = $state<string | null>(null);
+
+  function weiterNach(teil: TeilId): Promise<HTMLElement | null | undefined> {
+    const werte = `${eingabe.telefon}|${eingabe.email}`;
+    if (teil === 'kontakt' && zweifelKontakt && gewarntBei !== werte) {
+      gewarntBei = werte;
+      imFeld = null;
+      return Promise.resolve(null);
+    }
     return oeffnen(naechsterOffen(teil));
   }
 
@@ -514,6 +529,9 @@
         <span class="tx">
           <b>{titel}</b>
           <small>{teil.fertig ? zusammenfassung(teil.id) : offenText(teil)}</small>
+          {#if teil.id === 'kontakt' && zweifelKontakt}
+            <small class="zweifel">{t('selbstauskunft.formatZweifel')}</small>
+          {/if}
         </span>
         {#if teil.fertig}
           <span class="aendern">{t('selbstauskunft.aendern')}</span>
@@ -646,6 +664,10 @@
     font-size: calc(15 * var(--px));
     font-weight: 700;
     cursor: pointer;
+  }
+
+  .zweifel {
+    color: var(--knapp-text);
   }
 
   .format {

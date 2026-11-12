@@ -909,6 +909,7 @@
     "teilZu": "Fertig",
     "telefonHinweis": "Das sieht nicht nach einer Telefonnummer aus. Du kannst es trotzdem so lassen.",
     "emailHinweis": "Das sieht nicht nach einer E-Mail-Adresse aus. Du kannst es trotzdem so lassen.",
+    "formatZweifel": "Schreibweise bitte prüfen",
     "vonWem": "Von {name} ausgefüllt. Schau kurz drüber, wenn du unsicher bist.",
     "angabenLoeschen": "Angaben löschen",
     "angabenFrage": "Angaben in diesem Teil löschen? Der Teil ist danach wieder offen.",

@@ -29,7 +29,7 @@ export async function inDenKalender(heft: Heft, titel: string): Promise<Kalender
       titel: t.titel,
       start: new Date(termin.am).getTime(),
       dauerMin: t.dauerMin ?? 30,
-      vorherMin: t.vorherMin ?? 60,
+      erinnerungenMin: t.erinnerungenMin ?? [60],
       ort: t.ort || undefined,
       notiz: t.text || undefined,
     });

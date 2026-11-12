@@ -132,7 +132,7 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
         sichernAufruf = nil
     }
 
-    /// „In den Kalender“ (Zeile 9): das Kalenderfenster von iOS mit der Besichtigung. Gesichert wird erst,
+    /// „In den Kalender“ (Zeile 9, E90): das Kalenderfenster von iOS mit der Besichtigung. Gesichert wird erst,
     /// wenn man es dort bestätigt. Ab iOS 17 braucht das Fenster keine Erlaubnis für den Kalender; davor
     /// fragt iOS einmal (NSCalendarsUsageDescription).
     @objc func termin(_ call: CAPPluginCall) {
@@ -141,7 +141,8 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
             return
         }
         let dauer = call.getDouble("dauerMin") ?? 30
-        let vorher = call.getDouble("vorherMin") ?? 60
+        // Erinnerungen in Minuten vor dem Beginn (E90: Vorabend 18 Uhr und eine Stunde vorher).
+        let erinnerungen = call.getArray("erinnerungenMin")?.compactMap { ($0 as? NSNumber)?.doubleValue } ?? [60]
         let ort = call.getString("ort")
         let notiz = call.getString("notiz")
         DispatchQueue.main.async {
@@ -152,7 +153,9 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
                 ereignis.endDate = ereignis.startDate.addingTimeInterval(dauer * 60)
                 ereignis.location = ort
                 ereignis.notes = notiz?.isEmpty == false ? notiz : nil
-                ereignis.addAlarm(EKAlarm(relativeOffset: -vorher * 60))
+                for minuten in erinnerungen {
+                    ereignis.addAlarm(EKAlarm(relativeOffset: -minuten * 60))
+                }
                 let fenster = EKEventEditViewController()
                 fenster.eventStore = self.kalender
                 fenster.event = ereignis

@@ -232,6 +232,24 @@ test('Selbstauskunft: Hinweis zum Format, Knopf zum nächsten Teil, von wem der 
   await expect(page.getByText(/sieht nicht nach einer Telefonnummer aus/)).toHaveCount(0);
   await page.getByRole('button', { name: /^Weiter: / }).click();
   await expect(page.getByLabel('E-Mail')).toHaveCount(0);
+
+  // Rückmeldung 12.11.: Wer im E-Mail-Feld direkt „Weiter“ tippt, sieht den Hinweis trotzdem. Der erste
+  // Tipp zeigt ihn, der zweite geht weiter; im zugeklappten Teil bleibt ein kurzer Hinweis.
+  await page.getByRole('button', { name: /^Kontakt/ }).click();
+  await page.getByLabel('E-Mail').fill('max-at-beispiel');
+  await page.getByRole('button', { name: /^Weiter: / }).click();
+  await expect(page.getByText(/sieht nicht nach einer E-Mail-Adresse aus/)).toBeVisible();
+  await expect(page.getByLabel('E-Mail')).toBeVisible();
+  await page.getByRole('button', { name: /^Weiter: / }).click();
+  await expect(page.getByLabel('E-Mail')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Kontakt/ })).toContainText(
+    'Schreibweise bitte prüfen',
+  );
+  // Mit der Eingabetaste im letzten Feld genauso.
+  await page.getByRole('button', { name: /^Kontakt/ }).click();
+  await page.getByLabel('E-Mail').fill('max@beispiel');
+  await page.getByLabel('E-Mail').press('Enter');
+  await expect(page.getByText(/sieht nicht nach einer E-Mail-Adresse aus/)).toBeVisible();
 });
 
 test('Mehrere Dateien: Eine Datei mit zwei Monaten wird je Seite geprüft und getrennt gespeichert', async ({
