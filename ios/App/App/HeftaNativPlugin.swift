@@ -1,6 +1,7 @@
 import Capacitor
 import EventKit
 import EventKitUI
+import MessageUI
 import Network
 import UIKit
 import UniformTypeIdentifiers
@@ -10,18 +11,21 @@ import WebKit
 /// Sichern-Dialog des Systems ablegen. Die Daten bleiben außerdem aus dem iCloud-Backup heraus.
 @objc(HeftaNativPlugin)
 public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDelegate,
-    EKEventEditViewDelegate {
+    EKEventEditViewDelegate, MFMailComposeViewControllerDelegate {
     public let identifier = "HeftaNativPlugin"
     public let jsName = "HeftaNativ"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "alsDateiSichern", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "backupWaehlen", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "termin", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "termin", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "aussehen", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "mail", returnType: CAPPluginReturnPromise)
     ]
 
     private var sichernAufruf: CAPPluginCall?
     private var waehlenAufruf: CAPPluginCall?
     private var terminAufruf: CAPPluginCall?
+    private var mailAufruf: CAPPluginCall?
     private let kalender = EKEventStore()
 
     override public func load() {
@@ -180,6 +184,59 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
         controller.dismiss(animated: true)
         terminAufruf?.resolve(["gesichert": action == .saved, "erlaubt": true])
         terminAufruf = nil
+    }
+
+    /// Aussehen (Einstellungen, 12.11.): „hell“, „dunkel“ oder „system“ für das ganze Fenster. Dann gehen
+    /// Statusleiste, Systemfenster und `prefers-color-scheme` der Webansicht mit.
+    @objc func aussehen(_ call: CAPPluginCall) {
+        let stil = call.getString("stil") ?? "system"
+        DispatchQueue.main.async {
+            let wert: UIUserInterfaceStyle = stil == "hell" ? .light : stil == "dunkel" ? .dark : .unspecified
+            self.bridge?.viewController?.view.window?.overrideUserInterfaceStyle = wert
+            call.resolve()
+        }
+    }
+
+    /// Bewerben per Mail (Zeile 8, Planung 09b): das eigene Mailfenster mit der Mappe im Anhang. Meldet es
+    /// „gesendet“, steht „Beworben“ ohne Nachfrage. Ohne Mailkonto: „keinKonto“, dann nimmt Hefta das
+    /// Teilen-Blatt, und der Stand ist unsicher.
+    @objc func mail(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard MFMailComposeViewController.canSendMail() else {
+                call.resolve(["status": "keinKonto"])
+                return
+            }
+            let fenster = MFMailComposeViewController()
+            fenster.mailComposeDelegate = self
+            if let an = call.getString("an"), !an.isEmpty { fenster.setToRecipients([an]) }
+            fenster.setSubject(call.getString("betreff") ?? "")
+            fenster.setMessageBody(call.getString("text") ?? "", isHTML: false)
+            for anhang in call.getArray("anhaenge") ?? [] {
+                guard let a = anhang as? JSObject,
+                      let uri = a["uri"] as? String,
+                      let name = a["name"] as? String,
+                      let url = URL(string: uri),
+                      let daten = try? Data(contentsOf: url) else { continue }
+                fenster.addAttachmentData(daten, mimeType: (a["typ"] as? String) ?? "application/pdf",
+                                          fileName: name)
+            }
+            self.mailAufruf = call
+            self.bridge?.viewController?.present(fenster, animated: true)
+        }
+    }
+
+    public func mailComposeController(_ controller: MFMailComposeViewController,
+                                      didFinishWith result: MFMailComposeResult, error: Error?) {
+        controller.dismiss(animated: true)
+        let status: String
+        switch result {
+        case .sent: status = "gesendet"
+        case .saved: status = "gespeichert"
+        case .failed: status = "fehlgeschlagen"
+        default: status = "abgebrochen"
+        }
+        mailAufruf?.resolve(["status": status])
+        mailAufruf = nil
     }
 }
 

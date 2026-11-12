@@ -12,9 +12,11 @@
     ergebnisSetzen,
     hervorholen,
     stand,
+    standFragen,
     standNummer,
     terminVorbei,
   } from '../domain/heftStand';
+  import { homescreenFragen } from '../ui/homescreen';
   import type { HeftEreignisse } from '../domain/modell';
   import { tageBis } from '../domain/tageslinie';
   import { abweichungen, urteile } from '../domain/urteile';
@@ -57,6 +59,11 @@
   const abgleich = $derived(alleUrteile ? abweichungen(alleUrteile) : null);
 
   // Zeile 9: Kalender, Ergebnis und „Wieder hervorholen“ direkt im Heft.
+  // Ohne Haushalt führt „Wer zieht ein?“ in die Einrichtung, wie der Tab „Mappe“.
+  const haushaltZiel = $derived(
+    homescreenFragen(daten.einstellungen) ? '#/homescreen/einrichtung' : '#/einrichtung',
+  );
+
   let kalenderMeldung = $state('');
   async function kalender() {
     if (!heft) return;
@@ -235,6 +242,67 @@
             type="button"
             onclick={() => ereignisse(hervorholen(heft.ereignisse))}>{t('heft.hervorholen')}</button
           >
+        </div>
+      {:else if standFragen(heft.ereignisse) && heft.ereignisse.beworben}
+        <!-- „Stimmt der Stand?“ (B16, B21): einmal, wenn etwas hinausging, Hefta das Absenden aber nicht
+             sicher weiß. -->
+        {@const b = heft.ereignisse.beworben}
+        {@const tag = tagKurz(b.am)}
+        <div class="nx vorschlag">
+          <small class="vk">{t('heft.vorschlag')}</small>
+          <b>{t('heft.vorschlagBeworben')}</b>
+          <p>
+            {t(
+              b.weg === 'portal'
+                ? ihr
+                  ? 'heft.vorschlagPortalIhr'
+                  : 'heft.vorschlagPortalDu'
+                : b.weg === 'website'
+                  ? ihr
+                    ? 'heft.vorschlagWebsiteIhr'
+                    : 'heft.vorschlagWebsiteDu'
+                  : ihr
+                    ? 'heft.vorschlagMailIhr'
+                    : 'heft.vorschlagMailDu',
+              { tag },
+            )}
+          </p>
+          <div class="knopfreihe">
+            <button
+              class="knopf haupt"
+              type="button"
+              onclick={() =>
+                ereignisse({
+                  ...heft.ereignisse,
+                  beworben: { ...b, sicher: true },
+                  gefragtAm: new Date().toISOString(),
+                })}>{t('heft.jaBeworben')}</button
+            >
+            <button
+              class="knopf"
+              type="button"
+              onclick={() =>
+                ereignisse({ ...heft.ereignisse, gefragtAm: new Date().toISOString() })}
+              >{t('heft.nochNicht')}</button
+            >
+          </div>
+          <p class="fein">{t(ihr ? 'heft.nurEinmalIhr' : 'heft.nurEinmalDu')}</p>
+        </div>
+      {:else if st === 'gemerkt'}
+        <!-- Als Nächstes: bewerben (B21); ohne Haushalt erst „Wer zieht ein?“. -->
+        <div class="nx">
+          <b>{t('heft.naechstesBewerben')}</b>
+          {#if daten.ansicht}
+            <p>{t(ihr ? 'heft.naechstesSatzIhr' : 'heft.naechstesSatzDu')}</p>
+            <a class="knopf haupt breit" href={`#/heft/${heft.id}/bewerben`}
+              >{t('heft.jetztBewerben')}</a
+            >
+          {:else}
+            <p>{t(ihr ? 'heft.ohneHaushaltSatzIhr' : 'heft.ohneHaushaltSatzDu')}</p>
+            <a class="knopf haupt breit" href={haushaltZiel}
+              ><Symbol name="person" groesse={20} />{t('heft.werZiehtEin')}</a
+            >
+          {/if}
         </div>
       {/if}
       <a class="leis selbst" href={`#/heft/${heft.id}/stand`}>{t('heft.standSelbst')}</a>
@@ -508,6 +576,29 @@
     border-color: var(--action);
     background: var(--action);
     color: var(--on-action);
+  }
+
+  /* „Hefta schlägt vor: Beworben“ (B21 `x-vs`): Kasten mit Etikett, darunter der feine Satz. */
+  .vorschlag {
+    padding: 12px 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+    background: var(--ground);
+  }
+
+  .vk {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--ink-muted);
+    font-size: calc(12 * var(--px));
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .fein {
+    margin: 10px 0 0 !important;
+    font-size: calc(13 * var(--px)) !important;
   }
 
   .vb {

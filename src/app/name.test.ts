@@ -16,13 +16,14 @@ describe('Der Name steht an einer Stelle', () => {
 
   it('kein Satz nennt noch den alten Namen als Dienst', () => {
     const alt =
-      /(?<![Dd]ie |[Dd]er |[Ee]ine |[Ee]iner |Eure |Deine |eurer |deiner |jede |ganze |zur |dieser )\bMappe\b(?! erstellen| anpassen| ansehen| anhängen| wird erstellt| trotzdem| teilen)/;
+      /(?<![Dd]ie |[Dd]er |[Ee]ine |[Ee]iner |Eure |Deine |eurer |deiner |jede |ganze |zur |dieser |mit )\bMappe\b(?! erstellen| anpassen| ansehen| anhängen| wird erstellt| trotzdem| teilen)/;
     const treffer = [lesen('src/i18n/de.json'), lesen('data/regelkatalog.de.json')]
       .join('\n')
       .split('\n')
       .filter((zeile) => alt.test(zeile))
       // Hefta 2: „Mappe“ ist der Name des Tabs (B12), nicht des Dienstes.
-      .filter((zeile) => zeile.trim() !== '"mappe": "Mappe"');
+      // Ebenso der Schritt „Mappe“ beim Bewerben (B23).
+      .filter((zeile) => !/^"mappe": "Mappe",?$/.test(zeile.trim()));
     expect(treffer).toEqual([]);
   });
 

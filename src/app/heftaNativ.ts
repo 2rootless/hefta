@@ -27,6 +27,17 @@ export interface HeftaNativPlugin {
     ort?: string;
     notiz?: string;
   }): Promise<{ gesichert: boolean; erlaubt: boolean }>;
+  /** Nur iOS: Aussehen des Fensters, damit Statusleiste und Systemfenster mitgehen. */
+  aussehen(o: { stil: 'system' | 'hell' | 'dunkel' }): Promise<void>;
+  /** Nur iOS: das eigene Mailfenster mit Anhängen (Zeile 8). */
+  mail(o: {
+    an?: string;
+    betreff: string;
+    text: string;
+    anhaenge: { uri: string; name: string; typ: string }[];
+  }): Promise<{
+    status: 'gesendet' | 'gespeichert' | 'fehlgeschlagen' | 'abgebrochen' | 'keinKonto';
+  }>;
   addListener(
     ereignis: 'eingang',
     aufruf: (daten: { dateien: EmpfangeneDatei[] }) => void,

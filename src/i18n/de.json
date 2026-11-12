@@ -299,7 +299,11 @@
     "allesLoeschen": "Alles löschen",
     "allesLoeschenHinweis": "Personen, Unterlagen und Einstellungen",
     "gesichert": "Gesichert. Letztes Backup: gerade eben.",
-    "eingespielt": "Eingespielt, Stand {stand}: {unterlagen}. {personen}"
+    "eingespielt": "Eingespielt, Stand {stand}: {unterlagen}. {personen}",
+    "aussehen": "Aussehen",
+    "aussehenSystem": "System",
+    "aussehenHell": "Hell",
+    "aussehenDunkel": "Dunkel"
   },
   "datenschutz": {
     "kurz": "Bleibt auf deinem Gerät. Nichts wird hochgeladen."
@@ -535,7 +539,8 @@
     "wegWohnungWeb": "Kopier den Text der Anzeige und füg ihn hier ein. Dafür brauchst du noch keinen Haushalt.",
     "wegHaushalt": "Wer zieht ein?",
     "wegHaushaltText": "Leg deinen Haushalt an. Daraus baut {app} deine Bewerbungsmappe.",
-    "kasten": "Hier stehen bald deine Wohnungen, jede als eigenes Heft."
+    "kasten": "Hier stehen bald deine Wohnungen, jede als eigenes Heft.",
+    "anleitung": "Anleitung"
   },
   "navigation": {
     "haushalt": "Haushalt",
@@ -1557,7 +1562,26 @@
     "hervorholen": "Wieder hervorholen",
     "kalenderGesichert": "Im Kalender eingetragen.",
     "kalenderDatei": "Die Datei für den Kalender ist da. Öffne sie, dann trägt dein Kalender den Termin ein.",
-    "kalenderNein": "Ohne Zugriff auf den Kalender geht das nicht. Erlauben kannst du ihn in den Einstellungen von iOS unter {app}."
+    "kalenderNein": "Ohne Zugriff auf den Kalender geht das nicht. Erlauben kannst du ihn in den Einstellungen von iOS unter {app}.",
+    "naechstesBewerben": "Als Nächstes: bewerben",
+    "naechstesSatzIhr": "{app} legt Anschreiben und die Mappe bereit. Abschicken tut ihr selbst.",
+    "naechstesSatzDu": "{app} legt Anschreiben und die Mappe bereit. Abschicken tust du selbst.",
+    "jetztBewerben": "Jetzt bewerben",
+    "ohneHaushaltSatzIhr": "Für die Bewerbung braucht {app} euren Haushalt. Daraus entsteht die Mappe.",
+    "ohneHaushaltSatzDu": "Für die Bewerbung braucht {app} deinen Haushalt. Daraus entsteht die Mappe.",
+    "werZiehtEin": "Wer zieht ein?",
+    "vorschlag": "Vorschlag",
+    "vorschlagBeworben": "{app} schlägt vor: Beworben",
+    "vorschlagPortalIhr": "Am {tag} habt ihr den Text fürs Portal kopiert und die Mappe geteilt. Ob abgeschickt wurde, sieht {app} nicht.",
+    "vorschlagPortalDu": "Am {tag} hast du den Text fürs Portal kopiert und die Mappe geteilt. Ob abgeschickt wurde, sieht {app} nicht.",
+    "vorschlagWebsiteIhr": "Am {tag} habt ihr die Angaben für die Website kopiert und die Mappe geteilt. Ob abgeschickt wurde, sieht {app} nicht.",
+    "vorschlagWebsiteDu": "Am {tag} hast du die Angaben für die Website kopiert und die Mappe geteilt. Ob abgeschickt wurde, sieht {app} nicht.",
+    "vorschlagMailIhr": "Am {tag} habt ihr die Mail mit der Mappe geöffnet. Ob sie hinausging, meldet das System hier nicht.",
+    "vorschlagMailDu": "Am {tag} hast du die Mail mit der Mappe geöffnet. Ob sie hinausging, meldet das System hier nicht.",
+    "jaBeworben": "Ja, beworben",
+    "nochNicht": "Noch nicht",
+    "nurEinmalIhr": "{app} fragt nur dieses eine Mal. Den Stand könnt ihr jederzeit selbst setzen.",
+    "nurEinmalDu": "{app} fragt nur dieses eine Mal. Den Stand kannst du jederzeit selbst setzen."
   },
   "merkmal": {
     "zurueck": "Heft",
@@ -1912,5 +1936,62 @@
     "satzSpaeter": "{datum}, {zeit}",
     "satzVorbei": "war am {datum}",
     "label": "Besichtigung {satz}, {titel}"
+  },
+  "bewerben": {
+    "titel": "Bewerben in einer Minute",
+    "sub": "Vier Schritte als Angebot. Wer es eilig hat, springt gleich nach unten.",
+    "wegeLabel": "Bewerben per",
+    "weg": {
+      "portal": "Portal",
+      "mail": "Mail",
+      "website": "Website"
+    },
+    "satzMail": "Die Mail ist fertig, die Mappe hängt an. Prüfen, abschicken, fertig.",
+    "satzPortalIhr": "Im Portal: Text ins Nachrichtenfeld einsetzen. Die Mappe schickt ihr, sobald der Vermieter euch eine Mailadresse nennt oder nach Unterlagen fragt.",
+    "satzPortalDu": "Im Portal: Text ins Nachrichtenfeld einsetzen. Die Mappe schickst du, sobald der Vermieter dir eine Mailadresse nennt oder nach Unterlagen fragt.",
+    "satzWebsite": "Auf der Website ein Formular ausfüllen. Die Angaben stehen unten zum Abschreiben.",
+    "ueberspringen": "überspringen",
+    "ueberspringenLabel": "{schritt} überspringen",
+    "schritt": {
+      "anschreiben": "Anschreiben",
+      "angaben": "Was das Inserat wissen will",
+      "mappe": "Mappe",
+      "abschicken": "Abschicken"
+    },
+    "aendern": "Ändern",
+    "fertig": "Übernehmen",
+    "anschreibenLabel": "Anschreiben",
+    "einzug": "Einzug",
+    "werEinzieht": "Wer einzieht",
+    "haustiere": "Haustiere",
+    "beruf": "Beruf",
+    "einkommen": "Einkommen",
+    "anschrift": "Anschrift",
+    "kopieren": "Kopieren",
+    "kopierenLabel": "{was} kopieren",
+    "kopiert": "Kopiert.",
+    "nichtKopiert": "Kopieren ging nicht. Halt den Text gedrückt und wähl „Kopieren“.",
+    "nurVerlangt": "Nur, was verlangt ist",
+    "alles": "Alles, was da ist",
+    "seiten": {
+      "one": "1 Seite",
+      "other": "{anzahl} Seiten"
+    },
+    "allesMitschicken": "Alles mitschicken",
+    "nurVerlangtMitschicken": "Nur, was verlangt ist",
+    "buergschaftVon": "Bürgschaft von {name}",
+    "mappeBaut": "Die Mappe wird zusammengelegt …",
+    "mappeFehler": "Die Mappe ließ sich nicht zusammenlegen. Versuch es noch einmal.",
+    "mailOeffnen": "Mail mit Mappe öffnen",
+    "textKopieren": "Text kopieren",
+    "mappeTeilen": "Mappe teilen",
+    "websiteOeffnen": "Website öffnen",
+    "ohneLink": "Für dieses Heft ist kein Link gespeichert. Öffne die Website des Anbieters selbst.",
+    "versprechenIhr": "{app} schickt eure Daten nirgendwohin. Was hinausgeht, schickt ihr selbst.",
+    "versprechenDu": "{app} schickt deine Daten nirgendwohin. Was hinausgeht, schickst du selbst.",
+    "betreff": "Bewerbung um die Wohnung {wohnung}",
+    "betreffOhne": "Bewerbung um die Wohnung",
+    "anhangSelbst": "Die Mappe ist geladen. Häng sie in der Mail selbst an.",
+    "ohneHaushalt": "Für die Bewerbung braucht {app} einen Haushalt."
   }
 }

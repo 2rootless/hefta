@@ -208,6 +208,9 @@
   );
   const blaetterVertrag = $derived(blaetter.filter((b) => b.wert.rolle !== 'buerge'));
   const blaetterBuergen = $derived(blaetter.filter((b) => b.wert.rolle === 'buerge'));
+  // Nur eine Person: Ihr Blatt steht gleich darunter und zeigt dieselben offenen Unterlagen. Dann bleibt
+  // vom Kasten nur der Satz, die Liste stünde doppelt da (Auftraggeber, 12.11.).
+  const nurEinBlatt = $derived(blaetter.filter((b) => !b.geist).length === 1);
   // Person geht: lang; sonst schließt eine Aufgabe ihren Platz in „mittel“.
   const zuDauer = $derived(bw.wegPersonen.length ? 'var(--bw-lang)' : 'var(--bw-mittel)');
 </script>
@@ -259,7 +262,7 @@
     {:else}
       <section class="aufgaben" aria-labelledby="aufgaben-titel">
         <h2 id="aufgaben-titel" class:blende={bw.satz}>{lead}</h2>
-        <ul>
+        <ul hidden={nurEinBlatt}>
           {#each aufgabenListe as { wert: a, geist } ((geist ? 'g:' : '') + `${a.stand.person.id}/${a.u.typ.id}`)}
             {@const text = naechsterText(a.u, a.stand.person)}
             <li
@@ -423,6 +426,15 @@
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+
+  /* Nur eine Person: nur der Satz (siehe `nurEinBlatt`). */
+  .aufgaben ul[hidden] {
+    display: none;
+  }
+
+  .aufgaben h2:has(+ ul[hidden]) {
+    margin-bottom: 0;
   }
 
   .aufgabe {

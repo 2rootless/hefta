@@ -25,6 +25,8 @@
 
   // Der Gruß folgt der Uhr; er wechselt, wenn die App wieder nach vorn kommt (Bericht 61, 1.3).
   let jetzt = $state(new Date());
+  // Anleitung auf „Wohnungen“ zugeklappt, mit „Anleitung ⌄“ zum Aufklappen (Auftraggeber, 12.11.).
+  let anleitungOffen = $state(false);
   $effect(() => {
     const auffrischen = () => {
       if (document.visibilityState === 'visible') jetzt = new Date();
@@ -94,7 +96,7 @@
       >
       <a class="link" href="#/">{t('wohnungen.mappeBereit')}</a>
     </section>
-    {#if istApp()}<AnleitungTeilen {ihr} />{/if}
+    {#if istApp()}{@render anleitung(ihr)}{/if}
   {:else}
     <p class="sub">{t('wohnungen.subOhne')}</p>
     <h2 class="h">{t('wohnungen.ohneTitel')}</h2>
@@ -117,7 +119,7 @@
     <GrafikPlatz name="erster-start" />
     <p class="kasten">{t('wohnungen.kasten')}</p>
     <!-- Ohne Haushalt „ihr“ (E74.4). -->
-    {#if istApp()}<AnleitungTeilen ihr={true} />{/if}
+    {#if istApp()}{@render anleitung(true)}{/if}
     {#if !istApp()}
       <!-- E42: solange es keinen Haushalt gibt, gesiezt (B15). -->
       <p class="vermieter">
@@ -130,7 +132,45 @@
 </main>
 <TabLeiste aktiv="wohnungen" />
 
+{#snippet anleitung(anrede: boolean)}
+  <button
+    class="anleitung-kopf"
+    type="button"
+    aria-expanded={anleitungOffen}
+    onclick={() => (anleitungOffen = !anleitungOffen)}
+    ><span>{t('wohnungen.anleitung')}</span><span class="pfeil" class:auf={anleitungOffen}
+      ><Symbol name="ab" groesse={16} /></span
+    ></button
+  >
+  {#if anleitungOffen}<div class="einblenden"><AnleitungTeilen ihr={anrede} /></div>{/if}
+{/snippet}
+
 <style>
+  .anleitung-kopf {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--tap-target);
+    margin-top: 20px;
+    padding: 0 2px;
+    border: 0;
+    background: none;
+    color: var(--accent-text);
+    font: inherit;
+    font-size: calc(15 * var(--px));
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .anleitung-kopf .pfeil {
+    display: inline-flex;
+    transition: transform var(--bw-kurz) var(--bw-weich);
+  }
+
+  .anleitung-kopf .pfeil.auf {
+    transform: rotate(180deg);
+  }
+
   .seite {
     max-width: var(--content-width);
     min-height: 100dvh;

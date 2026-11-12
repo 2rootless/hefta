@@ -17,6 +17,7 @@
   import Rueckmeldung from '../ui/Rueckmeldung.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
   import { homescreenFragen } from '../ui/homescreen';
+  import { aussehenSetzen, aussehenWahl, type Aussehen } from '../app/theme';
 
   const meldung = einstellungenZustand.meldung;
   einstellungenZustand.meldung = '';
@@ -67,6 +68,14 @@
 
   // Stand des Regelkatalogs als „Oktober 2026“ (mit Jahr, darum ein Bezugsdatum in einem anderen Jahr).
   const stand = monatName(KATALOG_STAND.slice(0, 7), new Date(0));
+
+  // Aussehen (Auftraggeber, 12.11.): System, Hell oder Dunkel, nur auf diesem Gerät.
+  let aussehen = $state<Aussehen>(aussehenWahl());
+  const AUSSEHEN: { wert: Aussehen; text: string }[] = [
+    { wert: 'system', text: t('einstellungen.aussehenSystem') },
+    { wert: 'hell', text: t('einstellungen.aussehenHell') },
+    { wert: 'dunkel', text: t('einstellungen.aussehenDunkel') },
+  ];
 
   function backupGewaehlt(datei: File | undefined) {
     if (!datei) return;
@@ -216,6 +225,24 @@
     <h2 id="g-app">{t('einstellungen.app')}</h2>
     <ul class="zeilen">
       <li>
+        <div class="listenzeile aussehen-zeile">
+          <span class="tx" id="aussehen-titel"><b>{t('einstellungen.aussehen')}</b></span>
+          <div class="segmente" role="radiogroup" aria-labelledby="aussehen-titel">
+            {#each AUSSEHEN as a (a.wert)}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={aussehen === a.wert}
+                onclick={() => {
+                  aussehen = a.wert;
+                  aussehenSetzen(a.wert);
+                }}>{a.text}</button
+              >
+            {/each}
+          </div>
+        </div>
+      </li>
+      <li>
         <div class="listenzeile">
           <span class="tx"><b>{t('einstellungen.sprache')}</b></span>
           <span class="wert">{t('einstellungen.deutsch')}</span>
@@ -271,6 +298,43 @@
 </main>
 
 <style>
+  /* Der Schalter unter der Beschriftung, über die volle Breite: passt auch bei 320 px mit 130 %. */
+  .aussehen-zeile {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  /* Drei Segmente wie ein Schalter: das gewählte gefüllt. */
+  /* Bei sehr großer Schrift brechen die Segmente in eine zweite Reihe statt mitten im Wort. */
+  .segmente {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 3px;
+    border-radius: 22px;
+    background: var(--ground);
+  }
+
+  .segmente button {
+    flex: 1 1 auto;
+    min-height: 44px;
+    white-space: nowrap;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: none;
+    color: var(--ink-muted);
+    font: inherit;
+    font-size: calc(14 * var(--px));
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .segmente button[aria-checked='true'] {
+    background: var(--action);
+    color: var(--on-action);
+  }
+
   .seite {
     max-width: var(--content-width);
     min-height: 100dvh;
