@@ -31,6 +31,13 @@ export async function mailMitMappe(o: {
     if (status === 'abgebrochen') return 'abgebrochen';
     // Als Entwurf gesichert oder fehlgeschlagen: geöffnet, aber nicht sicher hinaus.
     if (status !== 'keinKonto') return 'geoeffnet';
+    // Keine Apple-Mail: das Teilen-Blatt mit Betreff, sonst nimmt die Mail-App den Dateinamen.
+    const { geteilt } = await HeftaNativ.teilen({
+      dateien: anhaenge.map((a) => a.uri),
+      text: o.text,
+      betreff: o.betreff,
+    });
+    return geteilt ? 'geoeffnet' : 'abgebrochen';
   }
   // Ohne Mailkonto, in einer anderen Mail-App, auf Android: das Teilen-Blatt, der Stand bleibt unsicher.
   if (istApp()) return (await appTeilen(o.dateien, o.text)) ? 'geoeffnet' : 'abgebrochen';

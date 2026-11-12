@@ -61,7 +61,8 @@ export const route = $state<{
 // eslint-disable-next-line svelte/prefer-svelte-reactivity -- nur Buchführung, nichts zeichnet danach.
 const scrollStand = new Map<number, number>();
 let naechsterErsetzt = false;
-let danach: string | null = null;
+/** Was nach dem Sprung im Verlauf folgt, der Reihe nach: ersetzt oder als neuer Schritt. */
+const danach: { pfad: string; ersetzt: boolean }[] = [];
 
 window.addEventListener('hashchange', () => {
   const pfad = aktuell();
@@ -88,10 +89,12 @@ window.addEventListener('hashchange', () => {
   }
   verlaufMerken();
   // Unterwegs zum nächsten Ablauf (neuAnfangen): Die Zwischenstation zeigt sich nicht.
-  if (danach) {
-    const weiter = danach;
-    danach = null;
-    window.location.hash = weiter;
+  const weiter = danach.shift();
+  if (weiter) {
+    if (weiter.ersetzt) {
+      naechsterErsetzt = true;
+      window.location.replace(`#${weiter.pfad}`);
+    } else window.location.hash = weiter.pfad;
     return;
   }
   route.scrollZiel = verlauf.stelle < alt ? (scrollStand.get(verlauf.stelle) ?? 0) : 0;
@@ -130,7 +133,7 @@ export function neuAnfangen(pfad: string): void {
     gehe(pfad);
     return;
   }
-  danach = pfad;
+  danach.push({ pfad, ersetzt: false });
   history.go(-verlauf.stelle);
 }
 
@@ -149,10 +152,23 @@ export function abschliessen(ziel: string): void {
  * Ein Ablauf endet mit einer neuen Seite (Neues Heft → das Heft): zurück zu `ziel`, alles dazwischen ist
  * aus dem Weg, dann `pfad` dahinter. „Zurück“ im Heft führt so zu `ziel`, nicht in den Ablauf.
  */
-export function abschliessenMit(ziel: string, pfad: string): void {
+export function abschliessenMit(ziel: string, pfad: string, ablauf?: string): void {
   const stelle = verlauf.stapel.lastIndexOf(ziel, verlauf.stelle - 1);
   if (verlauf.stelle > 0 && stelle >= 0) {
-    danach = pfad;
+    danach.push({ pfad, ersetzt: false });
     history.go(stelle - verlauf.stelle);
-  } else ersetzen(pfad);
+    return;
+  }
+  // `ziel` liegt nicht im Verlauf (Ablauf von der Übersicht oder aus dem Teilen begonnen): zurück vor
+  // den Ablauf, dessen Seiten mit `ablauf` beginnen. Sonst bliebe der Ablauf im Weg zurück.
+  let anfang = verlauf.stelle;
+  while (ablauf && anfang > 0 && verlauf.stapel[anfang - 1]!.startsWith(ablauf)) anfang--;
+  if (!ablauf || anfang === verlauf.stelle) {
+    ersetzen(pfad);
+    return;
+  }
+  // Begann der Ablauf ganz vorn, tritt `ziel` an seine Stelle.
+  if (anfang === 0) danach.push({ pfad: ziel, ersetzt: true });
+  danach.push({ pfad, ersetzt: false });
+  history.go((anfang === 0 ? 0 : anfang - 1) - verlauf.stelle);
 }

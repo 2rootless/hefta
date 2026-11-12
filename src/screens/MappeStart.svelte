@@ -68,7 +68,7 @@
   let bild: HTMLElement | undefined = $state();
   async function los(pfad: string) {
     const d = dauer('aufschlagen');
-    if (bild && d > 0)
+    if (bild && d > 0) {
       await bild
         .animate(
           [{ transform: 'none' }, { transform: 'scale(1.35) translateY(-8%)', opacity: 0 }],
@@ -79,6 +79,10 @@
           },
         )
         .finished.catch(() => {});
+      // Bis die nächste Seite steht, bleibt das Deckblatt weg; sonst springt es kurz zurück
+      // (TestFlight 12.11.). Beim Zurückkommen ist die Seite neu, ohne diesen Stil.
+      bild.style.opacity = '0';
+    }
     gehe(pfad);
   }
   const anlegenZiel = $derived(

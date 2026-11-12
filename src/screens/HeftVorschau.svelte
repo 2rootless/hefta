@@ -27,6 +27,7 @@
     entwurfVergessen,
     hatEckdaten,
     vorschauStand,
+    zurKontrolle,
   } from '../ui/neuesHeft.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import UrteilZeichen from '../ui/UrteilZeichen.svelte';
@@ -91,7 +92,7 @@
   /** Weiter mit dem, was gelesen ist; bei Zeit um oder leerem Lesen auch mit wenig. */
   function weiter() {
     if (!entwurf.angaben) entwurfAusVorschau(vorschauStand.roh ?? { zustand: 'fehler' }, link);
-    gehe('/wohnung-neu/kontrolle');
+    zurKontrolle();
   }
 
   function andererLink() {

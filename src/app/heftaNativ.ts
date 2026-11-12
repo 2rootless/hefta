@@ -38,6 +38,8 @@ export interface HeftaNativPlugin {
   }): Promise<{
     status: 'gesendet' | 'gespeichert' | 'fehlgeschlagen' | 'abgebrochen' | 'keinKonto';
   }>;
+  /** Nur iOS: Teilen-Blatt, das Mail-Apps den Betreff mitgibt (ohne Konto in Apple Mail). */
+  teilen(o: { dateien: string[]; text?: string; betreff: string }): Promise<{ geteilt: boolean }>;
   addListener(
     ereignis: 'eingang',
     aufruf: (daten: { dateien: EmpfangeneDatei[] }) => void,

@@ -3,12 +3,12 @@
   // Der Text der Anzeige, auf Wunsch der Link dazu; „Eckdaten lesen“ liest ihn auf dem Gerät und führt zur
   // letzten Kontrolle. Hefta lädt den Link nie: Er steht nur im Heft, damit man die Anzeige wiederfindet.
   // Der Weg mit dem Knopf von iOS und der Vorschau (B23 Bildschirm 1 und 2) kommt mit dem Plugin.
-  import { daten, gehe } from '../app/daten.svelte';
+  import { daten } from '../app/daten.svelte';
   import { zurueckGehen } from '../app/router.svelte';
   import { istApp } from '../app/plattform';
   import { t } from '../i18n';
   import Hauptbutton from '../ui/Hauptbutton.svelte';
-  import { entwurf, entwurfLesen, entwurfVergessen } from '../ui/neuesHeft.svelte';
+  import { entwurf, entwurfLesen, entwurfVergessen, zurKontrolle } from '../ui/neuesHeft.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
 
@@ -34,7 +34,7 @@
 
   function weiter() {
     entwurfLesen();
-    gehe('/wohnung-neu/kontrolle');
+    zurKontrolle();
   }
 </script>
 

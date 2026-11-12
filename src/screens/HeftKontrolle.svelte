@@ -358,7 +358,7 @@
     await stillLaden();
     entwurfVergessen();
     zuletzt.heftId = heft.id;
-    abschliessenMit('/wohnungen', `/heft/${heft.id}`);
+    abschliessenMit('/wohnungen', `/heft/${heft.id}`, '/wohnung-neu');
   }
 </script>
 

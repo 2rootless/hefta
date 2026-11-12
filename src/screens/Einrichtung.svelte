@@ -2,7 +2,8 @@
   // Einrichtung Schritt 1 „Wer bist du?“ (design/einrichtung-rutsch-navigation.md, Abschnitt 1):
   // sofort mit dem Namen los, darunter Bezeichnung und Einkommen (vorbelegt „Angestellt“).
   // „Weiter“ legt den Haushalt mit der ersten Person an (oder ändert sie) und führt zu Schritt 2.
-  import { daten, db, gehe, neuLaden } from '../app/daten.svelte';
+  import { daten, db, neuLaden } from '../app/daten.svelte';
+  import { abschliessen } from '../app/router.svelte';
   import { t } from '../i18n';
   import {
     einstellungenAendern,
@@ -93,7 +94,8 @@
     }
     await neuLaden();
     speichert = false;
-    gehe('/einrichtung/2');
+    // Angelegt: Der Schritt ist fertig, Zurück führt nicht noch einmal ins Formular (Auftraggeber 12.11.).
+    abschliessen('/einrichtung/2');
   }
 </script>
 

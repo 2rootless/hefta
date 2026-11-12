@@ -1,6 +1,6 @@
 import type { InseratGelesen } from '../app/heftaInserat';
 import { linkWegDa } from '../app/plattform';
-import { gehe } from '../app/router.svelte';
+import { abschliessenMit, gehe } from '../app/router.svelte';
 import type { HeftAngaben } from '../domain/modell';
 import { adresseAus, angabenAus } from '../lesen/angaben';
 import { adresseLesen, lesen, type Gelesen } from '../lesen/leser';
@@ -103,6 +103,14 @@ export function hatEckdaten(a: HeftAngaben | null): boolean {
 }
 
 /** Ein geteiltes Inserat: direkt in die Vorschau, wo man gerade ist (E81, E73). */
+/**
+ * Eingelesen: weiter zur Kontrolle. Der Schritt ist damit abgeschlossen (Auftraggeber 12.11.): Zurück
+ * führt zu „Wohnungen“, nicht noch einmal in Link oder Vorschau.
+ */
+export function zurKontrolle(): void {
+  abschliessenMit('/wohnungen', '/wohnung-neu/kontrolle', '/wohnung-neu');
+}
+
 export function geteiltOeffnen(link: string): void {
   entwurfVergessen();
   entwurf.link = link;

@@ -19,7 +19,8 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
         CAPPluginMethod(name: "backupWaehlen", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "termin", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "aussehen", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "mail", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "mail", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "teilen", returnType: CAPPluginReturnPromise)
     ]
 
     private var sichernAufruf: CAPPluginCall?
@@ -190,8 +191,15 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
     /// Statusleiste, Systemfenster und `prefers-color-scheme` der Webansicht mit.
     @objc func aussehen(_ call: CAPPluginCall) {
         let stil = call.getString("stil") ?? "system"
+        // Gemerkt, damit der nächste Start gleich in der gewählten Farbe beginnt, nicht erst nach dem Laden.
+        if stil == "system" {
+            UserDefaults.standard.removeObject(forKey: MainViewController.aussehenSchluessel)
+        } else {
+            UserDefaults.standard.set(stil, forKey: MainViewController.aussehenSchluessel)
+        }
         DispatchQueue.main.async {
-            let wert: UIUserInterfaceStyle = stil == "hell" ? .light : stil == "dunkel" ? .dark : .unspecified
+            let wert = MainViewController.aussehen()
+            self.bridge?.viewController?.overrideUserInterfaceStyle = wert
             self.bridge?.viewController?.view.window?.overrideUserInterfaceStyle = wert
             call.resolve()
         }
@@ -238,6 +246,53 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
         mailAufruf?.resolve(["status": status])
         mailAufruf = nil
     }
+
+    /// Teilen-Blatt mit Betreff (ohne Mailkonto in Apple Mail): Mail-Apps übernehmen den Betreff, statt
+    /// den Dateinamen mit Unterstrichen zu nehmen. Der Text geht als Text mit, nicht als Datei.
+    @objc func teilen(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            let betreff = call.getString("betreff") ?? ""
+            var elemente: [Any] = []
+            if let text = call.getString("text"), !text.isEmpty {
+                elemente.append(TeilenElement(text, betreff: betreff))
+            }
+            for eintrag in call.getArray("dateien") ?? [] {
+                if let uri = eintrag as? String, let url = URL(string: uri) {
+                    elemente.append(TeilenElement(url, betreff: betreff))
+                }
+            }
+            let blatt = UIActivityViewController(activityItems: elemente, applicationActivities: nil)
+            blatt.completionWithItemsHandler = { _, fertig, _, _ in
+                call.resolve(["geteilt": fertig])
+            }
+            if let ansicht = self.bridge?.viewController?.view,
+               let pop = blatt.popoverPresentationController {
+                pop.sourceView = ansicht
+                pop.sourceRect = CGRect(x: ansicht.bounds.midX, y: ansicht.bounds.midY, width: 0, height: 0)
+                pop.permittedArrowDirections = []
+            }
+            self.bridge?.viewController?.present(blatt, animated: true)
+        }
+    }
+}
+
+/// Ein Element im Teilen-Blatt, das den Betreff mitgibt.
+final class TeilenElement: NSObject, UIActivityItemSource {
+    private let wert: Any
+    private let betreff: String
+
+    init(_ wert: Any, betreff: String) {
+        self.wert = wert
+        self.betreff = betreff
+    }
+
+    func activityViewControllerPlaceholderItem(_ controller: UIActivityViewController) -> Any { wert }
+
+    func activityViewController(_ controller: UIActivityViewController,
+                                itemForActivityType typ: UIActivity.ActivityType?) -> Any? { wert }
+
+    func activityViewController(_ controller: UIActivityViewController,
+                                subjectForActivityType typ: UIActivity.ActivityType?) -> String { betreff }
 }
 
 // MARK: - Neues Heft aus dem Link (B23 Bildschirm 1 und 2, E72 bis E76)
