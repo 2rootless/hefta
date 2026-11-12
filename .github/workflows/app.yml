@@ -134,15 +134,21 @@ jobs:
         run: node scripts/ohne-probe.mjs
       # Ohne Signatur archivieren: Automatisch signiert verlangt Xcode sonst ein Entwicklungsprofil und
       # dafür ein registriertes Gerät (Lauf vom 7.11.). Signiert wird beim Export, über den API-Schlüssel.
+      # Vom Zweig app/hefta-2 mit Versionsnummer 2.0.0 (Planung 12h): eigener Zug in App Store Connect, der
+      # bei der Auswahl eines Baus für Ausgaben von main (1.0.x) nicht erscheint. Baunummer weiter laufend.
       - name: Archiv bauen, noch ohne Signatur
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: >
-          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release
-          -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Hefta.xcarchive"
-          DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
-          CURRENT_PROJECT_VERSION="${{ github.run_number }}"
-          archive | tail -n 40
+        run: |
+          VERSION=()
+          if [ "$GITHUB_REF" = "refs/heads/app/hefta-2" ]; then VERSION=(MARKETING_VERSION=2.0.0); fi
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Hefta.xcarchive" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" "${VERSION[@]}" \
+            archive | tail -n 40
+          /usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleShortVersionString' \
+            "$RUNNER_TEMP/Hefta.xcarchive/Info.plist"
       - name: Zu App Store Connect hochladen (TestFlight)
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
