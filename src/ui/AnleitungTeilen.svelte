@@ -1,8 +1,9 @@
 <script lang="ts">
-  // Anleitung „So kommt ein Inserat zu Hefta“ (E81, B24): drei Bilder (Inserat in der Portal-App öffnen,
-  // „Teilen“ tippen, Hefta wählen), der Hinweis zu „Mehr“ im Teilen-Menü und der kleinere zweite Weg.
-  // Die Bilder zeichnet das Design als eigene SVG auf festen Plätzen (E58); bis dahin stehen leere Plätze
-  // in ihrer Form da, die Sätze sind lesbar. Nur in der App: Im Browser gibt es kein Teilen an Hefta.
+  // Anleitung „So kommt ein Inserat zu Hefta“ (E81, B24 Richtung B, E84): drei Schritte mit Bild
+  // (Inserat öffnen, „Teilen“ tippen, Hefta wählen), darunter ein breiter vierter Schritt (die Vorschau),
+  // der Hinweis zu „Mehr“ und der kleinere zweite Weg. Die Bilder sind Schmuck (die Sätze tragen die
+  // Bedeutung, B24 Abschnitt 2). Werden die Plätze schmaler als etwa 96 px (320 px mit 130 %), stehen die
+  // Schritte untereinander: Bild links, Satz mit Nummer rechts (Container-Abfrage, E84.3).
   import { t } from '../i18n';
   import GrafikPlatz from './GrafikPlatz.svelte';
 
@@ -20,20 +21,31 @@
   <ol class="schritte">
     {#each SCHRITTE as s, i (s.grafik)}
       <li>
-        <GrafikPlatz name={s.grafik} hoehe={140}>
-          <span class="platz" aria-hidden="true">{i + 1}</span>
-        </GrafikPlatz>
-        <span class="satz">{t(s.satz)}</span>
+        <span class="bild">
+          <GrafikPlatz name={s.grafik} hoehe={240}>
+            <span class="platz" aria-hidden="true">{i + 1}</span>
+          </GrafikPlatz>
+        </span>
+        <span class="satz"><span class="nr">{i + 1}.</span> {t(s.satz)}</span>
       </li>
     {/each}
+    <li class="vier">
+      <span class="bild">
+        <GrafikPlatz name="teilen-4" hoehe={240}>
+          <span class="platz" aria-hidden="true">4</span>
+        </GrafikPlatz>
+      </span>
+      <span class="satz">{t('anleitung.schritt4')}</span>
+    </li>
   </ol>
   <p class="hinweis">{t(ihr ? 'anleitung.mehrIhr' : 'anleitung.mehrDu')}</p>
-  <p class="zweit">{t(ihr ? 'anleitung.zweitIhr' : 'anleitung.zweitDu')}</p>
+  <p class="zweit">{t('anleitung.zweit')}</p>
 </section>
 
 <style>
   .anleitung {
     margin-top: 24px;
+    container-type: inline-size;
   }
 
   .h3 {
@@ -45,7 +57,7 @@
   .schritte {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
+    gap: 12px 10px;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -58,15 +70,25 @@
     min-width: 0;
   }
 
-  /* Leerer Platz in der Form des Bildes, bis das Design es zeichnet. */
+  .bild {
+    display: block;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+  }
+
+  .bild :global(svg) {
+    width: 100%;
+    height: auto;
+  }
+
+  /* Leerer Platz in der Form des Bildes, falls eine Grafik fehlt. */
   .platz {
     display: flex;
     align-items: center;
     justify-content: center;
     aspect-ratio: 9 / 16;
-    border: 1px dashed var(--line-strong);
-    border-radius: 14px;
-    background: var(--surface);
     color: var(--ink-quiet);
     font-size: calc(20 * var(--px));
     font-weight: 700;
@@ -77,6 +99,29 @@
     line-height: 1.35;
   }
 
+  /* In der breiten Form steht die Nummer schon im Bild; sie gilt nur untereinander. */
+  .nr {
+    display: none;
+  }
+
+  /* Schritt 4: ein breiter Kasten, Bild links, Satz rechts (E84.2). */
+  .schritte li.vier {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+  }
+
+  .vier .bild {
+    flex: none;
+    width: 84px;
+    border: 0;
+  }
+
   .hinweis,
   .zweit {
     margin: 12px 2px 0;
@@ -84,10 +129,25 @@
     font-size: calc(14 * var(--px));
   }
 
-  /* Bei großer Schrift untereinander statt nebeneinander. */
-  @media (max-width: 360px) {
+  /* Plätze schmaler als etwa 96 px (3 × 96 + 2 × 10): untereinander, Bild links, Satz mit Nummer rechts. */
+  @container (max-width: 308px) {
     .schritte {
       grid-template-columns: 1fr;
+    }
+
+    .schritte li {
+      flex-direction: row;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .schritte li .bild {
+      flex: none;
+      width: 84px;
+    }
+
+    .nr {
+      display: inline;
     }
   }
 </style>

@@ -7,7 +7,8 @@
     | 'zusage'
     | 'teilen-1'
     | 'teilen-2'
-    | 'teilen-3';
+    | 'teilen-3'
+    | 'teilen-4';
 </script>
 
 <script lang="ts">

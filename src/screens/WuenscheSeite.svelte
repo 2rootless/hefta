@@ -87,12 +87,23 @@
   }
 
   const einzugText = $derived.by(() => {
-    if (wu.einzugVon && wu.einzugBis)
-      return t('wuensche.einzugVonBis', { von: tag(wu.einzugVon), bis: tag(wu.einzugBis) });
+    // Im selben Jahr steht das Jahr nur einmal: „1. Jan. bis 1. März 2027“ (E84.4).
+    if (wu.einzugVon && wu.einzugBis) {
+      const gleich = wu.einzugVon.slice(0, 4) === wu.einzugBis.slice(0, 4);
+      return t('wuensche.einzugVonBis', {
+        von: gleich ? tagOhneJahr(wu.einzugVon) : tag(wu.einzugVon),
+        bis: tag(wu.einzugBis),
+      });
+    }
     if (wu.einzugVon) return t('wuensche.einzugAb', { von: tag(wu.einzugVon) });
     if (wu.einzugBis) return t('wuensche.einzugBis', { bis: tag(wu.einzugBis) });
     return null;
   });
+  const tagOhneJahr = (d: string) =>
+    new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short' }).format(
+      new Date(`${d}T12:00`),
+    );
+
   const tiereText = $derived(
     hh?.haustiere === 'ja'
       ? hh.haustiereText?.trim() || t('wuensche.tiereJa')
@@ -149,12 +160,14 @@
     <label class="l" for={`w-${k}`}>{name}</label>
     {#if k === 'weg'}
       <input id={`w-${k}`} placeholder={t('wuensche.wegOrt')} bind:value={e1} />
-      <input
-        aria-label={t('wuensche.wegKm')}
-        placeholder={t('wuensche.wegKm')}
-        inputmode="decimal"
-        bind:value={e2}
-      />
+      <span class="mit-einheit">
+        <input
+          aria-label={t('wuensche.wegKm')}
+          placeholder={t('wuensche.wegKm')}
+          inputmode="decimal"
+          bind:value={e2}
+        /><span aria-hidden="true">km</span>
+      </span>
     {:else if k === 'einzug'}
       <label class="unter" for={`w-${k}`}>{t('wuensche.von')}</label>
       <input id={`w-${k}`} type="date" bind:value={e1} />
@@ -193,7 +206,11 @@
         {/if}
       {/each}
       <div class="wz fest">
-        <span class="l">{t('wuensche.haustiere')}</span>{@render wert({ wert: tiereText })}
+        <span class="l">{t('wuensche.haustiere')}</span>
+        <!-- Aus der Selbstauskunft, hier nicht festlegbar: „nicht angegeben“ (E84.4). -->
+        {#if tiereText}<span class="v">{tiereText}</span>{:else}<span class="v offenwert"
+            >{t('wuensche.nichtAngegeben')}</span
+          >{/if}
         <small>{t(ihr ? 'wuensche.haustiereKleinIhr' : 'wuensche.haustiereKleinDu')}</small>
       </div>
       <div class="wz fest">
@@ -373,6 +390,16 @@
     background: var(--surface);
     color: var(--ink);
     font: inherit;
+  }
+
+  .mit-einheit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mit-einheit span {
+    color: var(--ink-muted);
   }
 
   .unter,

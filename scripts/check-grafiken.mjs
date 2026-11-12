@@ -3,7 +3,20 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ORDNER = 'src/grafiken';
-const PLAETZE = ['erster-start', 'wohnungen-leer', 'alles-da', 'zusage'];
+const PLAETZE = [
+  'erster-start',
+  'wohnungen-leer',
+  'alles-da',
+  'zusage',
+  'teilen-1',
+  'teilen-2',
+  'teilen-3',
+  'teilen-4',
+];
+// Jedes Token muss es geben, sonst bleibt die Farbe hell und dunkel leer (B24 kam mit den Namen des Designs).
+const TOKENS = new Set(
+  [...readFileSync('design/tokens.css', 'utf8').matchAll(/--([a-z0-9-]+)s*:/g)].map((m) => m[1]),
+);
 const herkunft = JSON.parse(readFileSync(join(ORDNER, 'herkunft.json'), 'utf8'));
 const fehler = [];
 
@@ -29,6 +42,8 @@ for (const datei of dateien) {
     if (!/^(none|currentColor|inherit|transparent|var\(--[a-z0-9-]+\)?)$/i.test(wert))
       melden(`feste Farbe ${wert}; nur none, currentColor oder var(--…)`);
   }
+  for (const m of svg.matchAll(/var(--([a-z0-9-]+))/g))
+    if (!TOKENS.has(m[1])) melden(`Token --${m[1]} gibt es nicht in design/tokens.css`);
 }
 for (const datei of Object.keys(herkunft))
   if (!dateien.includes(datei)) fehler.push(`herkunft.json nennt ${datei}, die Datei fehlt`);
