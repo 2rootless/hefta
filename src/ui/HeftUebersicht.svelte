@@ -10,6 +10,8 @@
   import { t, type TextSchluessel } from '../i18n';
   import Symbol from './Symbol.svelte';
   import TerminKarte from './TerminKarte.svelte';
+  import { terminNaehe } from '../domain/terminNaehe';
+  import { naeheWort } from './terminWorte';
   import { zuletzt } from './neuesHeft.svelte';
 
   let { hefte, jetzt }: { hefte: Heft[]; jetzt: Date } = $props();
@@ -101,7 +103,13 @@
   >
     <span class="k">
       <b class="ti" class:str={titel.strasse}>{titel.text}</b>
-      <span class="w {z.art}">{wort(z.wort)}</span>
+      {#if z.art === 'termin' && h.ereignisse.termin}
+        <!-- Dieselben Wörter wie der Reiter der Terminkarte, heute und morgen in Violett (Planung 12w). -->
+        {@const n = terminNaehe(h.ereignisse.termin.am, jetzt)}
+        <span class="w termin {n.art}">{naeheWort(n)}</span>
+      {:else}
+        <span class="w {z.art}">{wort(z.wort)}</span>
+      {/if}
     </span>
     <small class="e">{zweiteZeile(h)}</small>
     {#if z.art === 'tun' && h.ereignisse.termin}
@@ -328,6 +336,26 @@
 
   .w.termin {
     color: var(--termin);
+  }
+
+  /* Heute und morgen als kleine Marke im Aussehen des Reiters, ringsum gerundet (B25 n1). */
+  .w.termin.heute,
+  .w.termin.morgen {
+    padding: 1px 8px;
+    border: 1px solid var(--nah-linie);
+    border-radius: 7px;
+    background: var(--nah-hell);
+    color: var(--nah-text);
+    font-size: calc(11 * var(--px));
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .w.termin.heute {
+    border-color: var(--nah);
+    background: var(--nah);
+    color: var(--nah-auf);
   }
 
   .w.tun {

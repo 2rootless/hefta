@@ -278,3 +278,184 @@ test('Fragen für die Besichtigung: weglassen, abhaken, Antwort, eigene Frage (E
   await expect(fragen).toContainText('0 von 11');
   await expect(fragen.getByRole('checkbox', { name: 'Wo stehen die Mülltonnen?' })).toBeVisible();
 });
+
+test('Terminkarte nach B25 n1: 15 Fälle, Reiter, Satz, Band, immer gleich hoch (E92)', async ({
+  page,
+}) => {
+  // Do, 12. Nov. 2026, 9 Uhr: die 15 Fälle aus build_b25_n1.py, dazu Sonntag auf Sonntag (Planung 12w).
+  await page.clock.setFixedTime(new Date(2026, 10, 12, 9, 0));
+  await haushaltMitMax(page);
+  const am = (tag: number, monat = 10, jahr = 2026, stunde = 17, minute = 30) =>
+    new Date(jahr, monat, tag, stunde, minute).toISOString();
+  const LANG = {
+    adresse: 'Hinterhaus, Seitenflügel links, 4. OG rechts\n20251 Hoheluft-Ost, nahe Isebekkanal',
+    treff:
+      'Herr Wojciechowski von der Hausverwaltung wartet am Hintereingang zum Hof; bitte klingeln bei Hausmeister.',
+  };
+  type Fall = [string, string, string, string, { adresse?: string; treff?: string }?];
+  const faelle: Fall[] = [
+    ['heute', am(12), 'heute', 'heute, 17:30'],
+    ['heute-vorbei', am(12, 10, 2026, 8, 0), 'vorbei', 'war heute, 08:00'],
+    ['morgen', am(13), 'morgen', 'morgen, 17:30'],
+    ['sonntag', am(15), 'diese Woche', 'Sonntag, 17:30'],
+    ['montag', am(16), 'nächste Woche', 'Montag nächster Woche, 17:30'],
+    ['dienstag', am(17), 'nächste Woche', 'Dienstag nächster Woche, 17:30'],
+    ['drei', am(3, 11), 'in 3 Wochen', 'Do, 3. Dez., 17:30'],
+    ['sechs', am(24, 11), 'im Dezember', 'Do, 24. Dez., 17:30'],
+    ['zehn', am(23, 8, 2027), 'im September', 'Do, 23. Sept., 17:30'],
+    ['dreizehn', am(9, 11, 2027), 'im Dezember 2027', 'Do, 9. Dez. 2027, 17:30'],
+    ['vorbei', am(10), 'vorbei', 'war am Di, 10. Nov.'],
+    ['zwei', am(30, 9), 'vorbei', 'war am Fr, 30. Okt.'],
+    ['lang', am(17), 'nächste Woche', 'Dienstag nächster Woche, 17:30', LANG],
+    ['ohne', am(13), 'morgen', 'morgen, 17:30', { treff: '' }],
+  ];
+  await hefteAnlegen(
+    page,
+    faelle.map(([id, wann, , , extra]) => ({
+      ...heft(id, `Fall ${id}`, {
+        termin: { am: wann, ort: '', treffpunkt: extra?.treff ?? 'Klingeln' },
+      }),
+      // Die Adresse gehört ans Heft, nicht zu den Ereignissen.
+      ...(extra?.adresse ? { adresse: extra.adresse } : {}),
+    })),
+  );
+  const hoehen = new Set<number>();
+  const pruefen = async (id: string, reiter: string, satz: string, luecke: boolean) => {
+    await heftOeffnen(page, id);
+    // Der Name als Satz nach wortlaute-B25.md; das Datum trägt ein geschütztes Leerzeichen.
+    const karte = page.getByRole('group', {
+      name: `Besichtigung ${satz}, Fall ${id}`,
+      exact: true,
+    });
+    await expect(karte).toBeVisible();
+    await expect(karte.locator('.reiter')).toHaveText(reiter);
+    // K6: genau ein Termintag und ein heute im Band, Lücke nur bei Abstand.
+    await expect(karte.locator('.tg.termin')).toHaveCount(1);
+    await expect(karte.locator('.tg.heute')).toHaveCount(1);
+    await expect(karte.locator('.za.nach-luecke')).toHaveCount(luecke ? 1 : 0);
+    // K3: die Uhrzeit in einer Zeile; K2: nichts ragt aus der Karte.
+    const zeit = (await karte.locator('.rel').boundingBox())!;
+    expect(zeit.height).toBeLessThan(40);
+    const box = (await karte.boundingBox())!;
+    for (const teil of ['.ti', '.ad', '.tr', '.ba'])
+      expect((await karte.locator(teil).boundingBox())!.x + 1).toBeGreaterThan(box.x);
+    hoehen.add(Math.round(box.height));
+    return karte;
+  };
+  for (const [id, , reiter, satz] of faelle) {
+    await pruefen(id, reiter, satz, ['drei', 'sechs', 'zehn', 'dreizehn', 'zwei'].includes(id));
+    if (id === 'heute') await ganzesBild(page, 'karte-heute.png');
+    if (id === 'morgen') await ganzesBild(page, 'karte-morgen.png');
+    if (id === 'lang') await ganzesBild(page, 'karte-lang.png');
+  }
+  // Heute Sonntag: Montag ist „morgen“, der Sonntag darauf „nächste Woche“.
+  await page.clock.setFixedTime(new Date(2026, 10, 15, 9, 0));
+  await hefteAnlegen(page, [
+    heft('so-mo', 'Fall so-mo', { termin: { am: am(16), ort: '', treffpunkt: 'Klingeln' } }),
+    heft('so-so', 'Fall so-so', { termin: { am: am(22), ort: '', treffpunkt: 'Klingeln' } }),
+  ]);
+  await page.reload();
+  await pruefen('so-mo', 'morgen', 'morgen, 17:30', false);
+  await pruefen('so-so', 'nächste Woche', 'Sonntag nächster Woche, 17:30', false);
+  // K1: alle Karten gleich hoch, auch mit langen Angaben und ohne Treffpunkt.
+  expect([...hoehen]).toHaveLength(1);
+});
+
+test('Fragen ausblenden: nur hier, auch in neuen Heften, Rückgängig, wieder zeigen (E92)', async ({
+  page,
+}) => {
+  await haushaltMitMax(page);
+  const mitTermin = { termin: { am: tag(2, 17), ort: '', treffpunkt: '' } };
+  await hefteAnlegen(page, [heft('aus1', 'Zwei Zimmer am Park', mitTermin)]);
+  await heftOeffnen(page, 'aus1');
+  const fragen = page.getByRole('region', { name: /Fragen für die Besichtigung/ });
+  const zeile = (text: RegExp) =>
+    fragen.locator('.zeile').filter({ has: page.getByRole('checkbox', { name: text }) });
+  const menue = async (text: RegExp) =>
+    zeile(text).getByRole('button', { name: 'Mehr zu dieser Frage' }).click();
+  await expect(fragen).toContainText('0 von 10');
+
+  // Nur in diesem Heft, mit Rückgängig.
+  await menue(/Keller, Fahrradraum/);
+  await page.getByRole('menuitem', { name: 'Nur in diesem Heft ausblenden' }).click();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'In diesem Heft ausgeblendet' }),
+  ).toBeVisible();
+  await expect(fragen).toContainText('0 von 9');
+  await page.getByRole('button', { name: 'Rückgängig' }).click();
+  await expect(fragen).toContainText('0 von 10');
+  await menue(/Keller, Fahrradraum/);
+  await page.getByRole('menuitem', { name: 'Nur in diesem Heft ausblenden' }).click();
+
+  // Auch in neuen Heften.
+  await menue(/Internetanschluss/);
+  await page.getByRole('menuitem', { name: 'Ausblenden, auch in neuen Heften' }).click();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Ausgeblendet, auch in neuen Heften' }),
+  ).toBeVisible();
+  await expect(fragen).toContainText('0 von 8');
+
+  // Beantwortet: bleibt hier stehen, „nur hier“ gibt es dann nicht.
+  await fragen.getByRole('checkbox', { name: /Mängel, Feuchtigkeit/ }).click();
+  await menue(/Mängel, Feuchtigkeit/);
+  await expect(page.getByRole('menuitem', { name: 'Nur in diesem Heft ausblenden' })).toHaveCount(
+    0,
+  );
+  // Design (nach B25 n1): Der Eintrag sagt genau, was passiert.
+  await page.getByRole('menuitem', { name: 'Für neue Hefte ausblenden' }).click();
+  await expect(fragen.getByRole('checkbox', { name: /Mängel, Feuchtigkeit/ })).toBeVisible();
+  await expect(fragen).toContainText('1 von 8');
+
+  // Die Meldung geht nach etwa 6 Sekunden von selbst (B25 n1), nicht früher.
+  const meldung = page.getByRole('status').filter({ hasText: 'Für neue Hefte ausgeblendet' });
+  await page.waitForTimeout(4000);
+  await expect(meldung).toBeVisible();
+  await expect(meldung).toBeHidden({ timeout: 4000 });
+
+  // Am Ende der Liste: wieder zeigen.
+  await fragen.getByRole('button', { name: '2 ausgeblendete Fragen wieder zeigen' }).click();
+  await expect(
+    fragen.locator('.versteckt li').filter({ hasText: 'Internetanschluss' }),
+  ).toContainText('Auch in neuen Heften ausgeblendet');
+  await ganzesBild(page, 'fragen-ausgeblendet.png');
+  await fragen.getByRole('button', { name: /Wieder zeigen: Gibt es Keller/ }).click();
+  await expect(fragen).toContainText('1 von 9');
+  await expect(
+    fragen.getByRole('button', { name: 'Eine ausgeblendete Frage wieder zeigen' }),
+  ).toBeVisible();
+
+  // Ein neues Heft danach: Internet und Mängel fehlen, Keller ist da. Ein älteres bleibt unverändert.
+  await hefteAnlegen(page, [
+    { ...heft('aus2', 'Altbau am Kanal', mitTermin), createdAt: tag(1), updatedAt: tag(1) },
+    heft('aus3', 'Dachgeschoss', mitTermin),
+  ]);
+  await heftOeffnen(page, 'aus2');
+  await expect(fragen.getByRole('checkbox', { name: /Internetanschluss/ })).toHaveCount(0);
+  await expect(fragen.getByRole('checkbox', { name: /Mängel, Feuchtigkeit/ })).toHaveCount(0);
+  await expect(fragen.getByRole('checkbox', { name: /Keller, Fahrradraum/ })).toBeVisible();
+  await expect(fragen).toContainText('0 von 8');
+  await heftOeffnen(page, 'aus3');
+  await expect(fragen).toContainText('0 von 10');
+
+  // Eigene Frage: bearbeiten und entfernen, mit Rückgängig.
+  await fragen.getByRole('button', { name: 'Eigene Frage' }).click();
+  await fragen.getByRole('textbox', { name: 'Eigene Frage' }).fill('Wo stehen die Mülltonnen');
+  await fragen.getByRole('button', { name: 'Hinzufügen' }).click();
+  await menue(/Mülltonnen/);
+  await page.getByRole('menuitem', { name: 'Bearbeiten' }).click();
+  await fragen.getByRole('textbox', { name: 'Frage bearbeiten' }).fill('Wo stehen die Fahrräder');
+  await fragen.getByRole('button', { name: 'Übernehmen' }).click();
+  await expect(fragen.getByRole('checkbox', { name: 'Wo stehen die Fahrräder?' })).toBeVisible();
+  await menue(/Fahrräder/);
+  await page.getByRole('menuitem', { name: 'Frage entfernen' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Frage entfernt' })).toBeVisible();
+  await expect(fragen.getByRole('checkbox', { name: /Fahrräder/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Rückgängig' }).click();
+  await expect(fragen.getByRole('checkbox', { name: 'Wo stehen die Fahrräder?' })).toBeVisible();
+  await menue(/Fahrräder/);
+  await page.getByRole('menuitem', { name: 'Frage entfernen' }).click();
+  await expect(fragen.getByRole('checkbox', { name: /Fahrräder/ })).toHaveCount(0);
+  // Auch in den anderen Heften weg.
+  await heftOeffnen(page, 'aus1');
+  await expect(fragen.getByRole('checkbox', { name: /Fahrräder/ })).toHaveCount(0);
+});

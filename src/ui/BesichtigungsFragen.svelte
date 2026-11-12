@@ -2,14 +2,21 @@
   // Fragen für die Besichtigung (E52, B17c Abschnitt 3, B21 `x-fragen`): Liste zum Abhaken vor Ort, mit
   // „Antwort notieren“ unter jeder Frage. Mit Antwort steht diese eingerückt darunter, die Frage wird grau.
   // Eigene Fragen kommen ans Ende und gehören zum Gerät. Alles bleibt im Heft, nichts wird exportiert.
+  // Ausblenden (E92, B25 n1 Abschnitt 4, Planung 12x): drei Punkte an jeder Frage öffnen ein kleines Menü.
+  // Fragen von Hefta: „Ausblenden, auch in neuen Heften“ (Gerät, ab jetzt angelegte Hefte) oder „Nur in
+  // diesem Heft ausblenden“ (am Heft). Eigene Fragen: bearbeiten oder entfernen. Danach eine Meldung mit
+  // „Rückgängig“, etwa 6 Sekunden. Am Ende der Liste lassen sich ausgeblendete Fragen wieder zeigen.
   import { tick } from 'svelte';
   import { daten, db, stillLaden } from '../app/daten.svelte';
+  import { rueckgaengigAnbieten } from '../app/rueckgaengig.svelte';
+  import { route } from '../app/router.svelte';
   import {
     besichtigungsFragen,
     KEINE_FRAGEN,
     tierFrage,
     type Frage,
     type HeftFragen,
+    type Thema,
   } from '../domain/besichtigungsFragen';
   import type { Heft } from '../domain/modell';
   import type { Urteil } from '../domain/urteile';
@@ -27,6 +34,12 @@
       urteile,
       mitTieren: hh?.haustiere === 'ja',
       eigene: [...gespeichert.eigene, ...(daten.einstellungen?.eigeneFragen ?? [])],
+      ausgeblendet: {
+        hier: gespeichert.ausgeblendet ?? [],
+        neu: daten.einstellungen?.ausgeblendeteFragen ?? [],
+        heftAngelegt: heft.createdAt,
+      },
+      antworten: gespeichert.antworten,
     }),
   );
   const abgehakt = $derived(liste.fragen.filter((f) => gespeichert.antworten[f.id]?.ab).length);
@@ -43,6 +56,9 @@
     }
     return t(`fragen.frage.${f.thema}` as TextSchluessel);
   }
+
+  /** Meldungen nach dem Ausblenden und Entfernen: etwa 6 Sekunden, nicht weniger (B25a, B25 n1). */
+  const MELDUNG_MS = 6000;
 
   async function sichern(neu: HeftFragen) {
     // Ohne Proxys von Svelte: IndexedDB kann sie nicht kopieren.
@@ -90,6 +106,122 @@
     });
   }
 
+  // Menü an einer Frage: welche offen ist.
+  let menue = $state<string | null>(null);
+
+  function beantwortet(id: string): boolean {
+    const a = gespeichert.antworten[id];
+    return !!a && (a.ab || !!a.antwort.trim());
+  }
+
+  /** Stand vor einer Änderung, für „Rückgängig“. */
+  function vorher() {
+    return {
+      heft: $state.snapshot(gespeichert),
+      geraet: $state.snapshot(daten.einstellungen?.ausgeblendeteFragen ?? []),
+      eigene: $state.snapshot(daten.einstellungen?.eigeneFragen ?? []),
+    };
+  }
+
+  function rueckgaengig(text: string, alt: ReturnType<typeof vorher>) {
+    rueckgaengigAnbieten({
+      text,
+      seite: route.pfad,
+      dauerMs: MELDUNG_MS,
+      ausfuehren: async () => {
+        await einstellungenAendern(await db(), {
+          ausgeblendeteFragen: alt.geraet,
+          eigeneFragen: alt.eigene,
+        });
+        await sichern(alt.heft);
+      },
+    });
+  }
+
+  async function ausblenden(thema: Thema, auchNeu: boolean) {
+    menue = null;
+    const alt = vorher();
+    // Schon beantwortet: Die Frage bleibt hier stehen, das Ausblenden gilt nur für neue Hefte. Menü und
+    // Meldung sagen das dann genau (Design, nach B25 n1).
+    const nurNeue = beantwortet(thema);
+    if (!nurNeue && !(gespeichert.ausgeblendet ?? []).includes(thema))
+      await sichern({ ...gespeichert, ausgeblendet: [...(gespeichert.ausgeblendet ?? []), thema] });
+    if (auchNeu) {
+      const geraet = $state
+        .snapshot(daten.einstellungen?.ausgeblendeteFragen ?? [])
+        .filter((a) => a.thema !== thema);
+      await einstellungenAendern(await db(), {
+        ausgeblendeteFragen: [...geraet, { thema, seit: new Date().toISOString() }],
+      });
+      await stillLaden();
+    }
+    rueckgaengig(
+      t(nurNeue ? 'fragen.meldungFuerNeue' : auchNeu ? 'fragen.meldungNeu' : 'fragen.meldungHier'),
+      alt,
+    );
+  }
+
+  async function wiederZeigen(thema: Thema) {
+    // Hebt beides auf: hier und für neue Hefte (B25 n1).
+    await einstellungenAendern(await db(), {
+      ausgeblendeteFragen: $state
+        .snapshot(daten.einstellungen?.ausgeblendeteFragen ?? [])
+        .filter((a) => a.thema !== thema),
+    });
+    await sichern({
+      ...gespeichert,
+      ausgeblendet: (gespeichert.ausgeblendet ?? []).filter((th) => th !== thema),
+    });
+  }
+
+  let versteckteOffen = $state(false);
+
+  /** Eine eigene Frage entfernen: aus dem Gerät und aus diesem Heft, mit „Rückgängig“. */
+  async function entfernen(f: Frage) {
+    menue = null;
+    if (!f.text) return;
+    const alt = vorher();
+    const ohne = (liste: string[]) => liste.filter((x) => x.trim() !== f.text);
+    await einstellungenAendern(await db(), {
+      eigeneFragen: ohne(daten.einstellungen?.eigeneFragen ?? []),
+    });
+    await sichern({ ...gespeichert, eigene: ohne(gespeichert.eigene) });
+    rueckgaengig(t('fragen.meldungEntfernt'), alt);
+  }
+
+  // Eine eigene Frage wird bearbeitet.
+  let bearbeitet = $state<string | null>(null);
+  let bearbeitetText = $state('');
+  let bearbeitetFeld: HTMLInputElement | undefined = $state();
+
+  async function bearbeiten(f: Frage) {
+    menue = null;
+    bearbeitet = f.id;
+    bearbeitetText = f.text ?? '';
+    await tick();
+    bearbeitetFeld?.focus();
+  }
+
+  async function bearbeitenSichern(f: Frage) {
+    const roh = bearbeitetText.trim().slice(0, 140);
+    bearbeitet = null;
+    if (!roh || !f.text) return;
+    const neu = /[?.!]$/.test(roh) ? roh : `${roh}?`;
+    if (neu === f.text) return;
+    const tausch = (liste: string[]) => liste.map((x) => (x.trim() === f.text ? neu : x));
+    await einstellungenAendern(await db(), {
+      eigeneFragen: tausch(daten.einstellungen?.eigeneFragen ?? []),
+    });
+    // Häkchen und Antwort gehen mit.
+    const antworten = { ...gespeichert.antworten };
+    const bisher = antworten[f.id];
+    if (bisher) {
+      antworten[`eigen:${neu}`] = bisher;
+      delete antworten[f.id];
+    }
+    await sichern({ ...gespeichert, eigene: tausch(gespeichert.eigene), antworten });
+  }
+
   let neuOffen = $state(false);
   let neueFrage = $state('');
   let neuFeld: HTMLInputElement | undefined = $state();
@@ -118,6 +250,15 @@
     });
   }
 </script>
+
+<svelte:window
+  onclick={(ev) => {
+    if (menue && !(ev.target as Element).closest('.menuewrap')) menue = null;
+  }}
+  onkeydown={(ev) => {
+    if (ev.key === 'Escape') menue = null;
+  }}
+/>
 
 <section class="fragen" aria-labelledby="fragen-titel">
   <h2 class="kopf" id="fragen-titel">
@@ -153,7 +294,27 @@
               >{t(ihr ? 'fragen.offenIhr' : 'fragen.offenDu')}</small
             >{:else if f.thema === 'eigen'}<small class="etikett">{t('fragen.eigenEtikett')}</small
             >{/if}
-          <span class="frage" aria-hidden="true">{frage}</span>
+          {#if bearbeitet === f.id}
+            <form
+              class="neu bearbeiten"
+              onsubmit={(ev) => {
+                ev.preventDefault();
+                void bearbeitenSichern(f);
+              }}
+            >
+              <input
+                bind:this={bearbeitetFeld}
+                bind:value={bearbeitetText}
+                maxlength="140"
+                autocomplete="off"
+                enterkeyhint="done"
+                aria-label={t('fragen.bearbeitenLabel')}
+              />
+              <button class="hinzu" type="submit">{t('fragen.uebernehmen')}</button>
+            </form>
+          {:else}
+            <span class="frage" aria-hidden="true">{frage}</span>
+          {/if}
           {#if schreibt === f.id}
             <textarea
               bind:this={feld}
@@ -174,8 +335,80 @@
             >
           {/if}
         </div>
+        <div class="menuewrap">
+          <button
+            class="punkte"
+            type="button"
+            aria-label={t('fragen.mehr')}
+            aria-haspopup="menu"
+            aria-expanded={menue === f.id}
+            onclick={() => (menue = menue === f.id ? null : f.id)}
+            ><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"
+              ><circle cx="4" cy="10" r="1.8" /><circle cx="10" cy="10" r="1.8" /><circle
+                cx="16"
+                cy="10"
+                r="1.8"
+              /></svg
+            ></button
+          >
+          {#if menue === f.id}
+            <div class="menue" role="menu">
+              {#if f.thema === 'eigen'}
+                <button role="menuitem" type="button" onclick={() => bearbeiten(f)}
+                  >{t('fragen.bearbeiten')}</button
+                >
+                <button role="menuitem" type="button" onclick={() => entfernen(f)}
+                  >{t('fragen.entfernen')}</button
+                >
+              {:else}
+                <button
+                  role="menuitem"
+                  type="button"
+                  onclick={() => ausblenden(f.thema as Thema, true)}
+                  >{t(
+                    beantwortet(f.id) ? 'fragen.ausblendenFuerNeue' : 'fragen.ausblendenNeu',
+                  )}</button
+                >
+                {#if !beantwortet(f.id)}
+                  <button
+                    role="menuitem"
+                    type="button"
+                    onclick={() => ausblenden(f.thema as Thema, false)}
+                    >{t('fragen.ausblendenHier')}</button
+                  >
+                {/if}
+              {/if}
+            </div>
+          {/if}
+        </div>
       </div>
     {/each}
+    {#if liste.versteckt.length}
+      <button
+        class="plus versteckt-knopf"
+        type="button"
+        aria-expanded={versteckteOffen}
+        onclick={() => (versteckteOffen = !versteckteOffen)}
+        >{t('fragen.wiederZeigenAnzahl', { anzahl: liste.versteckt.length })}</button
+      >
+      {#if versteckteOffen}
+        <ul class="versteckt">
+          {#each liste.versteckt as v (v.thema)}
+            {@const frage = text({ id: v.thema, thema: v.thema, offen: false, text: null })}
+            <li>
+              <span class="frage">{frage}</span>
+              {#if v.auchNeu}<small>{t('fragen.auchNeu')}</small>{/if}
+              <button
+                class="notieren"
+                type="button"
+                aria-label={`${t('fragen.wiederZeigen')}: ${frage}`}
+                onclick={() => wiederZeigen(v.thema)}>{t('fragen.wiederZeigen')}</button
+              >
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    {/if}
     {#if neuOffen}
       <form
         class="neu"
@@ -368,6 +601,79 @@
     flex: 1;
     min-width: 0;
     margin: 0;
+  }
+
+  .menuewrap {
+    position: relative;
+    flex: none;
+  }
+
+  .punkte {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin-right: -10px;
+    border: 0;
+    background: none;
+    color: var(--ink-muted);
+    cursor: pointer;
+  }
+
+  .punkte svg {
+    fill: currentColor;
+  }
+
+  .menue {
+    position: absolute;
+    z-index: 5;
+    top: 40px;
+    right: -6px;
+    display: flex;
+    flex-direction: column;
+    min-width: 240px;
+    padding: 6px 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+  }
+
+  .menue button {
+    min-height: 44px;
+    padding: 0 16px;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: calc(15 * var(--px));
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .versteckt-knopf {
+    border-top: 1px solid var(--line);
+  }
+
+  .versteckt {
+    margin: 0;
+    padding: 0 14px 8px 48px;
+    list-style: none;
+  }
+
+  .versteckt li {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0 0;
+    color: var(--ink-muted);
+  }
+
+  .versteckt small {
+    font-size: calc(12 * var(--px));
+  }
+
+  .bearbeiten {
+    padding: 0;
   }
 
   .hinzu {

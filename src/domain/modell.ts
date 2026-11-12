@@ -342,6 +342,11 @@ export interface Einstellungen {
   rueckmeldungMomentFertig?: boolean;
   /** Eigene Fragen für die Besichtigung (E52): gehören zum Gerät, nicht zum Haushalt (Planung 10i). */
   eigeneFragen?: string[];
+  /**
+   * Ausgeblendete Fragen von Hefta (E92, vorbereitet, noch ohne Oberfläche): fehlen in allen Heften, außer
+   * dort schon beantwortet.
+   */
+  ausgeblendeteFragen?: import('./besichtigungsFragen').AusgeblendeteFrage[];
 }
 
 /** Eine gespeicherte Datei. `daten` ist ein Blob oder, wo Blobs nicht gehen, ein ArrayBuffer. */

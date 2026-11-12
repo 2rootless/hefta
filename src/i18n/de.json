@@ -1875,6 +1875,42 @@
     "antwortAendern": "Antwort ändern: {antwort}",
     "eigeneFrage": "Eigene Frage",
     "eigeneHinzufuegen": "Hinzufügen",
-    "eigeneSatz": "Eigene Fragen schlägt {app} bei der nächsten Besichtigung wieder vor, nur auf diesem Gerät."
+    "eigeneSatz": "Eigene Fragen schlägt {app} bei der nächsten Besichtigung wieder vor, nur auf diesem Gerät.",
+    "mehr": "Mehr zu dieser Frage",
+    "ausblendenNeu": "Ausblenden, auch in neuen Heften",
+    "ausblendenHier": "Nur in diesem Heft ausblenden",
+    "meldungNeu": "Ausgeblendet, auch in neuen Heften",
+    "meldungHier": "In diesem Heft ausgeblendet",
+    "wiederZeigenAnzahl": {
+      "one": "Eine ausgeblendete Frage wieder zeigen",
+      "other": "{anzahl} ausgeblendete Fragen wieder zeigen"
+    },
+    "wiederZeigen": "Wieder zeigen",
+    "auchNeu": "Auch in neuen Heften ausgeblendet",
+    "bearbeiten": "Bearbeiten",
+    "entfernen": "Frage entfernen",
+    "meldungEntfernt": "Frage entfernt",
+    "bearbeitenLabel": "Frage bearbeiten",
+    "uebernehmen": "Übernehmen",
+    "ausblendenFuerNeue": "Für neue Hefte ausblenden",
+    "meldungFuerNeue": "Für neue Hefte ausgeblendet"
+  },
+  "naehe": {
+    "heute": "heute",
+    "morgen": "morgen",
+    "dieseWoche": "diese Woche",
+    "naechsteWoche": "nächste Woche",
+    "inWochen": "in {n} Wochen",
+    "monat": "im {monat}",
+    "monatJahr": "im {monat} {jahr}",
+    "vorbei": "vorbei",
+    "satzHeute": "heute, {zeit}",
+    "satzVorbeiHeute": "war heute, {zeit}",
+    "satzMorgen": "morgen, {zeit}",
+    "satzDieseWoche": "{tag}, {zeit}",
+    "satzNaechsteWoche": "{tag} nächster Woche, {zeit}",
+    "satzSpaeter": "{datum}, {zeit}",
+    "satzVorbei": "war am {datum}",
+    "label": "Besichtigung {satz}, {titel}"
   }
 }

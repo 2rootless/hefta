@@ -67,6 +67,14 @@ export interface FragenListe {
   fragen: Frage[];
   /** Weggelassene Themen in der Reihenfolge der Liste, für „Nicht in der Liste, weil …“. */
   weg: Thema[];
+  /** Ausgeblendete Fragen dieses Hefts (E92), für „… wieder zeigen“; `auchNeu`: auch in neuen Heften. */
+  versteckt: { thema: Thema; auchNeu: boolean }[];
+}
+
+/** Eine Frage, die in neuen Heften fehlt (E92): seit wann, damit schon angelegte Hefte bleiben. */
+export interface AusgeblendeteFrage {
+  thema: Thema;
+  seit: string;
 }
 
 export function besichtigungsFragen(o: {
@@ -77,6 +85,17 @@ export function besichtigungsFragen(o: {
   mitTieren: boolean;
   /** Eigene Fragen: die des Geräts und die schon in diesem Heft gestellten. */
   eigene: string[];
+  /**
+   * Ausblenden (E92, Planung 12x): `hier` am Heft; `neu` vom Gerät, gilt für Hefte, die danach angelegt
+   * wurden. Schon beantwortete Fragen bleiben im Heft stehen.
+   */
+  ausgeblendet?: {
+    hier: readonly Thema[];
+    neu: readonly AusgeblendeteFrage[];
+    heftAngelegt: string;
+  };
+  /** Häkchen und Antworten dieses Hefts, für „schon beantwortet“. */
+  antworten?: HeftFragen['antworten'];
 }): FragenListe {
   const sicher = sicherImInserat(o.angaben);
   const offen = new Set<Thema>();
@@ -87,7 +106,19 @@ export function besichtigungsFragen(o: {
     offen.add(thema);
   }
   const weg = THEMEN.filter((th) => sicher.has(th) && !offen.has(th));
-  const liste = THEMEN.filter((th) => !weg.includes(th)).map((th): Frage => ({
+  const beantwortet = (th: Thema) => {
+    const a = o.antworten?.[th];
+    return !!a && (a.ab || !!a.antwort.trim());
+  };
+  const neu = new Set((o.ausgeblendet?.neu ?? []).map((a) => a.thema));
+  const hierAus = new Set([
+    ...(o.ausgeblendet?.hier ?? []),
+    ...(o.ausgeblendet?.neu ?? [])
+      .filter((a) => o.ausgeblendet!.heftAngelegt > a.seit)
+      .map((a) => a.thema),
+  ]);
+  const aus = new Set([...hierAus].filter((th) => !beantwortet(th) && !weg.includes(th)));
+  const liste = THEMEN.filter((th) => !weg.includes(th) && !aus.has(th)).map((th): Frage => ({
     id: th,
     thema: th,
     offen: offen.has(th),
@@ -104,7 +135,11 @@ export function besichtigungsFragen(o: {
     gesehen.add(schluessel);
     eigene.push({ id: `eigen:${text}`, thema: 'eigen', offen: false, text });
   }
-  return { fragen: [...oben, ...rest, ...eigene], weg };
+  const versteckt = THEMEN.filter((th) => aus.has(th)).map((th) => ({
+    thema: th,
+    auchNeu: neu.has(th),
+  }));
+  return { fragen: [...oben, ...rest, ...eigene], weg, versteckt };
 }
 
 /**
@@ -124,6 +159,8 @@ export interface HeftFragen {
   antworten: Record<string, { ab: boolean; antwort: string }>;
   /** Eigene Fragen, die in diesem Heft gestellt wurden. */
   eigene: string[];
+  /** Nur in diesem Heft ausgeblendet, oder hier und in neuen Heften (E92). */
+  ausgeblendet?: Thema[];
 }
 
 export const KEINE_FRAGEN: HeftFragen = { antworten: {}, eigene: [] };

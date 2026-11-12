@@ -1,18 +1,16 @@
 <script lang="ts">
-  // Karte einer Besichtigung (B21 Fassung 4, `x8-tc`): Datum links, „morgen 17:30“, Titel oder Adresse,
-  // Treffpunkt, darunter die Woche ab heute mit dem Termin. In der Übersicht ist sie ein Link ins Heft,
-  // im Heft nur Anzeige. Die Woche ist Schmuck; das Wort steht immer daneben.
-  import {
-    heftAdresseKurz,
-    heftOrt,
-    heftTitel,
-    terminKarte,
-    WOCHE_TAGE,
-  } from '../domain/heftKarte';
+  // Karte einer Besichtigung (B25 auf B21 Fassung 4, `x8-tc`): oben rechts ein Reiter für die Nähe
+  // (heute und morgen in Violett), Datum links, groß nur die Uhrzeit, Titel oder Adresse, Ort und
+  // Treffpunkt, darunter immer zwei Wochenzeilen Mo–So. Die Karte ist immer gleich hoch: Titel und Ort je
+  // eine Zeile, Treffpunkt höchstens zwei, ohne Treffpunkt bleibt der Platz frei. Der ganze Satz steht als
+  // Name für Vorlesehilfen da; Reiter und Band sind nur zur Anzeige. In der Übersicht ist die Karte ein
+  // Link ins Heft, im Heft nur Anzeige.
+  import { heftAdresseKurz, heftOrt, heftTitel, terminKarte } from '../domain/heftKarte';
   import type { Heft } from '../domain/modell';
-  import { bisWort, vorWort } from '../domain/tageslinie';
-  import { t, type TextSchluessel } from '../i18n';
+  import { terminBand, terminNaehe } from '../domain/terminNaehe';
+  import { t } from '../i18n';
   import Symbol from './Symbol.svelte';
+  import { naeheWort, terminSatz, uhrzeit } from './terminWorte';
 
   let {
     heft,
@@ -21,68 +19,70 @@
     href,
   }: { heft: Heft; jetzt: Date; titel?: boolean; href?: string } = $props();
 
+  const WOCHENTAGE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
   const termin = $derived(heft.ereignisse.termin!);
   const k = $derived(terminKarte(termin.am, jetzt));
-  const wann = $derived.by(() => {
-    // Vorbei (noch ohne Ergebnis): „vor 2 Tagen“ statt „heute“.
-    const w = k.tage < 0 ? vorWort(-k.tage) : bisWort(k.tage);
-    return t(w.schluessel as TextSchluessel, w.werte ?? {});
-  });
+  const naehe = $derived(terminNaehe(termin.am, jetzt));
+  const band = $derived(terminBand(termin.am, jetzt));
+  const uhr = $derived(uhrzeit(termin.am));
   const name = $derived(heftTitel(heft).text);
-  const label = $derived(
-    t('hefte.terminLabel', { wann: k.uhr ? `${wann}, ${k.uhr}` : wann, titel: name }),
-  );
+  const label = $derived(t('naehe.label', { satz: terminSatz(termin.am, jetzt), titel: name }));
   // Im Heft steht oben schon der Titel: Dann zeigt die Karte Straße und Ort.
   const zeile1 = $derived(titel ? name : heft.adresse.split('\n')[0]?.trim() || name);
   const zeile2 = $derived(titel ? heftAdresseKurz(heft) : heftOrt(heft));
-  const SPALTE = 100 / WOCHE_TAGE;
 </script>
 
 <svelte:element
   this={href ? 'a' : 'div'}
-  class="tc"
-  class:heute={k.tage === 0}
+  class="tc {naehe.art}"
   {href}
-  aria-label={href ? label : undefined}
+  aria-label={label}
   role={href ? undefined : 'group'}
 >
-  <span class="dt" aria-hidden={href ? 'true' : undefined}
-    ><i>{k.wochentag}</i><b>{k.tag}</b><i>{k.monat}</i></span
-  >
+  <span class="reiter" aria-hidden="true">{naeheWort(naehe)}</span>
+  <span class="dt" aria-hidden="true"><i>{k.wochentag}</i><b>{k.tag}</b><i>{k.monat}</i></span>
   <span class="tx" aria-hidden={href ? 'true' : undefined}>
-    <span class="rel"
-      >{wann}
-      {#if k.uhr}<small>{k.uhr}</small>{/if}</span
-    >
+    <span class="rel">{uhr || k.wochentag}</span>
     <b class="ti">{zeile1}</b>
-    {#if zeile2}<span class="ad">{zeile2}</span>{/if}
-    {#if termin.treffpunkt}
-      <span class="tr"><Symbol name="person" groesse={16} /><span>{termin.treffpunkt}</span></span>
-    {/if}
+    <span class="ad">{zeile2}</span>
+    <span class="tr" class:ohne={!termin.treffpunkt}
+      >{#if termin.treffpunkt}<Symbol name="person" groesse={16} /><span class="trt"
+          >{termin.treffpunkt}</span
+        >{/if}</span
+    >
   </span>
   <span class="wl" aria-hidden="true">
-    <span class="wz">
-      {#if k.ereignis !== null && k.ereignis > 0}
-        <i class="wp" style={`left:${SPALTE / 2}%;width:${k.ereignis * SPALTE}%`}></i>
-      {/if}
-      {#each k.woche as tag, i (i)}
-        <i class="t" class:hz={i === 0} class:mo={tag.montag}
-          ><i class="tk"></i>{#if k.ereignis === i}<i class="ev"></i>{#if i > 0}<b class="el"
-                >{k.wochentag}</b
-              >{/if}{/if}</i
-        >
+    <span class="ba">
+      <span class="za kopf"
+        >{#each WOCHENTAGE as w (w)}<i>{w}</i>{/each}</span
+      >
+      {#each band.wochen as woche, n (n)}
+        <span class="za" class:nach-luecke={n === 1 && band.luecke}>
+          {#each woche as tag, i (i)}
+            <span
+              class="tg"
+              class:we={tag.wochenende}
+              class:vorbei={tag.vorbei}
+              class:heute={tag.heute}
+              class:termin={tag.termin}>{tag.tag}</span
+            >
+          {/each}
+        </span>
       {/each}
     </span>
-    <span class="wh">{t('zeit.heute')}</span>
   </span>
 </svelte:element>
 
 <style>
   .tc {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0 14px;
-    padding: 14px 16px 10px 15px;
+    position: relative;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: start;
+    margin-top: 16px;
+    padding: 14px 16px 12px 15px;
     border: 1px solid var(--line);
     border-left: 3px solid var(--termin);
     border-radius: 14px;
@@ -91,19 +91,77 @@
     text-decoration: none;
   }
 
-  .tc.heute {
-    border-color: var(--termin-line);
-    border-left-color: var(--termin);
+  /* Reiter: wie der Reiter eines Hefts, oben rechts an der Karte. */
+  .reiter {
+    position: absolute;
+    top: -15px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    height: 22px;
+    padding: 0 10px;
+    border: 1px solid var(--termin-line);
+    border-bottom: 0;
+    border-radius: 7px 7px 0 0;
     background: var(--termin-soft);
+    color: var(--termin);
+    font-size: calc(11 * var(--px));
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .heute .reiter {
+    border-color: var(--nah);
+    background: var(--nah);
+    color: var(--nah-auf);
+  }
+
+  .morgen .reiter {
+    border-color: var(--nah-linie);
+    background: var(--nah-hell);
+    color: var(--nah-text);
+  }
+
+  .vorbei .reiter {
+    border-color: var(--line-strong);
+    background: var(--ground);
+    color: var(--ink-muted);
+  }
+
+  /* Heute ganz violett getönt, morgen Rand und Termin in Violett, vorbei grau. */
+  .tc.heute {
+    border-left-color: var(--nah);
+    background: var(--nah-hell);
+  }
+
+  .tc.morgen {
+    border-left-color: var(--nah);
+  }
+
+  .tc.vorbei {
+    border-left-color: var(--line-strong);
   }
 
   .dt {
-    flex: none;
-    width: 44px;
     padding-top: 3px;
     color: var(--termin);
     line-height: 1.1;
     text-align: center;
+  }
+
+  .heute .dt,
+  .morgen .dt,
+  .heute .rel,
+  .morgen .rel {
+    /* Schrift in Violett nimmt --nah-text, im Dunkeln Tinte (B25 n1). */
+    color: var(--nah-text);
+  }
+
+  .vorbei .dt,
+  .vorbei .rel {
+    color: var(--ink-muted);
   }
 
   .dt i {
@@ -124,9 +182,8 @@
 
   .tx {
     display: flex;
-    flex: 1 1 0;
     flex-direction: column;
-    min-width: min-content;
+    min-width: 0;
   }
 
   .rel {
@@ -134,12 +191,16 @@
     font-size: calc(21 * var(--px));
     font-weight: 700;
     line-height: 1.2;
+    white-space: nowrap;
   }
 
-  .rel small {
-    margin-left: 2px;
-    font-size: calc(14.5 * var(--px));
-    font-weight: 600;
+  /* Nie höher als vorgesehen: Titel und Ort je eine Zeile, Treffpunkt zwei. */
+  .ti,
+  .ad {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .ti {
@@ -147,19 +208,21 @@
     font-size: calc(17 * var(--px));
     font-weight: 700;
     line-height: 1.25;
-    overflow-wrap: break-word;
   }
 
   .ad {
     color: var(--ink-muted);
     font-size: calc(14.5 * var(--px));
+    line-height: 1.35;
   }
 
   .tr {
     display: flex;
     align-items: flex-start;
     gap: 6px;
+    height: calc(2 * 1.35em);
     margin-top: 5px;
+    overflow: hidden;
     color: var(--ink-muted);
     font-size: calc(14 * var(--px));
     line-height: 1.35;
@@ -170,103 +233,105 @@
     margin-top: 1px;
   }
 
+  .trt {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .tr.ohne {
+    visibility: hidden;
+  }
+
+  /* Band: immer zwei Wochenzeilen Mo–So, nur zur Anzeige. */
   .wl {
-    display: block;
-    flex-basis: 100%;
+    grid-column: 1 / -1;
     margin-top: 12px;
-    padding-top: 6px;
+    padding-top: 10px;
     border-top: 1px solid var(--line);
   }
 
-  .tc.heute .wl {
-    border-top-color: var(--termin-line);
+  .heute .wl {
+    border-top-color: var(--nah-linie);
   }
 
-  .wz {
-    position: relative;
+  .ba {
     display: grid;
-    grid-template-columns: repeat(15, 1fr);
-    height: 28px;
+    gap: 4px;
   }
 
-  .wz::before {
-    position: absolute;
-    top: 20px;
-    right: 0;
-    left: 0;
-    height: 1px;
-    background: var(--line-strong);
-    content: '';
+  .za {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    text-align: center;
   }
 
-  .wz .t {
-    position: relative;
-    display: block;
-    font-style: normal;
-  }
-
-  .wz i,
-  .wz b {
-    position: absolute;
-    display: block;
-  }
-
-  .wz .tk {
-    top: 17px;
-    left: 50%;
-    width: 1px;
-    height: 7px;
-    background: var(--line-strong);
-  }
-
-  .wz .mo .tk {
-    top: 15px;
-    height: 11px;
-    background: var(--ink-quiet);
-    opacity: 0.55;
-  }
-
-  .wz .hz .tk {
-    top: 14px;
-    width: 1.5px;
-    height: 13px;
-    background: var(--ink-muted);
-  }
-
-  .wp {
-    z-index: 0;
-    top: 20px;
-    height: 0;
-    border-top: 1.5px dotted var(--termin);
-    opacity: 0.75;
-  }
-
-  .ev {
-    z-index: 1;
-    top: 16px;
-    left: 50%;
-    width: 9px;
-    height: 9px;
-    margin-left: -4.5px;
-    border-radius: 50%;
-    background: var(--termin);
-  }
-
-  .el {
-    top: 0;
-    left: 50%;
-    color: var(--termin);
-    font-size: calc(11 * var(--px));
-    font-weight: 700;
-    white-space: nowrap;
-    transform: translateX(-50%);
-  }
-
-  .wh {
-    display: block;
-    margin-top: 1px;
+  .za.kopf i {
     color: var(--ink-muted);
     font-size: calc(11 * var(--px));
+    font-style: normal;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+  }
+
+  .tg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    border-radius: 13px;
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
     font-weight: 600;
+  }
+
+  .tg.we {
+    color: var(--ink-quiet);
+  }
+
+  .tg.vorbei {
+    color: var(--ink-quiet);
+    opacity: 0.6;
+  }
+
+  .tg.heute {
+    box-shadow: inset 0 0 0 1.5px var(--ink);
+    color: var(--ink);
+    opacity: 1;
+  }
+
+  .tg.termin {
+    background: var(--termin);
+    color: var(--surface);
+    font-weight: 750;
+    opacity: 1;
+  }
+
+  .heute .tg.termin,
+  .morgen .tg.termin {
+    background: var(--nah);
+    color: var(--nah-auf);
+  }
+
+  .vorbei .tg.termin {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--ink-muted);
+    color: var(--ink-muted);
+  }
+
+  .za.nach-luecke {
+    position: relative;
+  }
+
+  .za.nach-luecke::before {
+    position: absolute;
+    top: -2.5px;
+    right: 8px;
+    left: 8px;
+    border-top: 1.5px dashed var(--line-strong);
+    content: '';
   }
 </style>

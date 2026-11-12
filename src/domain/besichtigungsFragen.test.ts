@@ -108,3 +108,56 @@ describe('Fragen für die Besichtigung (E52, B17c)', () => {
     expect(tierFrage('')).toBeNull();
   });
 });
+
+describe('Ausgeblendete Fragen (E92, nur vorbereitet)', () => {
+  it('fehlen, außer sie sind in diesem Heft schon beantwortet; der Zähler zählt nur sichtbare', () => {
+    const l = besichtigungsFragen({
+      angaben: undefined,
+      urteile: [],
+      mitTieren: false,
+      eigene: [],
+      ausgeblendet: { hier: ['haus', 'internet', 'ablauf'], neu: [], heftAngelegt: '2026-11-01' },
+      antworten: {
+        internet: { ab: true, antwort: '' },
+        ablauf: { ab: false, antwort: 'bis Freitag' },
+      },
+    });
+    const ids = l.fragen.map((f) => f.id);
+    expect(ids).not.toContain('haus');
+    expect(ids).toContain('internet');
+    expect(ids).toContain('ablauf');
+    expect(l.fragen).toHaveLength(10);
+    // Ausgeblendet ist nicht „weggelassen, weil das Inserat es sagt“.
+    expect(l.weg).toEqual([]);
+  });
+});
+
+describe('Ausblenden: nur hier oder auch in neuen Heften (Planung 12x)', () => {
+  const basis = { angaben: undefined, urteile: [], mitTieren: false, eigene: [] };
+  const neu = [{ thema: 'haus' as const, seit: '2026-11-12T10:00:00.000Z' }];
+  it('„auch in neuen“ trifft Hefte, die danach angelegt wurden; ältere bleiben', () => {
+    const spaeter = besichtigungsFragen({
+      ...basis,
+      ausgeblendet: { hier: [], neu, heftAngelegt: '2026-11-13T09:00:00.000Z' },
+    });
+    expect(spaeter.fragen.map((f) => f.id)).not.toContain('haus');
+    expect(spaeter.versteckt).toEqual([{ thema: 'haus', auchNeu: true }]);
+    const frueher = besichtigungsFragen({
+      ...basis,
+      ausgeblendet: { hier: [], neu, heftAngelegt: '2026-11-10T09:00:00.000Z' },
+    });
+    expect(frueher.fragen.map((f) => f.id)).toContain('haus');
+    expect(frueher.versteckt).toEqual([]);
+  });
+  it('im Heft, wo es geschah, steht es in „hier“; dort mit „auch in neuen Heften“', () => {
+    const l = besichtigungsFragen({
+      ...basis,
+      ausgeblendet: { hier: ['haus', 'kaution'], neu, heftAngelegt: '2026-11-10T09:00:00.000Z' },
+    });
+    expect(l.versteckt).toEqual([
+      { thema: 'haus', auchNeu: true },
+      { thema: 'kaution', auchNeu: false },
+    ]);
+    expect(l.fragen).toHaveLength(9);
+  });
+});

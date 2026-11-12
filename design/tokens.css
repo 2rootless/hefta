@@ -42,6 +42,11 @@
   --termin: #2b5a86;
   --termin-soft: #e3ebf4;
   --termin-line: #a9bfd8;
+  --nah: #5d2e99;
+  --nah-text: #5d2e99;
+  --nah-hell: #efeaf8;
+  --nah-auf: #ffffff;
+  --nah-linie: #cbbde8;
   --shadow-card: 0 12px 28px rgba(60, 40, 20, 0.12), 0 1px 3px rgba(60, 40, 20, 0.06);
   --shadow-card-quiet: 0 8px 18px rgba(60, 40, 20, 0.08);
   --shadow-chip: 0 4px 10px rgba(60, 40, 20, 0.12);
@@ -91,6 +96,11 @@
   --termin: #a9c8ee;
   --termin-soft: #1d2a38;
   --termin-line: #3f5a78;
+  --nah: #6732a9;
+  --nah-text: #f3ede4;
+  --nah-hell: #2c2540;
+  --nah-auf: #f3ede4;
+  --nah-linie: #5a4a86;
   --shadow-card: 0 12px 28px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-card-quiet: 0 8px 18px rgba(0, 0, 0, 0.35);
   --shadow-chip: 0 4px 10px rgba(0, 0, 0, 0.4);
