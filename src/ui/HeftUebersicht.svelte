@@ -3,7 +3,11 @@
   // „Steht an“ mit der Karte der nächsten Besichtigung, „Warten auf Antwort“, „Gemerkt“, zugeklappt
   // „Keine Antwort“ und „Abgelegt“. Jede Zeile: Titel, Zeit in Worten, Ort und Eckdaten, die Tageslinie.
   // Die Linie ergänzt das Wort und ist für Vorlesehilfen ausgeblendet.
-  import { gruppieren } from '../domain/heftStand';
+  import { db, stillLaden } from '../app/daten.svelte';
+  import { rueckgaengigAnbieten } from '../app/rueckgaengig.svelte';
+  import { route } from '../app/router.svelte';
+  import { gruppieren, ohneLoeschbitte } from '../domain/heftStand';
+  import { heftAendern } from '../storage/speicher';
   import { eckdaten, heftOrt, heftTitel, terminKurz } from '../domain/heftKarte';
   import type { Heft } from '../domain/modell';
   import { HEUTE_LAGE, tageBis, zeile, type Marke, type ZeitWort } from '../domain/tageslinie';
@@ -24,6 +28,31 @@
   const stehtAnZeilen = $derived(g.stehtAn.filter((h) => h !== naechste));
 
   let offen = $state<'keine' | 'abgelegt' | null>(null);
+
+  // „Alle ablegen“ bei „Keine Antwort“ (Planung 09a): erst ab drei Heften, davor die Zahl ohne
+  // Löschbitte als Auskunft, kein Hindernis. Danach „Rückgängig“ bis zur nächsten Handlung.
+  const ALLE_AB = 3;
+  const loeschbitteFehlt = $derived(ohneLoeschbitte(g.keineAntwort));
+  async function alleAblegen() {
+    const vorher = g.keineAntwort.map((h) => ({
+      id: h.id,
+      ereignisse: $state.snapshot(h.ereignisse),
+    }));
+    const am = new Date().toISOString();
+    const verbindung = await db();
+    for (const v of vorher)
+      await heftAendern(verbindung, v.id, { ereignisse: { ...v.ereignisse, abgelegtAm: am } });
+    await stillLaden();
+    rueckgaengigAnbieten({
+      text: t('hefte.alleAbgelegt', { anzahl: vorher.length }),
+      seite: route.pfad,
+      ausfuehren: async () => {
+        const v2 = await db();
+        for (const v of vorher) await heftAendern(v2, v.id, { ereignisse: v.ereignisse });
+        await stillLaden();
+      },
+    });
+  }
 
   function wort(w: ZeitWort): string {
     return t(w.schluessel as TextSchluessel, w.werte ?? {});
@@ -178,6 +207,16 @@
     <div class="bl ke">
       {#each g.keineAntwort as h (h.id)}{@render zeileVon(h)}{/each}
     </div>
+    {#if g.keineAntwort.length >= ALLE_AB}
+      <div class="alle">
+        {#if loeschbitteFehlt}
+          <p>{t('hefte.ohneLoeschbitte', { anzahl: loeschbitteFehlt })}</p>
+        {/if}
+        <button type="button" class="alle-ab" onclick={alleAblegen}
+          >{t('hefte.alleAblegen', { anzahl: g.keineAntwort.length })}</button
+        >
+      </div>
+    {/if}
   {/if}
 {/if}
 
@@ -203,6 +242,30 @@
 {/if}
 
 <style>
+  .alle {
+    margin: 4px 0 12px;
+    padding: 0 var(--space-1);
+  }
+
+  .alle p {
+    margin: 0 0 4px;
+    color: var(--ink-muted);
+    font-size: calc(14 * var(--px));
+  }
+
+  .alle-ab {
+    min-height: var(--tap-target);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
   .sub {
     margin: 0 0 4px;
     color: var(--ink-muted);

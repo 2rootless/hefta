@@ -12,6 +12,7 @@
   import { t, tagZusammen } from '../i18n';
   import {
     haushaltAendern,
+    haushaltLoeschen,
     haushaltZaehlen,
     mitgliedZurueckholen,
     zugehoerigkeitAendern,
@@ -24,7 +25,9 @@
   import Eintragen from '../ui/Eintragen.svelte';
   import { homescreenNochmal } from '../ui/homescreen';
   import { passend } from '../ui/passend';
+  import Sheet from '../ui/Sheet.svelte';
   import Symbol from '../ui/Symbol.svelte';
+  import { nachLoeschen } from '../app/haushaltGeloescht.svelte';
 
   let { einrichtung = false }: { einrichtung?: boolean } = $props();
 
@@ -76,9 +79,25 @@
     await neuLaden();
   }
 
+  // „Haushalt löschen“ (E96): nur nach dem Blatt. Hefte bleiben und gelten wieder als ohne Haushalt.
+  let loeschenOffen = $state(false);
+  let geloescht = false;
+  async function haushaltWeg() {
+    const hh = daten.ansicht?.haushalt;
+    if (!hh) return;
+    const allein = vertrag.length === 1;
+    geloescht = true;
+    await haushaltLoeschen(await db(), hh.id);
+    loeschenOffen = false;
+    await neuLaden();
+    nachLoeschen.du = allein;
+    nachLoeschen.offen = daten.hefte.length > 0;
+    abschliessen('/mappe-start');
+  }
+
   $effect(() => {
     // Ohne Haushalt gibt es hier nichts zu bearbeiten: zurück zum Anfang der Einrichtung.
-    if (daten.geladen && !daten.ansicht) ersetzen('/einrichtung');
+    if (daten.geladen && !daten.ansicht && !geloescht) ersetzen('/einrichtung');
   });
 </script>
 
@@ -363,8 +382,26 @@
         {/if}
       </section>
     {/if}
+    {#if haushalt}
+      <button class="haushalt-weg" type="button" onclick={() => (loeschenOffen = true)}
+        >{t('einrichtung.haushalt.haushaltLoeschen')}</button
+      >
+    {/if}
   {/if}
 </main>
+<Sheet bind:offen={loeschenOffen} titel={t('einrichtung.haushalt.haushaltLoeschenFrage')}>
+  <p class="blatt-satz">
+    {vertrag.length === 1
+      ? t('einrichtung.haushalt.haushaltLoeschenSatzDu')
+      : t('einrichtung.haushalt.haushaltLoeschenSatz')}
+  </p>
+  <button class="blatt-weg" type="button" onclick={haushaltWeg}
+    >{t('einrichtung.haushalt.haushaltLoeschen')}</button
+  >
+  <button class="blatt-abbrechen" type="button" onclick={() => (loeschenOffen = false)}
+    >{t('einrichtung.haushalt.abbrechen')}</button
+  >
+</Sheet>
 {#if einrichtung}
   <Aktionsleiste
     text={t('einrichtung.haushalt.anlegen')}
@@ -756,6 +793,51 @@
     border-radius: 20px;
     background: var(--surface);
     list-style: none;
+  }
+
+  .haushalt-weg {
+    display: block;
+    min-height: var(--tap-target);
+    margin: 32px auto 0;
+    padding: 0 var(--space-5);
+    border: 0;
+    background: none;
+    color: var(--ink-muted);
+    font: inherit;
+    font-size: calc(15 * var(--px));
+    font-weight: 700;
+  }
+
+  .blatt-satz {
+    margin: 0 0 20px;
+    color: var(--ink-muted);
+  }
+
+  .blatt-weg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 54px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--action);
+    color: var(--on-action);
+    font: inherit;
+    font-weight: 700;
+  }
+
+  .blatt-abbrechen {
+    display: block;
+    width: 100%;
+    min-height: var(--tap-target);
+    margin-top: 8px;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-weight: 700;
   }
 
   .raus-hinweis {

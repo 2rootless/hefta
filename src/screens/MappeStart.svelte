@@ -3,7 +3,9 @@
   // Deckblatts, „Haushalt anlegen“, dem Hinweis für Vermieter (E42) und der Anleitung „So entsteht eure
   // Mappe“. Angefangen die wachsende Mappe: das Deckblatt als lebende Vorschau, die Schritte als Karten,
   // fest „Weiter anlegen“ und leise „Von vorn beginnen“. Erst ein Knopf startet den Ablauf, nie der Reiter.
+  import { onDestroy } from 'svelte';
   import { daten, db, gehe, stillLaden } from '../app/daten.svelte';
+  import { nachLoeschen } from '../app/haushaltGeloescht.svelte';
   import { VERMIETER_ADRESSE, VERMIETER_DOMAIN } from '../app/name';
   import { t } from '../i18n';
   import { haushaltAendern, haushaltVonVorn } from '../storage/speicher';
@@ -98,6 +100,9 @@
     });
     await stillLaden();
   }
+
+  // Der Hinweis nach „Haushalt löschen“ gilt nur, bis man die Seite verlässt.
+  onDestroy(() => (nachLoeschen.offen = false));
 
   let vonVornOffen = $state(false);
   async function vonVorn() {
@@ -242,6 +247,13 @@
 {/snippet}
 
 <main class="seite">
+  {#if nachLoeschen.offen && !ansicht}
+    <!-- E96: Nach „Haushalt löschen“ einmal die Frage nach den Heften; der Link löscht nicht selbst. -->
+    <p class="geloescht" role="status">
+      {nachLoeschen.du ? t('mappeStart.geloeschtDu') : t('mappeStart.geloescht')}
+      <a href="#/einstellungen/loeschen">{t('mappeStart.allesLoeschen')}</a>
+    </p>
+  {/if}
   {#if !angefangen}
     <div class="held">
       <div class="heldt">
@@ -453,6 +465,23 @@
   .los {
     width: 100%;
     margin-top: 14px;
+  }
+
+  .geloescht {
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    font-size: calc(14 * var(--px));
+  }
+
+  .geloescht a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    color: var(--ink);
+    font-weight: 700;
   }
 
   .verm {

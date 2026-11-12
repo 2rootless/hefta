@@ -178,6 +178,15 @@
         sub: t('mappe.lateinEintragen'),
         href: `#/person-aendern/${s.person.id}`,
       })),
+      // E96, 3: Ohne Nachname geht es trotzdem; Hefta sagt es hier noch einmal, sperrt aber nicht.
+      ...dabei
+        .filter((s) => !s.person.nachname.trim() && !ohneLatein.includes(s))
+        .map((s) => ({
+          id: `nachname-${s.person.id}`,
+          titel: t('uebersicht.nachnameFehlt', { name: s.person.rufname || s.person.vorname }),
+          sub: t('uebersicht.nachnameWozu'),
+          href: `#/person-aendern/${s.person.id}`,
+        })),
       ...fehlendeUnterlagen(dabei, e).map(({ person, unterlage }) => ({
         id: `fehlt-${person.person.id}-${unterlage.typ.id}`,
         titel: t('mappe.unlesbarName', {

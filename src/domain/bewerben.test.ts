@@ -5,6 +5,8 @@ import {
   bewerbungsText,
   einzugText,
   inDerStrasse,
+  loeschbitteText,
+  nachfassText,
   wegVorschlag,
   werZiehtEin,
 } from './bewerben';
@@ -90,6 +92,55 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
       }),
     ).toBe(
       'Sehr geehrte Frau Hansen,\n\nich möchte mich bewerben.\n\nEinzug: 1. Januar 2027\n\nMit freundlichen Grüßen\nLea Berg\n040 123',
+    );
+  });
+});
+
+describe('Löschbitte und Nachfassen (B18)', () => {
+  const auftrag = {
+    wir: true,
+    anbieter: 'Herr Kraus',
+    strasse: 'Bismarckstraße 56',
+    beworbenAm: '2026-10-15T09:00:00.000Z',
+    namen: ['Max Mustermann', 'Lea Mustermann'],
+    heute: HEUTE,
+  };
+
+  it('Löschbitte mit „wir“, Datum, Straße und Gruß', () => {
+    expect(loeschbitteText(auftrag)).toEqual({
+      betreff: 'Bitte um Löschung unserer Unterlagen',
+      text:
+        'Sehr geehrter Herr Kraus,\n\nwir haben uns am 15. Oktober um die Wohnung in der Bismarckstraße 56 beworben. ' +
+        'Da wir sie nicht mehr suchen, bitten wir Sie, unsere Unterlagen zu löschen, auch Ausdrucke und Anhänge.' +
+        '\n\nFreundliche Grüße\nMax Mustermann und Lea Mustermann',
+    });
+  });
+
+  it('Löschbitte allein, ohne Datum, ohne Anbieter, ohne Namen', () => {
+    const { betreff, text } = loeschbitteText({
+      ...auftrag,
+      wir: false,
+      anbieter: null,
+      beworbenAm: null,
+      namen: [],
+    });
+    expect(betreff).toBe('Bitte um Löschung meiner Unterlagen');
+    expect(text).toBe(
+      'Sehr geehrte Damen und Herren,\n\nich habe mich um die Wohnung in der Bismarckstraße 56 beworben. ' +
+        'Da ich sie nicht mehr suche, bitte ich Sie, meine Unterlagen zu löschen, auch Ausdrucke und Anhänge.' +
+        '\n\nFreundliche Grüße',
+    );
+  });
+
+  it('Nachfassen beginnt nach der Anrede klein', () => {
+    expect(nachfassText(auftrag)).toEqual({
+      betreff: 'Nachfrage zur Wohnung Bismarckstraße 56',
+      text:
+        'Sehr geehrter Herr Kraus,\n\nam 15. Oktober haben wir uns um die Wohnung in der Bismarckstraße 56 beworben. ' +
+        'Ist sie noch zu haben? Wir würden sie uns gern ansehen.\n\nFreundliche Grüße\nMax Mustermann und Lea Mustermann',
+    });
+    expect(nachfassText({ ...auftrag, wir: false, beworbenAm: null, strasse: '' }).text).toContain(
+      'ich habe mich um Ihre Wohnung beworben. Ist sie noch zu haben? Ich würde sie mir gern ansehen.',
     );
   });
 });

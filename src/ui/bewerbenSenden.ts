@@ -56,6 +56,31 @@ export async function mailMitMappe(o: {
   return 'anhangSelbst';
 }
 
+/**
+ * Eine Mail ohne Anhang (Löschbitte, Nachfassen; B18): unter iOS im eigenen Mailfenster, sonst über einen
+ * Mail-Link ins Mailprogramm. Sicher „gesendet“ nur, wenn das Mailfenster es meldet.
+ */
+export async function mailOhneAnhang(o: {
+  an: string | null;
+  betreff: string;
+  text: string;
+}): Promise<'gesendet' | 'geoeffnet' | 'abgebrochen'> {
+  if (istIosApp()) {
+    const { HeftaNativ } = await import('../app/heftaNativ');
+    const { status } = await HeftaNativ.mail({
+      an: o.an ?? undefined,
+      betreff: o.betreff,
+      text: o.text,
+      anhaenge: [],
+    });
+    if (status === 'gesendet') return 'gesendet';
+    if (status === 'abgebrochen') return 'abgebrochen';
+    if (status !== 'keinKonto') return 'geoeffnet';
+  }
+  window.location.href = mailLink(o.an, o.betreff, o.text);
+  return 'geoeffnet';
+}
+
 /** Die Mappe teilen, ohne Text (Portal, Website). */
 export async function mappeTeilen(dateien: File[]): Promise<boolean> {
   if (istApp()) return appTeilen(dateien);

@@ -107,6 +107,8 @@
       "titel": "Willkommen."
     },
     "hallo": "Hallo {name}.",
+    "nachnameFehlt": "Nachname von {name} fehlt",
+    "nachnameWozu": "Für Deckblatt und Selbstauskunft",
     "offenIhr": {
       "one": "Noch ein Ding, dann seid ihr startklar.",
       "other": "Noch {zahl} Dinge, dann seid ihr startklar."
@@ -212,7 +214,12 @@
       "loeschen": "Löschen",
       "behalten": "Behalten",
       "dreiMonateHinweis": "Nach drei Monaten fragt {app} einmal, ob die Unterlagen weg können.",
-      "abschnittOhneVertrag": "Ohne Mietvertrag dabei"
+      "abschnittOhneVertrag": "Ohne Mietvertrag dabei",
+      "haushaltLoeschen": "Haushalt löschen",
+      "haushaltLoeschenFrage": "Haushalt löschen?",
+      "haushaltLoeschenSatz": "Alle Personen mit ihren Unterlagen und die Mappe werden gelöscht. Eure Hefte mit Wohnungen, Terminen und Notizen bleiben.",
+      "haushaltLoeschenSatzDu": "Alle Personen mit ihren Unterlagen und die Mappe werden gelöscht. Deine Hefte mit Wohnungen, Terminen und Notizen bleiben.",
+      "abbrechen": "Abbrechen"
     }
   },
   "person": {
@@ -1507,6 +1514,12 @@
     "wartet": "Warten auf Antwort",
     "gemerkt": "Gemerkt",
     "keineAntwort": "Keine Antwort",
+    "alleAblegen": "Alle {anzahl} ablegen",
+    "ohneLoeschbitte": {
+      "one": "An eins davon ging keine Löschbitte.",
+      "other": "An {anzahl} davon ging keine Löschbitte."
+    },
+    "alleAbgelegt": "{anzahl} Hefte abgelegt",
     "abgelegt": "Abgelegt",
     "eckdatenFehlen": "Eckdaten fehlen noch",
     "besichtigung": "Besichtigung · {wann}",
@@ -1560,6 +1573,14 @@
     "abgelegtAm": "Abgelegt am {datum}",
     "abgelegtSatz": "Das Heft liegt bei den abgelegten.",
     "hervorholen": "Wieder hervorholen",
+    "unterlagenNochIhr": "Der Vermieter hat noch eure Unterlagen.",
+    "unterlagenNochDu": "Der Vermieter hat noch deine Unterlagen.",
+    "loeschbitteSchreiben": "Löschbitte schreiben",
+    "loeschbitteAm": "Löschbitte geschickt am {datum}. Ob gelöscht wurde, kann {app} nicht wissen.",
+    "nachfassen": "Kurz nachfragen",
+    "nachgefasstAm": "Nachgefragt am {datum}.",
+    "keineAntwortSatz": "Seit drei Wochen keine Antwort.",
+    "ablegen": "Ablegen",
     "kalenderGesichert": "Im Kalender eingetragen.",
     "kalenderDatei": "Die Datei für den Kalender ist da. Öffne sie, dann trägt dein Kalender den Termin ein.",
     "kalenderNein": "Ohne Zugriff auf den Kalender geht das nicht. Erlauben kannst du ihn in den Einstellungen von iOS unter {app}.",
@@ -1817,8 +1838,23 @@
     "schritt3": "{app} wählen.",
     "mehrIhr": "Beim ersten Mal steht {app} oft erst unter „Mehr“, am Ende der Reihe. Dort könnt ihr es nach vorn holen.",
     "mehrDu": "Beim ersten Mal steht {app} oft erst unter „Mehr“, am Ende der Reihe. Dort kannst du es nach vorn holen.",
-    "zweit": "Oder den Link kopieren und auf „Neues Heft“ einsetzen.",
+    "zweit": "Oder den Link kopieren und auf „Wohnung hinzufügen“ einsetzen.",
     "schritt4": "Danach zeigt {app} eine kleine Vorschau. Passt sie, „Ja, einlesen“ tippen."
+  },
+  "heftMail": {
+    "zurueck": "Heft",
+    "titelLoeschbitte": "Löschbitte",
+    "titelNachfassen": "Kurz nachfragen",
+    "subLoeschbitteIhr": "Eine kurze, freundliche Mail. Ihr schickt sie aus eurem Mailprogramm.",
+    "subLoeschbitteDu": "Eine kurze, freundliche Mail. Du schickst sie aus deinem Mailprogramm.",
+    "subNachfassenIhr": "Eine freundliche Mail. Ihr schickt sie aus eurem Mailprogramm.",
+    "subNachfassenDu": "Eine freundliche Mail. Du schickst sie aus deinem Mailprogramm.",
+    "an": "An",
+    "anFehlt": "Keine Adresse im Inserat. Sie kommt im Mailprogramm dazu.",
+    "betreff": "Betreff",
+    "text": "Text",
+    "mailOeffnen": "Mail öffnen",
+    "selbst": "{app} verschickt nichts selbst."
   },
   "termin": {
     "zurueck": "Heft",
@@ -2033,6 +2069,9 @@
     "vonVorn": "Von vorn beginnen",
     "vonVornFrage": "Von vorn beginnen?",
     "vonVornSatz": "Die eingetragenen Personen werden entfernt.",
+    "geloescht": "Haushalt gelöscht. Möchtet ihr auch die Hefte löschen?",
+    "geloeschtDu": "Haushalt gelöscht. Möchtest du auch die Hefte löschen?",
+    "allesLoeschen": "Alles löschen",
     "abbrechen": "Abbrechen",
     "weiterAnlegen": "Weiter anlegen"
   }

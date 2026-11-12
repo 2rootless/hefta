@@ -233,10 +233,46 @@
             ><Symbol name="kalender" groesse={20} />{t('heft.terminEintragen')}</a
           >
         </div>
+      {:else if st === 'keine_antwort'}
+        <!-- B18: Nachfassen, um Löschung bitten oder ablegen, das geht im Heft. -->
+        <div class="nx">
+          <b>{beworbenWort}</b>
+          <p>{t('heft.keineAntwortSatz')}</p>
+          {#if heft.ereignisse.nachgefasstAm}
+            <p>{t('heft.nachgefasstAm', { datum: tagKurz(heft.ereignisse.nachgefasstAm) })}</p>
+          {/if}
+          {#if heft.ereignisse.loeschbitteAm}
+            <p>{t('heft.loeschbitteAm', { datum: tagKurz(heft.ereignisse.loeschbitteAm) })}</p>
+          {/if}
+          <div class="knopfreihe">
+            <a class="knopf" href={`#/heft/${heft.id}/nachfassen`}>{t('heft.nachfassen')}</a>
+            {#if !heft.ereignisse.loeschbitteAm}
+              <a class="knopf" href={`#/heft/${heft.id}/loeschbitte`}
+                >{t('heft.loeschbitteSchreiben')}</a
+              >
+            {/if}
+            <button
+              class="knopf"
+              type="button"
+              onclick={() =>
+                ereignisse({ ...heft.ereignisse, abgelegtAm: new Date().toISOString() })}
+              >{t('heft.ablegen')}</button
+            >
+          </div>
+        </div>
       {:else if st === 'abgelegt'}
         <div class="nx">
           <b>{ergebnisWort}</b>
           <p>{t('heft.abgelegtSatz')}</p>
+          {#if heft.ereignisse.loeschbitteAm}
+            <p>{t('heft.loeschbitteAm', { datum: tagKurz(heft.ereignisse.loeschbitteAm) })}</p>
+          {:else if heft.ereignisse.beworben}
+            <!-- B18: Wer sich beworben hat, kann auch aus „Abgelegt“ um Löschung bitten. -->
+            <p>{t(ihr ? 'heft.unterlagenNochIhr' : 'heft.unterlagenNochDu')}</p>
+            <a class="leis" href={`#/heft/${heft.id}/loeschbitte`}
+              >{t('heft.loeschbitteSchreiben')}</a
+            >
+          {/if}
           <button
             class="leis"
             type="button"

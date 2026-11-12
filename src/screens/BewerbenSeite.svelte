@@ -214,6 +214,8 @@
   }
 
   const SCHRITTE = ['anschreiben', 'angaben', 'mappe', 'abschicken'] as const;
+  // Planung 12z: mit Leerzeichen vor und nach dem Punkt; als Wert, sonst kürzt Svelte die Leerzeichen.
+  const TRENNER = ' · ';
 </script>
 
 {#snippet kopf(nr: number)}
@@ -311,12 +313,11 @@
       {/each}
       <div class="mpf">
         <small
-          >{t(alles ? 'bewerben.alles' : 'bewerben.nurVerlangt')}{#if mappe && !mappeBaut}{' · '}{t(
-              'bewerben.seiten',
-              {
-                anzahl: mappe.seiten,
-              },
-            )}{/if}</small
+          >{t(
+            alles ? 'bewerben.alles' : 'bewerben.nurVerlangt',
+          )}{#if mappe && !mappeBaut}{TRENNER}{t('bewerben.seiten', {
+              anzahl: mappe.seiten,
+            })}{/if}</small
         >
         <button class="mini" type="button" onclick={() => (alles = !alles)}
           >{t(alles ? 'bewerben.nurVerlangtMitschicken' : 'bewerben.allesMitschicken')}</button

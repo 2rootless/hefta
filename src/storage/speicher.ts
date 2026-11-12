@@ -479,6 +479,15 @@ export async function haushaltVonVorn(db: HeftaDb, haushaltId: Id): Promise<void
   const haushalt = await db.get('haushalte', haushaltId);
   if (!haushalt?.einrichtungOffen)
     throw new Error('Nur ein angefangener Haushalt beginnt von vorn');
+  await haushaltLoeschen(db, haushaltId);
+}
+
+/**
+ * „Haushalt löschen“ (E96): Personen mit ihren Unterlagen und die Mappe gehen, Hefte bleiben und gelten
+ * wieder als Hefte ohne Haushalt (E45). Wer auch in einem anderen Haushalt steht, bleibt dort. Nur nach
+ * dem Blatt „Haushalt löschen?“ aufrufen.
+ */
+export async function haushaltLoeschen(db: HeftaDb, haushaltId: Id): Promise<void> {
   const plaetze = await db.getAllFromIndex('zugehoerigkeiten', 'haushaltId', haushaltId);
   for (const z of plaetze) {
     const anderswo = (await db.getAllFromIndex('zugehoerigkeiten', 'personId', z.personId)).some(

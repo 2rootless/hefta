@@ -43,6 +43,7 @@
     standSetzen: () => import('../screens/StandSeite.svelte'),
     ergebnis: () => import('../screens/ErgebnisSeite.svelte'),
     bewerben: () => import('../screens/BewerbenSeite.svelte'),
+    heftMail: () => import('../screens/HeftMailSeite.svelte'),
     wuensche: () => import('../screens/WuenscheSeite.svelte'),
     anleitung: () => import('../screens/AnleitungSeite.svelte'),
     netto: () => import('../screens/NettoSeite.svelte'),
@@ -95,7 +96,7 @@
   const merkmalId = $derived(route.pfad.match(/^\/heft\/([\w-]+)\/merkmal$/)?.[1]);
   // Zeile 9: Termin, Stand selbst setzen, Ergebnis.
   const heftUnter = $derived(
-    route.pfad.match(/^\/heft\/([\w-]+)\/(termin|stand|ergebnis|bewerben)$/),
+    route.pfad.match(/^\/heft\/([\w-]+)\/(termin|stand|ergebnis|bewerben|loeschbitte|nachfassen)$/),
   );
   const unterlage = $derived(
     route.pfad.match(/^\/unterlage\/([\w-]+)\/(\w+)(\/datum(?:\/([\w-]+))?)?$/),
@@ -116,11 +117,12 @@
     route.pfad.match(/^\/person-neu\/(mitmieter|buerge)(\/einrichtung)?$/),
   );
   const personAendern = $derived(
-    route.pfad.match(/^\/person-aendern\/([\w-]+)(\/einrichtung|\/person)?$/),
+    route.pfad.match(/^\/person-aendern\/([\w-]+)(\/einrichtung|\/person|\/mappe)?$/),
   );
   function zurueckZu(zusatz: string | undefined, id?: string): string {
     if (zusatz === '/einrichtung') return '/einrichtung/2';
     if (zusatz === '/person' && id) return `/person/${id}`;
+    if (zusatz === '/mappe') return '/';
     return '/haushalt';
   }
 
@@ -277,6 +279,10 @@
     {:else if heftUnter?.[2] === 'bewerben'}
       {#await seiten.bewerben() then m}
         <m.default id={heftUnter[1]!} />
+      {/await}
+    {:else if heftUnter?.[2] === 'loeschbitte' || heftUnter?.[2] === 'nachfassen'}
+      {#await seiten.heftMail() then m}
+        <m.default id={heftUnter[1]!} art={heftUnter[2]} />
       {/await}
     {:else if merkmalId}
       {#await seiten.merkmal() then m}

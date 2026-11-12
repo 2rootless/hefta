@@ -111,7 +111,9 @@
     staende.reduce((n, s) => n + s.pfad.filter((u) => pruefKurz(s, u.typ.id)).length, 0),
   );
 
-  const offen = $derived(offeneDinge(staende));
+  // Nachname freiwillig beim Anlegen (E96, 3), fehlt er, ist er ein eigener Punkt im Kasten.
+  const ohneNachname = $derived([...vertrag, ...buergen].filter((s) => !s.person.nachname.trim()));
+  const offen = $derived(offeneDinge(staende) + ohneNachname.length);
   const fertig = $derived(staende.length > 0 && offen === 0);
   // U15: Backup älter als 30 Tage und seitdem Neues dazugekommen. Ohne Änderungen bleibt die Zeile ruhig.
   const backupAlt = $derived.by(() => {
@@ -291,6 +293,26 @@
             </li>
           {/each}
         </ul>
+        {#if ohneNachname.length}
+          <ul class="namen">
+            {#each ohneNachname as s (s.person.id)}
+              <li>
+                <a class="aufgabe" href="#/person-aendern/{s.person.id}/mappe">
+                  <span class="sym" aria-hidden="true"><Symbol name="person" groesse={20} /></span>
+                  <span class="tx">
+                    <b
+                      >{t('uebersicht.nachnameFehlt', {
+                        name: s.person.rufname || s.person.vorname,
+                      })}</b
+                    >
+                    <small>{t('uebersicht.nachnameWozu')}</small>
+                  </span>
+                  <Symbol name="weiter" groesse={16} />
+                </a>
+              </li>
+            {/each}
+          </ul>
+        {/if}
       </section>
     {/if}
 
@@ -433,6 +455,15 @@
   }
 
   /* Nur eine Person: nur der Satz (siehe `nurEinBlatt`). */
+  .aufgaben ul.namen {
+    margin-top: 8px;
+  }
+
+  .aufgaben a.aufgabe {
+    color: inherit;
+    text-decoration: none;
+  }
+
   .aufgaben ul[hidden] {
     display: none;
   }

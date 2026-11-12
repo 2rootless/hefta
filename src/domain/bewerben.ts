@@ -117,6 +117,58 @@ export function anschreibenText(a: AnschreibenAuftrag): { anrede: string; text: 
   return { anrede: anrede(a.anbieter), text: saetze.join(' ') };
 }
 
+export interface NachrichtAuftrag {
+  /** Mehrere im Mietvertrag oder ohne Haushalt: „wir“ (E74, E83). */
+  wir: boolean;
+  anbieter: string | null | undefined;
+  /** Erste Zeile der Adresse des Hefts. */
+  strasse: string;
+  /** Wann die Bewerbung hinausging; ohne Datum ohne „am …“. */
+  beworbenAm: string | null;
+  /** Für den Gruß, etwa „Max Mustermann“; leer: nur „Freundliche Grüße“. */
+  namen: string[];
+  heute: Date;
+}
+
+function wohnungUndDatum(a: NachrichtAuftrag): { wohnung: string; am: string } {
+  const s = a.strasse.trim();
+  const wohnung = s ? `die Wohnung ${inDerStrasse(s) || s}` : 'Ihre Wohnung';
+  const am = a.beworbenAm ? `am ${einzugText(a.beworbenAm.slice(0, 10), a.heute)} ` : '';
+  return { wohnung, am };
+}
+
+function gruss(namen: string[]): string {
+  const n = namen.filter(Boolean);
+  const liste = n.length < 2 ? (n[0] ?? '') : `${n.slice(0, -1).join(', ')} und ${n.at(-1)}`;
+  return liste ? `Freundliche Grüße\n${liste}` : 'Freundliche Grüße';
+}
+
+/** Löschbitte nach B18 (`s=loeschbitte`): kurz und freundlich, der Nutzer schickt sie selbst. */
+export function loeschbitteText(a: NachrichtAuftrag): { betreff: string; text: string } {
+  const { wohnung, am } = wohnungUndDatum(a);
+  const satz = a.wir
+    ? `wir haben uns ${am}um ${wohnung} beworben. Da wir sie nicht mehr suchen, bitten wir Sie, unsere Unterlagen zu löschen, auch Ausdrucke und Anhänge.`
+    : `ich habe mich ${am}um ${wohnung} beworben. Da ich sie nicht mehr suche, bitte ich Sie, meine Unterlagen zu löschen, auch Ausdrucke und Anhänge.`;
+  return {
+    betreff: a.wir ? 'Bitte um Löschung unserer Unterlagen' : 'Bitte um Löschung meiner Unterlagen',
+    text: `${anrede(a.anbieter)}\n\n${satz}\n\n${gruss(a.namen)}`,
+  };
+}
+
+/** Kurz nachfragen nach B18 (`s=nachfassen`), wenn lange keine Antwort kam. */
+export function nachfassText(a: NachrichtAuftrag): { betreff: string; text: string } {
+  const { wohnung, am } = wohnungUndDatum(a);
+  // Nach der Anrede mit Komma beginnt der Brief klein (B18: „am 15. Oktober haben wir …“).
+  const satz = a.wir
+    ? `${am ? `${am}haben wir` : 'wir haben'} uns um ${wohnung} beworben. Ist sie noch zu haben? Wir würden sie uns gern ansehen.`
+    : `${am ? `${am}habe ich` : 'ich habe'} mich um ${wohnung} beworben. Ist sie noch zu haben? Ich würde sie mir gern ansehen.`;
+  const s = a.strasse.trim();
+  return {
+    betreff: s ? `Nachfrage zur Wohnung ${s}` : 'Nachfrage zur Wohnung',
+    text: `${anrede(a.anbieter)}\n\n${satz}\n\n${gruss(a.namen)}`,
+  };
+}
+
 const ZAHL = [
   '',
   'Eine',
