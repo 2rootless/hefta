@@ -17,7 +17,9 @@
 
   const heft = $derived(daten.hefte.find((h) => h.id === id) ?? null);
   const ihr = $derived(
-    (daten.ansicht?.mitglieder ?? []).filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
+    // Ohne Haushalt „ihr“ (E74.4, Design 12.11.), sonst ab zwei Personen ohne Bürgen.
+    !daten.ansicht ||
+      daten.ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
   );
   const vorschlag = $derived((heft?.angaben?.titel ?? '').trim());
   /** Was oben stünde, gäbe es kein Merkmal: Titel, Straße oder der gebaute Titel. */

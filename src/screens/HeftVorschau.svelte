@@ -34,7 +34,9 @@
   const NB = ' ';
   const plugin = heftaInserat();
   const ihr = $derived(
-    (daten.ansicht?.mitglieder ?? []).filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
+    // Ohne Haushalt „ihr“ (E74.4, Design 12.11.), sonst ab zwei Personen ohne Bürgen.
+    !daten.ansicht ||
+      daten.ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
   );
   const hh = $derived(daten.ansicht?.haushalt ?? null);
   const link = $derived(entwurf.link);
@@ -289,7 +291,20 @@
       <div class="cta">
         <Hauptbutton text={t('vorschau.heftOeffnen')} onclick={() => gehe(`/heft/${alt.id}`)} />
         <button class="ganz" type="button" onclick={ganzeSeite}
-          ><Symbol name="datei" groesse={20} />{t('vorschau.ganzeSeite')}</button
+          ><svg
+            width="18"
+            height="18"
+            viewBox="0 0 32 32"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            ><path d="M18 6h8v8" /><path d="M26 6L15 17" /><path
+              d="M23 19v5a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2h5"
+            /></svg
+          >{t('vorschau.ganzeSeite')}</button
         >
       </div>
     {:else}
@@ -301,7 +316,20 @@
             >{t('vorschau.andererLink')}</button
           >
           <button class="ganz" type="button" onclick={ganzeSeite}
-            ><Symbol name="datei" groesse={20} />{t('vorschau.ganzeSeite')}</button
+            ><svg
+              width="18"
+              height="18"
+              viewBox="0 0 32 32"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              ><path d="M18 6h8v8" /><path d="M26 6L15 17" /><path
+                d="M23 19v5a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2h5"
+              /></svg
+            >{t('vorschau.ganzeSeite')}</button
           >
         </div>
       </div>
@@ -338,7 +366,20 @@
       {/if}
       {#if zustand !== 'netz'}
         <button class="ganz" type="button" onclick={ganzeSeite}
-          ><Symbol name="datei" groesse={20} />{t('vorschau.ganzeSeite')}</button
+          ><svg
+            width="18"
+            height="18"
+            viewBox="0 0 32 32"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            ><path d="M18 6h8v8" /><path d="M26 6L15 17" /><path
+              d="M23 19v5a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2h5"
+            /></svg
+          >{t('vorschau.ganzeSeite')}</button
         >
       {/if}
       {#if zustand !== 'liste'}

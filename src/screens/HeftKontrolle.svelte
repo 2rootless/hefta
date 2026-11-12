@@ -22,7 +22,9 @@
 
   const NB = ' ';
   const ihr = $derived(
-    (daten.ansicht?.mitglieder ?? []).filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
+    // Ohne Haushalt „ihr“ (E74.4, Design 12.11.), sonst ab zwei Personen ohne Bürgen.
+    !daten.ansicht ||
+      daten.ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
   );
   const a = $derived(entwurf.angaben);
   const hh = $derived(daten.ansicht?.haushalt ?? null);
@@ -427,7 +429,14 @@
         {@const gw = gelesenWert(z)}
         {#if gw !== undefined && gw !== z.wert}
           <div class="gelesen">
-            <span>{t('neuesHeft.gelesenWar', { wert: gw ?? '–' })}</span>
+            <!-- Wortlaute des Designs (12.11.): Wert aus dem Inserat, nicht gefunden, oder gerechnet (E78). -->
+            <span
+              >{gw === null
+                ? t('neuesHeft.imInseratFehlt')
+                : z.schluessel === 'warm' && entwurf.gelesenAngaben?.warmCa
+                  ? t('neuesHeft.gerechnetWar', { wert: gw })
+                  : t('neuesHeft.gelesenWar', { wert: gw })}</span
+            >
             <button type="button" onclick={() => zuruecksetzen(z)}
               >{t('neuesHeft.zuruecksetzen')}</button
             >

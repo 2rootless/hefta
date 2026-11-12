@@ -1653,10 +1653,12 @@
     "textEinsetzen": "Text des Inserats einsetzen",
     "ohneLinkIhr": "Wenn ihr keinen Link habt.",
     "ohneLinkDu": "Wenn du keinen Link hast.",
-    "gelesenWar": "Gelesen: {wert}",
+    "gelesenWar": "Im Inserat: {wert}",
     "zuruecksetzen": "Zurücksetzen",
     "ausAppTeilen": "Aus der App teilen",
-    "ausAppTeilenText": "Im Portal auf „Teilen“ tippen, dann {app} wählen."
+    "ausAppTeilenText": "Im Portal auf „Teilen“ tippen, dann {app} wählen.",
+    "imInseratFehlt": "Im Inserat: nicht gefunden",
+    "gerechnetWar": "Gerechnet: {wert}"
   },
   "vorschau": {
     "zurueck": "Neues Heft",

@@ -19,7 +19,9 @@
   const heft = $derived(daten.hefte.find((h) => h.id === id) ?? null);
   const jetzt = new Date();
   const ihr = $derived(
-    (daten.ansicht?.mitglieder ?? []).filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
+    // Ohne Haushalt „ihr“ (E74.4, Design 12.11.), sonst ab zwei Personen ohne Bürgen.
+    !daten.ansicht ||
+      daten.ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
   );
 
   const st = $derived(heft ? stand(heft.ereignisse, jetzt) : 'gemerkt');
