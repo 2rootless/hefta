@@ -1,0 +1,179 @@
+{
+  "fill-specializations" : [
+    {
+      "value" : {
+        "solid" : "extended-srgb:0.24706,0.07451,0.04314,1.00000"
+      }
+    },
+    {
+      "appearance" : "dark",
+      "value" : {
+        "solid" : "extended-srgb:0.16471,0.05098,0.02745,1.00000"
+      }
+    }
+  ],
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "extended-srgb:0.98431,0.97255,0.94902,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "extended-srgb:0.95294,0.92941,0.89412,1.00000"
+              }
+            }
+          ],
+          "glass" : true,
+          "image-name" : "1-klammer.svg",
+          "name" : "Klammer"
+        }
+      ],
+      "name" : "Klammer",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "extended-srgb:0.40000,0.12157,0.07843,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "extended-srgb:0.32157,0.10980,0.07059,1.00000"
+              }
+            }
+          ],
+          "glass" : true,
+          "image-name" : "2-deckel.svg",
+          "name" : "Deckel"
+        }
+      ],
+      "name" : "Deckel",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "extended-srgb:0.98431,0.97255,0.94902,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "extended-srgb:0.95294,0.92941,0.89412,1.00000"
+              }
+            }
+          ],
+          "glass" : true,
+          "image-name" : "3-seite-1.svg",
+          "name" : "Seite 1",
+          "opacity-specializations" : [
+            {
+              "value" : 0.95
+            },
+            {
+              "appearance" : "dark",
+              "value" : 0.44
+            }
+          ]
+        },
+        {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "extended-srgb:0.98431,0.97255,0.94902,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "extended-srgb:0.95294,0.92941,0.89412,1.00000"
+              }
+            }
+          ],
+          "glass" : true,
+          "image-name" : "3-seite-2.svg",
+          "name" : "Seite 2",
+          "opacity-specializations" : [
+            {
+              "value" : 0.78
+            },
+            {
+              "appearance" : "dark",
+              "value" : 0.32
+            }
+          ]
+        },
+        {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "extended-srgb:0.98431,0.97255,0.94902,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "extended-srgb:0.95294,0.92941,0.89412,1.00000"
+              }
+            }
+          ],
+          "glass" : true,
+          "image-name" : "3-seite-3.svg",
+          "name" : "Seite 3",
+          "opacity-specializations" : [
+            {
+              "value" : 0.58
+            },
+            {
+              "appearance" : "dark",
+              "value" : 0.22
+            }
+          ]
+        }
+      ],
+      "lighting" : "individual",
+      "name" : "Seiten",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.3
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : "shared"
+  }
+}
