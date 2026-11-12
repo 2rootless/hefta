@@ -108,3 +108,27 @@ describe('Erinnerungen als Kalendereintrag (Version 2)', () => {
     expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true);
   });
 });
+
+describe('Besichtigung in den Kalender (Zeile 9)', () => {
+  it('30 Minuten, belegt, Erinnerung eine Stunde vorher, mit Ort und Treffpunkt', async () => {
+    const { besichtigungTermin, icsErzeugen } = await import('./kalender');
+    const t = besichtigungTermin({
+      id: 'linden',
+      titel: 'Altbau mit Garten',
+      adresse: 'Lindenallee 3, EG\n20259 Hamburg',
+      termin: {
+        am: new Date(2026, 10, 13, 17, 30).toISOString(),
+        treffpunkt: 'Klingeln bei Hansen',
+      },
+    });
+    expect(t.tag).toBe('2026-11-13');
+    expect(t.uhrzeit).toBe('1730');
+    const ics = icsErzeugen([t], new Date(2026, 10, 12));
+    expect(ics).toContain('DTSTART:20261113T173000');
+    expect(ics).toContain('DURATION:PT30M');
+    expect(ics).toContain('TRIGGER:-PT60M');
+    expect(ics).toContain('TRANSP:OPAQUE');
+    expect(ics).toContain(String.raw`LOCATION:Lindenallee 3\, EG\, 20259 Hamburg`);
+    expect(ics).toContain('SUMMARY:Besichtigung: Altbau mit Garten');
+  });
+});

@@ -1535,7 +1535,26 @@
     "merkmalEigen": "Eigenes Merkmal",
     "merkmalInserat": "Merkmal aus dem Inserat",
     "merkmalKeins": "Noch kein Merkmal",
-    "aendern": "Ändern"
+    "aendern": "Ändern",
+    "beworbenHeute": "Beworben heute",
+    "beworbenTag": "Beworben am {datum}, seit einem Tag",
+    "beworbenTage": "Beworben am {datum}, seit {tage} Tagen",
+    "beworbenSatzIhr": "Meldet sich jemand, tragt den Termin ein. Nach drei Wochen ohne Antwort steht das Heft bei „Keine Antwort“.",
+    "beworbenSatzDu": "Meldet sich jemand, trag den Termin ein. Nach drei Wochen ohne Antwort steht das Heft bei „Keine Antwort“.",
+    "terminEintragen": "Termin eintragen",
+    "inDenKalender": "In den Kalender",
+    "terminAendern": "Termin ändern",
+    "standSelbst": "Stand selbst setzen",
+    "besichtigt": "Besichtigt am {datum}{punkt} Wie ist es ausgegangen?",
+    "zusageAm": "Zusage am {datum}",
+    "absageAm": "Absage am {datum}",
+    "dagegenAm": "Dagegen entschieden am {datum}",
+    "abgelegtAm": "Abgelegt am {datum}",
+    "abgelegtSatz": "Das Heft liegt bei den abgelegten.",
+    "hervorholen": "Wieder hervorholen",
+    "kalenderGesichert": "Im Kalender eingetragen.",
+    "kalenderDatei": "Die Datei für den Kalender ist da. Öffne sie, dann trägt dein Kalender den Termin ein.",
+    "kalenderNein": "Ohne Zugriff auf den Kalender geht das nicht. Erlauben kannst du ihn in den Einstellungen von iOS unter {app}."
   },
   "merkmal": {
     "zurueck": "Heft",
@@ -1773,5 +1792,41 @@
     "mehrDu": "Beim ersten Mal steht {app} oft erst unter „Mehr“, am Ende der Reihe. Dort kannst du es nach vorn holen.",
     "zweit": "Oder den Link kopieren und auf „Neues Heft“ einsetzen.",
     "schritt4": "Danach zeigt {app} eine kleine Vorschau. Passt sie, „Ja, einlesen“ tippen."
+  },
+  "termin": {
+    "zurueck": "Heft",
+    "titelNeu": "Termin eintragen",
+    "titelAendern": "Termin ändern",
+    "sub": "Mit dem Termin steht das Heft auf „Besichtigung“.",
+    "tag": "Tag",
+    "andererTag": "Anderer Tag",
+    "datum": "Datum",
+    "uhrzeit": "Uhrzeit",
+    "treffpunkt": "Treffpunkt oder Notiz",
+    "freiwillig": "freiwillig",
+    "beispiel": "zum Beispiel: Klingeln bei Okafor",
+    "speichern": "Termin speichern",
+    "ohneTag": "Erst einen Tag wählen."
+  },
+  "standSetzen": {
+    "zurueck": "Heft",
+    "titel": "Stand selbst setzen",
+    "gemerktSub": "Noch nicht beworben",
+    "beworbenSub": "Die Bewerbung ist raus",
+    "besichtigungSubIhr": "Mit Termin; den tragt ihr danach ein",
+    "besichtigungSubDu": "Mit Termin; den trägst du danach ein",
+    "ergebnis": "Ergebnis",
+    "ergebnisSub": "Zusage, Absage oder nicht mehr gewollt. Danach wird das Heft abgelegt.",
+    "keineAntwort": "„Keine Antwort“ setzt {app} selbst, nach drei Wochen ohne Nachricht."
+  },
+  "ergebnis": {
+    "zurueck": "Heft",
+    "titel": "Wie ist es ausgegangen?",
+    "satzIhr": "Ihr setzt das Ergebnis, {app} legt das Heft dann ab.",
+    "satzDu": "Du setzt das Ergebnis, {app} legt das Heft dann ab.",
+    "zusage": "Zusage",
+    "absage": "Absage",
+    "nichtMehrIhr": "Wir wollen nicht mehr",
+    "nichtMehrDu": "Ich will nicht mehr"
   }
 }

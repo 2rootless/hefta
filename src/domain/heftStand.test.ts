@@ -97,3 +97,38 @@ describe('Gruppen der Übersicht (B16)', () => {
     ).toBe(1);
   });
 });
+
+describe('Stand selbst setzen, Termin und Ergebnis (Zeile 9)', async () => {
+  const { ergebnisSetzen, hervorholen, standSetzen, stand, terminSetzen } =
+    await import('./heftStand');
+  const JETZT = new Date(2026, 10, 12, 10);
+  const beworben: HeftEreignisse = {
+    ...KEINE_EREIGNISSE,
+    beworben: { am: new Date(2026, 10, 1).toISOString(), weg: 'mail', sicher: false },
+  };
+
+  it('setzt „Beworben“ sicher und behält das Datum; „Gemerkt“ nimmt alles zurück', () => {
+    const b = standSetzen(beworben, 'beworben', JETZT);
+    expect(stand(b, JETZT)).toBe('beworben');
+    expect(b.beworben?.am).toBe(beworben.beworben!.am);
+    const neu = standSetzen(KEINE_EREIGNISSE, 'beworben', JETZT);
+    expect(neu.beworben).toMatchObject({ am: JETZT.toISOString(), sicher: true });
+    const mitTermin = terminSetzen(b, new Date(2026, 10, 13, 17, 30), ' Klingeln ');
+    expect(stand(mitTermin, JETZT)).toBe('besichtigung');
+    expect(mitTermin.termin?.treffpunkt).toBe('Klingeln');
+    const g = standSetzen(mitTermin, 'gemerkt', JETZT);
+    expect(stand(g, JETZT)).toBe('gemerkt');
+    expect(g.termin).toBeNull();
+  });
+
+  it('legt mit dem Ergebnis ab, behält den Termin und holt wieder hervor', () => {
+    const mitTermin = terminSetzen(beworben, new Date(2026, 10, 10, 17), '');
+    const z = ergebnisSetzen(mitTermin, 'zusage', JETZT);
+    expect(stand(z, JETZT)).toBe('abgelegt');
+    expect(z.ergebnis?.art).toBe('zusage');
+    expect(z.termin).not.toBeNull();
+    expect(stand(hervorholen(z), JETZT)).toBe('besichtigung');
+    // Ein neuer Termin holt ein abgelegtes Heft zurück.
+    expect(stand(terminSetzen(z, new Date(2026, 10, 20, 9), ''), JETZT)).toBe('besichtigung');
+  });
+});

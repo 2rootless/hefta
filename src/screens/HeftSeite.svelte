@@ -6,13 +6,24 @@
   // Eckdaten und Quelle, die Leiste „Stand x von 4“, die Besichtigung, Notizen und der Abgleich mit den
   // Wünschen. Fragen für die Besichtigung, Fotos und „Was hinausging“ kommen mit Schritt 8 und 9.
   import { daten, db, stillLaden } from '../app/daten.svelte';
-  import { eckdaten, heftAdresseKurz, heftTitel } from '../domain/heftKarte';
-  import { stand, standNummer } from '../domain/heftStand';
+  import { istApp } from '../app/plattform';
+  import { eckdaten, heftAdresseKurz, heftTitel, tagKurz, terminKurz } from '../domain/heftKarte';
+  import {
+    ergebnisSetzen,
+    hervorholen,
+    stand,
+    standNummer,
+    terminVorbei,
+  } from '../domain/heftStand';
+  import type { HeftEreignisse } from '../domain/modell';
+  import { tageBis } from '../domain/tageslinie';
   import { abweichungen, urteile } from '../domain/urteile';
   import { t, type TextSchluessel } from '../i18n';
   import { wohnungAus } from '../lesen/angaben';
   import { heftAendern } from '../storage/speicher';
   import TabLeiste from '../ui/TabLeiste.svelte';
+  import { inDenKalender } from '../ui/kalenderEintrag';
+  import Symbol from '../ui/Symbol.svelte';
   import TerminKarte from '../ui/TerminKarte.svelte';
   import UrteilZeichen from '../ui/UrteilZeichen.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
@@ -42,6 +53,47 @@
       ihr,
     });
     return abweichungen(u);
+  });
+
+  // Zeile 9: Kalender, Ergebnis und „Wieder hervorholen“ direkt im Heft.
+  let kalenderMeldung = $state('');
+  async function kalender() {
+    if (!heft) return;
+    kalenderMeldung = '';
+    const a = await inDenKalender(heft, heftTitel(heft).text);
+    kalenderMeldung =
+      a === 'gesichert'
+        ? t('heft.kalenderGesichert')
+        : a === 'nicht_erlaubt'
+          ? t('heft.kalenderNein')
+          : a === 'datei' && !istApp()
+            ? t('heft.kalenderDatei')
+            : '';
+  }
+
+  async function ereignisse(neu: HeftEreignisse) {
+    if (!heft) return;
+    // Ohne Proxys von Svelte: IndexedDB kann sie nicht kopieren.
+    await heftAendern(await db(), heft.id, { ereignisse: $state.snapshot(neu) });
+    await stillLaden();
+  }
+
+  const ergebnisWort = $derived.by(() => {
+    const e = heft?.ereignisse;
+    if (!e) return '';
+    const datum = tagKurz(e.ergebnis?.am ?? e.abgelegtAm ?? new Date().toISOString());
+    if (e.ergebnis?.art === 'zusage') return t('heft.zusageAm', { datum });
+    if (e.ergebnis?.art === 'absage') return t('heft.absageAm', { datum });
+    if (e.ergebnis?.art === 'nicht_mehr') return t('heft.dagegenAm', { datum });
+    return t('heft.abgelegtAm', { datum });
+  });
+
+  const beworbenWort = $derived.by(() => {
+    const am = heft?.ereignisse.beworben?.am;
+    if (!am) return '';
+    const tage = -tageBis(am, jetzt);
+    if (tage <= 0) return t('heft.beworbenHeute');
+    return t(tage === 1 ? 'heft.beworbenTag' : 'heft.beworbenTage', { datum: tagKurz(am), tage });
   });
 
   let notiz = $state('');
@@ -104,6 +156,7 @@
     <section class="stand" class:kommt>
       <div
         class="leiste"
+        class:abgelegt={st === 'abgelegt'}
         role="img"
         aria-label={t('heft.standLabel', { stand: t(`heft.stand.${st}` as TextSchluessel) })}
       >
@@ -113,9 +166,67 @@
           {#each [1, 2, 3, 4] as n (n)}<i class:d={n < nummer} class:c={n === nummer}></i>{/each}
         </span>
       </div>
-      {#if heft.ereignisse.termin}
+      {#if heft.ereignisse.termin && st === 'besichtigung'}
         <TerminKarte {heft} {jetzt} titel={false} />
+        {#if terminVorbei(heft.ereignisse, jetzt)}
+          {@const datum = terminKurz(heft.ereignisse.termin.am, false)}
+          <div class="nx">
+            <!-- „Fr, 6. Nov. Wie …“, aber „Fr, 6. Mai. Wie …“: kein Punkt doppelt. -->
+            <b>{t('heft.besichtigt', { datum, punkt: datum.endsWith('.') ? '' : '.' })}</b>
+            <p>{t(ihr ? 'ergebnis.satzIhr' : 'ergebnis.satzDu')}</p>
+            <div class="knopfreihe">
+              <button
+                class="knopf haupt"
+                type="button"
+                onclick={() => ereignisse(ergebnisSetzen(heft.ereignisse, 'zusage', new Date()))}
+                >{t('ergebnis.zusage')}</button
+              >
+              <button
+                class="knopf"
+                type="button"
+                onclick={() => ereignisse(ergebnisSetzen(heft.ereignisse, 'absage', new Date()))}
+                >{t('ergebnis.absage')}</button
+              >
+              <button
+                class="knopf"
+                type="button"
+                onclick={() =>
+                  ereignisse(ergebnisSetzen(heft.ereignisse, 'nicht_mehr', new Date()))}
+                >{t(ihr ? 'ergebnis.nichtMehrIhr' : 'ergebnis.nichtMehrDu')}</button
+              >
+            </div>
+          </div>
+        {:else}
+          <div class="vb">
+            <button class="vz" type="button" onclick={kalender}>
+              <span class="vi"><Symbol name="kalender" groesse={20} /></span>
+              <b>{t('heft.inDenKalender')}</b>
+              <Symbol name="weiter" groesse={16} />
+            </button>
+          </div>
+          {#if kalenderMeldung}<p class="meldung" role="status">{kalenderMeldung}</p>{/if}
+        {/if}
+        <a class="leis" href={`#/heft/${heft.id}/termin`}>{t('heft.terminAendern')}</a>
+      {:else if st === 'beworben'}
+        <div class="nx">
+          <b>{beworbenWort}</b>
+          <p>{t(ihr ? 'heft.beworbenSatzIhr' : 'heft.beworbenSatzDu')}</p>
+          <a class="knopf breit" href={`#/heft/${heft.id}/termin`}
+            ><Symbol name="kalender" groesse={20} />{t('heft.terminEintragen')}</a
+          >
+        </div>
+      {:else if st === 'abgelegt'}
+        <div class="nx">
+          <b>{ergebnisWort}</b>
+          <p>{t('heft.abgelegtSatz')}</p>
+          <button
+            class="leis"
+            type="button"
+            onclick={() => ereignisse(hervorholen(heft.ereignisse))}>{t('heft.hervorholen')}</button
+          >
+        </div>
       {/if}
+      <a class="leis selbst" href={`#/heft/${heft.id}/stand`}>{t('heft.standSelbst')}</a>
     </section>
 
     <section class="teil">
@@ -328,6 +439,132 @@
   .kommt .seg i.c {
     border-color: var(--termin);
     background: var(--termin);
+  }
+
+  .leiste.abgelegt .seg i.c,
+  .leiste.abgelegt .seg i.d {
+    border-color: var(--ink-quiet);
+    background: var(--ink-quiet);
+  }
+
+  /* Zeile 9 (B21 Fassung 4): Hinweis zum Stand, „In den Kalender“ als Zeile, leise Links darunter. */
+  .nx > b {
+    display: block;
+    font-size: calc(17 * var(--px));
+    line-height: 1.3;
+  }
+
+  .nx p {
+    margin: 4px 0 12px;
+    color: var(--ink-muted);
+    font-size: calc(14 * var(--px));
+  }
+
+  .knopfreihe {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .knopf {
+    display: inline-flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 18px;
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-weight: 650;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .knopf.breit {
+    width: 100%;
+  }
+
+  .knopf.haupt {
+    border-color: var(--action);
+    background: var(--action);
+    color: var(--on-action);
+  }
+
+  .vb {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+  }
+
+  .vz {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 52px;
+    padding: 10px 14px;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: calc(15 * var(--px));
+    line-height: 1.35;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .vz b {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .vi {
+    display: flex;
+    flex: none;
+    color: var(--termin);
+  }
+
+  .vz > :global(svg:last-child) {
+    color: var(--ink-quiet);
+  }
+
+  .meldung {
+    margin: -6px 2px 0;
+    color: var(--ink-muted);
+    font-size: calc(14 * var(--px));
+  }
+
+  .leis {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    margin: -8px 0 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-text);
+    font: inherit;
+    font-size: calc(14 * var(--px));
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .nx .leis {
+    margin-top: 0;
+  }
+
+  .leis.selbst {
+    margin-top: 0;
+    padding-top: 4px;
+    border-top: 1px solid var(--line);
   }
 
   .wlink {

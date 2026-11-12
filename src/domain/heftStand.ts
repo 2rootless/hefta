@@ -98,3 +98,48 @@ export const ALLE_ABLEGEN_AB = 3;
 export function ohneLoeschbitte(hefte: Pick<Heft, 'ereignisse'>[]): number {
   return hefte.filter((h) => !h.ereignisse.loeschbitteAm).length;
 }
+
+// „Stand selbst setzen“, Termin und Ergebnis (Zeile 9, B21 und B23): Änderungen an den Ereignissen, aus
+// denen sich der Stand rechnet. Die Bewerbung bleibt beim Zurücksetzen nicht stehen, sonst rechnete sich
+// der alte Stand wieder heraus; das Datum der Bewerbung bleibt, wenn es eins gab.
+
+/** „Gemerkt“ oder „Beworben“ von Hand. Besichtigung und Ergebnis gehen über Termin und Ergebnis. */
+export function standSetzen(
+  e: HeftEreignisse,
+  ziel: 'gemerkt' | 'beworben',
+  jetzt: Date,
+): HeftEreignisse {
+  const ohne = { ...e, termin: null, ergebnis: null, abgelegtAm: null };
+  if (ziel === 'gemerkt') return { ...ohne, beworben: null };
+  return {
+    ...ohne,
+    beworben: e.beworben
+      ? { ...e.beworben, sicher: true }
+      : { am: jetzt.toISOString(), weg: 'sonst', sicher: true },
+  };
+}
+
+/** Termin eintragen oder ändern: Das Heft steht auf „Besichtigung“, auch wenn es abgelegt war. */
+export function terminSetzen(e: HeftEreignisse, am: Date, treffpunkt: string): HeftEreignisse {
+  return {
+    ...e,
+    termin: { am: am.toISOString(), ort: e.termin?.ort ?? '', treffpunkt: treffpunkt.trim() },
+    ergebnis: null,
+    abgelegtAm: null,
+  };
+}
+
+/** Zusage, Absage oder „Wir wollen nicht mehr“: Hefta legt das Heft ab. Der Termin bleibt erhalten. */
+export function ergebnisSetzen(
+  e: HeftEreignisse,
+  art: NonNullable<HeftEreignisse['ergebnis']>['art'],
+  jetzt: Date,
+): HeftEreignisse {
+  const am = jetzt.toISOString();
+  return { ...e, ergebnis: { art, am }, abgelegtAm: am };
+}
+
+/** „Wieder hervorholen“: Ergebnis und Ablage weg, der Stand rechnet sich aus dem Rest. */
+export function hervorholen(e: HeftEreignisse): HeftEreignisse {
+  return { ...e, ergebnis: null, abgelegtAm: null };
+}

@@ -105,11 +105,13 @@
   }
 
   /* Schritt 4: ein breiter Kasten, Bild links, Satz rechts (E84.2). */
+  /* Kompakt (B24 Fassung 2): Bild 72 px, Polster 10, Abstand 16. */
   .schritte li.vier {
+    display: grid;
     grid-column: 1 / -1;
-    flex-direction: row;
+    grid-template-columns: 72px 1fr;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     padding: 10px;
     border: 1px solid var(--line);
     border-radius: 14px;
@@ -117,8 +119,7 @@
   }
 
   .vier .bild {
-    flex: none;
-    width: 84px;
+    width: 72px;
     border: 0;
   }
 
@@ -144,6 +145,11 @@
     .schritte li .bild {
       flex: none;
       width: 84px;
+    }
+
+    .schritte li.vier {
+      grid-template-columns: 84px 1fr;
+      gap: 14px;
     }
 
     .nr {

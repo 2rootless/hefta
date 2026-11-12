@@ -121,6 +121,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- „In den Kalender“ (Zeile 9): nur iOS 15 und 16 fragen; ab iOS 17 braucht das Kalenderfenster keine Erlaubnis. -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>Hefta trägt eine Besichtigung nur in deinen Kalender ein, wenn du sie im Kalenderfenster sicherst.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<!-- Teilen an Hefta (E81): Die Erweiterung HeftaTeilen öffnet die App mit hefta://teilen?link=… -->

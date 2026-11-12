@@ -10,7 +10,7 @@
     WOCHE_TAGE,
   } from '../domain/heftKarte';
   import type { Heft } from '../domain/modell';
-  import { bisWort } from '../domain/tageslinie';
+  import { bisWort, vorWort } from '../domain/tageslinie';
   import { t, type TextSchluessel } from '../i18n';
   import Symbol from './Symbol.svelte';
 
@@ -24,7 +24,8 @@
   const termin = $derived(heft.ereignisse.termin!);
   const k = $derived(terminKarte(termin.am, jetzt));
   const wann = $derived.by(() => {
-    const w = bisWort(k.tage);
+    // Vorbei (noch ohne Ergebnis): „vor 2 Tagen“ statt „heute“.
+    const w = k.tage < 0 ? vorWort(-k.tage) : bisWort(k.tage);
     return t(w.schluessel as TextSchluessel, w.werte ?? {});
   });
   const name = $derived(heftTitel(heft).text);

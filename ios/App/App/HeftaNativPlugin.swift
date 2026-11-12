@@ -1,4 +1,6 @@
 import Capacitor
+import EventKit
+import EventKitUI
 import Network
 import UIKit
 import UniformTypeIdentifiers
@@ -7,16 +9,20 @@ import WebKit
 /// Eigene Gerätefunktionen der App: PDFs von anderen Apps empfangen und Dateien über den
 /// Sichern-Dialog des Systems ablegen. Die Daten bleiben außerdem aus dem iCloud-Backup heraus.
 @objc(HeftaNativPlugin)
-public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDelegate {
+public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDelegate,
+    EKEventEditViewDelegate {
     public let identifier = "HeftaNativPlugin"
     public let jsName = "HeftaNativ"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "alsDateiSichern", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "backupWaehlen", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "backupWaehlen", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "termin", returnType: CAPPluginReturnPromise)
     ]
 
     private var sichernAufruf: CAPPluginCall?
     private var waehlenAufruf: CAPPluginCall?
+    private var terminAufruf: CAPPluginCall?
+    private let kalender = EKEventStore()
 
     override public func load() {
         ausDemBackupNehmen()
@@ -124,6 +130,53 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
         }
         sichernAufruf?.resolve(["gesichert": false])
         sichernAufruf = nil
+    }
+
+    /// „In den Kalender“ (Zeile 9): das Kalenderfenster von iOS mit der Besichtigung. Gesichert wird erst,
+    /// wenn man es dort bestätigt. Ab iOS 17 braucht das Fenster keine Erlaubnis für den Kalender; davor
+    /// fragt iOS einmal (NSCalendarsUsageDescription).
+    @objc func termin(_ call: CAPPluginCall) {
+        guard let titel = call.getString("titel"), let startMs = call.getDouble("start") else {
+            call.reject("titel oder start fehlt")
+            return
+        }
+        let dauer = call.getDouble("dauerMin") ?? 30
+        let vorher = call.getDouble("vorherMin") ?? 60
+        let ort = call.getString("ort")
+        let notiz = call.getString("notiz")
+        DispatchQueue.main.async {
+            let zeigen = {
+                let ereignis = EKEvent(eventStore: self.kalender)
+                ereignis.title = titel
+                ereignis.startDate = Date(timeIntervalSince1970: startMs / 1000)
+                ereignis.endDate = ereignis.startDate.addingTimeInterval(dauer * 60)
+                ereignis.location = ort
+                ereignis.notes = notiz?.isEmpty == false ? notiz : nil
+                ereignis.addAlarm(EKAlarm(relativeOffset: -vorher * 60))
+                let fenster = EKEventEditViewController()
+                fenster.eventStore = self.kalender
+                fenster.event = ereignis
+                fenster.editViewDelegate = self
+                self.terminAufruf = call
+                self.bridge?.viewController?.present(fenster, animated: true)
+            }
+            if #available(iOS 17.0, *) {
+                zeigen()
+            } else {
+                self.kalender.requestAccess(to: .event) { erlaubt, _ in
+                    DispatchQueue.main.async {
+                        if erlaubt { zeigen() } else { call.resolve(["gesichert": false, "erlaubt": false]) }
+                    }
+                }
+            }
+        }
+    }
+
+    public func eventEditViewController(_ controller: EKEventEditViewController,
+                                        didCompleteWith action: EKEventEditViewAction) {
+        controller.dismiss(animated: true)
+        terminAufruf?.resolve(["gesichert": action == .saved, "erlaubt": true])
+        terminAufruf = nil
     }
 }
 

@@ -17,6 +17,14 @@ export interface Termin {
   text: string;
   /** Jeden Monat am selben Tag statt einmal. */
   monatlich?: boolean;
+  /** Ort, etwa die Adresse einer Besichtigung. */
+  ort?: string;
+  /** Dauer in Minuten; sonst 15 (Erinnerung). */
+  dauerMin?: number;
+  /** Erinnerung so viele Minuten vorher; sonst zum Termin. */
+  vorherMin?: number;
+  /** Belegt die Zeit im Kalender (Besichtigung), statt sie frei zu lassen (Erinnerung). */
+  belegt?: boolean;
 }
 
 /**
@@ -88,18 +96,44 @@ export function icsErzeugen(termine: Termin[], jetzt: Date = new Date()): string
       `UID:${t.uid}`,
       `DTSTAMP:${stempel}`,
       `DTSTART:${ohneStriche(t.tag)}T${t.uhrzeit ?? '1800'}00`,
-      'DURATION:PT15M',
+      `DURATION:PT${t.dauerMin ?? 15}M`,
       ...(t.monatlich ? [`RRULE:FREQ=MONTHLY;BYMONTHDAY=${Number(t.tag.slice(8))}`] : []),
       `SUMMARY:${maskieren(t.titel)}`,
       `DESCRIPTION:${maskieren(t.text)}`,
-      'TRANSP:TRANSPARENT',
+      ...(t.ort ? [`LOCATION:${maskieren(t.ort)}`] : []),
+      t.belegt ? 'TRANSP:OPAQUE' : 'TRANSP:TRANSPARENT',
       'BEGIN:VALARM',
       'ACTION:DISPLAY',
-      'TRIGGER:PT0M',
+      t.vorherMin ? `TRIGGER:-PT${t.vorherMin}M` : 'TRIGGER:PT0M',
       `DESCRIPTION:${maskieren(t.titel)}`,
       'END:VALARM',
       'END:VEVENT',
     );
   zeilen.push('END:VCALENDAR');
   return zeilen.map(falten).join('\r\n') + '\r\n';
+}
+
+/**
+ * Die Besichtigung eines Hefts als Termin (Zeile 9, B21 „In den Kalender“): 30 Minuten, belegt, Erinnerung
+ * eine Stunde vorher, mit Adresse und Treffpunkt. Ortszeit, wie bei den Erinnerungen.
+ */
+export function besichtigungTermin(h: {
+  id: string;
+  titel: string;
+  adresse: string;
+  termin: { am: string; treffpunkt: string };
+}): Termin {
+  const am = new Date(h.termin.am);
+  const zwei = (n: number) => String(n).padStart(2, '0');
+  return {
+    uid: `besichtigung-${h.id}@hefta`,
+    tag: `${am.getFullYear()}-${zwei(am.getMonth() + 1)}-${zwei(am.getDate())}`,
+    uhrzeit: `${zwei(am.getHours())}${zwei(am.getMinutes())}`,
+    titel: `Besichtigung: ${h.titel}`,
+    text: h.termin.treffpunkt,
+    ort: h.adresse.replace(/\n+/g, ', ').trim(),
+    dauerMin: 30,
+    vorherMin: 60,
+    belegt: true,
+  };
 }

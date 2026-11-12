@@ -16,6 +16,16 @@ export interface HeftaNativPlugin {
   }): Promise<{ gesichert: boolean }>;
   /** Nur iOS: Auswahl, die nur Hefta-Backups anbietet. Leer, wenn abgebrochen. */
   backupWaehlen(): Promise<{ uri?: string; name?: string }>;
+  /** Nur iOS: das Kalenderfenster des Systems mit einem Termin (Zeile 9). */
+  termin(o: {
+    titel: string;
+    /** Beginn in Millisekunden seit 1970. */
+    start: number;
+    dauerMin: number;
+    vorherMin: number;
+    ort?: string;
+    notiz?: string;
+  }): Promise<{ gesichert: boolean; erlaubt: boolean }>;
   addListener(
     ereignis: 'eingang',
     aufruf: (daten: { dateien: EmpfangeneDatei[] }) => void,

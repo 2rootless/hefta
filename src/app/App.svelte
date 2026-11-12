@@ -38,6 +38,9 @@
     wohnungen: () => import('../screens/Wohnungen.svelte'),
     heft: () => import('../screens/HeftSeite.svelte'),
     merkmal: () => import('../screens/MerkmalSeite.svelte'),
+    termin: () => import('../screens/TerminSeite.svelte'),
+    standSetzen: () => import('../screens/StandSeite.svelte'),
+    ergebnis: () => import('../screens/ErgebnisSeite.svelte'),
     wuensche: () => import('../screens/WuenscheSeite.svelte'),
     anleitung: () => import('../screens/AnleitungSeite.svelte'),
     netto: () => import('../screens/NettoSeite.svelte'),
@@ -88,6 +91,8 @@
   });
   const heftId = $derived(route.pfad.match(/^\/heft\/([\w-]+)$/)?.[1]);
   const merkmalId = $derived(route.pfad.match(/^\/heft\/([\w-]+)\/merkmal$/)?.[1]);
+  // Zeile 9: Termin, Stand selbst setzen, Ergebnis.
+  const heftUnter = $derived(route.pfad.match(/^\/heft\/([\w-]+)\/(termin|stand|ergebnis)$/));
   const unterlage = $derived(
     route.pfad.match(/^\/unterlage\/([\w-]+)\/(\w+)(\/datum(?:\/([\w-]+))?)?$/),
   );
@@ -248,6 +253,18 @@
     {:else if route.pfad === '/wuensche/netto'}
       {#await seiten.netto() then m}
         <m.default />
+      {/await}
+    {:else if heftUnter?.[2] === 'termin'}
+      {#await seiten.termin() then m}
+        <m.default id={heftUnter[1]!} />
+      {/await}
+    {:else if heftUnter?.[2] === 'stand'}
+      {#await seiten.standSetzen() then m}
+        <m.default id={heftUnter[1]!} />
+      {/await}
+    {:else if heftUnter?.[2] === 'ergebnis'}
+      {#await seiten.ergebnis() then m}
+        <m.default id={heftUnter[1]!} />
       {/await}
     {:else if merkmalId}
       {#await seiten.merkmal() then m}

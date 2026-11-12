@@ -138,3 +138,9 @@ export function terminKurz(am: string, mitUhr: boolean): string {
     return `${WOCHENTAG[d.getDay()]}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   return `${WOCHENTAG[d.getDay()]}, ${d.getDate()}.${NB}${MONAT[d.getMonth()]}`;
 }
+
+/** „4. Nov.“: Datum ohne Wochentag, etwa für „Beworben am …“. */
+export function tagKurz(am: string): string {
+  const d = new Date(am);
+  return `${d.getDate()}.${NB}${MONAT[d.getMonth()]}`;
+}
