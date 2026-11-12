@@ -4,7 +4,7 @@
   // zeichnet iOS darüber (`HeftaInseratPlugin.knopf`). Er blendet nach dem Aufschlagen knapp ein und ist
   // weg, solange die Tastatur offen ist. Ein eingesetzter Text gilt, wenn Hefta darin einen Link findet.
   // Ohne Knopf (vor iOS 16) oder bei leerer Zwischenablage steht das Feld da. Darunter scrollt nur der Rest.
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
   import { daten } from '../app/daten.svelte';
   import { heftaInserat, linkAus } from '../app/heftaInserat';
   import { gehe, zurueckGehen } from '../app/router.svelte';
@@ -28,7 +28,10 @@
   let platz = $state<HTMLDivElement | null>(null);
   let feld = $state<HTMLInputElement | null>(null);
 
-  const mitKnopf = $derived(!feldOffen && knopfGeht !== false && ablage?.inhalt !== false);
+  // Der Knopf nur, wenn iOS still einen Link in der Zwischenablage erkennt (Auftraggeber, 12.11.); sonst das
+  // Feld. Bis das geprüft ist, steht keines von beiden da, damit nichts springt.
+  const geprueft = $derived(ablage !== null || feldOffen);
+  const mitKnopf = $derived(!feldOffen && knopfGeht !== false && ablage?.link === true);
 
   /** Dauer des Aufschlagens aus den Tokens (`--bw-aufschlagen`; „Bewegung reduzieren“ regeln die Tokens). */
   function aufschlagen(): number {
@@ -65,7 +68,12 @@
 
   let abmelden: (() => void) | null = null;
   const sichtbar = () => {
-    if (document.visibilityState === 'visible') void ablagePruefen();
+    // Zurück aus der Portal-App: neu prüfen und den Knopf setzen, falls jetzt ein Link da ist.
+    if (document.visibilityState === 'visible')
+      void ablagePruefen().then(async () => {
+        await tick();
+        await knopfSetzen();
+      });
   };
   const neuSetzen = () => void knopfSetzen();
 
@@ -80,6 +88,7 @@
     document.addEventListener('visibilitychange', sichtbar);
     window.addEventListener('resize', neuSetzen);
     await ablagePruefen();
+    await tick();
     await knopfSetzen(aufschlagen());
   });
 
@@ -141,7 +150,7 @@
   </div>
 
   <main class="roll">
-    {#if !mitKnopf}
+    {#if geprueft && !mitKnopf}
       <label class="lab" for="link">{t('neuesHeft.linkZumInserat')}</label>
       <input
         id="link"

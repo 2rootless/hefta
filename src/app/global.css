@@ -11,6 +11,8 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* Auch hinter der Seite die Grundfarbe, etwa beim Überziehen über die Tastatur hinaus. */
+  background: var(--ground);
 }
 
 body {

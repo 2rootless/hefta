@@ -194,11 +194,13 @@ public class HeftaInseratPlugin: CAPPlugin, CAPBridgedPlugin {
         let verzoegerung = (call.getDouble("verzoegerung") ?? 0) / 1000
         DispatchQueue.main.async {
             guard #available(iOS 16.0, *),
-                  let web = self.bridge?.webView,
-                  let oben = web.superview else {
+                  let web = self.bridge?.webView else {
                 call.resolve(["geht": false])
                 return
             }
+            // In der scrollenden Ansicht der Seite: Beim Zurückwischen wandert der Knopf mit der Seite
+            // (TestFlight 12.11.: er blieb sonst an seinem Ort stehen).
+            let oben = web.scrollView
             let knopf: UIPasteControl
             if let vorhanden = self.knopfAnsicht as? UIPasteControl {
                 knopf = vorhanden
@@ -219,8 +221,8 @@ public class HeftaInseratPlugin: CAPPlugin, CAPBridgedPlugin {
                                options: [.curveEaseOut, .allowUserInteraction]) { knopf.alpha = 1 }
             }
             // CSS-Pixel der Web-Ansicht sind Punkte; umgerechnet in die Lage über der Web-Ansicht.
-            let ursprung = web.convert(CGPoint(x: x, y: y), to: oben)
-            knopf.frame = CGRect(x: ursprung.x, y: ursprung.y, width: breite, height: hoehe)
+            let versatz = oben.contentOffset
+            knopf.frame = CGRect(x: x + versatz.x, y: y + versatz.y, width: breite, height: hoehe)
             call.resolve(["geht": true])
         }
     }

@@ -2,10 +2,21 @@
   // Hefta 2: die zwei Tabs unten (B12, B17a). „Wohnungen“ und „Mappe“; Einstellungen haben keine
   // Tab-Leiste (B12c). Ihre Höhe steht als --tabs-hoehe an der Wurzel: Die Aktionsleiste sitzt darüber,
   // und Seiten halten unten so viel Platz frei.
+  import { daten } from '../app/daten.svelte';
   import { t } from '../i18n';
+  import { homescreenFragen } from './homescreen';
   import Symbol from './Symbol.svelte';
 
   let { aktiv }: { aktiv: 'wohnungen' | 'mappe' } = $props();
+
+  // Ohne Haushalt führt „Mappe“ gleich in die Einrichtung des Haushalts (Auftraggeber, 12.11.).
+  const mappeZiel = $derived(
+    daten.ansicht
+      ? '#/'
+      : homescreenFragen(daten.einstellungen)
+        ? '#/homescreen/einrichtung'
+        : '#/einrichtung',
+  );
 
   let leiste = $state<HTMLElement>();
   $effect(() => {
@@ -29,7 +40,7 @@
   <a href="#/wohnungen" aria-current={aktiv === 'wohnungen' ? 'page' : undefined}>
     <Symbol name="wohnung" groesse={24} />{t('tabs.wohnungen')}
   </a>
-  <a href="#/" aria-current={aktiv === 'mappe' ? 'page' : undefined}>
+  <a href={mappeZiel} aria-current={aktiv === 'mappe' ? 'page' : undefined}>
     <Symbol name="mappe" groesse={24} />{t('tabs.mappe')}
   </a>
 </nav>
