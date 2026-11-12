@@ -13,7 +13,7 @@ Hier liegen die SVG-Grafiken für die festen Plätze der App (`src/ui/GrafikPlat
 | `teilen-3.svg` | dieselbe Anleitung: Hefta im Teilen-Menü wählen |
 | `teilen-4.svg` | dieselbe Anleitung: die Vorschau von Hefta (breiter vierter Schritt, E84) |
 
-Die Bilder `teilen-1` bis `teilen-4` stammen aus B24 Richtung B (Design). Ihre Farben heißen dort wie im Design (`--blatt`, `--tinte` …); beim Übernehmen sind sie auf die Namen in `design/tokens.css` umgesetzt (`--surface`, `--ink` …). Die Prüfung meldet jedes Token, das es dort nicht gibt.
+Die Bilder `teilen-1` bis `teilen-4` stammen aus B24 Richtung B (Design, Nachtrag n1) und nutzen die Namen aus `design/tokens.css`, dazu `--schleier`, `--app-zeichen` und `--app-zeichen-haus`. Die Prüfung meldet jedes Token, das es dort nicht gibt.
 
 Fehlt eine Datei, steht am Platz, was heute gezeichnet ist.
 
