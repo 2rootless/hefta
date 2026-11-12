@@ -30,10 +30,11 @@
   let platz = $state<HTMLDivElement | null>(null);
   let feld = $state<HTMLInputElement | null>(null);
 
-  // Der Knopf nur, wenn iOS still einen Link in der Zwischenablage erkennt (Auftraggeber, 12.11.); sonst das
-  // Feld. Bis das geprüft ist, steht keines von beiden da, damit nichts springt.
+  // Der Knopf steht immer da (E75, E83): Die stille Erkennung übersieht Links, und ist nichts Einsetzbares in
+  // der Zwischenablage, graut iOS ihn selbst aus. Die Prüfung steuert nur den Satz darüber. Bis sie fertig
+  // ist, steht nichts da, damit nichts springt.
   const geprueft = $derived(ablage !== null || feldOffen);
-  const mitKnopf = $derived(!feldOffen && knopfGeht !== false && ablage?.link === true);
+  const mitKnopf = $derived(geprueft && !feldOffen && knopfGeht !== false);
 
   /** Dauer des Aufschlagens aus den Tokens (`--bw-aufschlagen`; „Bewegung reduzieren“ regeln die Tokens). */
   function aufschlagen(): number {
