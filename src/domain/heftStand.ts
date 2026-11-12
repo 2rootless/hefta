@@ -123,7 +123,13 @@ export function standSetzen(
 export function terminSetzen(e: HeftEreignisse, am: Date, treffpunkt: string): HeftEreignisse {
   return {
     ...e,
-    termin: { am: am.toISOString(), ort: e.termin?.ort ?? '', treffpunkt: treffpunkt.trim() },
+    termin: {
+      am: am.toISOString(),
+      ort: e.termin?.ort ?? '',
+      treffpunkt: treffpunkt.trim(),
+      // Der alte Eintrag kann noch im Kalender stehen (Planung 12t).
+      ...(e.termin?.imKalender ? { imKalender: true as const } : {}),
+    },
     ergebnis: null,
     abgelegtAm: null,
   };

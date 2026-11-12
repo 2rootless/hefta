@@ -254,6 +254,8 @@ export interface Heft extends Basis {
    * Adresse, etwa bei Heften aus Version 1. IndexedDB braucht dafür kein neues Schema.
    */
   angaben?: HeftAngaben;
+  /** Fragen für die Besichtigung (E52): Häkchen, Antworten und eigene Fragen dieses Hefts. */
+  fragen?: import('./besichtigungsFragen').HeftFragen;
 }
 
 /** Was Hefta aus einem Inserat übernimmt; jeder Wert ist bestätigt oder selbst eingetragen. */
@@ -294,7 +296,13 @@ export interface HeftEreignisse {
   beworben: { am: Zeitpunkt; weg: 'mail' | 'portal' | 'website' | 'sonst'; sicher: boolean } | null;
   /** Die einmalige Frage „Stimmt der Stand?“ wurde gestellt (B16). */
   gefragtAm: Zeitpunkt | null;
-  termin: { am: Zeitpunkt; ort: string; treffpunkt: string } | null;
+  termin: {
+    am: Zeitpunkt;
+    ort: string;
+    treffpunkt: string;
+    /** „In den Kalender“ wurde für diesen Termin benutzt (E91 Nachtrag); bleibt beim Ändern. */
+    imKalender?: true;
+  } | null;
   ergebnis: { art: 'zusage' | 'absage' | 'nicht_mehr'; am: Zeitpunkt } | null;
   loeschbitteAm: Zeitpunkt | null;
   nachgefasstAm: Zeitpunkt | null;
@@ -332,6 +340,8 @@ export interface Einstellungen {
   rueckmeldung?: Partial<Record<import('../rueckmeldung/fragen').Frage, string>>;
   /** Moment im Heft (B19): einmal gezeigt, abgeschickt oder „Nicht mehr fragen“. */
   rueckmeldungMomentFertig?: boolean;
+  /** Eigene Fragen für die Besichtigung (E52): gehören zum Gerät, nicht zum Haushalt (Planung 10i). */
+  eigeneFragen?: string[];
 }
 
 /** Eine gespeicherte Datei. `daten` ist ein Blob oder, wo Blobs nicht gehen, ein ArrayBuffer. */

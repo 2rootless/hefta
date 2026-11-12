@@ -1812,9 +1812,11 @@
     "ohneTag": "Erst einen Tag wählen.",
     "entfernen": "Termin entfernen",
     "entfernenTitel": "Termin entfernen?",
-    "entfernenBeworben": "Das Heft steht dann wieder auf „Beworben“. Einen Eintrag in deinem Kalender löschst du dort selbst.",
-    "entfernenGemerkt": "Das Heft steht dann wieder auf „Gemerkt“. Einen Eintrag in deinem Kalender löschst du dort selbst.",
-    "abbrechen": "Abbrechen"
+    "entfernenBeworben": "Das Heft steht dann wieder auf „Beworben“.",
+    "entfernenGemerkt": "Das Heft steht dann wieder auf „Gemerkt“.",
+    "abbrechen": "Abbrechen",
+    "kalenderIhr": "Einen Eintrag in eurem Kalender löscht ihr dort selbst.",
+    "kalenderDu": "Einen Eintrag in deinem Kalender löschst du dort selbst."
   },
   "standSetzen": {
     "zurueck": "Heft",
@@ -1836,5 +1838,43 @@
     "absage": "Absage",
     "nichtMehrIhr": "Wir wollen nicht mehr",
     "nichtMehrDu": "Ich will nicht mehr"
+  },
+  "fragen": {
+    "titel": "Fragen für die Besichtigung",
+    "zaehler": "{ab} von {alle}",
+    "satz": "Zum Abhaken vor Ort. Die Liste bleibt in {app}.",
+    "weg": "Nicht in der Liste, weil das Inserat es schon sagt: {themen}.",
+    "thema": {
+      "internet": "Internet",
+      "heizung": "Heizung",
+      "kaution": "Kaution",
+      "vertrag": "Vertrag",
+      "haustiere": "Haustiere"
+    },
+    "frage": {
+      "zustand": "Gibt es Mängel, Feuchtigkeit oder Schimmel? Was wird vor dem Einzug noch gemacht?",
+      "uebernahme": "Muss etwas vom Vormieter übernommen werden, etwa Küche oder Möbel? Zu welchem Preis?",
+      "haus": "Gibt es Keller, Fahrradraum oder Waschküche?",
+      "internet": "Welcher Internetanschluss liegt an?",
+      "nebenkosten": "Wie hoch waren die Nebenkosten zuletzt? Gibt es die letzte Abrechnung?",
+      "heizung": "Wie wird geheizt, und steckt die Heizung in der Warmmiete?",
+      "kaution": "Wie hoch ist die Kaution, und wie wird sie gezahlt?",
+      "vertrag": "Ist der Vertrag befristet? Gibt es eine Staffel- oder Indexmiete?",
+      "haustiere": "Sind Haustiere erlaubt?",
+      "haustiereEin": "Ist {tier} erlaubt?",
+      "haustiereMehr": "Sind {tier} erlaubt?",
+      "einzug": "Steht der Einzug fest, oder geht es auch früher oder später?",
+      "ablaufUns": "Bis wann entscheiden Sie, und was brauchen Sie noch von uns?",
+      "ablaufMir": "Bis wann entscheiden Sie, und was brauchen Sie noch von mir?"
+    },
+    "offenIhr": "offen bei euren Wünschen",
+    "offenDu": "offen bei deinen Wünschen",
+    "eigenEtikett": "eigene Frage",
+    "antwortNotieren": "Antwort notieren",
+    "antwortLabel": "Antwort zu: {frage}",
+    "antwortAendern": "Antwort ändern: {antwort}",
+    "eigeneFrage": "Eigene Frage",
+    "eigeneHinzufuegen": "Hinzufügen",
+    "eigeneSatz": "Eigene Fragen schlägt {app} bei der nächsten Besichtigung wieder vor, nur auf diesem Gerät."
   }
 }

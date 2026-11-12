@@ -214,3 +214,67 @@ test('Besichtigung vorbei: Ergebnis direkt im Heft (Zeile 9)', async ({ page }) 
   await expect(page.getByRole('img', { name: 'Stand: Abgelegt' })).toBeVisible();
   await expect(page.getByText(/^Zusage am 8\.\sNov\.$/)).toBeVisible();
 });
+
+test('Termin entfernen ohne Kalender: kein Satz zum Kalender (Planung 12t)', async ({ page }) => {
+  await haushaltMitMax(page);
+  await hefteAnlegen(page, [
+    heft('ohnekal', 'Altbau am Kanal', {
+      beworben: { am: tag(-9), weg: 'mail', sicher: true },
+      termin: { am: tag(2, 17), ort: '', treffpunkt: '' },
+    }),
+  ]);
+  await heftOeffnen(page, 'ohnekal');
+  await page.getByRole('link', { name: 'Termin ändern' }).click();
+  await page.getByRole('button', { name: 'Termin entfernen' }).click();
+  const blatt = page.getByRole('dialog', { name: 'Termin entfernen?' });
+  await expect(blatt.locator('p')).toHaveText('Das Heft steht dann wieder auf „Beworben“.');
+});
+
+test('Fragen für die Besichtigung: weglassen, abhaken, Antwort, eigene Frage (E52)', async ({
+  page,
+}) => {
+  await haushaltMitMax(page);
+  const mitTermin = { termin: { am: tag(2, 17), ort: '', treffpunkt: '' } };
+  const eins = heft('fragen1', 'Zwei Zimmer am Park', mitTermin);
+  eins.angaben = { ...eins.angaben, warm: 1000, kaution: 2400 } as typeof eins.angaben;
+  await hefteAnlegen(page, [eins, heft('fragen2', 'Altbau am Kanal', mitTermin)]);
+  await heftOeffnen(page, 'fragen1');
+
+  const fragen = page.getByRole('region', { name: /Fragen für die Besichtigung/ });
+  await expect(fragen).toContainText('0 von 9');
+  await expect(fragen).toContainText(
+    'Nicht in der Liste, weil das Inserat es schon sagt: Heizung, Kaution.',
+  );
+  // Allein: „von mir“; die Frage an den Vermieter siezt.
+  await expect(fragen).toContainText(
+    'Bis wann entscheiden Sie, und was brauchen Sie noch von mir?',
+  );
+  await fragen.getByRole('checkbox', { name: /Keller, Fahrradraum/ }).click();
+  await expect(fragen).toContainText('1 von 9');
+
+  // Antwort notieren: gilt dann als abgehakt.
+  await fragen.getByRole('button', { name: 'Antwort notieren' }).first().click();
+  const antwort = fragen.getByRole('textbox', { name: /Antwort zu: Gibt es Mängel/ });
+  await antwort.fill('Bad alt, kein Schimmel');
+  await antwort.blur();
+  await expect(
+    fragen.getByRole('button', { name: 'Antwort ändern: Bad alt, kein Schimmel' }),
+  ).toBeVisible();
+  await expect(fragen).toContainText('2 von 9');
+
+  // Eigene Frage: am Ende, mit Etikett, und im nächsten Heft wieder da.
+  await fragen.getByRole('button', { name: 'Eigene Frage' }).click();
+  await fragen.getByRole('textbox', { name: 'Eigene Frage' }).fill('Wo stehen die Mülltonnen');
+  await fragen.getByRole('button', { name: 'Hinzufügen' }).click();
+  await expect(fragen.getByRole('checkbox', { name: 'Wo stehen die Mülltonnen?' })).toBeVisible();
+  await expect(fragen).toContainText('eigene Frage');
+  await expect(fragen).toContainText('2 von 10');
+  await ganzesBild(page, 'fragen.png');
+
+  await page.reload();
+  await expect(fragen).toContainText('2 von 10');
+  await heftOeffnen(page, 'fragen2');
+  // Das zweite Heft nennt eine Warmmiete, aber keine Kaution: zehn plus die eigene Frage.
+  await expect(fragen).toContainText('0 von 11');
+  await expect(fragen.getByRole('checkbox', { name: 'Wo stehen die Mülltonnen?' })).toBeVisible();
+});

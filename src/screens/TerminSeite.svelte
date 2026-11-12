@@ -18,6 +18,11 @@
   let { id }: { id: string } = $props();
 
   const heft = $derived(daten.hefte.find((h) => h.id === id) ?? null);
+  const ihr = $derived(
+    // Ohne Haushalt „ihr“ (E74.4, Design 12.11.), sonst ab zwei Personen ohne Bürgen.
+    !daten.ansicht ||
+      daten.ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
+  );
   const heute = new Date();
   // Ändern nur, solange das Heft auf „Besichtigung“ steht; nach einem Ergebnis ist es ein neuer Termin.
   const aendern = $derived(!!heft && stand(heft.ereignisse, heute) === 'besichtigung');
@@ -162,6 +167,10 @@
         ? 'termin.entfernenGemerkt'
         : 'termin.entfernenBeworben',
     )}
+    <!-- Nur, wenn „In den Kalender“ für diesen Termin benutzt wurde (Planung 12t). -->
+    {#if heft?.ereignisse.termin?.imKalender}
+      {t(ihr ? 'termin.kalenderIhr' : 'termin.kalenderDu')}
+    {/if}
   </p>
   <Hauptbutton text={t('termin.entfernen')} onclick={entfernen} />
   <button class="leis" type="button" onclick={() => (entfernenOffen = false)}

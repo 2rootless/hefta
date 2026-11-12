@@ -23,6 +23,7 @@
   import { heftAendern } from '../storage/speicher';
   import TabLeiste from '../ui/TabLeiste.svelte';
   import { inDenKalender } from '../ui/kalenderEintrag';
+  import BesichtigungsFragen from '../ui/BesichtigungsFragen.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import TerminKarte from '../ui/TerminKarte.svelte';
   import UrteilZeichen from '../ui/UrteilZeichen.svelte';
@@ -43,17 +44,17 @@
 
   const datum = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short' });
 
-  const abgleich = $derived.by(() => {
+  const alleUrteile = $derived.by(() => {
     const a = heft?.angaben;
     const hh = daten.ansicht?.haushalt;
     if (!a || !hh?.wuensche) return null;
-    const u = urteile(wohnungAus(a), hh.wuensche, {
+    return urteile(wohnungAus(a), hh.wuensche, {
       netto: haushaltsNetto(hh, daten.ansicht?.mitglieder ?? []),
       grenze: hh.mietgrenze ?? null,
       ihr,
     });
-    return abweichungen(u);
   });
+  const abgleich = $derived(alleUrteile ? abweichungen(alleUrteile) : null);
 
   // Zeile 9: Kalender, Ergebnis und „Wieder hervorholen“ direkt im Heft.
   let kalenderMeldung = $state('');
@@ -61,6 +62,16 @@
     if (!heft) return;
     kalenderMeldung = '';
     const a = await inDenKalender(heft, heftTitel(heft).text);
+    // Vermerk für „Termin entfernen“: Dann steht dort der Satz zum Kalender (Planung 12t).
+    if (
+      (a === 'gesichert' || a === 'datei') &&
+      heft.ereignisse.termin &&
+      !heft.ereignisse.termin.imKalender
+    )
+      await ereignisse({
+        ...heft.ereignisse,
+        termin: { ...heft.ereignisse.termin, imKalender: true },
+      });
     kalenderMeldung =
       a === 'gesichert'
         ? t('heft.kalenderGesichert')
@@ -228,6 +239,11 @@
       {/if}
       <a class="leis selbst" href={`#/heft/${heft.id}/stand`}>{t('heft.standSelbst')}</a>
     </section>
+
+    {#if heft.ereignisse.termin}
+      <!-- Fragen für die Besichtigung (E52): ab dem Termin, danach mit den Antworten. -->
+      <BesichtigungsFragen {heft} urteile={alleUrteile ?? []} {ihr} />
+    {/if}
 
     <section class="teil">
       <h2 class="fnh"><label for="notiz">{t('heft.notizen')}</label></h2>
