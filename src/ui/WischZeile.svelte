@@ -140,16 +140,10 @@
   .inhalt {
     position: relative;
     background: var(--surface);
-    transition: transform 0.15s ease-out;
+    transition: transform var(--bw-kurz) var(--bw-weich);
   }
 
   .inhalt.gezogen {
     transition: none;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .inhalt {
-      transition: none;
-    }
   }
 </style>

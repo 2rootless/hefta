@@ -85,7 +85,7 @@
   .pruefen {
     border-style: solid;
     background: #fff;
-    color: #191a2c;
+    color: #26221e;
   }
 
   .pruefen .plus {

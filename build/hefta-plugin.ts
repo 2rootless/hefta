@@ -5,6 +5,7 @@ import { join, relative, sep } from 'node:path';
 import type { Plugin } from 'vite';
 import { cspMeta, headersFile } from './csp.ts';
 import { DATENSCHUTZ_PFAD, RATGEBER_ORDNER, RATGEBER_PFAD, ratgeberSchreiben } from './ratgeber.ts';
+import { RUECKMELDUNG_PFAD, rueckmeldungSchreiben } from './rueckmeldungSeite.ts';
 
 const wurzel = join(import.meta.dirname, '..');
 const pdfjs = join(wurzel, 'node_modules', 'pdfjs-dist');
@@ -130,6 +131,7 @@ export function heftaBau(): Plugin {
       // index.html steckt schon in './'; Cloudflare leitet /index.html ohnehin auf / um.
       writeFileSync(join(ziel, 'lizenzen.txt'), lizenzenText());
       ratgeberSchreiben(ziel, 'm');
+      rueckmeldungSchreiben(ziel);
       const ausgenommen = new Set([
         '_headers',
         'robots.txt',
@@ -146,7 +148,9 @@ export function heftaBau(): Plugin {
           (d) =>
             !d.startsWith(`${RATGEBER_ORDNER}/`) &&
             !d.startsWith(`${RATGEBER_PFAD.m}/`) &&
-            !d.startsWith(`${DATENSCHUTZ_PFAD}/`),
+            !d.startsWith(`${DATENSCHUTZ_PFAD}/`) &&
+            // Die Seite der Rückmeldung gehört zur Website, nicht zur App (E54).
+            !d.startsWith(`${RUECKMELDUNG_PFAD}/`),
         )
         .sort();
       const version = createHash('sha256');

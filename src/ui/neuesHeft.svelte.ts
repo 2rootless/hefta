@@ -1,0 +1,75 @@
+import type { InseratGelesen } from '../app/heftaInserat';
+import type { HeftAngaben } from '../domain/modell';
+import { adresseAus, angabenAus } from '../lesen/angaben';
+import { adresseLesen, lesen, type Gelesen } from '../lesen/leser';
+
+// Entwurf eines neuen Hefts zwischen „Text einfügen“ und „Heft anlegen“ (B23). Er lebt nur im Speicher
+// der Seite: Gespeichert wird erst mit „Heft anlegen“ (Lesesatz in B23). Schließt man die App, ist er weg.
+
+export const entwurf = $state<{
+  text: string;
+  link: string;
+  gelesen: Gelesen | null;
+  angaben: HeftAngaben | null;
+  /** Adresse wie im Heft, zwei Zeilen; leer, wenn nichts gefunden. */
+  adresse: string;
+  /** Erstes Foto aus der Vorschau (B23), verkleinert als Daten-Adresse; nur im Speicher der Seite. */
+  bild: string | null;
+  bildHoch: boolean;
+}>({ text: '', link: '', gelesen: null, angaben: null, adresse: '', bild: null, bildHoch: false });
+
+/**
+ * Stand der Vorschau (B23 Bildschirm 2) für genau einen Link: Zurück aus der Kontrolle zeigt ihn wieder,
+ * ohne neu zu laden (E72).
+ */
+export const vorschauStand = $state<{
+  link: string;
+  zustand: 'laden' | 'ok' | 'zeit' | 'netz' | 'leer' | 'liste' | 'schon';
+  roh: InseratGelesen | null;
+}>({ link: '', zustand: 'laden', roh: null });
+
+/** Liest den eingefügten Text. Einmal: „Heft anlegen“ übernimmt nur, was hier gelesen ist (E72). */
+export function entwurfLesen(): void {
+  const link = entwurf.link.trim();
+  const g = lesen({ text: entwurf.text, url: link || undefined });
+  const a = adresseLesen(entwurf.text);
+  entwurf.gelesen = g;
+  entwurf.angaben = angabenAus(g, a, null, link || null);
+  entwurf.adresse = adresseAus(a);
+}
+
+export function entwurfVergessen(): void {
+  entwurf.text = '';
+  entwurf.link = '';
+  entwurf.gelesen = null;
+  entwurf.angaben = null;
+  entwurf.adresse = '';
+  entwurf.bild = null;
+  entwurf.bildHoch = false;
+  vorschauStand.link = '';
+  vorschauStand.roh = null;
+}
+
+/**
+ * Übernimmt, was die unsichtbare Vorschau gelesen hat (E72: gelesen wird beim Einsetzen, einmal).
+ * Titel nach Probe 3: die Überschrift der Seite vor `og:title`, dann der Titel des Dokuments.
+ */
+export function entwurfAusVorschau(g: InseratGelesen, link: string): void {
+  const text = g.text ?? '';
+  const url = g.url || link;
+  const gelesen = lesen({ text, url });
+  const a = adresseLesen(text);
+  const titel = (g.h1 || g.ogTitle || g.titel || '').trim() || null;
+  entwurf.text = text;
+  entwurf.link = link;
+  entwurf.gelesen = gelesen;
+  entwurf.angaben = angabenAus(gelesen, a, titel, link);
+  entwurf.adresse = adresseAus(a);
+  entwurf.bild = g.bild ?? null;
+  entwurf.bildHoch = !!g.bildHoch;
+}
+
+/** Hat das Lesen etwas gefunden, das im Kopf eines Hefts steht? */
+export function hatEckdaten(a: HeftAngaben | null): boolean {
+  return !!a && (a.warm !== null || a.zimmer !== null || a.flaeche !== null);
+}

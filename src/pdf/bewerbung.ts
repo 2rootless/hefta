@@ -41,6 +41,7 @@ import {
   type Schriften,
 } from './mappe';
 import {
+  rundesRechteck,
   selbstauskunftZeichnen,
   umbrechen,
   zeichenErsetzer,
@@ -133,6 +134,11 @@ export interface BewerbungAuftrag {
   datum?: Date;
   /** Letzter Ausweg für eine Datei, die sich nicht übernehmen lässt: dieselben Seiten als Bilder. */
   alsBilder?: (daten: Uint8Array) => Promise<Uint8Array>;
+  /**
+   * B21, Mappe entsteht: echter Fortschritt, gezählt nach Quellen, die schon in der Mappe stecken, und
+   * zuletzt dem Speichern. Dazwischen lässt der Bau den Bildschirm zeichnen.
+   */
+  fortschritt?: (fertig: number, gesamt: number) => void;
 }
 
 export interface UnlesbareDatei {
@@ -177,10 +183,12 @@ const INHALT_OBEN = 19 * MM;
 const INHALT_UNTEN = 16 * MM;
 const FUSS_TEXT = 9 * MM;
 const FUSS_LINIE = 13 * MM;
-const RAHMEN = rgb(0xd5 / 255, 0xd7 / 255, 0xe0 / 255);
+/** Rahmen um fremde Seiten und Punktlinien, warm (B14, mappe14.py `.us .fremd`). */
+const RAHMEN = rgb(0xd5 / 255, 0xce / 255, 0xc4 / 255);
 const FUSS_FARBE = rgb(0xe4 / 255, 0xe6 / 255, 0xef / 255);
 /** Nebentext, der auch im harten Schwarzweiß und beim Tonersparen lesbar bleibt (P17). */
-const DRUCK = rgb(0x3d / 255, 0x3f / 255, 0x55 / 255);
+/** Leise Schrift in warmer Tinte (B14, LEISE). */
+const DRUCK = rgb(0x43 / 255, 0x3d / 255, 0x37 / 255);
 
 function hex(farbe: string) {
   const n = Number.parseInt(farbe.replace('#', ''), 16);
@@ -758,38 +766,75 @@ function deckblattSetzen(
     const noetig = V(11) + zeilen.length * V(5.4);
     // Ein Block bleibt zusammen, außer er ist länger als eine ganze Seite.
     if (y - noetig < RECHTS_UNTEN && noetig <= H - 2 * RECHTS_UNTEN) weiter();
-    let oben = y + V(3.8);
-    const balken = () => {
-      const unten = y + V(3.4);
+    // B14: Jede Person beginnt mit einem Reiter (Quadrat, Name), der auf einer Linie über die ganze Breite sitzt,
+    // wie im Tab „Mappe“ und auf der Vermieterseite. Bürgen haben den Umriss (mappe14.py, `.db .pers`).
+    const em = F(9.5);
+    const padL = 0.9 * em;
+    const padR = 1.1 * em;
+    const q = V(2.6);
+    const luecke = V(2.6);
+    const nameBreite = rw - padL - q - luecke - padR;
+    const g = passendeGroesse(b.person.name, s.bold, F(11), 8.5, nameBreite, s);
+    const namen = umbrechen(zeichenbar(b.person.name, s), s.bold, g, nameBreite);
+    const zeilenHoehe = g * 1.25;
+    const reiterHoehe = 0.48 * em + namen.length * zeilenHoehe + 0.4 * em;
+    const reiterBreite =
+      padL + q + luecke + Math.max(...namen.map((t) => breiteVon(t, s.bold, g, s))) + padR;
+    const reiterOben = y + g;
+    const reiterUnten = reiterOben - reiterHoehe;
+    if (p) {
       const farbe = hex(deckFarbe(aussehen, b.person.farbe));
-      p?.drawRectangle(
+      p.drawLine({
+        start: { x: rx, y: reiterUnten },
+        end: { x: rx + rw, y: reiterUnten },
+        thickness: 0.6,
+        color: FARBE.ink,
+      });
+      rundesRechteck(
+        p,
+        rx,
+        reiterOben,
+        reiterBreite,
+        reiterHoehe,
+        [V(2.2), V(2.2), 0, 0],
+        { color: FARBE.weiss, borderColor: FARBE.ink, borderWidth: 0.6 },
+        true,
+      );
+      p.drawRectangle({
+        x: rx + 0.3,
+        y: reiterUnten - 0.6,
+        width: reiterBreite - 0.6,
+        height: 1.2,
+        color: FARBE.weiss,
+      });
+      const qOben = reiterOben - 0.48 * em - 0.42 * em;
+      p.drawRectangle(
         b.person.buerge
           ? {
-              x: rx + 0.4,
-              y: unten,
-              width: 1.8,
-              height: oben - unten,
+              x: rx + padL + 0.7,
+              y: qOben - q + 0.7,
+              width: q - 1.4,
+              height: q - 1.4,
               borderColor: farbe,
-              borderWidth: 0.8,
+              borderWidth: 1.4,
             }
-          : { x: rx, y: unten, width: 2.4, height: oben - unten, color: farbe },
+          : { x: rx + padL, y: qOben - q, width: q, height: q, color: farbe },
       );
-    };
-    const g = passendeGroesse(b.person.name, s.bold, F(11), 8.5, rw - V(4), s);
-    const namen = umbrechen(zeichenbar(b.person.name, s), s.bold, g, rw - V(4));
+    }
     namen.forEach((name, i) => {
-      text(name, rx + V(4), y, g, s.bold);
-      y -= i < namen.length - 1 ? g * 1.2 : V(6);
+      text(
+        name,
+        rx + padL + q + luecke,
+        reiterOben - 0.48 * em - (i + 0.8) * zeilenHoehe,
+        g,
+        s.bold,
+      );
     });
+    y = reiterUnten - V(5);
     for (const e of zeilen) {
-      if (y - V(5.4) < RECHTS_UNTEN) {
-        balken();
-        weiter();
-        oben = y + V(3.8);
-      }
+      if (y - V(5.4) < RECHTS_UNTEN) weiter();
       zeile(e);
     }
-    balken();
     y -= V(4);
   };
   if (a.inhaltsverzeichnis) {
@@ -908,6 +953,23 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
   const aussehen: MappenAussehen = a.aussehen ?? { art: 'schlicht' };
   const auskunftSchriften: AuskunftSchriften = { regular, bold, titel, ersetzen: s.ersetzen };
 
+  const schritte = a.bloecke.reduce(
+    (n, b) => n + b.teile.reduce((m, teil) => m + teil.quellen.length, 0),
+    1,
+  );
+  let erledigt = 0;
+  let zuletztGezeichnet = performance.now();
+  async function weiter() {
+    if (!a.fortschritt) return;
+    a.fortschritt(++erledigt, schritte);
+    // Höchstens alle 50 ms eine Pause, damit Linie und Zahl auf den Bildschirm kommen.
+    if (performance.now() - zuletztGezeichnet > 50) {
+      await new Promise((fertig) => setTimeout(fertig, 0));
+      zuletztGezeichnet = performance.now();
+    }
+  }
+  a.fortschritt?.(0, schritte);
+
   for (const block of a.bloecke) {
     for (const teil of block.teile) {
       const eintrag: Eintrag = {
@@ -937,6 +999,7 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
       for (const q of teil.quellen) {
         const kopf = q.kopf ?? standard;
         const uebernommen = await quelleUebernehmen(pdf, q, a.alsBilder);
+        await weiter();
         if (!uebernommen) {
           const meldung = teil.meldung ?? { name: `${kopf}, ${block.person.name}` };
           unlesbar.set(meldung.name, meldung);
@@ -1129,8 +1192,10 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
         ]
       : [];
   });
+  const bytes = await pdf.save();
+  a.fortschritt?.(schritte, schritte);
   return {
-    bytes: await pdf.save(),
+    bytes,
     seiten: gesamt,
     inhalt,
     fremde,

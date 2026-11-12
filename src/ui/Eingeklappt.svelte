@@ -50,7 +50,7 @@
     display: inline-flex;
     flex-shrink: 0;
     opacity: 0.6;
-    transition: transform 150ms ease-out;
+    transition: transform var(--bw-kurz) var(--bw-weich);
   }
 
   .auf {

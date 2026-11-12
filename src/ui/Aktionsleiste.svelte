@@ -14,6 +14,10 @@
     neben,
     beiGrund,
     fuss,
+    zahlNeu = false,
+    einblenden = false,
+    nebenGeist,
+    statt,
   }: {
     text: string;
     zusatz?: string;
@@ -30,6 +34,14 @@
     beiGrund?: () => void;
     /** Leiser Zusatz ganz unten in der Leiste, immer sichtbar (E42: Hinweis für Vermieter). */
     fuss?: import('svelte').Snippet;
+    /** B21: Der Zusatz („1 offen“) hat sich geändert und steigt ein. */
+    zahlNeu?: boolean;
+    /** B21, „Alles da“: Der Knopf ist neu und blendet ein. */
+    einblenden?: boolean;
+    /** B21, „Alles da“: Dieser leise Link geht; er blendet aus, und sein Platz schließt sich. */
+    nebenGeist?: string;
+    /** B21, Mappe entsteht: statt des Knopfs ein ruhiger Kasten, solange Hefta baut. */
+    statt?: import('svelte').Snippet;
   } = $props();
   const grundId = $props.id();
 
@@ -93,19 +105,23 @@
 {#snippet inhalt()}
   {#if ansage}
     <span class="visually-hidden">{ansage}</span>
-    <span aria-hidden="true">{text}</span>{#if zusatz}<small aria-hidden="true">{zusatz}</small
+    <span aria-hidden="true">{text}</span>{#if zusatz}<small class:neu={zahlNeu} aria-hidden="true"
+        >{zusatz}</small
       >{/if}
   {:else}
-    {text}{#if zusatz}<small>{zusatz}</small>{/if}
+    {text}{#if zusatz}<small class:neu={zahlNeu}>{zusatz}</small>{/if}
   {/if}
 {/snippet}
 
 <div class="leiste" class:beim-tippen-weg={tippt && knapp} bind:this={leiste}>
   <div class="innen">
     {#if rueck.eintrag}<RueckgaengigZeile />{/if}
-    {#if href && !grund}
+    {#if statt}
+      {@render statt()}
+    {:else if href && !grund}
       <a
         class="haupt"
+        class:einblenden-neu={einblenden}
         {href}
         onclick={(e) => {
           if (!onclick) return;
@@ -133,6 +149,10 @@
     {#if grund}<p id={grundId} class:visually-hidden={tippt}>{grund}</p>{/if}
     {#if neben}
       <button type="button" class="textlink neben" onclick={neben.onclick}>{neben.text}</button>
+    {:else if nebenGeist}
+      <div class="geist" inert aria-hidden="true">
+        <div><span class="textlink neben">{nebenGeist}</span></div>
+      </div>
     {/if}
     {#if fuss}<div class="fuss">{@render fuss()}</div>{/if}
   </div>
@@ -143,9 +163,10 @@
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    /* Hefta 2: über der Tab-Leiste, die den sicheren Rand unten schon hält (TabLeiste.svelte). */
+    bottom: var(--tabs-hoehe, 0px);
     z-index: 5;
-    padding: 26px 16px calc(20px + env(safe-area-inset-bottom));
+    padding: 26px 16px calc(20px + var(--leiste-sicher, env(safe-area-inset-bottom)));
     background: linear-gradient(to bottom, transparent, var(--ground) 26px);
   }
 
@@ -178,7 +199,7 @@
     text-align: center;
     text-decoration: none;
     cursor: pointer;
-    transition: transform 120ms ease-out;
+    transition: transform var(--bw-knapp) var(--bw-weich);
   }
 
   .haupt:active:not(.deaktiviert) {
@@ -188,6 +209,31 @@
   .neben {
     display: block;
     margin: 6px auto 0;
+  }
+
+  /* B21, „Alles da“: Knopf blendet ab zwei Takten ein; „trotzdem teilen“ geht und schließt seinen Platz. */
+  .einblenden-neu {
+    animation: bw-blende var(--bw-kurz) var(--bw-weich) calc(2 * var(--bw-takt)) backwards;
+  }
+
+  .geist {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    animation: bw-zu var(--bw-mittel) var(--bw-ziel) backwards;
+  }
+
+  .geist > div {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* B21: Die neue Zahl steigt ein. */
+  small.neu {
+    display: inline-block;
+    animation:
+      bw-zahl var(--bw-kurz) var(--bw-weich) var(--bw-takt) backwards,
+      bw-blende var(--bw-nur-reduziert) var(--bw-gleich) backwards;
   }
 
   small {

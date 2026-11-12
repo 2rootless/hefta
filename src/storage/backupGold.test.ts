@@ -151,6 +151,25 @@ describe('Backups aus jeder bisherigen Version', () => {
   }
 });
 
+describe('Schema 2 (Hefta 2)', () => {
+  it('schema1-offen.hefta: Bewerbungen ohne Adresse werden keine Hefte', async () => {
+    const db = await neueDb();
+    await sicherungEinspielen(db, lesen('schema1-offen.hefta'));
+    expect(await db.count('hefte')).toBe(0);
+  });
+
+  it('schema2-offen.hefta: Hefte mit und ohne Haushalt kommen zurück', async () => {
+    const db = await neueDb();
+    await sicherungEinspielen(db, lesen('schema2-offen.hefta'));
+    const hefte = (await db.getAll('hefte')).sort((a, b) => a.id.localeCompare(b.id));
+    expect(hefte.map((h) => [h.id, h.haushaltId === null, h.kennung])).toEqual([
+      ['heft-mit', false, 'kennung-heft-mit'],
+      ['heft-ohne', true, 'kennung-heft-ohne'],
+    ]);
+    expect(await db.count('bewerbungen')).toBe(1);
+  });
+});
+
 describe('Neues Backup', () => {
   for (const passwort of [undefined, 'Sommer in Hamburg']) {
     const art = passwort ? 'mit' : 'ohne';

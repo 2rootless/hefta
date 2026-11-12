@@ -45,6 +45,9 @@ export function teilbestand(daten: Datensaetze, haushaltId: string): Teilbestand
       bewerbungen: (daten.bewerbungen ?? []).filter(
         (b) => (b as { haushaltId: string }).haushaltId === haushaltId,
       ),
+      hefte: (daten.hefte ?? []).filter(
+        (h) => (h as { haushaltId: string | null }).haushaltId === haushaltId,
+      ),
     },
     dateien: [...dateien],
   };

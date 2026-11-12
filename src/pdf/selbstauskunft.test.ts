@@ -134,8 +134,12 @@ describe('Selbstauskunft als festes Formular', () => {
       },
     } as Person;
     const e = await bauen(lang);
-    expect(e.seiten).toBe(2);
-    expect(await text(e)).toContain('Ort, Datum');
+    // B14: Ein Abschnitt wird nie geteilt. Füllt eine sehr lange Erläuterung die zweite Seite, steht
+    // „Ort, Datum“ auf einer dritten, wie im Skript des Designs (mappe14.py, SA_JS).
+    expect(e.seiten).toBe(3);
+    const seiten = await textJeSeite(e.bytes);
+    expect(seiten[1]).toContain('inzwischen vollständig beglichen');
+    expect(seiten[2]).toContain('Ort, Datum');
   });
 
   it('neutrale Metadaten', async () => {

@@ -27,6 +27,13 @@ export interface Selbstauskunft {
   ort: string;
 }
 
+/**
+ * Längste Erläuterung zu einem Ja (Nachricht 10.11. k): So passt jeder Abschnitt der Selbstauskunft auf
+ * eine Seite, und keiner wird geteilt (B14). Ab `ERLAEUTERUNG_ZAEHLER_AB` steht ein ruhiger Zähler darunter.
+ */
+export const ERLAEUTERUNG_MAX = 600;
+export const ERLAEUTERUNG_ZAEHLER_AB = 500;
+
 /** Die drei Ja/Nein-Fragen und wo die Erklärung zu ihrem Ja steht. */
 export const ERKLAERUNG = {
   insolvenz: 'erklaerungInsolvenz',
@@ -259,6 +266,11 @@ export function ortUndDatum(
   return { ortDatum: [ort.trim(), datum].filter(Boolean).join(', '), ortLabel: 'Ort, Datum' };
 }
 
+/** E49 (B17a): Satz in der Selbstauskunft, wenn die Frage nach Mietrückständen auf die Zusage wartet. */
+export function nachZusageSatz(allein: boolean): string {
+  return allein ? 'Beantworte ich nach der Zusage' : 'Beantworten wir nach der Zusage';
+}
+
 /** Das feste Formular nach dem Musterbogen, immer dieselben Blöcke in derselben Reihenfolge (fürs PDF). */
 export function selbstauskunftBloecke(
   person: Person,
@@ -270,6 +282,7 @@ export function selbstauskunftBloecke(
     rolleText,
     antwortenImmer = false,
     buergschaftDabei = false,
+    zusageText,
   }: {
     /** Wie die Rolle bei dieser Person heißt, z. B. „Bürgin“. */
     rolleText: string;
@@ -280,13 +293,19 @@ export function selbstauskunftBloecke(
     antwortenImmer?: boolean;
     /** Liegt die Bürgschaftserklärung dieser Mappe wirklich bei? Sonst sagt das Formular das nicht. */
     buergschaftDabei?: boolean;
+    /**
+     * E49 (B17a): Satz für eine Frage, die erst bei der Zusage beantwortet wird, wenn der Schalter für
+     * Mietrückstände an ist: „Beantworten wir nach der Zusage“ bzw. „Beantworte ich nach der Zusage“.
+     */
+    zusageText?: string;
   },
 ): FormBlock[] {
   const sa = selbstauskunftVon(person);
   const feld = (id: string) => SELBSTAUSKUNFT_FELDER.find((f) => f.id === id)!;
   const spaeter = (id: string) => {
     const f = feld(id);
-    return SCHRITTE.indexOf(f.schritt) > SCHRITTE.indexOf(schritt) ? SPAETER[f.schritt] : '';
+    if (SCHRITTE.indexOf(f.schritt) <= SCHRITTE.indexOf(schritt)) return '';
+    return f.schritt === 'zusage' && zusageText ? zusageText : SPAETER[f.schritt];
   };
   const text = (id: string, etikett: string, wert: string): FormZeile =>
     spaeter(id)

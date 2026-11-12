@@ -18,13 +18,26 @@ async function personAusfuellen(page: Page, p: NeuePerson) {
   if (p.einkommen) await page.getByLabel(/Einkommen\?$/).selectOption({ label: p.einkommen });
 }
 
-/** Erster Start (G4) und Homescreen-Anleitung (G4b, die Tests laufen als iPhone-Safari). */
+/** Erster Start (G4) und Hinweis auf die App (E30; die Tests laufen als iPhone-Safari). */
 export async function ersterStart(page: Page) {
-  await page.getByRole('button', { name: 'Los geht’s' }).click();
+  // Hefta 2: Der erste Bildschirm ist der Tab „Wohnungen“ ohne Haushalt (E45, B15).
+  await page.getByRole('button', { name: /^Wer zieht ein\?/ }).click();
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Erst auf den Homescreen.' }),
+    page.getByRole('heading', { level: 1, name: 'Hefta gibt es als App.' }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Ist erledigt' }).click();
+  await page.getByRole('button', { name: 'Weiter im Browser', exact: true }).click();
+}
+
+/**
+ * E30: Nach „Weiter im Browser“ zeigt Hefta den Hinweis auf die App nach dem Anlegen des Haushalts noch
+ * einmal, mit dem Satz zum Backup. Danach nie wieder.
+ */
+export async function appHinweisNochmal(page: Page) {
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Hefta gibt es als App.' }),
+  ).toBeVisible();
+  await expect(page.getByText('Safari und die App haben getrennte Speicher.')).toBeVisible();
+  await page.getByRole('button', { name: 'Weiter im Browser', exact: true }).click();
 }
 
 /** Schritt 1 vom leeren Zustand aus. */
@@ -68,6 +81,7 @@ export async function haushaltDesAuftraggebers(page: Page) {
     einkommen: 'In Rente',
   });
   await page.getByRole('link', { name: 'Haushalt anlegen' }).click();
+  await appHinweisNochmal(page);
   await expect(
     page.getByRole('heading', { level: 1, name: 'Jetzt die Unterlagen.' }),
   ).toBeVisible();
@@ -77,6 +91,8 @@ export async function haushaltDesAuftraggebers(page: Page) {
 export async function haushaltMitMax(page: Page) {
   await erstePerson(page, { vorname: 'Max', bezeichnung: 'Hauptmieter' });
   await page.getByRole('link', { name: 'Haushalt anlegen' }).click();
+  await appHinweisNochmal(page);
   await page.getByRole('button', { name: 'Später', exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Hallo Max.' })).toBeVisible();
+  // Tab „Mappe“ (B12b): allein „Deine Mappe“.
+  await expect(page.getByRole('heading', { level: 1, name: 'Deine Mappe' })).toBeVisible();
 }

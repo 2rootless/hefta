@@ -7,6 +7,8 @@ export const APP_ADRESSE = `https://${APP_DOMAIN}`;
 /** Die Vermieter-Seite hat eine eigene Adresse: Sie öffnet fremde PDFs und teilt nichts mit der App. */
 export const VERMIETER_DOMAIN = `vermieter.${APP_DOMAIN}`;
 export const VERMIETER_ADRESSE = `https://${VERMIETER_DOMAIN}`;
+/** Hefta im App Store (seit 10.11.2026). Der deutsche Store, denn Hefta gibt es nur in Deutschland. */
+export const APP_STORE_ADRESSE = 'https://apps.apple.com/de/app/hefta/id6831939371';
 /** Der Ratgeber für Vermieter auf derselben Adresse wie die Vermieter-Seite. */
 export const VERMIETER_RATGEBER = '/welche-unterlagen-wann/';
 /** Öffentliches Repository. Erst setzen, wenn es das saubere Repository wirklich gibt. */

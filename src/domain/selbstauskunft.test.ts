@@ -12,6 +12,7 @@ import {
   haushaltsAngaben,
   ortUndDatum,
   teile,
+  nachZusageSatz,
   selbstauskunftBloecke,
   type FormZeile,
   vollstaendig,
@@ -334,5 +335,32 @@ describe('Personen, die einziehen', () => {
     expect(einziehendText(einziehend(1, { kinder: 2, weitereErwachsene: 0 }))).toBe(
       '3 (1 Erwachsener, 2 Kinder)',
     );
+  });
+});
+
+describe('E49: Mietrückstände erst nach der Zusage', () => {
+  const HH = haushaltsAngaben({ haustiere: 'nein', haustiereText: '', ort: 'Hamburg' });
+  const WER = einziehend(2, { kinder: 0, weitereErwachsene: 0 });
+  const zeile = (zusageText?: string) =>
+    selbstauskunftBloecke(AUSGEFUELLT, 'hauptmieter', WER, HH, 'will_wohnung', {
+      rolleText: 'Hauptmieter',
+      zusageText,
+    })
+      .flatMap((b) => b.zeilen)
+      .find((z) => z.id === 'mietrueckstaende');
+
+  it('mit dem Schalter steht der Satz aus B17a statt der Antwort', () => {
+    expect(zeile(nachZusageSatz(false))).toMatchObject({
+      art: 'hinweis',
+      wert: 'Beantworten wir nach der Zusage',
+    });
+    expect(zeile(nachZusageSatz(true))).toMatchObject({ wert: 'Beantworte ich nach der Zusage' });
+  });
+
+  it('ohne den Schalter bleibt der bisherige Satz', () => {
+    expect(zeile()).toMatchObject({
+      art: 'hinweis',
+      wert: 'Wird erst bei der Zusage gefragt und dann ergänzt',
+    });
   });
 });

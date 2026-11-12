@@ -9,14 +9,20 @@ test.beforeEach(async ({ page }) => {
 
 test('zeigt den ersten Start im Stil des Designs', async ({ page, browserName }) => {
   await page.goto('/');
+  // Hefta 2: der Tab „Wohnungen“ ohne Haushalt, mit Gruß ohne Namen (E45, B15, B16).
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Eure Mappe für die Wohnungssuche.' }),
+    page.getByRole('heading', { level: 1, name: /^(Guten Morgen|Hallo|Guten Abend)$/ }),
   ).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Hefta' }).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Los geht’s' })).not.toHaveAttribute(
-    'aria-disabled',
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Wer zieht ein\?/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Eine Wohnung gefunden\?/ })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Bereiche' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Wohnungen' })).toHaveAttribute(
+    'aria-current',
+    'page',
   );
-  await expect(page.getByRole('button', { name: 'Ich habe ein Backup' })).toBeVisible();
   // E42: Vermieter, die hefta.de eintippen, finden den Weg zur Vermieterseite.
   await expect(page.getByText(/^Sie haben eine Mappe bekommen und vermieten\?/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'vermieter.hefta.de' })).toHaveAttribute(
@@ -30,15 +36,12 @@ test('zeigt den ersten Start im Stil des Designs', async ({ page, browserName })
     return {
       hintergrund: getComputedStyle(document.body).backgroundColor,
       schrift: h1.fontFamily,
-      groesse: h1.fontSize,
-      gewicht: h1.fontWeight,
       archivoGeladen: document.fonts.check('800 34px Archivo'),
     };
   });
-  expect(stil.hintergrund).toBe('rgb(245, 246, 250)');
+  // Warmes Papier (B12, E35).
+  expect(stil.hintergrund).toBe('rgb(250, 246, 239)');
   expect(stil.schrift).toContain('Archivo');
-  expect(stil.groesse).toBe('34px');
-  expect(stil.gewicht).toBe('800');
   expect(stil.archivoGeladen).toBe(true);
 
   // Bildschirmfotos nur aus Chromium: WebKit unter Windows stellt variable Schriften fehlerhaft dar.
@@ -50,7 +53,7 @@ test('zeigt den ersten Start im Stil des Designs', async ({ page, browserName })
   await page.emulateMedia({ colorScheme: 'dark' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(
-    'rgb(20, 21, 31)',
+    'rgb(27, 24, 20)',
   );
   if (fotos) await page.screenshot({ path: 'docs/screenshots/m0-uebersicht-dunkel.png' });
 });
@@ -92,7 +95,7 @@ test('öffnet offline aus dem Service Worker', async ({ page, context, browserNa
   await context.setOffline(true);
   await page.reload();
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Eure Mappe für die Wohnungssuche.' }),
+    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
   ).toBeVisible();
   await page.goto('/#/technik-test');
   await expect(page.getByRole('heading', { level: 1, name: 'Technik-Test' })).toBeVisible();
@@ -214,9 +217,7 @@ test('unerwarteter Fehler: Kasten mit „Noch einmal versuchen“, schließbar, 
   page,
 }) => {
   await page.goto('/');
-  await page
-    .getByRole('heading', { level: 1, name: 'Eure Mappe für die Wohnungssuche.' })
-    .waitFor();
+  await page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }).waitFor();
   const obenVorher = await page.locator('h1').evaluate((e) => e.getBoundingClientRect().top);
   await page.evaluate(() => {
     void Promise.reject(new Error('Testfehler'));
@@ -230,13 +231,21 @@ test('unerwarteter Fehler: Kasten mit „Noch einmal versuchen“, schließbar, 
   await expect(hinweis).toBeHidden();
 });
 
-test('erster Start: „Los geht’s“ zeigt zuerst die Homescreen-Anleitung', async ({ page }) => {
+test('erster Start: „Wer zieht ein?“ empfiehlt am iPhone in Safari die App (E30)', async ({
+  page,
+}) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Los geht’s' }).click();
+  await page.getByRole('button', { name: /^Wer zieht ein\?/ }).click();
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Erst auf den Homescreen.' }),
+    page.getByRole('heading', { level: 1, name: 'Hefta gibt es als App.' }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Später', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Im App Store laden' })).toHaveAttribute(
+    'href',
+    'https://apps.apple.com/de/app/hefta/id6831939371',
+  );
+  // Solange es keinen Haushalt gibt, steht auch hier der Hinweis für Vermieter (Nachricht 8.11. l).
+  await expect(page.getByRole('link', { name: 'vermieter.hefta.de' })).toBeVisible();
+  await page.getByRole('button', { name: 'Weiter im Browser', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Wer bist du?' })).toBeVisible();
 });
 
@@ -244,17 +253,20 @@ test('erster Start: „Später“ fragt höchstens noch einmal, „Ich habe ein 
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Ich habe ein Backup' }).click();
-  // Erst die Anleitung: In Safari eingespielt, fehlt das Backup später in der App auf dem Homescreen.
+  // Hefta 2: Ohne Haushalt spielt man das Backup über die Einstellungen ein (B15).
+  await page.getByRole('link', { name: 'Einstellungen' }).click();
+  await page.getByRole('link', { name: /^Backup einspielen/ }).click();
+  // Erst der Hinweis auf die App: In Safari eingespielt, fehlt das Backup später in der App.
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Erst auf den Homescreen.' }),
+    page.getByRole('heading', { level: 1, name: 'Hefta gibt es als App.' }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Später', exact: true }).click();
+  await page.getByRole('button', { name: 'Weiter im Browser', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Backup einspielen' })).toBeVisible();
   await page.getByRole('button', { name: 'Abbrechen' }).click();
 
-  // Einmal „Später“ gilt auch hier: Die Einrichtung fragt nicht gleich noch einmal.
-  await page.getByRole('button', { name: 'Los geht’s' }).click();
+  // Einmal „Weiter im Browser“ gilt auch hier: Die Einrichtung fragt nicht gleich noch einmal.
+  await page.goto('/');
+  await page.getByRole('button', { name: /^Wer zieht ein\?/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Wer bist du?' })).toBeVisible();
   await page.getByLabel('Vorname').fill('Max');
   await page.getByLabel('Nachname').fill('Mustermann');
@@ -263,9 +275,9 @@ test('erster Start: „Später“ fragt höchstens noch einmal, „Ich habe ein 
   await page.getByRole('link', { name: 'Haushalt anlegen' }).click();
   // Einmal fragt Hefta noch, dann nie wieder.
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Erst auf den Homescreen.' }),
+    page.getByRole('heading', { level: 1, name: 'Hefta gibt es als App.' }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Später', exact: true }).click();
+  await page.getByRole('button', { name: 'Weiter im Browser', exact: true }).click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'Jetzt die Unterlagen.' }),
   ).toBeVisible();

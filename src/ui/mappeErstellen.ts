@@ -23,7 +23,12 @@ import {
 } from '../domain/regelkatalog';
 import { nameImPdf, nameText } from '../domain/namen';
 import { mitziehendeTexte, monatsSpanne, vomText } from '../domain/mappeWoerter';
-import { einziehend, ortUndDatum, selbstauskunftBloecke } from '../domain/selbstauskunft';
+import {
+  einziehend,
+  nachZusageSatz,
+  ortUndDatum,
+  selbstauskunftBloecke,
+} from '../domain/selbstauskunft';
 import { datum as datumText, t } from '../i18n';
 import {
   bewerbungBauen,
@@ -110,6 +115,8 @@ export async function mappeErstellen(
   aussehen: MappenAussehen = ansicht.haushalt.mappeAussehen ?? AUSSEHEN_STANDARD,
   /** Für dieselbe Vorschau: Dieses leere Blatt steht für jede Datei, gelesen wird keine. */
   platzhalter?: Uint8Array,
+  /** B21: echter Fortschritt beim Zusammenlegen, für den Zwischenstand in „Mappe teilen“. */
+  fortschritt?: (fertig: number, gesamt: number) => void,
 ): Promise<MappenErgebnis> {
   const staende = staendeAus(ansicht, heute);
   const hh = haushaltsAngabenAus(ansicht);
@@ -175,6 +182,12 @@ export async function mappeErstellen(
               {
                 rolleText: rollenText(block.person.rolle, block.person.bezeichnung),
                 antwortenImmer: auskunftAntwortenImmer(e),
+                zusageText: e.mietrueckstaendeNachZusage
+                  ? nachZusageSatz(
+                      ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge')
+                        .length <= 1,
+                    )
+                  : undefined,
                 buergschaftDabei: block.teile.some(
                   (x) => x.stand.typ.id === 'buergschaftserklaerung',
                 ),
@@ -282,6 +295,10 @@ export async function mappeErstellen(
         // Ließ sich gar nichts übernehmen, gibt es für diese Unterlage keine leere Datei.
         if (erg.unlesbar.length && !erg.inhalt.length) continue;
         seiten += erg.seiten;
+        fortschritt?.(
+          nummer,
+          mappenBloecke.reduce((n, x) => n + x.teile.length, 0),
+        );
         dateien.push(new File([erg.bytes.slice()], datei, { type: 'application/pdf' }));
       }
     return {
@@ -331,6 +348,7 @@ export async function mappeErstellen(
     schriften,
     datum: heute,
     alsBilder,
+    fortschritt,
   });
   erg.unlesbar.forEach((u) => unlesbar.set(u.name, u));
   const datei = new File([erg.bytes.slice()], dateiname, { type: 'application/pdf' });
@@ -355,11 +373,21 @@ export async function mappeGebaut(
   bewerbung: Pick<Bewerbung, 'adresse' | 'satz' | 'bitteSatz'> | null,
   e: ExportEinstellungen,
   aussehen?: MappenAussehen,
+  fortschritt?: (fertig: number, gesamt: number) => void,
 ): Promise<MappenErgebnis> {
   const schluessel = bauSchluessel(ansicht, bewerbung, e, aussehen);
   const schon = gebauteMappen.holen(schluessel);
   if (schon) return schon;
-  const neu = await mappeErstellen(db, ansicht, bewerbung, e, new Date(), aussehen);
+  const neu = await mappeErstellen(
+    db,
+    ansicht,
+    bewerbung,
+    e,
+    new Date(),
+    aussehen,
+    undefined,
+    fortschritt,
+  );
   gebauteMappen.merken(schluessel, neu, neu.groesse);
   return neu;
 }

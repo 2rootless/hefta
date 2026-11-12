@@ -64,7 +64,7 @@
     stroke: var(--ink);
     stroke-width: 2.2;
     stroke-linecap: round;
-    animation: funken 280ms ease-out 820ms both;
+    animation: funken 280ms ease-out 820ms backwards;
   }
 
   @keyframes funken {
@@ -86,7 +86,7 @@
 
   /* Wenn das Leuchten angekommen ist (nach 840 ms), hebt sich das Ziel einmal kurz. */
   .feiern {
-    animation: ankommen 280ms ease-out 820ms both;
+    animation: ankommen 280ms ease-out 820ms backwards;
   }
 
   @keyframes ankommen {

@@ -6,6 +6,8 @@
   import type { Person, Rolle } from '../domain/modell';
   import {
     ERKLAERUNG,
+    ERLAEUTERUNG_MAX,
+    ERLAEUTERUNG_ZAEHLER_AB,
     berufBezeichnungen,
     betragText,
     emailSiehtGutAus,
@@ -289,8 +291,16 @@
           data-feld="erklaerung"
           bind:value={eingabe.sa[ERKLAERUNG[f]]}
           rows="3"
+          maxlength={ERLAEUTERUNG_MAX}
           placeholder={t('selbstauskunft.erklaerenBeispiel')}></textarea>
       </label>
+      {@const laenge = (eingabe.sa[ERKLAERUNG[f]] ?? '').length}
+      <!-- Nachricht 10.11. k: ruhiger Zähler ab 500, kein Hinweis in Koralle, das ist kein Fehler. -->
+      <small class="zaehler" aria-live="polite"
+        >{laenge >= ERLAEUTERUNG_ZAEHLER_AB
+          ? t('selbstauskunft.zeichen', { n: laenge, max: ERLAEUTERUNG_MAX })
+          : ''}</small
+      >
     {/if}
     {#if f === 'mietrueckstaende' && eingabe.sa.mietrueckstaende !== null}
       <button type="button" class="textlink" onclick={zusageAntwortEntfernen}
@@ -694,6 +704,17 @@
   .eingabe textarea {
     min-height: 48px;
     border-radius: 14px;
+  }
+
+  .zaehler {
+    display: block;
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
+    text-align: right;
+  }
+
+  .zaehler:empty {
+    display: none;
   }
 
   textarea {

@@ -17,6 +17,14 @@ function vomHomescreen(): boolean {
   );
 }
 
+/**
+ * E30: Seit Hefta im App Store ist, empfiehlt die Seite am iPhone in Safari die App statt des
+ * Home-Bildschirms. „Weiter im Browser“ bleibt offen.
+ */
+export function appEmpfehlen(): boolean {
+  return iphoneSafari() && !vomHomescreen();
+}
+
 /** Vor der Einrichtung: Bisher nicht beantwortet? */
 export function homescreenFragen(e: Einstellungen | null): boolean {
   return (

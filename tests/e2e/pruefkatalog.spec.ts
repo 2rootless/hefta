@@ -487,7 +487,7 @@ const BILDER: Bild[] = [
     pfad: '/person-aendern/p-01-standard-2',
     vorher: async (page) => {
       await farbeZeigen(page);
-      await page.getByRole('radio', { name: 'Koralle, hat Max' }).click();
+      await page.getByRole('radio', { name: 'Apricot, hat Max' }).click();
       await page.getByText(/^Max bekommt dafür/).waitFor();
     },
   },
@@ -676,12 +676,14 @@ const BILDER: Bild[] = [
     },
   },
   {
-    id: 'X2-spar-will',
+    id: 'X2-eigene-miet',
     gruppe: 'X',
     szenario: '04-fertig',
     pfad: '/mappe',
     vorher: async (page) => {
-      await page.getByRole('radio', { name: /^Datensparsam/ }).click();
+      // E49: Statt „Datensparsam“ die Eigene Auswahl mit dem Schalter für Mietrückstände.
+      await page.getByRole('button', { name: /^Eigene Auswahl/ }).click();
+      await page.getByRole('switch', { name: /^Mietrückstände erst nach der Zusage/ }).click();
       await vorschau(page);
     },
   },
@@ -1400,7 +1402,7 @@ const BILDER: Bild[] = [
     pfad: '/',
     vorher: async (page) => {
       await versionenPatchen(page, '-0-gehaltsnachweis', {}, true);
-      await page.getByRole('link', { name: /prüfen\. Dieselbe Datei/ }).waitFor();
+      await page.getByRole('link', { name: /prüfen ?: Dieselbe Datei/ }).waitFor();
     },
   },
   {
@@ -1874,7 +1876,7 @@ test.describe('Prüfkatalog Stil C', () => {
     expect([sauber.c23, sauber.c24, sauber.c25, sauber.c26]).toEqual([[], [], [], []]);
     await page.evaluate(() => {
       document.querySelector('main h1')!.textContent = 'Version vom 12. Juli';
-      document.querySelector<HTMLElement>('.band .karte')!.style.marginLeft = '-16px';
+      document.querySelector<HTMLElement>('.aufgaben')!.style.marginLeft = '-16px';
       document.querySelector<HTMLElement>('.leiste .haupt')!.style.maxWidth = '50%';
       // Wie im ersten Entwurf von PF1: Knöpfe über dem Hinweis.
       for (const [art, text] of [

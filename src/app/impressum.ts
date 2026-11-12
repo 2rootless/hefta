@@ -14,3 +14,15 @@ export function impressumHtml(ebene: 3 | 4): string {
     .replaceAll('<h2 ', `<h${ebene} `)
     .replaceAll('</h2>', `</h${ebene}>`);
 }
+
+/**
+ * Die Mailadresse aus dem Impressum, für die Rückmeldung (E52, B17c): Hefta schickt selbst nichts, es öffnet
+ * nur das Mailprogramm. Sie steht nur im Impressum; ändert es sich, folgt die Rückmeldung von selbst.
+ */
+export const RUECKMELDUNG_ADRESSE: string =
+  /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/.exec(TEXT)?.[0] ?? '';
+
+/** `mailto:` mit Betreff; der Betreff „Mehrere Geräte“ zählt für die Schwelle aus E34. */
+export function rueckmeldungLink(betreff: string): string {
+  return `mailto:${RUECKMELDUNG_ADRESSE}?subject=${encodeURIComponent(betreff)}`;
+}

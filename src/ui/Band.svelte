@@ -15,6 +15,7 @@
 </script>
 
 <script lang="ts">
+  import { bewegungReduziert } from './bewegung';
   // Schwingendes Band links neben den Karten (design/stil-c.md, „Umsetzung des Bands“).
   // Zeilen setzen sich normal im Fluss; jede Zeile, die zum Band gehört, trägt data-band
   // („p“ Person, „track“ Station, „open“ Trennung) und bei Personen data-farbe, data-duenn, data-docs.
@@ -61,7 +62,7 @@
   const uid = $props.id();
   let fuellenBeginn: number | null = null;
   let feiern = $state(false);
-  const ruhig = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  const ruhig = bewegungReduziert;
   const SANFT = 'calcMode="spline" keyTimes="0;1" keySplines="0.2 0 0 1"';
 
   function animation(attribut: string, werte: string, beginn: number, dauer: number): string {
@@ -400,6 +401,30 @@
 
   .band :global(.f6) {
     stroke: var(--person-6);
+  }
+
+  .band :global(.f7) {
+    stroke: var(--person-7);
+  }
+
+  .band :global(.f8) {
+    stroke: var(--person-8);
+  }
+
+  .band :global(.f9) {
+    stroke: var(--person-9);
+  }
+
+  .band :global(.f10) {
+    stroke: var(--person-10);
+  }
+
+  .band :global(.f11) {
+    stroke: var(--person-11);
+  }
+
+  .band :global(.f12) {
+    stroke: var(--person-12);
   }
 
   /* „da“: kleiner Punkt mit dünnem Ring (B11, 3.4), damit er auf jeder Personenfarbe steht. */

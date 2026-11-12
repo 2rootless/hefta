@@ -5,6 +5,7 @@
   import { onMount } from 'svelte';
   import { daten, db, gehe } from '../app/daten.svelte';
   import { QUELLCODE_ADRESSE } from '../app/name';
+  import { RUECKMELDUNG_ADRESSE, rueckmeldungLink } from '../app/impressum';
   import { tageSeit } from '../domain/zeit';
   import { backupAccept } from '../storage/backup';
   import { KATALOG_STAND } from '../domain/regelkatalog';
@@ -13,7 +14,9 @@
   import { einstellungenZustand } from '../ui/einstellungen.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import { passend, TITEL } from '../ui/passend';
+  import Rueckmeldung from '../ui/Rueckmeldung.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
+  import { homescreenFragen } from '../ui/homescreen';
 
   const meldung = einstellungenZustand.meldung;
   einstellungenZustand.meldung = '';
@@ -71,6 +74,17 @@
     gehe('/einstellungen/einspielen');
   }
 
+  let kopiert = $state(false);
+  async function adresseKopieren() {
+    try {
+      await navigator.clipboard.writeText(RUECKMELDUNG_ADRESSE);
+      kopiert = true;
+      setTimeout(() => (kopiert = false), 2000);
+    } catch {
+      // Ohne Erlaubnis zum Kopieren bleibt die Adresse als Text und Link stehen.
+    }
+  }
+
   onMount(() => {
     void speicherMessen();
   });
@@ -99,21 +113,34 @@
         </a>
       </li>
       <li>
-        <label class="listenzeile">
-          <span class="tx"
-            ><b>{t('einstellungen.backupEinspielen')}</b><small
-              >{t('einstellungen.einspielenHinweis')}</small
-            ></span
-          >
-          {@render pfeil()}
-          <input
-            type="file"
-            class="visually-hidden"
-            accept={backupAccept(istApp())}
-            onclick={(e) => backupKlick(e, backupGewaehlt)}
-            onchange={(e) => backupGewaehlt(e.currentTarget.files?.[0])}
-          />
-        </label>
+        {#if !daten.ansicht && homescreenFragen(daten.einstellungen)}
+          <!-- Hefta 2: Ohne Haushalt spielt man hier ein (B15). Am iPhone in Safari erst der Hinweis auf
+               die App (E30): In Safari eingespielt, fehlt das Backup später in der App. -->
+          <a class="listenzeile" href="#/homescreen/einspielen">
+            <span class="tx"
+              ><b>{t('einstellungen.backupEinspielen')}</b><small
+                >{t('einstellungen.einspielenHinweis')}</small
+              ></span
+            >
+            {@render pfeil()}
+          </a>
+        {:else}
+          <label class="listenzeile">
+            <span class="tx"
+              ><b>{t('einstellungen.backupEinspielen')}</b><small
+                >{t('einstellungen.einspielenHinweis')}</small
+              ></span
+            >
+            {@render pfeil()}
+            <input
+              type="file"
+              class="visually-hidden"
+              accept={backupAccept(istApp())}
+              onclick={(e) => backupKlick(e, backupGewaehlt)}
+              onchange={(e) => backupGewaehlt(e.currentTarget.files?.[0])}
+            />
+          </label>
+        {/if}
       </li>
     </ul>
   </section>
@@ -159,6 +186,28 @@
             {@render pfeil()}
           </a>
         {/if}
+      </li>
+    </ul>
+  </section>
+
+  <section class="abschnitt" aria-labelledby="g-ueber">
+    <h2 id="g-ueber">{t('rueckmeldung.titel')}</h2>
+    <!-- E54 (B19 Fassung 4 und 5): Antworten zum Antippen, mit Rückfrage; längere Kommentare per Mail. -->
+    <div class="blatt-rueck"><Rueckmeldung /></div>
+    <ul class="zeilen">
+      <li>
+        <div class="listenzeile rueck">
+          <span class="tx"
+            ><b>{t('rueckmeldung.mehr')}</b><a
+              class="adresse"
+              href={rueckmeldungLink(t('einstellungen.rueckmeldungBetreff'))}
+              >{RUECKMELDUNG_ADRESSE.replace('@', '@​')}</a
+            ></span
+          >
+          <button type="button" class="kopieren" onclick={adresseKopieren}
+            >{kopiert ? t('einstellungen.kopiert') : t('einstellungen.kopieren')}</button
+          >
+        </div>
       </li>
     </ul>
   </section>
@@ -286,5 +335,45 @@
   /* Eine App ist schon auf dem Homescreen. */
   .app {
     display: none;
+  }
+
+  /* Passen Text und „Kopieren“ nicht nebeneinander (320 px, große Schrift), rutscht der Knopf
+     in die nächste Zeile, statt über dem Text zu liegen (C4, C26). */
+  .blatt-rueck {
+    margin-bottom: 10px;
+    border-radius: var(--radius-card);
+    background: var(--surface);
+  }
+
+  .rueck {
+    flex-wrap: wrap;
+  }
+
+  .rueck .tx {
+    flex: 1 1 auto;
+    min-width: min-content;
+  }
+
+  /* Tippfläche mindestens 44 px (C5). */
+  .rueck .adresse {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    color: var(--accent-text);
+    font-weight: 600;
+    overflow-wrap: break-word;
+  }
+
+  .kopieren {
+    flex: none;
+    min-height: var(--tap-target);
+    padding: 0 12px;
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius-full);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
   }
 </style>

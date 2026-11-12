@@ -16,6 +16,7 @@
   import { pdfFenster } from './pdfFenster.svelte';
   import { fehlerBeobachten, hinweise } from './hinweise.svelte';
   import { route } from './router.svelte';
+  import { linkWegDa } from './plattform';
 
   // Der Technik-Test (M0-Spike) wird nur bei Bedarf geladen, damit PDF.js nicht im Start-Bundle steckt.
   const technikTest = () => import('../spike/TechnikTest.svelte');
@@ -33,6 +34,13 @@
     version: () => import('../screens/VersionSeite.svelte'),
     rutsch: () => import('../screens/Rutsch.svelte'),
     homescreen: () => import('../screens/Homescreen.svelte'),
+    wohnungen: () => import('../screens/Wohnungen.svelte'),
+    heft: () => import('../screens/HeftSeite.svelte'),
+    merkmal: () => import('../screens/MerkmalSeite.svelte'),
+    wohnungNeu: () => import('../screens/WohnungNeu.svelte'),
+    neuesHeftLink: () => import('../screens/NeuesHeftLink.svelte'),
+    heftVorschau: () => import('../screens/HeftVorschau.svelte'),
+    heftKontrolle: () => import('../screens/HeftKontrolle.svelte'),
     auskuenfte: () => import('../screens/Selbstauskuenfte.svelte'),
     auskunft: () => import('../screens/SelbstauskunftSeite.svelte'),
     uebertragen: () => import('../screens/Uebertragen.svelte'),
@@ -69,6 +77,8 @@
   });
 
   const personId = $derived(route.pfad.match(/^\/person\/([\w-]+)$/)?.[1]);
+  const heftId = $derived(route.pfad.match(/^\/heft\/([\w-]+)$/)?.[1]);
+  const merkmalId = $derived(route.pfad.match(/^\/heft\/([\w-]+)\/merkmal$/)?.[1]);
   const unterlage = $derived(
     route.pfad.match(/^\/unterlage\/([\w-]+)\/(\w+)(\/datum(?:\/([\w-]+))?)?$/),
   );
@@ -197,6 +207,34 @@
     {:else if route.pfad === '/homescreen/rutsch'}
       {#await seiten.homescreen() then m}
         <m.default weiter="/rutsch" zweitesMal />
+      {/await}
+    {:else if route.pfad === '/wohnungen'}
+      {#await seiten.wohnungen() then m}
+        <m.default />
+      {/await}
+    {:else if route.pfad === '/wohnung-neu' && linkWegDa()}
+      {#await seiten.neuesHeftLink() then m}
+        <m.default />
+      {/await}
+    {:else if route.pfad === '/wohnung-neu' || route.pfad === '/wohnung-neu/text'}
+      {#await seiten.wohnungNeu() then m}
+        <m.default />
+      {/await}
+    {:else if route.pfad === '/wohnung-neu/vorschau'}
+      {#await seiten.heftVorschau() then m}
+        <m.default />
+      {/await}
+    {:else if route.pfad === '/wohnung-neu/kontrolle'}
+      {#await seiten.heftKontrolle() then m}
+        <m.default />
+      {/await}
+    {:else if merkmalId}
+      {#await seiten.merkmal() then m}
+        <m.default id={merkmalId} />
+      {/await}
+    {:else if heftId}
+      {#await seiten.heft() then m}
+        <m.default id={heftId} />
       {/await}
     {:else if route.pfad === '/eingang'}
       {#await seiten.eingang() then m}

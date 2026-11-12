@@ -17,6 +17,16 @@ export function istIosApp(): boolean {
   return istApp() && bruecke()?.getPlatform?.() === 'ios';
 }
 
+/**
+ * Gibt es den Weg „Link einsetzen → Vorschau“ (B23)? Nur in der App für iPhone; Browsertests setzen
+ * `window.__heftaInseratTest` (siehe `heftaInserat.ts`). Ohne Capacitor zu laden.
+ */
+export function linkWegDa(): boolean {
+  return (
+    !!(window as unknown as { __heftaInseratTest?: unknown }).__heftaInseratTest || istIosApp()
+  );
+}
+
 export function istAndroidApp(): boolean {
   return istApp() && bruecke()?.getPlatform?.() === 'android';
 }

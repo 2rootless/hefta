@@ -5,6 +5,7 @@ import {
   type IDBPTransaction,
   type StoreNames,
 } from 'idb';
+import { hefteAusBewerbungen } from '../domain/hefte';
 import {
   type Bewerbung,
   type DateiEintrag,
@@ -13,6 +14,7 @@ import {
   type Einstellungen,
   type Exportprofil,
   type Haushalt,
+  type Heft,
   type Person,
   type Zugehoerigkeit,
 } from '../domain/modell';
@@ -32,6 +34,8 @@ export interface HeftaSchema extends DBSchema {
   dokumente: { key: string; value: Dokument; indexes: { personId: string } };
   versionen: { key: string; value: DateiVersion; indexes: { dokumentId: string } };
   bewerbungen: { key: string; value: Bewerbung; indexes: { haushaltId: string } };
+  /** Schema 2 (Hefta 2): Wohnungen. `haushaltId` darf leer sein (E45); dann steht das Heft nicht im Index. */
+  hefte: { key: string; value: Heft; indexes: { haushaltId: string } };
   exportprofile: { key: string; value: Exportprofil };
   einstellungen: { key: string; value: Einstellungen };
   dateien: { key: string; value: DateiEintrag };
@@ -49,6 +53,7 @@ export const DATENORTE = [
   'dokumente',
   'versionen',
   'bewerbungen',
+  'hefte',
   'exportprofile',
   'einstellungen',
 ] as const satisfies readonly Speicherort[];
@@ -69,6 +74,18 @@ const MIGRATIONEN: ((db: HeftaDb, tx: Upgrade) => void)[] = [
     db.createObjectStore('exportprofile', { keyPath: 'id' });
     db.createObjectStore('einstellungen', { keyPath: 'id' });
     db.createObjectStore('dateien', { keyPath: 'id' });
+  },
+  // Schema 2, Hefta 2: Wohnungen als Hefte. Jede Bewerbung mit Adresse wird zu einem Heft; die Bewerbung
+  // bleibt, wie sie ist (docs/32-bauplan-hefta-2-schritt-1.md).
+  (db, tx) => {
+    db.createObjectStore('hefte', { keyPath: 'id' }).createIndex('haushaltId', 'haushaltId');
+    void tx
+      .objectStore('bewerbungen')
+      .getAll()
+      .then(async (bewerbungen) => {
+        for (const heft of hefteAusBewerbungen(bewerbungen))
+          await tx.objectStore('hefte').put(heft);
+      });
   },
 ];
 
@@ -106,7 +123,12 @@ export function datenbankOeffnen(
 export const DATEN_MIGRATIONEN: Record<
   number,
   (daten: Record<string, unknown[]>) => Record<string, unknown[]>
-> = {};
+> = {
+  1: (daten) => ({
+    ...daten,
+    hefte: hefteAusBewerbungen((daten.bewerbungen ?? []) as Bewerbung[]),
+  }),
+};
 
 export function datenMigrieren(
   daten: Record<string, unknown[]>,

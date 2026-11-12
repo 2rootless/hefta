@@ -58,9 +58,9 @@
     <path class="spur" d={pfad} />
     {#each punkte as p, i (i)}
       {#if p.art === 'aktuell'}
-        <circle class="f{p.farbe} rand" cx={p.x} cy={p.y} r={klein ? 9 : 12} />
+        <circle class="farbe-{p.farbe} pf rand" cx={p.x} cy={p.y} r={klein ? 9 : 12} />
       {:else if p.art === 'drin'}
-        <circle class="f{p.farbe}" cx={p.x} cy={p.y} r={klein ? 6 : 8} />
+        <circle class="farbe-{p.farbe} pf" cx={p.x} cy={p.y} r={klein ? 6 : 8} />
         <circle class="loch" cx={p.x} cy={p.y} r={klein ? 2 : 3} />
       {:else if p.art === 'bald'}
         <circle class="bald" cx={p.x} cy={p.y} r={klein ? 7 : 10} />
@@ -68,7 +68,7 @@
       {:else if p.art === 'weg'}
         <circle class="weg" cx={p.x} cy={p.y} r={klein ? 5 : 7} />
       {:else}
-        <circle class="f{p.farbe} blass" cx={p.x} cy={p.y} r={klein ? 4 : 6} />
+        <circle class="farbe-{p.farbe} pf blass" cx={p.x} cy={p.y} r={klein ? 4 : 6} />
       {/if}
     {/each}
     {#if haus}<svg x="338" y="12" width="28" height="28" viewBox="0 0 32 32">
@@ -132,25 +132,9 @@
     stroke-linecap: round;
   }
 
-  .f1 {
-    fill: var(--person-1);
-  }
-  .f2 {
-    fill: var(--person-2);
-  }
-  .f3 {
-    fill: var(--person-3);
-  }
-  .f4 {
-    fill: var(--person-4);
-  }
-
-  .f5 {
-    fill: var(--person-5);
-  }
-
-  .f6 {
-    fill: var(--person-6);
+  /* Zwölf Personenfarben (B14) über die gemeinsamen Klassen `.farbe-N` in global.css. */
+  .pf {
+    fill: var(--farbe);
   }
 
   .blass {

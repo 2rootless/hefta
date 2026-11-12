@@ -46,7 +46,7 @@ const ueberschriften = (page: Page) =>
   page.evaluate(() =>
     [...document.querySelectorAll('main h1, main h2, main h3')].map(
       (h) =>
-        `${h.tagName} ${h.querySelector('a')?.getAttribute('aria-label') ?? h.textContent?.trim()}`,
+        `${h.tagName} ${h.querySelector('a')?.getAttribute('aria-label') ?? h.textContent?.replace(/\s+/g, ' ').trim()}`,
     ),
   );
 
@@ -55,40 +55,36 @@ test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(HEUTE);
 });
 
-test('Übersicht: Überschriften, Personen als Links, Band als Bild, Reihenfolge', async ({
+test('Tab „Mappe“: Überschriften, Personen als Links, Zeilen mit Stand, Reihenfolge', async ({
   page,
   browserName,
 }) => {
   await laden(page, '01-standard');
 
-  // Das Logo ist Schmuck, das Band ein Bild mit einem Satz.
+  // Das Logo ist Schmuck. Ein Band gibt es im Tab „Mappe“ nicht mehr (B12b).
   await expect(page.getByRole('img', { name: /mappe/i })).toHaveCount(0);
-  await expect(page.getByRole('img', { name: /^Fortschritt: / })).toHaveCount(1);
+  await expect(page.getByRole('img', { name: /^Fortschritt: / })).toHaveCount(0);
   await expect(page.getByRole('link', { name: /^Haushalt bearbeiten: / })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Einstellungen' })).toBeVisible();
 
-  // Sechs Überschriften: Begrüßung, „Im Mietvertrag“, Max, Lea, „Bürgschaft“, Petra.
+  // Überschriften: „Eure Mappe“, die Aufgaben, dann je Person ein Reiter, Bürgen nach der Trennzeile.
   const kopf = await ueberschriften(page);
-  expect(kopf).toHaveLength(6);
-  expect(kopf[0]).toMatch(/^H1 Hallo Max/);
-  expect(kopf[1]).toBe('H2 Im Mietvertrag');
-  expect(kopf[2]).toMatch(/^H3 Max, Hauptmieter\. /);
-  expect(kopf[3]).toMatch(/^H3 Lea, Mitmieterin\. /);
-  expect(kopf[4]).toBe('H2 Bürgschaft');
-  expect(kopf[5]).toMatch(/^H3 Petra, Bürgin, Zusatz\. /);
+  expect(kopf).toHaveLength(5);
+  expect(kopf[0]).toBe('H1 Eure Mappe');
+  expect(kopf[1]).toMatch(/^H2 Noch [a-zäöüß]+ Dinge?, dann seid ihr startklar\.$/);
+  expect(kopf[2]).toBe('H2 Max Hauptmieter');
+  expect(kopf[3]).toBe('H2 Lea Mitmieterin');
+  expect(kopf[4]).toBe('H2 Petra Bürgin');
 
-  // Name, Rolle, Stand; der Stand zählt „aktuell“ wie das Band, in Worten.
+  // Jede Zeile sagt Unterlage, Stand und Marke in Worten.
+  await expect(page.getByRole('link', { name: /^Selbstauskunft .+ da$/ }).first()).toBeVisible();
   await expect(
-    page.getByRole('link', {
-      name: /^Max, Hauptmieter\. [A-ZÄÖÜ][a-zäöüß]+ von [a-zäöüß]+ aktuell\.$/,
-    }),
+    page.getByRole('link', { name: /^Bonitäts.?nachweis fehlt noch$/ }).first(),
   ).toBeVisible();
 
-  // Das Eintragen-Feld ist ein eigenes Element nach der Person und tut etwas auf dieser Seite.
-  await expect(page.getByRole('button', { name: /^.+ hinzufügen\. .+\.$/ }).first()).toBeVisible();
-
-  // Was eine andere Seite öffnet, ist ein Link; die Hauptaktion kommt zuletzt.
-  await expect(page.getByRole('link', { name: 'Mappe trotzdem erstellen' })).toBeVisible();
+  // Aufgaben tun etwas auf dieser Seite: Knöpfe. Was eine andere Seite öffnet, ist ein Link.
+  await expect(page.getByRole('button', { name: /^Bonitätsnachweis für Petra/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mappe trotzdem teilen' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Jetzt sichern' })).toBeVisible();
   const haupt = page.getByRole('link', { name: /^Unterlagen hinzufügen, [a-zäöüß]+ offen$/ });
   await expect(haupt).toBeVisible();
@@ -102,18 +98,16 @@ test('Übersicht: Überschriften, Personen als Links, Band als Bild, Reihenfolge
   };
   const reihenfolge = [
     /link "Einstellungen"/,
-    /heading "Hallo Max/,
+    /heading "Eure Mappe"/,
     /link "Haushalt bearbeiten: /,
-    /img "Fortschritt: /,
-    /heading "Im Mietvertrag"/,
-    /link "Max, Hauptmieter\. /,
-    /link "Lea, Mitmieterin\. /,
-    /heading "Bürgschaft"/,
+    /heading "Noch /,
+    /link "Max Hauptmieter"/,
+    /link "Lea Mitmieterin"/,
     /Zusätzlich, falls der Vermieter fragt/,
-    /link "Petra, Bürgin, Zusatz\. /,
-    /link "Mappe trotzdem erstellen"/,
+    /link "Petra Bürgin"/,
     /link "Jetzt sichern"/,
     /link "Unterlagen hinzufügen, /,
+    /button "Mappe trotzdem teilen"/,
   ].map(stelle);
   expect(reihenfolge).toEqual([...reihenfolge].sort((a, b) => a - b));
 
@@ -125,10 +119,11 @@ test('Übersicht: Überschriften, Personen als Links, Band als Bild, Reihenfolge
     );
 });
 
-test('Ohne Bürgen gibt es keine Abschnitte: Die Personen sind Ebene 2', async ({ page }) => {
+test('Ohne Bürgen gibt es keine Trennzeile: Die Personen sind Ebene 2', async ({ page }) => {
   await laden(page, '23-ohne-datum');
   const kopf = await ueberschriften(page);
-  expect(kopf[1]).toMatch(/^H2 Max, Hauptmieter\. /);
+  expect(kopf).toContain('H2 Max Hauptmieter');
+  await expect(page.getByText('Zusätzlich, falls der Vermieter fragt')).toHaveCount(0);
   expect(kopf.some((k) => k.includes('Im Mietvertrag'))).toBe(false);
 });
 
@@ -150,7 +145,7 @@ test('Fokus: nach einem Seitenwechsel auf dem Titel, sichtbarer Ring, Felder beh
   browserName,
 }) => {
   await laden(page, '01-standard');
-  await page.getByRole('link', { name: /^Lea, / }).click();
+  await page.getByRole('link', { name: /^Lea Mitmieterin$/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Lea' })).toBeFocused();
 
   await page.getByRole('link', { name: 'Ändern', exact: false }).first().click();
@@ -183,7 +178,7 @@ test('Große Schrift: Standard ist pixelgleich, --px vergrößert nur die Schrif
       probe.remove();
       return groesse;
     });
-  const karte = page.locator('.band .karte').first();
+  const karte = page.locator('.blatt .zeilen').first();
   const breite = () => karte.evaluate((e) => e.getBoundingClientRect().width);
   expect(await schrift()).toBe('17px');
   const vorher = await breite();
@@ -194,9 +189,18 @@ test('Große Schrift: Standard ist pixelgleich, --px vergrößert nur die Schrif
 
 test('Bewegung reduzieren: kurzes Überblenden, kein Schieben', async ({ page }) => {
   await laden(page, '01-standard');
-  const einblenden = await page.evaluate(() => {
+  // E58: Die Tokens regeln es an einer Stelle. Überblenden bleibt (120 ms), alles andere ist 0.
+  const werte = await page.evaluate(() => {
     const e = document.querySelector('.einblenden')!;
-    return getComputedStyle(e).animationDuration;
+    const wurzel = getComputedStyle(document.documentElement);
+    // Der Bau schreibt „120ms“ als „.12s“: in Millisekunden vergleichen.
+    const ms = (w: string) => Math.round(parseFloat(w) * (w.trim().endsWith('ms') ? 1 : 1000));
+    return {
+      einblenden: ms(getComputedStyle(e).animationDuration),
+      lang: ms(wurzel.getPropertyValue('--bw-lang')),
+      kurz: ms(wurzel.getPropertyValue('--bw-kurz')),
+      blende: ms(wurzel.getPropertyValue('--bw-blende')),
+    };
   });
-  expect(einblenden).toBe('0.15s');
+  expect(werte).toEqual({ einblenden: 120, lang: 0, kurz: 0, blende: 120 });
 });

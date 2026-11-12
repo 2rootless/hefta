@@ -46,7 +46,7 @@
   }
 
   button {
-    transition: transform 120ms ease-out;
+    transition: transform var(--bw-knapp) var(--bw-weich);
   }
 
   button:active:not(.deaktiviert) {

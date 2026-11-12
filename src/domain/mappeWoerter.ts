@@ -164,3 +164,24 @@ export function werIstDabeiLang(w: WerIstDabei): { titel: string; eintraege: str
     { titel: GRUPPE_BUERGT, eintraege: w.buergen },
   ].filter((g) => g.eintraege.length);
 }
+
+/**
+ * Satz unter „Wer ist dabei?“ in „Mappe teilen“ (B12c, E50 nach Bericht 61, 1.1). Die Anrede richtet sich
+ * nach dem Haushalt (du oder ihr). Ein Bürge steht in der gewählten Form da („Die Bürgin“, „Den Bürgen“),
+ * ohne gewählte Form mit Vornamen; zwei oder mehr immer mit Namen. Ohne Bürgen nur der erste Satz.
+ */
+export function werIstDabeiHinweis(
+  buergen: { vorname: string; bezeichnung: 'maennlich' | 'weiblich' | 'neutral' }[],
+  allein: boolean,
+): string {
+  const erster = 'Wer im Mietvertrag steht, ist immer dabei.';
+  if (!buergen.length) return erster;
+  const koennt = allein ? 'kannst du' : 'könnt ihr';
+  const namen = buergen.map((b) => b.vorname.trim()).filter(Boolean);
+  let wen: string;
+  if (buergen.length === 1 && buergen[0]!.bezeichnung === 'weiblich') wen = 'Die Bürgin';
+  else if (buergen.length === 1 && buergen[0]!.bezeichnung === 'maennlich') wen = 'Den Bürgen';
+  else if (namen.length < 2) wen = namen[0] ?? 'Die bürgende Person';
+  else wen = `${namen.slice(0, -1).join(', ')} und ${namen[namen.length - 1]}`;
+  return `${erster} ${wen} ${koennt} für diese Mappe abwählen.`;
+}

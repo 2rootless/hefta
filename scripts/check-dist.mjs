@@ -19,6 +19,8 @@ const ERLAUBT = new Set([
   // Selbsttests der URL-Polyfills in PDF.js (Fassung für ältere Browser), werden nie geladen.
   'a',
   'x',
+  // E30: Link „Im App Store laden“ am iPhone in Safari. Ein Link, den man antippt, keine Anfrage.
+  'apps.apple.com',
 ]);
 // Der Hinweis auf dem Deckblatt ist ein Link im PDF: Er wird nur geöffnet, wenn jemand ihn antippt.
 ERLAUBT.add(/APP_DOMAIN = '([^']+)'/.exec(readFileSync('src/app/name.ts', 'utf8'))[1]);
@@ -53,6 +55,21 @@ for (const datei of [...dateien('dist'), ...dateien('dist-vermieter')]) {
   for (const [, host] of inhalt.matchAll(/https?:\/\/([a-zA-Z0-9.-]+)/g)) {
     if (!ERLAUBT.has(host)) funde.push(`${datei}: ${host}`);
   }
+}
+
+// E54, E57: Die einzige Verbindung nach außen ist der Empfang der Rückmeldung. Keine andere Adresse
+// unter /api/, und die CSP erlaubt genau diese eine.
+const EMPFANG = 'https://hefta.de/api/rueckmeldung';
+for (const datei of dateien('dist')) {
+  if (!TEXT.has(extname(datei))) continue;
+  const inhalt = readFileSync(datei, 'utf8');
+  for (const [adresse] of inhalt.matchAll(/https:\/\/hefta\.de\/api\/[a-zA-Z0-9/_-]*/g))
+    if (adresse !== EMPFANG) funde.push(`${datei}: ${adresse}`);
+}
+for (const datei of ['dist/index.html', 'dist/_headers']) {
+  const csp = readFileSync(datei, 'utf8');
+  if (!csp.includes(`connect-src 'self' ${EMPFANG};`))
+    funde.push(`${datei}: connect-src erlaubt nicht genau den Empfang`);
 }
 
 // Die Lizenztexte reisen mit: die App, die Schrift und jede Bibliothek aus package.json.

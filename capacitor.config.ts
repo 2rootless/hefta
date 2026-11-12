@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   appName: 'Hefta',
   webDir: 'dist',
   // Gleiches Erscheinungsbild wie die Seite, bevor sie gezeichnet ist.
-  backgroundColor: '#f5f6fa',
+  backgroundColor: '#faf6ef',
   ios: { contentInset: 'never', limitsNavigationsToAppBoundDomains: false },
   android: { allowMixedContent: false },
 };

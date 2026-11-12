@@ -198,6 +198,24 @@ test('Fassung der echten App: Die Mappe aus Hefta wird gelesen', async ({ page }
   await expect(haupt(page)).toContainText('Hauptstraße 12');
 });
 
+// E60: Seit dem Start von Version 1 im Store gibt es Mappen bei Fremden. Diese Mappe hat der Code von
+// Version 1 gebaut (Stand 31e7436, Lesehilfe Fassung 3, scripts/muster-mappen.mjs). Sie wird nie neu
+// erzeugt; für jede neue Fassung kommt eine eigene dazu, und alle müssen lesbar bleiben.
+test('Mappe aus Version 1 (E60): Die Lesehilfe passt und wird ganz gezeigt', async ({ page }) => {
+  await page.goto('/');
+  await laden(page, 'tests/fixtures/mappe/version1-familie.pdf');
+  await expect(page.locator('.vs-row')).toHaveCount(1);
+  await expect(page.locator('.vs-rt')).toContainText('Max und Lea Mustermann');
+  const d = haupt(page);
+  const text = (await d.innerText()).replaceAll('­', '');
+  expect(text).toContain('Hauptmietpartei');
+  expect(text).toContain('Hefta prüft sie nicht');
+  expect(text).toContain('Bitte der Bewerber');
+  await expect(d.getByRole('button', { name: 'Deckblatt mit Kontakt ansehen' })).toBeVisible();
+  await d.getByRole('button', { name: 'Deckblatt mit Kontakt ansehen' }).click();
+  await expect(page.getByRole('heading', { name: /Seite 1 von \d+/ })).toBeVisible();
+});
+
 test('Hineinziehen: Die ganze Seite nimmt an und zeigt es', async ({ page }) => {
   await page.goto('/');
   const bytes = [...(await pdf(M2)).buffer];

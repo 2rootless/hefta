@@ -39,6 +39,9 @@
   {/if}
   <h3>{t('rechtliches.cookiesTitel')}</h3>
   <p>{t(app ? 'rechtliches.cookiesTextApp' : 'rechtliches.cookiesText')}</p>
+  <!-- E54, E57: freigegeben in Nachricht 10.11. t, nicht rechtlich geprüft. -->
+  <h3>{t('rechtliches.rueckmeldungTitel')}</h3>
+  <p>{t('rechtliches.rueckmeldungText')}</p>
   <h3>{t('rechtliches.rechteTitel')}</h3>
   <p>{t('rechtliches.rechteText')}</p>
   <p><a class="ganz" href="/datenschutz/">{t('rechtliches.ganzeErklaerung')}</a></p>

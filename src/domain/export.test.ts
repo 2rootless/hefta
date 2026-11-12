@@ -7,6 +7,7 @@ import {
   zuAlteUnterlagen,
   mappenDateiname,
   auskunftAntwortenImmer,
+  datensparsamUmstellen,
   einstellungenNachLaden,
   standardEinstellungen,
   strassenteil,
@@ -273,5 +274,66 @@ describe('Dateinamen (06-export.md)', () => {
     expect(einzelDateiname(5, 'Bürgschaftserklärung', 'Anna-Katharina', 'von Hohenstein')).toBe(
       '05_Buergschaftserklaerung_AnnaKatharina_vonHohenstein.pdf',
     );
+  });
+});
+
+describe('E49: „Datensparsam“ wird „Eigene Auswahl“ mit gleichem Inhalt', () => {
+  const typen = [
+    { id: 'selbstauskunft', etikett: 'ueblich', schritt: 'will_wohnung' },
+    { id: 'gehaltsnachweis', etikett: 'ueblich', schritt: 'zusage' },
+    { id: 'bonitaet', etikett: 'ueblich', schritt: 'zusage' },
+    { id: 'mietzahlung', etikett: 'kann_helfen', schritt: 'zusage' },
+    { id: 'wbs', etikett: 'ueblich', schritt: 'will_wohnung' },
+    { id: 'ausweiskopie', etikett: 'meist_unnoetig', schritt: null },
+    { id: 'anschreiben', etikett: 'kann_helfen', schritt: null },
+  ];
+  const mit = (schritt: ExportEinstellungen['schritt']): ExportEinstellungen => ({
+    ...standardEinstellungen(),
+    modus: 'datensparsam',
+    schritt,
+  });
+
+  it('„Ich will die Wohnung“: Selbstauskunft und WBS an, Nachweise für den Vertrag aus, Schalter an', () => {
+    const e = datensparsamUmstellen(mit('will_wohnung'), ['max', 'lea'], typen);
+    expect(e.modus).toBe('eigene_auswahl');
+    expect(e.mietrueckstaendeNachZusage).toBe(true);
+    for (const p of ['max', 'lea']) {
+      expect(e.auswahl[`${p}:selbstauskunft`]).toBe(true);
+      expect(e.auswahl[`${p}:wbs`]).toBe(true);
+      expect(e.auswahl[`${p}:gehaltsnachweis`]).toBe(false);
+      expect(e.auswahl[`${p}:bonitaet`]).toBe(false);
+      expect(e.auswahl[`${p}:mietzahlung`]).toBe(false);
+      expect(e.auswahl[`${p}:ausweiskopie`]).toBe(false);
+    }
+    // Die Antwort zu Mietrückständen bleibt draußen, wie vorher.
+    expect(auskunftAntwortenImmer(e)).toBe(false);
+  });
+
+  it('„Zur Besichtigung“: nichts aus dem Mietwunsch, Schalter an', () => {
+    const e = datensparsamUmstellen(mit('besichtigung'), ['max'], typen);
+    expect(e.auswahl['max:selbstauskunft']).toBe(false);
+    expect(e.auswahl['max:bonitaet']).toBe(false);
+    expect(e.mietrueckstaendeNachZusage).toBe(true);
+  });
+
+  it('„Nach der Zusage“: alle üblichen an, Schalter aus, Antworten immer', () => {
+    const e = datensparsamUmstellen(mit('zusage'), ['max'], typen);
+    expect(e.auswahl['max:gehaltsnachweis']).toBe(true);
+    expect(e.auswahl['max:bonitaet']).toBe(true);
+    // „Kann helfen“ ging auch bei „Datensparsam“ nie mit.
+    expect(e.auswahl['max:mietzahlung']).toBe(false);
+    expect(e.mietrueckstaendeNachZusage).toBe(false);
+    expect(auskunftAntwortenImmer(e)).toBe(true);
+  });
+
+  it('lässt andere Stufen unverändert', () => {
+    const e = { ...standardEinstellungen(), modus: 'alles' as const };
+    expect(datensparsamUmstellen(e, ['max'], typen)).toBe(e);
+  });
+
+  it('der Schalter allein hält die Antwort zurück, auch in „Eigene Auswahl“', () => {
+    const e = { ...standardEinstellungen(), modus: 'eigene_auswahl' as const };
+    expect(auskunftAntwortenImmer(e)).toBe(true);
+    expect(auskunftAntwortenImmer({ ...e, mietrueckstaendeNachZusage: true })).toBe(false);
   });
 });

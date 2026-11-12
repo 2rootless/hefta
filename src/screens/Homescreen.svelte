@@ -9,6 +9,9 @@
   import Notiz from '../ui/Notiz.svelte';
   import { passend, TITEL } from '../ui/passend';
   import Zurueck from '../ui/Zurueck.svelte';
+  import { appEmpfehlen } from '../ui/homescreen';
+  import { istApp } from '../app/plattform';
+  import { APP_STORE_ADRESSE, VERMIETER_ADRESSE, VERMIETER_DOMAIN } from '../app/name';
 
   /** Wohin es danach geht: Einrichtung, Backup einspielen oder (beim zweiten Mal) der Rutsch. */
   let { weiter, zweitesMal = false }: { weiter: string; zweitesMal?: boolean } = $props();
@@ -22,45 +25,81 @@
     await neuLaden();
     ersetzen(weiter);
   }
+
+  // E30: am iPhone in Safari die App statt der Anleitung. Anderswo bleibt die Anleitung.
+  const app = appEmpfehlen();
 </script>
 
 <main class="seite">
   <div class="kopf">
-    <Zurueck href="#{weiter}" text={t('homescreen.spaeter')} onclick={() => fertig(false)} />
+    <Zurueck
+      href="#{weiter}"
+      text={t(app ? 'homescreen.appWeiter' : 'homescreen.spaeter')}
+      onclick={() => fertig(false)}
+    />
   </div>
-  <div class="titelblock">
-    <h1 use:passend={TITEL} class="display">{t('homescreen.titel')}</h1>
-    <p class="lead">{t('homescreen.lead')}</p>
-  </div>
-  <ol class="schritte">
-    <li>
-      <span>
-        {t('homescreen.schritt1Vor')}
-        <b>{t('homescreen.teilen')}</b>
-        {t('homescreen.schritt1Nach')}
-      </span>
-    </li>
-    <li>
-      <span>
-        {t('homescreen.schritt2Vor')}
-        <b>{t('homescreen.zumHome')}</b>.
-      </span>
-    </li>
-    <li>
-      <span
-        >{t('homescreen.schritt3Vor')} <b>{t('homescreen.hinzufuegen')}</b>{t(
-          'homescreen.schritt3Nach',
-        )}</span
-      >
-    </li>
-  </ol>
-  <div class="notiz"><Notiz><p>{t('homescreen.backup')}</p></Notiz></div>
+  {#if app}
+    <div class="titelblock">
+      <h1 use:passend={TITEL} class="display">{t('homescreen.appTitel')}</h1>
+      <p class="lead">{t('homescreen.appLead')}</p>
+    </div>
+    {#if zweitesMal}
+      <div class="notiz"><Notiz><p>{t('homescreen.appBackup')}</p></Notiz></div>
+    {/if}
+  {:else}
+    <div class="titelblock">
+      <h1 use:passend={TITEL} class="display">{t('homescreen.titel')}</h1>
+      <p class="lead">{t('homescreen.lead')}</p>
+    </div>
+    <ol class="schritte">
+      <li>
+        <span>
+          {t('homescreen.schritt1Vor')}
+          <b>{t('homescreen.teilen')}</b>
+          {t('homescreen.schritt1Nach')}
+        </span>
+      </li>
+      <li>
+        <span>
+          {t('homescreen.schritt2Vor')}
+          <b>{t('homescreen.zumHome')}</b>.
+        </span>
+      </li>
+      <li>
+        <span
+          >{t('homescreen.schritt3Vor')} <b>{t('homescreen.hinzufuegen')}</b>{t(
+            'homescreen.schritt3Nach',
+          )}</span
+        >
+      </li>
+    </ol>
+    <div class="notiz"><Notiz><p>{t('homescreen.backup')}</p></Notiz></div>
+  {/if}
 </main>
-<Aktionsleiste
-  text={t('homescreen.erledigt')}
-  onclick={() => fertig(true)}
-  neben={{ text: t('homescreen.spaeter'), onclick: () => fertig(false) }}
-/>
+{#if app}
+  <Aktionsleiste
+    text={t('homescreen.appLaden')}
+    href={APP_STORE_ADRESSE}
+    neben={{ text: t('homescreen.appWeiter'), onclick: () => fertig(false) }}
+  >
+    <!-- Nachricht 8.11. l: Auch hier steht der Hinweis für Vermieter, solange es keinen Haushalt gibt. -->
+    {#snippet fuss()}
+      {#if !zweitesMal && !istApp()}
+        <p class="vermieter">
+          <span class="zeile">{t('ersterStart.vermieterFrage')}</span>
+          {t('ersterStart.vermieterVor')}
+          <a href={VERMIETER_ADRESSE}>{VERMIETER_DOMAIN}</a>{t('ersterStart.vermieterNach')}
+        </p>
+      {/if}
+    {/snippet}
+  </Aktionsleiste>
+{:else}
+  <Aktionsleiste
+    text={t('homescreen.erledigt')}
+    onclick={() => fertig(true)}
+    neben={{ text: t('homescreen.spaeter'), onclick: () => fertig(false) }}
+  />
+{/if}
 
 <style>
   .seite {
@@ -127,5 +166,27 @@
 
   .notiz {
     margin: 22px var(--space-4) 0;
+  }
+
+  /* Wie auf dem ersten Start (E42, B15): leise, gesiezt, Frage und Aufforderung je eine Zeile. */
+  .vermieter {
+    margin: 4px 0 0;
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: calc(14 * var(--px));
+    line-height: calc(20 * var(--px));
+  }
+
+  .vermieter .zeile {
+    display: block;
+  }
+
+  .vermieter a {
+    display: inline-block;
+    padding: 12px 0;
+    margin: -12px 0;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 </style>

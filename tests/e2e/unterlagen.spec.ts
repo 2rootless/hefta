@@ -22,7 +22,7 @@ async function pdfDatei(info: TestInfo, name: string, seiten: string[], passwort
 async function maxOeffnen(page: Page) {
   await haushaltMitMax(page);
   // Auf den Namensbereich tippen (in der Mitte liegt das Eintragen-Feld).
-  await page.getByRole('link', { name: /^Max,/ }).click();
+  await page.getByRole('link', { name: /^Max Hauptmieter$/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Max' })).toBeVisible();
 }
 

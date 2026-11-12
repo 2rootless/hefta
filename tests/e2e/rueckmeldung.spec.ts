@@ -730,7 +730,10 @@ test('Prüfhinweis Name: Übersicht, Person, Seite, Mappe; „Passt so“ gilt f
 }) => {
   await laden(page, '04-fertig', '/');
   await versionenPatchen(page, '-0-bonitaet', FAKTEN({ woerter: ['lea', 'mustermann'] }));
-  await expect(page.getByRole('link', { name: /^Bonitäts.?nachweis prüfen\./ })).toBeVisible();
+  // Tab „Mappe“: Marke „prüfen“ an der Zeile, der Satz nennt es, Teilen bleibt (Nachricht 10.11. k, l, m).
+  await expect(page.getByRole('link', { name: /^Bonitäts.?nachweis .* prüfen ?: / })).toBeVisible();
+  await expect(page.getByText('Alles da. Eine Unterlage solltet ihr noch prüfen.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Mappe teilen' })).toBeVisible();
 
   await page.evaluate(() => (location.hash = '#/person/p-04-fertig-0'));
   await expect(page.getByText(/^Bitte prüfen: Auf dem Dokument steht Lea/)).toBeVisible();
@@ -868,7 +871,9 @@ test('Bonitätsnachweis: Prüfcode statt Panik, nichts wird als offen gezählt',
     page.getByText(/^Vom 10\.\sSeptember\. Prüfcode läuft am 9\.\sNovember ab$/),
   ).toBeVisible();
   await page.evaluate(() => (location.hash = '#/'));
-  await expect(page.getByRole('heading', { level: 1, name: /Alles beisammen/ })).toBeVisible();
+  // Nichts offen: Der Tab „Mappe“ sagt „startklar“, die Zeile „prüfbar bis“.
+  await expect(page.getByText(/^Alles da\. (Ihr seid|Du bist) startklar\.$/)).toBeVisible();
+  await expect(page.getByText(/^prüfbar bis 9\.\sNov/)).toBeVisible();
 
   // Tag 70: abgelaufen, kommt aber in die Mappe.
   await versionenPatchen(page, '-0-bonitaet', {
@@ -1004,7 +1009,8 @@ test('Farbe bei der Person: wählen, vergebene wird getauscht, wirkt überall (P
   await laden(page, '01-standard', '/person-aendern/p-01-standard-2');
   const gruppe = page.getByRole('radiogroup', { name: /^Farbe/ });
   const flieder = gruppe.getByRole('radio', { name: 'Flieder' });
-  await expect(gruppe.getByRole('radio')).toHaveCount(6);
+  // B14: zwölf Farben.
+  await expect(gruppe.getByRole('radio')).toHaveCount(12);
   await expect(flieder).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByText('· Flieder')).toBeVisible();
   await expect(
@@ -1012,21 +1018,21 @@ test('Farbe bei der Person: wählen, vergebene wird getauscht, wirkt überall (P
   ).toBeVisible();
 
   // Vergeben: gewählt wird trotzdem, Max bekommt dafür die bisherige. Noch ist nichts gespeichert.
-  const koralle = gruppe.getByRole('radio', { name: 'Koralle, hat Max' });
+  const koralle = gruppe.getByRole('radio', { name: 'Apricot, hat Max' });
   await expect(koralle).toHaveText('M');
   await koralle.click();
   await expect(page.getByRole('status')).toHaveText('Max bekommt dafür Flieder.');
-  await expect(gruppe.getByRole('radio', { name: 'Koralle' })).toHaveAttribute(
+  await expect(gruppe.getByRole('radio', { name: 'Apricot' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
   await expect(gruppe.getByRole('radio', { name: 'Flieder, hat Max' })).toHaveText('M');
 
-  // Frei: gewählt, die Meldung geht, Max steht wieder bei Koralle.
-  await gruppe.getByRole('radio', { name: 'Ocker' }).click();
-  await expect(page.getByText('· Ocker')).toBeVisible();
+  // Frei: gewählt, die Meldung geht, Max steht wieder bei Apricot.
+  await gruppe.getByRole('radio', { name: 'Honig' }).click();
+  await expect(page.getByText('· Honig')).toBeVisible();
   await expect(page.getByRole('status')).toHaveText('');
-  await expect(gruppe.getByRole('radio', { name: 'Koralle, hat Max' })).toHaveText('M');
+  await expect(gruppe.getByRole('radio', { name: 'Apricot, hat Max' })).toHaveText('M');
   await expect(flieder).toHaveAttribute('aria-checked', 'false');
 
   // Erst „Speichern“ schreibt, danach gilt es überall.
@@ -1038,16 +1044,16 @@ test('Farbe bei der Person: wählen, vergebene wird getauscht, wirkt überall (P
   await expect(page.locator('.farbe-4').first()).toContainText('P');
   await page.goto('about:blank');
   await page.goto('/#/person-aendern/p-01-standard-2');
-  await expect(gruppe.getByRole('radio', { name: 'Ocker' })).toHaveAttribute(
+  await expect(gruppe.getByRole('radio', { name: 'Honig' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
-  await expect(page.getByText('· Ocker')).toBeVisible();
+  await expect(page.getByText('· Honig')).toBeVisible();
 
-  // Bei Max steht jetzt Ocker als vergeben, Flieder ist wieder frei.
+  // Bei Max steht jetzt Honig als vergeben, Flieder ist wieder frei.
   await page.goto('about:blank');
   await page.goto('/#/person-aendern/p-01-standard-0');
-  await expect(gruppe.getByRole('radio', { name: 'Ocker, hat Petra' })).toHaveText('P');
+  await expect(gruppe.getByRole('radio', { name: 'Honig, hat Petra' })).toHaveText('P');
   await expect(gruppe.getByRole('radio', { name: 'Flieder', exact: true })).toBeVisible();
 
   // Die Mappe nimmt die neue Farbe, im Druckton (AM3), und sagt, wo man sie ändert.
@@ -1062,7 +1068,7 @@ test('Farbe bei der Person: wählen, vergebene wird getauscht, wirkt überall (P
         .nth(2)
         .evaluate((e) => (e as HTMLElement).style.getPropertyValue('--ton')),
     )
-    .toBe('#967849');
+    .toBe('#86754c');
   expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
 });
 
@@ -1075,13 +1081,13 @@ test('Farbe: Wer allein ist, liest nichts von Buchstaben; bei sechs Personen ble
   await laden(page, '27-sechs-personen', '/person-aendern/p-27-sechs-personen-3');
   const gruppe = page.getByRole('radiogroup', { name: /^Farbe/ });
   await expect(gruppe.getByRole('radio', { name: /, hat / })).toHaveCount(5);
-  await expect(gruppe.getByRole('radio', { name: 'Ocker' })).toHaveAttribute(
+  await expect(gruppe.getByRole('radio', { name: 'Honig' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
-  // Alle vergeben: Es geht trotzdem, getauscht wird.
+  // Vergeben: Es geht trotzdem, getauscht wird.
   await gruppe.getByRole('radio', { name: 'Ton, hat Petra' }).click();
-  await expect(page.getByRole('status')).toHaveText('Petra bekommt dafür Ocker.');
+  await expect(page.getByRole('status')).toHaveText('Petra bekommt dafür Honig.');
 });
 
 test('Vorschau: sagt, was aus ist, liest keine Datei, erst der Tipp baut die ganze Mappe', async ({
@@ -1176,21 +1182,16 @@ test('Neues Logo: Symbole, Zeichen im Kopf, Ziel offen und erreicht, Kachel beim
       .first()
       .evaluate((e, f) => getComputedStyle(e).getPropertyValue(f), feld);
 
-  // LG1: Das Ziel ist blass und gestrichelt.
+  // LG1 und LG2: Das Ziel stand am Ende des Bands. Der Tab „Mappe“ (B12b) hat kein Band mehr und
+  // darum auch kein Ziel; „startklar“ steht im Kasten oben. Das Logo im Kopf bleibt.
   await laden(page, '01-standard', '/');
   await expect(page.locator('.logo img').first()).toHaveJSProperty('naturalWidth', 186);
-  await expect(page.locator('svg.ziel')).not.toHaveClass(/fertig/);
-  expect(await stil('svg.ziel .klammer', 'stroke-opacity')).toBe('0.18');
-  // Strichelung nach B11 (hefta-ziel-offen-56): 4 und 3,4.
-  expect(await stil('svg.ziel .rahmen', 'stroke-dasharray')).toBe('4px, 3.4px');
-
-  // LG2: Alles da, das Ziel ist die Kachel.
+  await expect(page.locator('svg.ziel')).toHaveCount(0);
   await laden(page, '04-fertig', '/');
-  await expect(page.locator('svg.ziel.fertig')).toBeVisible();
-  expect(await stil('svg.ziel .rahmen', 'fill')).toBe('rgb(255, 132, 102)');
-  expect(await stil('svg.ziel .klammer', 'stroke')).toBe('rgb(255, 255, 255)');
+  await expect(page.locator('.aufgaben.fertig')).toBeVisible();
+  expect(await stil('.logo img', 'width')).not.toBe('0px');
 
-  // LG3: Erster Start mit der Kachel, 76 px.
+  // LG3: Erster Start. Seit Hefta 2 (B15, B16) der Tab „Wohnungen“ mit dem Logo im Kopf statt der Kachel.
   await page.evaluate(
     () =>
       new Promise((ok) => {
@@ -1200,9 +1201,10 @@ test('Neues Logo: Symbole, Zeichen im Kopf, Ziel offen und erreicht, Kachel beim
   );
   await page.goto('about:blank');
   await page.goto('/');
-  const kachel = page.locator('.marke svg[role="img"]');
-  await expect(kachel).toHaveAttribute('width', '76');
-  await expect(kachel).toHaveAccessibleName('Hefta');
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
+  ).toBeVisible();
+  await expect(page.locator('.kopf .logo').first()).toBeVisible();
 });
 
 test.describe('ohne Service Worker', () => {

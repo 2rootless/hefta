@@ -831,7 +831,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       it('Akzentfarbe, Hellgrau und Keine', () => {
         expect(leistenTon({ art: 'einefarbe', akzent: 'bordeaux' }, [])).toBe('#f2eaeb');
         expect(leistenTon({ art: 'personen', flaeche: 'akzent' }, [])).toBe('#eaefed');
-        expect(leistenTon({ art: 'personen', flaeche: 'grau' }, [])).toBe('#f1f2f6');
+        expect(leistenTon({ art: 'personen', flaeche: 'grau' }, [])).toBe('#f3efe8');
         expect(leistenTon({ art: 'personen', flaeche: 'keine' }, [])).toBeNull();
       });
 

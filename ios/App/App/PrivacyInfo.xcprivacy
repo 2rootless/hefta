@@ -2,14 +2,29 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Hefta erfasst nichts, verfolgt nichts und sendet nichts. Einziger Grund nach Apples Liste:
-	     @capacitor/filesystem liest Zeitstempel von Dateien im eigenen Container der App (C617.1). -->
+	<!-- Hefta verfolgt nichts. Erfasst wird nur die freiwillige Rückmeldung (E54, E57): eine Antwort auf
+	     eine feste Frage, nach Rückfrage, nicht mit der Person verknüpft, als Zählung je Tag, Zweck Analyse.
+	     Grund nach Apples Liste: @capacitor/filesystem liest Zeitstempel von Dateien im eigenen Container
+	     der App (C617.1). -->
 	<key>NSPrivacyTracking</key>
 	<false/>
 	<key>NSPrivacyTrackingDomains</key>
 	<array/>
 	<key>NSPrivacyCollectedDataTypes</key>
-	<array/>
+	<array>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>

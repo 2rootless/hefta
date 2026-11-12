@@ -2,7 +2,13 @@
   // „Wer ist dabei?“ in „Mappe erstellen“ (Aufgabe 56, E25): drei Gruppen. Im Mietvertrag und wer mit
   // einzieht sind immer dabei, ohne Kästchen. Bürgen lassen sich je Zeile weglassen; die ganze Zeile
   // schaltet. Ohne Bürgen ist der Abschnitt nur zum Ansehen.
-  import { GRUPPE_BUERGT, GRUPPE_MIT, GRUPPE_VERTRAG, mitEinSatz } from '../domain/mappeWoerter';
+  import {
+    GRUPPE_BUERGT,
+    GRUPPE_MIT,
+    GRUPPE_VERTRAG,
+    mitEinSatz,
+    werIstDabeiHinweis,
+  } from '../domain/mappeWoerter';
   import { rollenText, type PersonStand } from '../domain/regelkatalog';
   import { t } from '../i18n';
   import Symbol from './Symbol.svelte';
@@ -14,6 +20,7 @@
     weitere,
     ohne,
     umschalten,
+    allein = false,
   }: {
     vertrag: PersonStand[];
     buergen: PersonStand[];
@@ -21,7 +28,18 @@
     weitere: number;
     ohne: string[];
     umschalten: (id: string) => void;
+    /** Eine Person im Mietvertrag: „kannst du“ statt „könnt ihr“ (E50). */
+    allein?: boolean;
   } = $props();
+  const satz = $derived(
+    werIstDabeiHinweis(
+      buergen.map((s) => ({
+        vorname: s.person.rufname || s.person.vorname,
+        bezeichnung: s.bezeichnung,
+      })),
+      allein,
+    ),
+  );
 
   const name = (s: PersonStand) => s.person.rufname || s.person.vorname;
 </script>
@@ -50,7 +68,7 @@
 
   {#if buergen.length}
     <h3>{GRUPPE_BUERGT}</h3>
-    <p class="satz">{t('mappe.buergenWeglassen')}</p>
+    <p class="satz">{satz}</p>
     <ul>
       {#each buergen as s (s.person.id)}
         {@const an = !ohne.includes(s.person.id)}

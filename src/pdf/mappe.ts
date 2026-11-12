@@ -1,3 +1,4 @@
+import { PERSONENFARBEN as FARBEN } from '../domain/personenfarben';
 import type { MappenAkzent, MappenAussehen, MappenFlaeche } from '../domain/modell';
 import fontkit from '@cantoo/fontkit';
 import { LineCapStyle, PDFDocument, rgb, type PDFFont, type PDFPage } from '@cantoo/pdf-lib';
@@ -21,14 +22,16 @@ export const TYPO = {
   meta: { groesse: 11, zeile: 14 },
 };
 export const FARBE = {
-  ink: rgb(0x19 / 255, 0x1a / 255, 0x2c / 255),
-  muted: rgb(0x4c / 255, 0x4e / 255, 0x66 / 255),
-  linie: rgb(0xdf / 255, 0xe1 / 255, 0xea / 255),
+  // B14: warme Tinte, leise Schrift und Haarlinie wie in mappe14.py (INK, LEISE, HAAR).
+  ink: rgb(0x26 / 255, 0x22 / 255, 0x1e / 255),
+  muted: rgb(0x43 / 255, 0x3d / 255, 0x37 / 255),
+  linie: rgb(0xd9 / 255, 0xcf / 255, 0xc2 / 255),
   weiss: rgb(1, 1, 1),
 };
 
-/** Personenfarben aus design/tokens.json (person-1 bis person-6), für den schmalen Balken. */
-export const PERSONENFARBEN = ['#ff8466', '#b8e07c', '#c8abff', '#e3b25a', '#ffadc9', '#c9a189'];
+/** Personenfarben aus design/tokens.json (B14: zwölf, Index = Nummer − 1), für Flächen und Vorschau. */
+export const PERSONENFARBEN: readonly string[] = FARBEN.map((f) => f.app);
+const DRUCKTOENE = new Map(FARBEN.map((f) => [f.app.toLowerCase(), f.druckton]));
 
 /** Gedeckte Farben für „Eine Farbe“: dunkel genug, dass die Linie im harten Schwarzweiß bleibt. */
 export const AKZENTE: Record<MappenAkzent, string> = {
@@ -38,10 +41,15 @@ export const AKZENTE: Record<MappenAkzent, string> = {
   graphit: '#3a3a40',
 };
 
-const INK = [0x19, 0x1a, 0x2c] as const;
+const INK = [0x26, 0x22, 0x1e] as const;
 
-/** Personenfarbe als Druckton: um 38 % zu `ink` hin abgedunkelt, damit sie klein auf Papier trägt. */
+/**
+ * Personenfarbe als Druckton. B14: Für die zwölf Farben steht er in der Palette (tokens.json, Regel: zur Tinte
+ * hin gemischt, mindestens 3 : 1 auf Papier, L* höchstens 50). Für andere Farben wie bisher um 38 % abgedunkelt.
+ */
 export function druckTon(farbe: string): string {
+  const aus = DRUCKTOENE.get(farbe.toLowerCase());
+  if (aus) return aus;
   const n = Number.parseInt(farbe.replace('#', ''), 16);
   const kanal = (wert: number, i: number) =>
     Math.round(wert * 0.62 + INK[i]! * 0.38)
@@ -51,8 +59,9 @@ export function druckTon(farbe: string): string {
 }
 
 /** Feine Linie, wenn die Fläche „Keine“ ist. */
-export const FLAECHE_LINIE = '#d5d7e0';
-const HELLGRAU = '#f1f2f6';
+export const FLAECHE_LINIE = '#d9cfc2';
+// B14: warmes Hellgrau der Leiste bei „Schlicht“ (mappe14.py, .db.schlicht .leiste).
+const HELLGRAU = '#f3efe8';
 
 function aufWeiss(farbe: string, anteil: number): string {
   const n = Number.parseInt(farbe.replace('#', ''), 16);
@@ -90,7 +99,7 @@ export function flaechenTon(
  * dann in `ink` (design/mappe-pdf.md, entschieden 5.11.).
  */
 export function deckFarbe(aussehen: MappenAussehen, personFarbe: string): string {
-  if (aussehen.art === 'schlicht') return '#191a2c';
+  if (aussehen.art === 'schlicht') return '#26221e';
   if (aussehen.art === 'einefarbe') return AKZENTE[aussehen.akzent ?? 'tanne'];
   return druckTon(personFarbe);
 }

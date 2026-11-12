@@ -126,7 +126,7 @@
       },
       "cta": {
         "titel": "So sieht die Mappe nach diesem Muster aus",
-        "text": "{app} stellt deine Bewerbungsmappe zusammen, wie du willst: die Selbstauskunft in der Reihenfolge des Musterbogens, die Nachweise nach diesen drei Schritten oder alles Übliche auf einmal, wie es viele Vermieter erwarten. Du entscheidest. Eine Bescheinigung über Mietschulden­freiheit geht mit, wenn du sie hochgeladen hast; Ausweis­kopie und Daten­kopie nur, wenn du sie einzeln auswählst. Kostenlos, ohne Konto; alles bleibt auf deinem Gerät.",
+        "text": "{app} stellt deine Bewerbungsmappe zusammen, wie du willst: die Selbstauskunft in der Reihenfolge des Musterbogens, die Nachweise nach diesen drei Schritten oder alles Übliche auf einmal, wie es viele Vermieter erwarten. Du entscheidest. Eine Bescheinigung über Mietschulden­freiheit geht mit, wenn du sie hochgeladen hast; Ausweis­kopie und Daten­kopie nur, wenn du sie einzeln auswählst. Kostenlos, ohne Konto. {app} schickt deine Daten nirgendwohin. Was hinausgeht, schickst du selbst.",
         "knopf": { "text": "{app} öffnen", "ziel": "start" },
         "link": { "text": "Wie {app} Daten behandelt", "ziel": "recht" }
       },

@@ -45,7 +45,9 @@ sw.addEventListener('fetch', (event) => {
   if (
     url.pathname.includes('/was-darf-der-vermieter-verlangen') ||
     url.pathname.includes('/datenschutz/') ||
-    url.pathname.includes('/ratgeber/')
+    url.pathname.includes('/ratgeber/') ||
+    // Die Seite der Rückmeldung für Links von außen (E54).
+    url.pathname.includes('/rueckmeldung/')
   )
     return;
 

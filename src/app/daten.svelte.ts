@@ -1,7 +1,13 @@
-import type { Einstellungen } from '../domain/modell';
+import type { Einstellungen, Heft } from '../domain/modell';
 import { rueckgaengigVergessen } from './rueckgaengig.svelte';
 import { datenbankOeffnen, type HeftaDb } from '../storage/db';
-import { einstellungenLaden, haushaltLaden, type HaushaltAnsicht } from '../storage/speicher';
+import {
+  einstellungenLaden,
+  haushaltLaden,
+  hefteLaden,
+  hefteAusVersion1EinordnenEinmal,
+  type HaushaltAnsicht,
+} from '../storage/speicher';
 
 // Geladener Stand für die Oberfläche. Nach jeder Änderung `neuLaden()` aufrufen.
 
@@ -11,9 +17,11 @@ export const daten = $state<{
   geladen: boolean;
   ansicht: HaushaltAnsicht | null;
   einstellungen: Einstellungen | null;
+  /** Hefte des Haushalts und die ohne Haushalt (Hefta 2). */
+  hefte: Heft[];
   /** Speicher nicht erreichbar, oder ein anderer Tab mit neuerer Version braucht ihn. */
   fehler: 'speicher' | 'andererTab' | null;
-}>({ geladen: false, ansicht: null, einstellungen: null, fehler: null });
+}>({ geladen: false, ansicht: null, einstellungen: null, hefte: [], fehler: null });
 
 function vergessen(): void {
   const alt = verbindung;
@@ -49,9 +57,12 @@ function verbindungVerloren(e: unknown): boolean {
 
 async function laden(): Promise<void> {
   const verbindung = await db();
+  if (!daten.einstellungen?.version1Eingeordnet) await hefteAusVersion1EinordnenEinmal(verbindung);
   const einstellungen = await einstellungenLaden(verbindung);
   const ansicht = await haushaltLaden(verbindung, einstellungen.aktiverHaushalt);
+  const hefte = await hefteLaden(verbindung, ansicht?.haushalt.id ?? null);
   daten.ansicht = ansicht;
+  daten.hefte = hefte;
   daten.einstellungen = einstellungen;
   daten.geladen = true;
   daten.fehler = null;

@@ -82,6 +82,8 @@ export interface Haushalt extends Basis {
   angabenVon?: string;
   /** Version 2: Nettoeinkommen des Haushalts, selbst eingetragen; fehlt es, gilt die Summe aus den Selbstauskünften. */
   netto?: number | null;
+  /** Hefta 2: Wünsche an die Wohnung, je Haushalt (E53); fehlen sie, gibt es keine Urteile. */
+  wuensche?: import('./urteile').Wuensche | null;
 }
 
 export interface Zugehoerigkeit extends Basis {
@@ -101,6 +103,12 @@ export interface Zugehoerigkeit extends Basis {
 
 export interface Dokument extends Basis {
   personId: Id;
+  /**
+   * Nur bei Typen mit `jeHaushalt` (Bürgschaftserklärung, E53): die Zugehörigkeit, für die sie gilt.
+   * Leer, solange die Person nur in einem Haushalt ist; kommt sie in einen zweiten, bekommt die
+   * Erklärung die Zugehörigkeit des ersten (`personAufnehmen`).
+   */
+  zugehoerigkeitId?: Id | null;
   /** ID des Dokumenttyps aus dem Regelkatalog. */
   typ: string;
   notiz: string;
@@ -215,6 +223,92 @@ export interface Bewerbung extends Basis {
   export?: import('./export').ExportEinstellungen;
 }
 
+/**
+ * Hefta 2 (Schema 2): eine Wohnung als Heft (Bericht 61, docs/32-bauplan-hefta-2-schritt-1.md). Der Stand
+ * steht hier nicht; er rechnet sich aus den Ereignissen (E43). Ein Heft geht auch ohne Haushalt (E45).
+ */
+export interface Heft extends Basis {
+  haushaltId: Id | null;
+  /** Wie die Adresse in Version 1: erste Zeile Straße und Lage, zweite Postleitzahl und Ort. */
+  adresse: string;
+  /** Link zum Inserat; Hefta lädt ihn nie selbst. */
+  link: string | null;
+  quelle: string;
+  inseratText: string | null;
+  /** Lesehilfe (E6): Kennung dieser Wohnung, gleich in jeder Fassung der Mappe. */
+  kennung: string;
+  ereignisse: HeftEreignisse;
+  notiz: string;
+  /** Ein Satz fürs Deckblatt, die Bitte zum Löschen und „Einzug ab“, wie bisher an der Bewerbung. */
+  satz?: string;
+  bitteSatz?: string;
+  einzug?: string;
+  /** Die Mappe für diese Wohnung; fehlt sie, gelten die Einstellungen des Haushalts. */
+  export?: import('./export').ExportEinstellungen;
+  /** Bei der Umstellung auf Hefta 2 aus einer Bewerbung von Version 1 entstanden. */
+  ausVersion1?: true;
+  /**
+   * Angaben aus dem Inserat, bestätigt in der letzten Kontrolle (B23). Fehlt das Feld, gibt es nur die
+   * Adresse, etwa bei Heften aus Version 1. IndexedDB braucht dafür kein neues Schema.
+   */
+  angaben?: HeftAngaben;
+}
+
+/** Was Hefta aus einem Inserat übernimmt; jeder Wert ist bestätigt oder selbst eingetragen. */
+export interface HeftAngaben {
+  /** Überschrift des Inserats. */
+  titel: string | null;
+  /** Kurzer Name des Hefts, etwa „Altbau mit Garten“ (Merkmal, B16); fehlt er, gilt der Titel. */
+  merkmal?: string | null;
+  stadtteil: string | null;
+  warm: number | null;
+  /** Warmmiete nur geschätzt (Portal oder gerechnet): „ca.“ davor. */
+  warmCa?: boolean;
+  kalt?: number | null;
+  nebenkosten?: number | null;
+  heizkosten?: number | null;
+  kaution?: number | null;
+  /**
+   * Staffel- oder Indexmiete laut Inserat: nur ein Hinweis, kein Urteil (B23). „fest“ nur, wenn jemand es
+   * in der Kontrolle gewählt hat (Planung 12d); null: das Inserat sagt nichts dazu.
+   */
+  mietart?: 'staffel' | 'index' | 'fest' | null;
+  zimmer: number | null;
+  flaeche: number | null;
+  flaecheCa?: boolean;
+  /** „JJJJ-MM-TT“ */
+  einzug?: string | null;
+  tiere?: 'erlaubt' | 'anfrage' | 'nicht' | null;
+  /** „unbefristet“, „2 Jahre“ */
+  befristung?: string | null;
+  anbieter?: string | null;
+  /** Portal, auf dem das Inserat stand, etwa „ImmoScout24“. */
+  portal?: string | null;
+}
+
+/** Was mit einem Heft geschah, jeweils mit Zeitpunkt; null: noch nicht. */
+export interface HeftEreignisse {
+  /** Eine Mappe ging hinaus. `sicher`: Das System hat das Senden gemeldet (Mailfenster unter iOS). */
+  beworben: { am: Zeitpunkt; weg: 'mail' | 'portal' | 'website' | 'sonst'; sicher: boolean } | null;
+  /** Die einmalige Frage „Stimmt der Stand?“ wurde gestellt (B16). */
+  gefragtAm: Zeitpunkt | null;
+  termin: { am: Zeitpunkt; ort: string; treffpunkt: string } | null;
+  ergebnis: { art: 'zusage' | 'absage' | 'nicht_mehr'; am: Zeitpunkt } | null;
+  loeschbitteAm: Zeitpunkt | null;
+  nachgefasstAm: Zeitpunkt | null;
+  abgelegtAm: Zeitpunkt | null;
+}
+
+export const KEINE_EREIGNISSE: HeftEreignisse = {
+  beworben: null,
+  gefragtAm: null,
+  termin: null,
+  ergebnis: null,
+  loeschbitteAm: null,
+  nachgefasstAm: null,
+  abgelegtAm: null,
+};
+
 export interface Einstellungen {
   id: 'app';
   updatedAt: Zeitpunkt;
@@ -230,6 +324,12 @@ export interface Einstellungen {
   rutsch?: import('./rutsch').RutschStand | null;
   /** Version 2: gewählter Haushalt, wenn es mehrere gibt; fehlt er, gilt der älteste. */
   aktiverHaushalt?: Id | null;
+  /** Hefta 2: Hefte aus Version 1 sind eingeordnet (Nachricht 10.11. l), einmal beim ersten Start. */
+  version1Eingeordnet?: Zeitpunkt;
+  /** Rückmeldung (E54): abgeschickte Antworten je Frage, nur auf dem Gerät, damit Hefta „Deine Antwort“ zeigt. */
+  rueckmeldung?: Partial<Record<import('../rueckmeldung/fragen').Frage, string>>;
+  /** Moment im Heft (B19): einmal gezeigt, abgeschickt oder „Nicht mehr fragen“. */
+  rueckmeldungMomentFertig?: boolean;
 }
 
 /** Eine gespeicherte Datei. `daten` ist ein Blob oder, wo Blobs nicht gehen, ein ArrayBuffer. */

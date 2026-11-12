@@ -232,7 +232,7 @@
   .blatt i:first-child {
     width: 70%;
     height: 4px;
-    background: #191a2c;
+    background: #26221e;
   }
 
   .blatt .farbig {

@@ -29,6 +29,11 @@ export interface ExportEinstellungen {
   hinweis?: boolean;
   /** Bitte zum Löschen auf dem Deckblatt (design/bitte-zum-loeschen.md); freiwillig, darum aus. */
   bitte?: boolean;
+  /**
+   * E49 (B17a): Die Frage nach Mietrückständen erst nach der Zusage beantworten. Gilt für alle
+   * Selbstauskünfte der Mappe; dort steht dann „Beantworten wir nach der Zusage“.
+   */
+  mietrueckstaendeNachZusage?: boolean;
   /** Leer: aus Nachnamen und Adresse gebildet. */
   dateiname: string;
 }
@@ -242,12 +247,43 @@ export function einzelDateiname(
   return `${teile.filter(Boolean).join('_').replace(/-/g, '')}.pdf`;
 }
 
-/** Selbstauskunft für welchen Schritt? „Datensparsam“ nach Wahl, sonst „Ich will die Wohnung“. */
-/** Nur „Datensparsam“ hält eine Antwort zurück, bis der gewählte Schritt erreicht ist. */
-export function auskunftAntwortenImmer(e: Pick<ExportEinstellungen, 'modus'>): boolean {
-  return e.modus !== 'datensparsam';
+/**
+ * Nur „Datensparsam“ (Version 1) und der Schalter für Mietrückstände (E49) halten eine Antwort zurück, bis
+ * ihr Schritt erreicht ist. Sonst steht jede gegebene Antwort in der Selbstauskunft.
+ */
+export function auskunftAntwortenImmer(
+  e: Pick<ExportEinstellungen, 'modus' | 'mietrueckstaendeNachZusage'>,
+): boolean {
+  return e.modus !== 'datensparsam' && !e.mietrueckstaendeNachZusage;
 }
 
 export function auskunftsSchritt(e: ExportEinstellungen): Schritt {
   return e.modus === 'datensparsam' ? e.schritt : 'will_wohnung';
+}
+
+/**
+ * E49: Aus „Datensparsam“ wird „Eigene Auswahl“ mit genau gleichem Inhalt (docs/32-bauplan-hefta-2-schritt-1.md).
+ * Für jede Person und jeden Dokumenttyp des Katalogs steht ein Schalter so, wie „Datensparsam“ im
+ * gespeicherten Schritt gewählt hätte, auch für Typen, die noch nicht hochgeladen sind. So kommt später
+ * nichts hinzu, was vorher draußen blieb. Die Antwort zu Mietrückständen bleibt vor der Zusage zurück:
+ * Bei „Zur Besichtigung“ ist die Selbstauskunft gar nicht dabei, bei „Ich will die Wohnung“ fehlt nur sie.
+ */
+export function datensparsamUmstellen(
+  e: ExportEinstellungen,
+  personIds: string[],
+  typen: readonly { id: string; etikett: string; schritt?: string | null }[],
+): ExportEinstellungen {
+  if (e.modus !== 'datensparsam') return e;
+  const auswahl: Record<string, boolean> = {};
+  for (const personId of personIds)
+    for (const typ of typen) {
+      const stand = { typ, versionen: [], status: 'fehlt' } as unknown as UnterlagenStand;
+      auswahl[schluessel(personId, typ.id)] = gewaehlt(stand, personId, e);
+    }
+  return {
+    ...e,
+    modus: 'eigene_auswahl',
+    auswahl,
+    mietrueckstaendeNachZusage: e.schritt !== 'zusage',
+  };
 }

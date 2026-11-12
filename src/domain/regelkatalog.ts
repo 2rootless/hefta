@@ -45,6 +45,8 @@ export interface Dokumenttyp {
   etikett: Etikett;
   schritt?: string;
   rollen?: Rolle[];
+  /** Gehört zur Zugehörigkeit, nicht zur Person: gilt nur im eigenen Haushalt (E53, Bürgschaft). */
+  jeHaushalt?: boolean;
   situationen?: Lebenssituation[];
   serie?: { anzahl: number; einheit: string };
   datum?: 'abrechnungsmonat' | 'ausstellungsdatum';
@@ -169,6 +171,9 @@ export function rollenText(rolle: Rolle, bezeichnung: Bezeichnung): string {
   if (bezeichnung === 'neutral') return r.textNeutral ?? r.text;
   return r.text;
 }
+
+/** Alle Dokumenttypen des Katalogs, etwa für die Umstellung von „Datensparsam“ (E49). */
+export const DOKUMENTTYPEN: readonly Dokumenttyp[] = katalog.dokumenttypen;
 
 export function dokumenttyp(id: string): Dokumenttyp | undefined {
   return katalog.dokumenttypen.find((d) => d.id === id);

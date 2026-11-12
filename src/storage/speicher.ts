@@ -1,8 +1,11 @@
+import { VERGABE } from '../domain/personenfarben';
 import { wohnungsSchluessel } from '../domain/adresse';
 import { sortieren } from '../domain/bewerbungen';
+import { hefteAusVersion1Einordnen } from '../domain/hefte';
 import {
   type Bewerbung,
   jetzt,
+  KEINE_EREIGNISSE,
   neueId,
   rufnameAus,
   type Bezeichnung,
@@ -11,6 +14,7 @@ import {
   type Dokument,
   type Einstellungen,
   type Haushalt,
+  type Heft,
   type Id,
   type AusbildungArt,
   type Lebenssituation,
@@ -19,6 +23,8 @@ import {
   type Zugehoerigkeit,
   type VersionFakten,
 } from '../domain/modell';
+import { dokumenttyp } from '../domain/regelkatalog';
+import { erklaerungenFestlegen, farbeImHaushalt, giltImHaushalt } from '../domain/zugehoerigkeiten';
 import { ALLE_ORTE, type HeftaDb } from './db';
 import type { HeftaSchema } from './db';
 
@@ -41,6 +47,30 @@ export function standardEinstellungen(): Einstellungen {
 
 export async function einstellungenLaden(db: HeftaDb): Promise<Einstellungen> {
   return (await db.get('einstellungen', 'app')) ?? standardEinstellungen();
+}
+
+/**
+ * Hefta 2, einmal beim ersten Start (Nachricht 10.11. l): Hefte aus Version 1 ohne eigene Ereignisse
+ * bekommen ihren Stand. Danach nie wieder, auch wenn später noch eine Kennung entsteht.
+ */
+export async function hefteAusVersion1EinordnenEinmal(db: HeftaDb): Promise<void> {
+  const tx = db.transaction(['hefte', 'bewerbungen', 'einstellungen'], 'readwrite');
+  const einstellungen =
+    (await tx.objectStore('einstellungen').get('app')) ?? standardEinstellungen();
+  if (einstellungen.version1Eingeordnet) {
+    await tx.done;
+    return;
+  }
+  const geaendert = hefteAusVersion1Einordnen(
+    await tx.objectStore('hefte').getAll(),
+    await tx.objectStore('bewerbungen').getAll(),
+  );
+  for (const h of geaendert) await tx.objectStore('hefte').put(h);
+  const zeit = jetzt();
+  await tx
+    .objectStore('einstellungen')
+    .put({ ...einstellungen, version1Eingeordnet: zeit, updatedAt: zeit });
+  await tx.done;
 }
 
 export async function einstellungenAendern(
@@ -89,16 +119,19 @@ function personAus(entwurf: PersonEntwurf, zeit: string): Person {
   };
 }
 
-/** Personenfarben 1 bis 6 in Reihenfolge der Einrichtung, danach wieder von vorn. */
+/** Personenfarben in der Reihenfolge aus B14 (Fassung 3), danach wieder von vorn. */
 export function farbeFuer(index: number): number {
-  return (index % 6) + 1;
+  return VERGABE[index % VERGABE.length]!;
 }
 
 /** Erste Farbe, die im Haushalt noch frei ist (sonst reihum nach Anzahl). */
 export function freieFarbe(belegt: number[]): number {
-  for (let f = 1; f <= 6; f++) if (!belegt.includes(f)) return f;
+  for (const f of VERGABE) if (!belegt.includes(f)) return f;
   return farbeFuer(belegt.length);
 }
+
+/** Typen, die zur Zugehörigkeit gehören, nicht zur Person (E53). */
+const jeHaushalt = (typ: string) => dokumenttyp(typ)?.jeHaushalt === true;
 
 /** Legt Haushalt, Personen und Rollen in einer Transaktion an. */
 export async function haushaltAnlegen(db: HeftaDb, entwurf: HaushaltEntwurf): Promise<Haushalt> {
@@ -114,10 +147,11 @@ export async function haushaltAnlegen(db: HeftaDb, entwurf: HaushaltEntwurf): Pr
   };
   const tx = db.transaction(['haushalte', 'personen', 'zugehoerigkeiten'], 'readwrite');
   await tx.objectStore('haushalte').put(haushalt);
+  const alle = await tx.objectStore('zugehoerigkeiten').getAll();
   for (const [i, p] of entwurf.personen.entries()) {
     const person = personAus(p, zeit);
     await tx.objectStore('personen').put(person);
-    await tx.objectStore('zugehoerigkeiten').put({
+    const zug: Zugehoerigkeit = {
       id: neueId(),
       createdAt: zeit,
       updatedAt: zeit,
@@ -125,10 +159,12 @@ export async function haushaltAnlegen(db: HeftaDb, entwurf: HaushaltEntwurf): Pr
       personId: person.id,
       rolle: p.rolle,
       bezeichnung: p.bezeichnung,
-      farbe: farbeFuer(i),
+      farbe: farbeImHaushalt(person.id, haushalt.id, alle),
       reihenfolge: i,
       herausgenommenAm: null,
-    });
+    };
+    alle.push(zug);
+    await tx.objectStore('zugehoerigkeiten').put(zug);
   }
   await tx.done;
   return haushalt;
@@ -175,7 +211,8 @@ export async function haushaltLaden(
       p ? tx.objectStore('dokumente').index('personId').getAll(p.id) : Promise.resolve([]),
     ),
   );
-  const dokumente = dokumenteJe.flat();
+  const hier = new Set(zugehoerigkeiten.map((z) => z.id));
+  const dokumente = dokumenteJe.flat().filter((d) => giltImHaushalt(d, hier, jeHaushalt));
   const versionen = (
     await Promise.all(
       dokumente.map((d) => tx.objectStore('versionen').index('dokumentId').getAll(d.id)),
@@ -300,7 +337,7 @@ export async function mitgliedHinzufuegen(
   const bisher = await tx.objectStore('zugehoerigkeiten').index('haushaltId').getAll(haushaltId);
   const reihenfolge = bisher.reduce((max, z) => Math.max(max, z.reihenfolge + 1), 0);
   const person = personAus(entwurf, zeit);
-  const aktiv = bisher.filter((z) => !z.herausgenommenAm);
+  const alle = await tx.objectStore('zugehoerigkeiten').getAll();
   await tx.objectStore('personen').put(person);
   await tx.objectStore('zugehoerigkeiten').put({
     id: neueId(),
@@ -310,12 +347,60 @@ export async function mitgliedHinzufuegen(
     personId: person.id,
     rolle: entwurf.rolle,
     bezeichnung: entwurf.bezeichnung,
-    farbe: freieFarbe(aktiv.map((z) => z.farbe)),
+    farbe: farbeImHaushalt(person.id, haushaltId, alle),
     reihenfolge,
     herausgenommenAm: null,
   });
   await tx.done;
   return person;
+}
+
+/**
+ * Nimmt eine Person, die es schon gibt, in einen weiteren Haushalt auf (E53, Modell für Schritt 2).
+ * Sie bringt ihre Farbe mit. Ihre Erklärungen ohne Zugehörigkeit bekommen die ihres ersten
+ * Haushalts, damit sie dort bleiben und im neuen nicht zählen. Ist sie schon darin, ändert sich nichts.
+ */
+export async function personAufnehmen(
+  db: HeftaDb,
+  haushaltId: Id,
+  personId: Id,
+  rolle: Rolle,
+  bezeichnung: Bezeichnung,
+): Promise<Zugehoerigkeit> {
+  const zeit = jetzt();
+  const tx = db.transaction(['zugehoerigkeiten', 'dokumente'], 'readwrite');
+  const alle = await tx.objectStore('zugehoerigkeiten').getAll();
+  const da = alle.find((z) => z.personId === personId && z.haushaltId === haushaltId);
+  if (da) {
+    await tx.done;
+    return da;
+  }
+  const eigene = alle
+    .filter((z) => z.personId === personId)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const erste = eigene[0];
+  if (erste) {
+    const dokumente = await tx.objectStore('dokumente').index('personId').getAll(personId);
+    for (const d of erklaerungenFestlegen(dokumente, erste.id, jeHaushalt))
+      await tx.objectStore('dokumente').put({ ...d, updatedAt: zeit });
+  }
+  const zug: Zugehoerigkeit = {
+    id: neueId(),
+    createdAt: zeit,
+    updatedAt: zeit,
+    haushaltId,
+    personId,
+    rolle,
+    bezeichnung,
+    farbe: farbeImHaushalt(personId, haushaltId, alle),
+    reihenfolge: alle
+      .filter((z) => z.haushaltId === haushaltId)
+      .reduce((m, z) => Math.max(m, z.reihenfolge + 1), 0),
+    herausgenommenAm: null,
+  };
+  await tx.objectStore('zugehoerigkeiten').put(zug);
+  await tx.done;
+  return zug;
 }
 
 /**
@@ -341,14 +426,16 @@ export async function mitgliedZurueckholen(
   const tx = db.transaction('zugehoerigkeiten', 'readwrite');
   const zug = await tx.store.get(zugehoerigkeitId);
   if (!zug) return;
-  const alle = await tx.store.index('haushaltId').getAll(zug.haushaltId);
-  const aktiv = alle.filter((z) => !z.herausgenommenAm && z.id !== zug.id);
-  const belegt = aktiv.map((z) => z.farbe);
+  const ueberall = await tx.store.getAll();
+  const alle = ueberall.filter((z) => z.haushaltId === zug.haushaltId);
+  const belegt = alle.filter((z) => !z.herausgenommenAm && z.id !== zug.id).map((z) => z.farbe);
   await tx.store.put({
     ...zug,
     ...teil,
     herausgenommenAm: null,
-    farbe: belegt.includes(zug.farbe) ? freieFarbe(belegt) : zug.farbe,
+    farbe: belegt.includes(zug.farbe)
+      ? farbeImHaushalt(zug.personId, zug.haushaltId, ueberall)
+      : zug.farbe,
     reihenfolge: alle.reduce((m, z) => Math.max(m, z.reihenfolge + 1), 0),
     updatedAt: jetzt(),
   });
@@ -577,6 +664,8 @@ export async function allesLoeschen(db: HeftaDb): Promise<void> {
 // ---------- Unterlagen (M3) ----------
 
 export interface UnterlageEntwurf {
+  /** Nur bei Typen mit `jeHaushalt`, wenn die Person in mehreren Haushalten ist (E53, Schritt 2). */
+  zugehoerigkeitId?: Id | null;
   /** Name der hochgeladenen Datei, für die Seite der Unterlage. */
   dateiname?: string | null;
   personId: Id;
@@ -643,12 +732,16 @@ async function versionAnlegen(
 ): Promise<DateiVersion> {
   const zeit = jetzt();
   const tx = db.transaction(['dokumente', 'versionen'], 'readwrite');
+  const zugId = jeHaushalt(e.typ) ? (e.zugehoerigkeitId ?? null) : null;
   const bisher = (await tx.objectStore('dokumente').index('personId').getAll(e.personId)).find(
-    (d) => d.typ === e.typ,
+    (d) => d.typ === e.typ && (d.zugehoerigkeitId ?? null) === zugId,
   );
   // Neue Unterlage: Erinnerungen dürfen wieder fragen.
   const dokument: Dokument = {
-    ...(bisher ?? neuesDokument(e.personId, e.typ, e.serie)),
+    ...(bisher ?? {
+      ...neuesDokument(e.personId, e.typ, e.serie),
+      ...(zugId ? { zugehoerigkeitId: zugId } : {}),
+    }),
     stummBis: null,
     updatedAt: zeit,
   };
@@ -879,4 +972,58 @@ export async function dokumentAendern(
   );
   const dokument = bisher ?? neuesDokument(personId, typ, serie);
   await db.put('dokumente', { ...dokument, ...teil, updatedAt: jetzt() });
+}
+
+// Hefte (Hefta 2, Schema 2). Ein Heft gehört zu einem Haushalt oder zu keinem (E45).
+
+/** Die Hefte des Haushalts und die ohne Haushalt, in der Reihenfolge ihres Entstehens. */
+export async function hefteLaden(db: HeftaDb, haushaltId: Id | null): Promise<Heft[]> {
+  const alle = await db.getAll('hefte');
+  return alle
+    .filter((h) => h.haushaltId === null || h.haushaltId === haushaltId)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+/** Ändert ein Heft; `updatedAt` setzt Hefta. Gibt es das Heft nicht mehr, geschieht nichts. */
+export async function heftAendern(
+  db: HeftaDb,
+  id: Id,
+  aenderung: Partial<Omit<Heft, 'id' | 'createdAt'>>,
+): Promise<Heft | null> {
+  const tx = db.transaction('hefte', 'readwrite');
+  const alt = await tx.store.get(id);
+  if (!alt) {
+    await tx.done;
+    return null;
+  }
+  const neu: Heft = {
+    ...alt,
+    ...aenderung,
+    id: alt.id,
+    createdAt: alt.createdAt,
+    updatedAt: jetzt(),
+  };
+  await tx.store.put(neu);
+  await tx.done;
+  return neu;
+}
+
+/** Ein neues Heft, „Gemerkt“, mit eigener Kennung für die Lesehilfe (E6). */
+export async function heftAnlegen(
+  db: HeftaDb,
+  entwurf: Pick<Heft, 'haushaltId' | 'adresse' | 'link' | 'quelle' | 'inseratText' | 'angaben'>,
+): Promise<Heft> {
+  const zeit = jetzt();
+  const heft: Heft = {
+    id: neueId(),
+    createdAt: zeit,
+    updatedAt: zeit,
+    kennung: neueId(),
+    ereignisse: { ...KEINE_EREIGNISSE },
+    notiz: '',
+    ...entwurf,
+  };
+  if (!heft.angaben) delete heft.angaben;
+  await db.put('hefte', heft);
+  return heft;
 }

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { adresseTeile, adresseZeilen } from '../domain/adresse';
 import { APP_NAME } from './name';
+import { RUECKMELDUNG_ADRESSE, rueckmeldungLink } from './impressum';
 
 const lesen = (pfad: string) => readFileSync(pfad, 'utf-8');
 
@@ -15,11 +16,13 @@ describe('Der Name steht an einer Stelle', () => {
 
   it('kein Satz nennt noch den alten Namen als Dienst', () => {
     const alt =
-      /(?<![Dd]ie |[Dd]er |[Ee]ine |Eure |Deine |eurer |deiner |jede |ganze |zur |dieser )\bMappe\b(?! erstellen| anpassen| ansehen| anhängen| wird erstellt| trotzdem)/;
+      /(?<![Dd]ie |[Dd]er |[Ee]ine |[Ee]iner |Eure |Deine |eurer |deiner |jede |ganze |zur |dieser )\bMappe\b(?! erstellen| anpassen| ansehen| anhängen| wird erstellt| trotzdem| teilen)/;
     const treffer = [lesen('src/i18n/de.json'), lesen('data/regelkatalog.de.json')]
       .join('\n')
       .split('\n')
-      .filter((zeile) => alt.test(zeile));
+      .filter((zeile) => alt.test(zeile))
+      // Hefta 2: „Mappe“ ist der Name des Tabs (B12), nicht des Dienstes.
+      .filter((zeile) => zeile.trim() !== '"mappe": "Mappe"');
     expect(treffer).toEqual([]);
   });
 
@@ -60,5 +63,14 @@ describe('Adresse auf dem Deckblatt', () => {
     });
     expect(adresseTeile(['Lindenallee 3'])).toEqual({ strasse: 'Lindenallee 3', rest: '' });
     expect(adresseZeilen('  \n ')).toEqual([]);
+  });
+});
+
+describe('Rückmeldung (E52)', () => {
+  it('nimmt die Adresse aus dem Impressum und setzt den Betreff', () => {
+    expect(RUECKMELDUNG_ADRESSE).toMatch(/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/);
+    expect(rueckmeldungLink('Mehrere Geräte')).toBe(
+      `mailto:${RUECKMELDUNG_ADRESSE}?subject=Mehrere%20Ger%C3%A4te`,
+    );
   });
 });

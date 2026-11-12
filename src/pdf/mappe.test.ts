@@ -87,15 +87,39 @@ describe('PDF-Mappe', () => {
   });
 });
 
-describe('Druckton der Personenfarben (mappe-pdf.md)', () => {
-  it('ergibt die sechs Töne aus dem Design', () => {
+describe('Druckton der Personenfarben (B14, Fassung 3)', () => {
+  it('ergibt die zwölf Drucktöne der Palette, nach Nummer', () => {
     expect(PERSONENFARBEN.map(druckTon)).toEqual([
-      '#a85c50',
-      '#7c955e',
-      '#8674af',
-      '#967849',
-      '#a8758d',
-      '#866e66',
+      '#956f4d',
+      '#727b4e',
+      '#7d728b',
+      '#86754c',
+      '#996977',
+      '#826c5e',
+      '#65628e',
+      '#597d73',
+      '#366f72',
+      '#895772',
+      '#4e708e',
+      '#5e7a8b',
     ]);
+  });
+
+  it('jeder Druckton hat auf Weiß und auf dem warmen Grund mindestens 3 : 1 (P34)', () => {
+    const lum = (hex: string) => {
+      const n = Number.parseInt(hex.slice(1), 16);
+      const k = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {
+        const v = c / 255;
+        return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * k[0]! + 0.7152 * k[1]! + 0.0722 * k[2]!;
+    };
+    const kontrast = (a: string, b: string) => {
+      const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+      return (x! + 0.05) / (y! + 0.05);
+    };
+    for (const farbe of PERSONENFARBEN)
+      for (const grund of ['#ffffff', '#faf6ef', '#efe6d8'])
+        expect(kontrast(druckTon(farbe), grund)).toBeGreaterThanOrEqual(3);
   });
 });

@@ -1,12 +1,13 @@
 // Eine Quelle für die Content-Security-Policy: Meta-Tag im HTML und HTTP-Header beim Hosting.
-// connect-src 'self' verbietet jede Verbindung zu fremden Hosts.
+// connect-src erlaubt den eigenen Ursprung und genau eine fremde Adresse: den Empfang der
+// Rückmeldung (E54, E57), den die App nur nach „Abschicken“ in der Rückfrage aufruft.
 const gemeinsam = [
   "default-src 'none'",
   "script-src 'self' 'wasm-unsafe-eval'",
   "style-src 'self'",
   "img-src 'self' blob: data:",
   "font-src 'self'",
-  "connect-src 'self'",
+  "connect-src 'self' https://hefta.de/api/rueckmeldung",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "frame-src 'self' blob:",

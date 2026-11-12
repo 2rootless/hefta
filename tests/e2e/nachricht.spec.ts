@@ -212,20 +212,25 @@ test.describe('Nachricht ans Inserat', () => {
 });
 
 test.describe('Feinschliff', () => {
-  test('Drei Stufen, Marktüblich vorausgewählt, Eigene Auswahl als Zeile (ME12, X13)', async ({
+  test('Stufen nach B12c: Nur das Übliche vorausgewählt, Alles, Eigene Auswahl als Zeile (E49)', async ({
     page,
   }) => {
     await laden(page, '04-fertig', '/mappe');
-    await expect(page.getByRole('radio', { name: 'Marktüblich' })).toHaveAttribute(
+    await expect(page.getByRole('radio', { name: 'Nur das Übliche' })).toHaveAttribute(
       'aria-checked',
       'true',
     );
-    await expect(page.getByRole('radio')).toHaveText(['Alles', 'Marktüblich', 'Datensparsam']);
+    await expect(page.getByRole('radio')).toHaveText(['Nur das Übliche', 'Alles']);
+    await expect(
+      page.getByText(/Reicht für die meisten Bewerbungen. Alles darin ist erlaubt/),
+    ).toBeVisible();
     await page.getByRole('radio', { name: 'Alles' }).click();
-    await expect(page.getByText(/Nie Ausweiskopie oder Datenkopie/)).toBeVisible();
+    await expect(
+      page.getByText(/^Alles, was (ihr gesammelt habt|du gesammelt hast)\.$/),
+    ).toBeVisible();
     await page.getByRole('button', { name: /^Eigene Auswahl/ }).click();
     await expect(page.getByRole('button', { name: /^Eigene Auswahl, gewählt/ })).toBeVisible();
-    for (const stufe of ['Alles', 'Marktüblich', 'Datensparsam']) {
+    for (const stufe of ['Nur das Übliche', 'Alles']) {
       await expect(page.getByRole('radio', { name: stufe })).toHaveAttribute(
         'aria-checked',
         'false',

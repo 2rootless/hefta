@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
-import { neueId } from '../domain/modell';
+import { wohnungsSchluessel } from '../domain/adresse';
+import { KEINE_EREIGNISSE, neueId } from '../domain/modell';
 import { BackupFehler } from './backup';
 import { ALLE_ORTE, SCHEMA_VERSION, datenMigrieren, datenbankOeffnen, type HeftaDb } from './db';
 import {
@@ -28,11 +29,13 @@ import {
   haushaltAnlegen,
   haushaltLaden,
   haushaltZaehlen,
+  hefteAusVersion1EinordnenEinmal,
   mitgliedEntfernen,
   mitgliedHerausnehmen,
   mitgliedHinzufuegen,
   mitgliedZurueckholen,
   personAendern,
+  personAufnehmen,
   personGanzLoeschen,
   speicherBelegt,
   unterlageSpeichern,
@@ -112,6 +115,141 @@ describe('Datenbank', () => {
     const daten = { personen: [{ id: 'a' }] };
     expect(datenMigrieren(daten, SCHEMA_VERSION)).toEqual(daten);
   });
+  it('Schema 2: Beim Öffnen wird jede Bewerbung mit Adresse ein Heft, mit derselben Kennung', async () => {
+    const name = `schema2-${neueId()}`;
+    const alt = await datenbankOeffnen(name, 1);
+    const zeit = '2026-11-01T10:00:00.000Z';
+    const basis = {
+      createdAt: zeit,
+      updatedAt: zeit,
+      haushaltId: 'h1',
+      quelle: 'Kleinanzeigen',
+      inseratText: 'Schöne Wohnung',
+      anrede: '',
+      ansprechpartner: '',
+      personen: [],
+      exportprofilId: null,
+      verwendeteVersionen: [],
+      bestandteile: {
+        deckblatt: true,
+        inhaltsverzeichnis: true,
+        anschreiben: false,
+        fusszeile: true,
+      },
+      dateiname: null,
+      kontakt: null,
+      status: null,
+      anschreiben: null,
+    };
+    await alt.put('bewerbungen', {
+      ...basis,
+      id: 'b1',
+      adresse: 'Hauptstraße 12, 3. OG links\n22767 Hamburg',
+      satz: 'Wir suchen ab Februar.',
+      kennungen: { [wohnungsSchluessel('Hauptstraße 12, 3. OG links\n22767 Hamburg')]: 'k-1' },
+    });
+    await alt.put('bewerbungen', { ...basis, id: 'b2', adresse: '  ' });
+    alt.close();
+
+    const db = await datenbankOeffnen(name);
+    expect(db.version).toBe(2);
+    const hefte = await db.getAll('hefte');
+    expect(hefte).toHaveLength(1);
+    expect(hefte[0]).toMatchObject({
+      haushaltId: 'h1',
+      adresse: 'Hauptstraße 12, 3. OG links\n22767 Hamburg',
+      kennung: 'k-1',
+      quelle: 'Kleinanzeigen',
+      inseratText: 'Schöne Wohnung',
+      satz: 'Wir suchen ab Februar.',
+      ausVersion1: true,
+      // Nachricht 10.11. l: Mit Kennung gab es eine Mappe, gesendet ist nicht sicher.
+      ereignisse: { beworben: { am: zeit, weg: 'sonst', sicher: false }, gefragtAm: null },
+    });
+    // Nichts gelöscht: Die Bewerbungen bleiben, wie sie waren.
+    expect((await db.getAll('bewerbungen')).map((b) => b.id).sort()).toEqual(['b1', 'b2']);
+    expect(await db.getAllFromIndex('hefte', 'haushaltId', 'h1')).toHaveLength(1);
+  });
+
+  it('Hefta 2 ordnet Hefte aus Version 1 einmal ein, nur ohne eigene Ereignisse', async () => {
+    const db = await neueDb();
+    const zeit = '2026-10-01T10:00:00.000Z';
+    const adresse = 'Lindenallee 17\n20259 Hamburg';
+    await db.put('bewerbungen', {
+      ...(await bewerbungAnlegen(db, 'h1')),
+      adresse,
+      updatedAt: zeit,
+      kennungen: { [wohnungsSchluessel(adresse)]: 'k-7' },
+    });
+    const heft = {
+      id: 'heft-1',
+      createdAt: zeit,
+      updatedAt: zeit,
+      haushaltId: 'h1',
+      adresse,
+      link: null,
+      quelle: '',
+      inseratText: null,
+      kennung: 'k-7',
+      ereignisse: { ...KEINE_EREIGNISSE },
+      notiz: '',
+      ausVersion1: true as const,
+    };
+    await db.put('hefte', heft);
+    await db.put('hefte', {
+      ...heft,
+      id: 'heft-2',
+      ereignisse: { ...KEINE_EREIGNISSE, gefragtAm: zeit },
+    });
+    await hefteAusVersion1EinordnenEinmal(db);
+    expect((await db.get('hefte', 'heft-1'))?.ereignisse.beworben).toEqual({
+      am: zeit,
+      weg: 'sonst',
+      sicher: false,
+    });
+    // Schon gefragt: bleibt, wie es ist.
+    expect((await db.get('hefte', 'heft-2'))?.ereignisse.beworben).toBeNull();
+    expect((await einstellungenLaden(db)).version1Eingeordnet).toBeTruthy();
+    // Einmal: Ein zweiter Lauf ändert nichts mehr.
+    await db.put('hefte', heft);
+    await hefteAusVersion1EinordnenEinmal(db);
+    expect((await db.get('hefte', 'heft-1'))?.ereignisse.beworben).toBeNull();
+    db.close();
+  });
+
+  it('Schema 2: dieselbe Regel für Backups aus Schema 1', () => {
+    const daten = datenMigrieren(
+      {
+        bewerbungen: [
+          { id: 'b1', haushaltId: 'h1', adresse: 'Elbchaussee 1', createdAt: '', updatedAt: '' },
+          { id: 'b2', haushaltId: 'h1', adresse: '', createdAt: '', updatedAt: '' },
+        ],
+      },
+      1,
+    );
+    expect(daten.hefte).toHaveLength(1);
+    expect(daten.hefte![0]).toMatchObject({ adresse: 'Elbchaussee 1', haushaltId: 'h1' });
+    expect(daten.bewerbungen).toHaveLength(2);
+  });
+
+  it('ein Heft ohne Haushalt (E45) lässt sich speichern und steht nicht im Index', async () => {
+    const db = await neueDb();
+    await db.put('hefte', {
+      id: 'x',
+      createdAt: '',
+      updatedAt: '',
+      haushaltId: null,
+      adresse: 'Lindenallee 3',
+      link: null,
+      quelle: '',
+      inseratText: null,
+      kennung: 'k',
+      ereignisse: { ...KEINE_EREIGNISSE },
+      notiz: '',
+    });
+    expect(await db.count('hefte')).toBe(1);
+    expect(await db.getAllFromIndex('hefte', 'haushaltId', 'x')).toHaveLength(0);
+  });
 });
 
 describe('Haushalt', () => {
@@ -127,9 +265,10 @@ describe('Haushalt', () => {
         m.zugehoerigkeit.farbe,
       ]),
     ).toEqual([
+      // B14: Vergabe in der Reihenfolge der Palette, nicht nach Nummer: Apricot 1, Lavendel 7, Minze 8.
       ['Max', 'hauptmieter', 1],
-      ['Lea', 'mitmieter', 2],
-      ['Petra', 'buerge', 3],
+      ['Lea', 'mitmieter', 7],
+      ['Petra', 'buerge', 8],
     ]);
     for (const m of ansicht.mitglieder) {
       expect(m.person.id).toMatch(/^[0-9a-f-]{36}$/);
@@ -162,11 +301,11 @@ describe('Haushalt', () => {
       );
     const lea = (await haushaltLaden(db))!.mitglieder[1]!.zugehoerigkeit.id;
     await farbeSetzen(db, lea, 1);
-    expect(await farben()).toEqual({ Max: 2, Lea: 1, Petra: 3 });
+    expect(await farben()).toEqual({ Max: 7, Lea: 1, Petra: 8 });
     await farbeSetzen(db, lea, 5);
-    expect(await farben()).toEqual({ Max: 2, Lea: 5, Petra: 3 });
+    expect(await farben()).toEqual({ Max: 7, Lea: 5, Petra: 8 });
     await farbeSetzen(db, lea, 5);
-    expect(await farben()).toEqual({ Max: 2, Lea: 5, Petra: 3 });
+    expect(await farben()).toEqual({ Max: 7, Lea: 5, Petra: 8 });
   });
 
   it('gibt null zurück, wenn es noch keinen Haushalt gibt', async () => {
@@ -198,7 +337,7 @@ describe('Haushalt', () => {
     const zug = ansicht.mitglieder[3]!.zugehoerigkeit;
     expect(zug.reihenfolge).toBe(3);
     expect(tom.id).toBe(ansicht.mitglieder[3]!.person.id);
-    expect(zug.farbe).toBe(4);
+    expect(zug.farbe).toBe(9);
 
     const dateiId = await dateiSpeichern(db, new Blob(['pdf'], { type: 'application/pdf' }));
     const dokId = neueId();
@@ -519,7 +658,7 @@ describe('Herausnehmen', () => {
     const haushalt = await haushaltDesAuftraggebers(db);
     const lea = (await haushaltLaden(db))!.mitglieder[1]!;
     await mitgliedHerausnehmen(db, lea.zugehoerigkeit.id);
-    // Leas Farbe 2 wird frei und geht an die nächste neue Person.
+    // Leas Farbe 7 wird frei und geht an die nächste neue Person.
     await mitgliedHinzufuegen(db, haushalt.id, {
       vorname: 'Tom',
       nachname: 'Beispiel',
@@ -528,16 +667,16 @@ describe('Herausnehmen', () => {
       lebenssituation: null,
     });
     expect((await haushaltLaden(db))!.mitglieder.map((m) => m.zugehoerigkeit.farbe)).toEqual([
-      1, 3, 2,
+      1, 8, 7,
     ]);
     await mitgliedZurueckholen(db, lea.zugehoerigkeit.id);
     const ansicht = (await haushaltLaden(db))!;
     expect(ansicht.herausgenommen).toEqual([]);
     expect(ansicht.mitglieder.map((m) => [m.person.vorname, m.zugehoerigkeit.farbe])).toEqual([
       ['Max', 1],
-      ['Petra', 3],
-      ['Tom', 2],
-      ['Lea', 4],
+      ['Petra', 8],
+      ['Tom', 7],
+      ['Lea', 9],
     ]);
   });
   it('holt als Bürgin zurück, wenn sie diesmal bürgt (Rolle gilt nur hier)', async () => {
@@ -817,6 +956,114 @@ describe('Dateien, die sich Versionen teilen', () => {
     await verwaisteDateienLoeschen(db, -1000);
     expect(await db.get('dateien', erste.original)).toBeDefined();
     expect((await db.get('versionen', zweite.id))?.seiten).toEqual([1]);
+    db.close();
+  });
+});
+
+describe('Mehrere Haushalte, Modell (E53)', () => {
+  function erklaerung(personId: string, zugehoerigkeitId?: string) {
+    return {
+      personId,
+      typ: 'buergschaftserklaerung',
+      serie: null,
+      original: new Blob(['PDF Bürgschaft'], { type: 'application/pdf' }),
+      aufbereitet: null,
+      ausstellungsdatum: '2026-11-01',
+      abrechnungsmonat: null,
+      variante: null,
+      seiten: null,
+      gerastert: false,
+      ...(zugehoerigkeitId ? { zugehoerigkeitId } : {}),
+    };
+  }
+
+  async function zweiHaushalte() {
+    const db = await neueDb();
+    const erster = await haushaltDesAuftraggebers(db);
+    const zweiter = await haushaltAnlegen(db, {
+      kinder: 0,
+      weitereErwachsene: 0,
+      personen: [
+        {
+          vorname: 'Jonas',
+          nachname: 'Becker',
+          bezeichnung: 'maennlich',
+          rolle: 'hauptmieter',
+          lebenssituation: 'angestellt',
+        },
+      ],
+    });
+    const a = (await haushaltLaden(db, erster.id))!;
+    const petra = a.mitglieder.find((m) => m.person.vorname === 'Petra')!;
+    return { db, erster, zweiter, petra };
+  }
+
+  it('ein zweiter Haushalt vergibt keine Farbe, die im ersten schon vergeben ist', async () => {
+    const { db, erster, zweiter } = await zweiHaushalte();
+    const a = (await haushaltLaden(db, erster.id))!.mitglieder.map((m) => m.zugehoerigkeit.farbe);
+    const b = (await haushaltLaden(db, zweiter.id))!.mitglieder.map((m) => m.zugehoerigkeit.farbe);
+    expect(a).toEqual([1, 7, 8]);
+    expect(b).toEqual([9]);
+    db.close();
+  });
+
+  it('eine Person kommt mit ihrer Farbe in den zweiten Haushalt, einmal', async () => {
+    const { db, zweiter, petra } = await zweiHaushalte();
+    const zug = await personAufnehmen(db, zweiter.id, petra.person.id, 'buerge', 'weiblich');
+    expect(zug.farbe).toBe(petra.zugehoerigkeit.farbe);
+    expect(zug.reihenfolge).toBe(1);
+    const nochmal = await personAufnehmen(db, zweiter.id, petra.person.id, 'buerge', 'weiblich');
+    expect(nochmal.id).toBe(zug.id);
+    expect((await db.getAll('personen')).length).toBe(4);
+    db.close();
+  });
+
+  it('die Bürgschaftserklärung bleibt im ersten Haushalt, der Gehaltsnachweis gilt in beiden', async () => {
+    const { db, erster, zweiter, petra } = await zweiHaushalte();
+    await unterlageSpeichern(db, erklaerung(petra.person.id));
+    await unterlageSpeichern(db, {
+      ...erklaerung(petra.person.id),
+      typ: 'rentenbescheid',
+      ausstellungsdatum: '2026-01-15',
+    });
+    await personAufnehmen(db, zweiter.id, petra.person.id, 'buerge', 'weiblich');
+    const typen = async (id: string) =>
+      (await haushaltLaden(db, id))!.dokumente
+        .filter((d) => d.personId === petra.person.id)
+        .map((d) => d.typ)
+        .sort();
+    expect(await typen(erster.id)).toEqual(['buergschaftserklaerung', 'rentenbescheid']);
+    expect(await typen(zweiter.id)).toEqual(['rentenbescheid']);
+    const alt = (await db.getAll('dokumente')).find((d) => d.typ === 'buergschaftserklaerung')!;
+    expect(alt.zugehoerigkeitId).toBe(petra.zugehoerigkeit.id);
+    db.close();
+  });
+
+  it('eine neue Erklärung für den zweiten Haushalt ersetzt die des ersten nicht', async () => {
+    const { db, erster, zweiter, petra } = await zweiHaushalte();
+    await unterlageSpeichern(db, erklaerung(petra.person.id));
+    const zug = await personAufnehmen(db, zweiter.id, petra.person.id, 'buerge', 'weiblich');
+    await unterlageSpeichern(db, erklaerung(petra.person.id, zug.id));
+    const erklaerungen = (await db.getAll('dokumente')).filter(
+      (d) => d.typ === 'buergschaftserklaerung',
+    );
+    expect(erklaerungen.map((d) => d.zugehoerigkeitId).sort()).toEqual(
+      [petra.zugehoerigkeit.id, zug.id].sort(),
+    );
+    for (const h of [erster.id, zweiter.id])
+      expect(
+        (await haushaltLaden(db, h))!.dokumente.filter((d) => d.typ === 'buergschaftserklaerung'),
+      ).toHaveLength(1);
+    db.close();
+  });
+
+  it('mit einem Haushalt bekommt eine Erklärung keine Zugehörigkeit', async () => {
+    const db = await neueDb();
+    const h = await haushaltDesAuftraggebers(db);
+    const petra = (await haushaltLaden(db, h.id))!.mitglieder[2]!;
+    await unterlageSpeichern(db, erklaerung(petra.person.id));
+    const [d] = await db.getAll('dokumente');
+    expect(d && 'zugehoerigkeitId' in d).toBe(false);
     db.close();
   });
 });

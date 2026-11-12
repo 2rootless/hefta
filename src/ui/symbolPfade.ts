@@ -281,6 +281,16 @@ export const SYMBOLE = {
     wort: 'Löschtermin',
     groessen: [16, 20, 24],
   },
+  // Hefta 2, Tab „Mappe“ (B12, Tab-Leiste): Klemmbrett mit zwei Zeilen.
+  mappe: {
+    voll: [
+      'M10.2 7.6h-.4c-1.3 0-2.3 1-2.3 2.3v15.8c0 1.3 1 2.3 2.3 2.3h12.4c1.3 0 2.3-1 2.3-2.3V9.9c0-1.3-1-2.3-2.3-2.3h-3',
+      'M13.4 11.6V5.9c0-1.1.9-1.9 1.9-1.9h.9c1.1 0 1.9.8 1.9 1.9v3.4',
+      'M12 17.2h8M12 22.4h4.8',
+    ],
+    wort: 'Mappe',
+    groessen: [20, 24],
+  },
   wohnung: {
     voll: [
       'M9 28V6.6C9 5.2 10.2 4 11.6 4h8.8C21.8 4 23 5.2 23 6.6V28',

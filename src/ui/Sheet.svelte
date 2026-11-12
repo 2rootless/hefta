@@ -167,10 +167,9 @@
     background: var(--line);
   }
 
-  @media (prefers-reduced-motion: no-preference) {
-    dialog[open] {
-      animation: hoch 220ms ease-out;
-    }
+  /* Bei „Bewegung reduzieren“ ist --bw-lang 0 ms (design/tokens.css). */
+  dialog[open] {
+    animation: hoch var(--bw-lang) var(--bw-ziel);
   }
 
   @keyframes hoch {

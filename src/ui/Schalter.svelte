@@ -57,8 +57,8 @@
     border: 2px solid var(--control-border);
     border-radius: 16px;
     transition:
-      background-color 150ms ease-out,
-      border-color 150ms ease-out;
+      background-color var(--bw-knapp) var(--bw-weich),
+      border-color var(--bw-knapp) var(--bw-weich);
   }
 
   .knopf {
@@ -73,8 +73,8 @@
     background: var(--control-border);
     color: var(--ink);
     transition:
-      left 150ms ease-out,
-      background-color 150ms ease-out;
+      left var(--bw-knapp) var(--bw-ziel),
+      background-color var(--bw-knapp) var(--bw-weich);
   }
 
   [aria-checked='true'] .bahn {

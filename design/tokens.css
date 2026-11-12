@@ -1,54 +1,90 @@
 /* Mappe — generated from tokens.json */
 :root, [data-theme="light"] {
-  --ground: #f5f6fa;
+  --ground: #faf6ef;
   --surface: #ffffff;
-  --track: #e4e6ef;
-  --line: #dfe1ea;
-  --control-border: #7a7c94;
-  --ink: #191a2c;
-  --ink-muted: #4c4e66;
-  --on-person: #191a2c;
+  --track: #efe6d8;
+  --line: #eadfcf;
+  --control-border: #857a6f;
+  --ink: #26221e;
+  --ink-muted: #5b544c;
+  --on-person: #26221e;
   --on-person-muted: #33354a;
-  --person-1: #ff8466;
-  --person-2: #b8e07c;
-  --person-3: #c8abff;
-  --person-4: #e3b25a;
-  --person-5: #ffadc9;
-  --person-6: #c9a189;
+  --person-1: #e9a970;
+  --person-2: #c4db83;
+  --person-3: #cbb9eb;
+  --person-4: #efce7e;
+  --person-5: #ef9fbb;
+  --person-6: #bb9a85;
+  --person-7: #8c89d3;
+  --person-8: #97edda;
+  --person-9: #3f9ea5;
+  --person-10: #c578a6;
+  --person-11: #67a0d3;
+  --person-12: #93cef3;
   --person-child: #ffffff;
   --stone: #ffffff;
   --slot-fill: rgba(255, 255, 255, 0.72);
-  --action: #191a2c;
-  --on-action: #ffffff;
-  --focus: #191a2c;
-  --shadow-card: 0 12px 28px rgba(25, 26, 44, 0.12), 0 1px 3px rgba(25, 26, 44, 0.06);
-  --shadow-card-quiet: 0 8px 18px rgba(25, 26, 44, 0.08);
-  --shadow-chip: 0 4px 10px rgba(25, 26, 44, 0.12);
-  --shadow-goal: 0 10px 24px rgba(25, 26, 44, 0.16);
-  --shadow-sheet: 0 -4px 24px rgba(25, 26, 44, 0.12);
+  --action: #26221e;
+  --on-action: #faf6ef;
+  --focus: #26221e;
+  --accent: #e2603f;
+  --accent-soft: #ffe5db;
+  --accent-text: #a8401f;
+  --knapp: #f8e8c4;
+  --knapp-text: #7a5200;
+  --passt: #e3eedb;
+  --passt-text: #355e25;
+  --ink-quiet: #71675d;
+  --line-strong: #d9ccb8;
+  --termin: #2b5a86;
+  --termin-soft: #e3ebf4;
+  --termin-line: #a9bfd8;
+  --shadow-card: 0 12px 28px rgba(60, 40, 20, 0.12), 0 1px 3px rgba(60, 40, 20, 0.06);
+  --shadow-card-quiet: 0 8px 18px rgba(60, 40, 20, 0.08);
+  --shadow-chip: 0 4px 10px rgba(60, 40, 20, 0.12);
+  --shadow-goal: 0 10px 24px rgba(60, 40, 20, 0.16);
+  --shadow-sheet: 0 -4px 24px rgba(60, 40, 20, 0.12);
 }
 [data-theme="dark"] {
-  --ground: #14151f;
-  --surface: #1f2030;
-  --track: #2c2e40;
-  --line: #34364a;
-  --control-border: #7d8099;
-  --ink: #f1f2f8;
-  --ink-muted: #a9abc2;
-  --on-person: #191a2c;
+  --ground: #1b1814;
+  --surface: #26221d;
+  --track: #332d26;
+  --line: #3a342c;
+  --control-border: #9a8f81;
+  --ink: #f3ede4;
+  --ink-muted: #c3b8a9;
+  --on-person: #26221e;
   --on-person-muted: #33354a;
-  --person-1: #ff8466;
-  --person-2: #b8e07c;
-  --person-3: #c8abff;
-  --person-4: #e3b25a;
-  --person-5: #ffadc9;
-  --person-6: #c9a189;
+  --person-1: #e9a970;
+  --person-2: #c4db83;
+  --person-3: #cbb9eb;
+  --person-4: #efce7e;
+  --person-5: #ef9fbb;
+  --person-6: #bb9a85;
+  --person-7: #8c89d3;
+  --person-8: #97edda;
+  --person-9: #3f9ea5;
+  --person-10: #c578a6;
+  --person-11: #67a0d3;
+  --person-12: #93cef3;
   --person-child: #ffffff;
   --stone: #ffffff;
   --slot-fill: rgba(255, 255, 255, 0.78);
-  --action: #f1f2f8;
-  --on-action: #191a2c;
-  --focus: #f1f2f8;
+  --action: #f3ede4;
+  --on-action: #1b1814;
+  --focus: #f3ede4;
+  --accent: #ff8466;
+  --accent-soft: #4a2a20;
+  --accent-text: #ffb39d;
+  --knapp: #43361a;
+  --knapp-text: #f2d38c;
+  --passt: #2c3a25;
+  --passt-text: #c6e2b2;
+  --ink-quiet: #9a8f81;
+  --line-strong: #4a4238;
+  --termin: #a9c8ee;
+  --termin-soft: #1d2a38;
+  --termin-line: #3f5a78;
   --shadow-card: 0 12px 28px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-card-quiet: 0 8px 18px rgba(0, 0, 0, 0.35);
   --shadow-chip: 0 4px 10px rgba(0, 0, 0, 0.4);
@@ -80,4 +116,38 @@
   --content-width: 560px;
   --pdf-margin: 20mm;
   --font-sans: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Bewegung (E58, Namen aus B21 bewegung-tokens.md, Nachricht 11.11. a): Dauern und Kurven an einer
+   Stelle. --bw-blende ist kein eigener Wert, sondern knapp mit gleich fürs Überblenden; er heißt
+   eigens, weil er als einzige Dauer bei „Bewegung reduzieren“ bleibt. */
+:root {
+  --bw-knapp: 120ms;
+  --bw-kurz: 160ms;
+  --bw-mittel: 200ms;
+  --bw-lang: 240ms;
+  --bw-aufschlagen: 280ms;
+  --bw-takt: 40ms;
+  --bw-blende: var(--bw-knapp);
+  /* Nur bei „Bewegung reduzieren“: Wo B21 „blendet knapp ein“ sagt, überblendet dieses Token. */
+  --bw-nur-reduziert: 0ms;
+  --bw-ziel: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --bw-weich: ease-out;
+  --bw-setzen: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --bw-gleich: linear;
+}
+
+/* „Bewegung reduzieren“ an genau dieser Stelle: Nichts wächst, schrumpft oder läuft, es wird nur
+   überblendet (B18 Abschnitt 5, B19). */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --bw-knapp: 0ms;
+    --bw-kurz: 0ms;
+    --bw-mittel: 0ms;
+    --bw-lang: 0ms;
+    --bw-aufschlagen: 0ms;
+    --bw-takt: 0ms;
+    --bw-blende: 120ms;
+    --bw-nur-reduziert: 120ms;
+  }
 }

@@ -133,3 +133,15 @@ export function abschliessen(ziel: string): void {
   if (verlauf.stelle > 0 && stelle >= 0) history.go(stelle - verlauf.stelle);
   else ersetzen(ziel);
 }
+
+/**
+ * Ein Ablauf endet mit einer neuen Seite (Neues Heft → das Heft): zurück zu `ziel`, alles dazwischen ist
+ * aus dem Weg, dann `pfad` dahinter. „Zurück“ im Heft führt so zu `ziel`, nicht in den Ablauf.
+ */
+export function abschliessenMit(ziel: string, pfad: string): void {
+  const stelle = verlauf.stapel.lastIndexOf(ziel, verlauf.stelle - 1);
+  if (verlauf.stelle > 0 && stelle >= 0) {
+    danach = pfad;
+    history.go(stelle - verlauf.stelle);
+  } else ersetzen(pfad);
+}

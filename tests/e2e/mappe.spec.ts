@@ -67,7 +67,7 @@ test('Mappe erstellen: Vorschau, Modi, Bürgin abwählen, Adresse, Download', as
 }, info) => {
   await laden(page, '04-fertig');
   await warten(page);
-  await expect(page.getByRole('radio', { name: /^Marktüblich/ })).toHaveAttribute(
+  await expect(page.getByRole('radio', { name: /^Nur das Übliche/ })).toHaveAttribute(
     'aria-checked',
     'true',
   );
@@ -118,15 +118,17 @@ test('Mappe erstellen: Vorschau, Modi, Bürgin abwählen, Adresse, Download', as
     })
     .toBeLessThan(marktSeiten);
 
-  // Datensparsam „Ich will die Wohnung“ (X2): Hinweis auf den Bonitätsnachweis.
-  await page.getByRole('radio', { name: /^Datensparsam/ }).click();
-  await expect(page.getByRole('radio', { name: 'Ich will die Wohnung' })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  );
-  await expect(page.getByText(/Bonitätsnachweis ist nicht dabei/)).toBeVisible();
-  await page.getByRole('radio', { name: 'Nach der Zusage' }).click();
-  await expect(page.getByText(/Bonitätsnachweis ist nicht dabei/)).toHaveCount(0);
+  // E49 (B17a): In „Eigene Auswahl“ hält ein Schalter die Antwort zu Mietrückständen bis zur Zusage zurück.
+  await page.getByRole('button', { name: /^Eigene Auswahl/ }).click();
+  const miet = page.getByRole('switch', {
+    name: /^Mietrückstände erst nach der Zusage beantworten/,
+  });
+  await expect(miet).toHaveAttribute('aria-checked', 'false');
+  await miet.click();
+  await expect(miet).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByText(/„Beantworten wir nach der Zusage“/)).toBeVisible();
+  await miet.click();
+  await page.getByRole('radio', { name: /^Nur das Übliche/ }).click();
 
   // Adresse eintragen: Deckblatt und Dateiname.
   await page.getByRole('button', { name: 'Adresse eintragen' }).click();
@@ -224,7 +226,7 @@ test('K8: Neue Person in anderer Schrift, die Felder erscheinen und verschwinden
   await expect(page.getByLabel('Vorname in der Mappe')).toHaveCount(0);
 });
 
-test('Übersicht „Mappe trotzdem erstellen“ führt zu „Mappe erstellen“ mit Hinweis auf Fehlendes', async ({
+test('Tab „Mappe“: „Mappe trotzdem teilen“ führt zu „Mappe erstellen“ mit Hinweis auf Fehlendes', async ({
   page,
 }) => {
   await laden(page, '01-standard');
@@ -233,6 +235,6 @@ test('Übersicht „Mappe trotzdem erstellen“ führt zu „Mappe erstellen“ 
     page.getByRole('link', { name: /^Bonitäts.?nachweis von Petra Fehlt noch/ }),
   ).toBeVisible();
   await page.getByRole('link', { name: 'Übersicht' }).click();
-  await page.getByRole('link', { name: 'Mappe trotzdem erstellen' }).click();
+  await page.getByRole('button', { name: 'Mappe trotzdem teilen' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Mappe erstellen' })).toBeVisible();
 });

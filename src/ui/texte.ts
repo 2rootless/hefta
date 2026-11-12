@@ -189,3 +189,20 @@ export function tagKurzAus(tag: Date): string {
     new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long' }).format(tag),
   );
 }
+
+/**
+ * Unterzeile im Blatt des Tabs „Mappe“ (B12b): klein geschrieben, wo es ein Satzanfang wäre
+ * („vom 6. Nov.“, „fehlt noch“), Monate bleiben groß („Aug. bis Okt.“). Bei der Bonität mit Prüfcode
+ * „prüfbar bis 27. Dez.“.
+ */
+export function blattText(u: UnterlagenStand, heute = new Date()): string {
+  if (u.status === 'fehlt' && !u.typ.serie && !u.veraltet) return t('mappeTab.fehltNoch');
+  if (u.neuestesDatum && u.status !== 'bald') {
+    const code = pruefcodeStand(u, heute);
+    if (code?.art === 'laeuft') return t('mappeTab.pruefbarBis', { am: tagKurzAus(code.am) });
+  }
+  const s = standText(u, heute);
+  return /^(Vom|Fehlt|Fertig|Bald|Zu|Neuer|Ohne|Freiwillig|Da)\b/.test(s)
+    ? s.charAt(0).toLowerCase() + s.slice(1)
+    : s;
+}

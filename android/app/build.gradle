@@ -7,9 +7,8 @@ android {
         applicationId "de.hefta.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // Im Lauf „play“ (E64) zählt GitHub die Nummer hoch; Google verlangt je Bau eine neue.
-        versionCode Integer.parseInt(System.getenv("HEFTA_VERSION_CODE") ?: "1")
-        versionName "1.0.1"
+        versionCode 1
+        versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -17,21 +16,8 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    // Upload-Schlüssel nur aus der Umgebung des Laufs „play“; ohne ihn bleibt der Release-Bau unsigniert.
-    signingConfigs {
-        upload {
-            def datei = System.getenv("HEFTA_UPLOAD_KEYSTORE")
-            if (datei) {
-                storeFile file(datei)
-                storePassword System.getenv("HEFTA_UPLOAD_PASSWORT")
-                keyAlias System.getenv("HEFTA_UPLOAD_ALIAS")
-                keyPassword System.getenv("HEFTA_UPLOAD_PASSWORT")
-            }
-        }
-    }
     buildTypes {
         release {
-            if (System.getenv("HEFTA_UPLOAD_KEYSTORE")) signingConfig signingConfigs.upload
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

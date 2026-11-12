@@ -134,7 +134,7 @@ test('Zurück oben links tut dasselbe wie die Wischgeste', async ({ page }) => {
   await expect(page.getByLabel('Vorname')).toHaveValue('Lea');
   await page.goBack();
   await page.getByRole('link', { name: 'Übersicht' }).click();
-  await expect(page.locator('main h1')).toContainText('Hallo');
+  await expect(page.locator('main h1')).toContainText('Mappe');
 });
 
 test('Nach dem Löschen führt der Weg zurück nicht zur gelöschten Version', async ({ page }) => {
@@ -507,14 +507,14 @@ test('Einmal Gebautes kommt sofort wieder: Hin und her wechseln liest keine Date
     .toHaveAttribute('aria-disabled', /^(?!true).*|^$/, { timeout: 30_000 })
     .catch(() => {});
   await expect(page.getByRole('button', { name: 'PDF ansehen' })).toBeVisible({ timeout: 30_000 });
-  await page.getByRole('radio', { name: /^Datensparsam/ }).click();
+  await page.getByRole('radio', { name: /^Alles/ }).click();
   await page.waitForTimeout(500);
   await expect(page.getByRole('button', { name: 'PDF ansehen' })).toBeVisible({ timeout: 30_000 });
   const nachBeiden = await gelesen();
   expect(nachBeiden).toBeGreaterThan(0);
-  await page.getByRole('radio', { name: /^Marktüblich/ }).click();
+  await page.getByRole('radio', { name: /^Nur das Übliche/ }).click();
   await expect(page.getByRole('button', { name: 'PDF ansehen' })).toBeVisible();
-  await page.getByRole('radio', { name: /^Datensparsam/ }).click();
+  await page.getByRole('radio', { name: /^Alles/ }).click();
   await expect(page.getByRole('button', { name: 'PDF ansehen' })).toBeVisible();
   await page.waitForTimeout(700);
   expect(await gelesen()).toBe(nachBeiden);
@@ -529,7 +529,7 @@ test('Farbe gleich in „Mappe anpassen“ ändern, getauscht wird; die Vorschau
   const vorher = await gross.locator('img').first().getAttribute('src');
   await page.getByRole('button', { name: 'Farbe von Lea' }).click();
   const blatt = page.getByRole('dialog');
-  await blatt.getByRole('radio', { name: 'Koralle, hat Max' }).click();
+  await blatt.getByRole('radio', { name: 'Apricot, hat Max' }).click();
   await expect(blatt.getByRole('status')).toHaveText('Max bekommt dafür Pistazie.');
   await expect
     .poll(() => gross.locator('img').first().getAttribute('src'), { timeout: 30_000 })
@@ -546,9 +546,11 @@ test('Farbe gleich in „Mappe anpassen“ ändern, getauscht wird; die Vorschau
 test('Backup vom ersten Start aus: danach die Übersicht, mit Bestätigung', async ({ page }) => {
   const backup = readFileSync('tests/fixtures/backup/schema1-offen.hefta');
   await page.goto('/');
-  await page.getByRole('button', { name: 'Ich habe ein Backup' }).click();
-  await page.getByRole('heading', { name: 'Erst auf den Homescreen.' }).waitFor();
-  await page.getByRole('button', { name: 'Später', exact: true }).click();
+  // Hefta 2: Ohne Haushalt spielt man das Backup über die Einstellungen ein (B15).
+  await page.getByRole('link', { name: 'Einstellungen' }).click();
+  await page.getByRole('link', { name: /^Backup einspielen/ }).click();
+  await page.getByRole('heading', { name: 'Hefta gibt es als App.' }).waitFor();
+  await page.getByRole('button', { name: 'Weiter im Browser', exact: true }).click();
   await page.getByRole('heading', { name: 'Backup einspielen' }).waitFor();
   await page.locator('input[type=file]').first().setInputFiles({
     name: 'hefta-backup.hefta',
@@ -559,7 +561,7 @@ test('Backup vom ersten Start aus: danach die Übersicht, mit Bestätigung', asy
     timeout: 30_000,
   });
   await page.getByRole('button', { name: 'Einspielen' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: /^Hallo|beisammen/ })).toBeVisible({
+  await expect(page.getByRole('heading', { level: 1, name: /Mappe$/ })).toBeVisible({
     timeout: 30_000,
   });
   await expect(page.locator('.meldung')).toContainText('im Mietvertrag');

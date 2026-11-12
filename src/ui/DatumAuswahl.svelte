@@ -427,7 +427,7 @@
   }
 
   .marke.gewaehlt {
-    border-color: #191a2c;
+    border-color: #26221e;
     background: rgb(255 210 63 / 0.55);
   }
 

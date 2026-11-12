@@ -654,7 +654,7 @@
     height: auto;
     border-radius: 3px;
     background: #fff;
-    box-shadow: 0 1px 3px rgba(25, 26, 44, 0.25);
+    box-shadow: 0 1px 3px rgba(60, 40, 20, 0.25);
   }
 
   .unter {

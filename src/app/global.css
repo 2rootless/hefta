@@ -89,23 +89,14 @@ textarea {
   border: 0;
 }
 
+/* „Bewegung reduzieren“ (E58): Dauern regeln allein die Tokens in design/tokens.css. Hier nur, was
+   Tokens nicht erfassen: nichts läuft in Schleife, Scrollen springt. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
-    /* 0s statt einer Mini-Dauer: Sonst würde jede Änderung (auch der Themenwechsel) zu einem
-       Übergang, und wer im selben Moment liest, sähe noch den alten Wert. */
-    transition-duration: 0s !important;
-    transition-delay: 0s !important;
     scroll-behavior: auto !important;
-  }
-
-  /* Statt Schieben ein kurzes Überblenden. */
-  .einblenden {
-    animation-duration: 150ms !important;
   }
 }
 
@@ -125,6 +116,17 @@ textarea {
   font-size: calc(16 * var(--px));
   line-height: calc(22 * var(--px));
   color: var(--ink-muted);
+}
+
+/* Überschrift der Seiten von Hefta 2 (B23 `h1.h2`): 25 px, 700, Breite 108 %. */
+.h2 {
+  margin: 8px 0 6px;
+  font-size: calc(25 * var(--px));
+  font-weight: 700;
+  font-stretch: 108%;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 
 .titel {
@@ -366,15 +368,76 @@ input[type='month']::-webkit-date-and-time-value {
   font-size: calc(12 * var(--px));
 }
 
-/* Bewegung (design/README.md): kurz und ruhig, 150 bis 250 ms, ausklingend. Bei „Bewegung
-   reduzieren“ kürzt die Regel oben alles auf praktisch null. Nur Deckkraft, damit feste Leisten
-   im Bildschirm fest bleiben (transform würde sie mitbewegen). */
+/* Überblenden (E58): Nur Deckkraft, damit feste Leisten im Bildschirm fest bleiben (transform würde
+   sie mitbewegen). Bleibt auch bei „Bewegung reduzieren“. */
 .einblenden {
-  animation: einblenden 180ms ease-out;
+  animation: einblenden var(--bw-blende) var(--bw-gleich);
 }
 
 @keyframes einblenden {
   from {
+    opacity: 0;
+  }
+}
+
+/* Bewegung im Tab „Mappe“ (B21): gemeinsame Abläufe. Dauer, Kurve und Verzögerung setzt jede Stelle
+   aus den Tokens, immer mit `backwards`: Das Ende jeder Bewegung ist der Ruhezustand der Ansicht. */
+@keyframes bw-toenen {
+  from {
+    background-color: var(--bw-ton);
+  }
+}
+
+@keyframes bw-steigen {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes bw-zahl {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+
+@keyframes bw-blende {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes bw-haken {
+  from {
+    stroke-dashoffset: 30;
+  }
+}
+
+@keyframes bw-marke {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes bw-auf {
+  from {
+    grid-template-rows: 0fr;
+  }
+}
+
+/* Was geht: Platz schließt sich, Inhalt blendet in der ersten Hälfte aus. Danach nimmt Hefta es heraus. */
+@keyframes bw-zu {
+  0% {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    grid-template-rows: 0fr;
     opacity: 0;
   }
 }
@@ -415,4 +478,42 @@ body::before {
   z-index: 40;
   height: env(safe-area-inset-top);
   background: var(--ground);
+}
+
+/* Personenfarben 1 bis 12 (B14, Fassung 3), für jeden Baustein gleich. */
+:where(.farbe-1) {
+  --farbe: var(--person-1);
+}
+:where(.farbe-2) {
+  --farbe: var(--person-2);
+}
+:where(.farbe-3) {
+  --farbe: var(--person-3);
+}
+:where(.farbe-4) {
+  --farbe: var(--person-4);
+}
+:where(.farbe-5) {
+  --farbe: var(--person-5);
+}
+:where(.farbe-6) {
+  --farbe: var(--person-6);
+}
+:where(.farbe-7) {
+  --farbe: var(--person-7);
+}
+:where(.farbe-8) {
+  --farbe: var(--person-8);
+}
+:where(.farbe-9) {
+  --farbe: var(--person-9);
+}
+:where(.farbe-10) {
+  --farbe: var(--person-10);
+}
+:where(.farbe-11) {
+  --farbe: var(--person-11);
+}
+:where(.farbe-12) {
+  --farbe: var(--person-12);
 }

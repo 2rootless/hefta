@@ -151,7 +151,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   // Überspringen, dann Pause: zurück zur Übersicht mit „Weitermachen“.
   await page.getByRole('button', { name: 'Überspringen' }).click();
   await page.getByRole('link', { name: 'Pause' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Hallo Max.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Eure Mappe' })).toBeVisible();
   await expect(page.getByRole('link', { name: /^Weitermachen/ })).toBeVisible();
   if (bilder) {
     await barrierefrei(page, 'Übersicht pausiert');
@@ -164,7 +164,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   // Weitermachen setzt bei Leas Selbstauskunft fort: Haustiere und Ort hat der Haushalt schon (A2).
   await page.getByRole('link', { name: /^Weitermachen/ }).click();
   await expect(page.getByText(/^4 von \d+$/)).toBeVisible();
-  await expect(page.getByText('Für Lea')).toBeVisible();
+  await expect(page.getByText('Für Lea', { exact: true })).toBeVisible();
   await expect(
     page.getByText('Was für den ganzen Haushalt gilt, hat Max schon eingetragen.'),
   ).toBeVisible();
@@ -189,17 +189,16 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   }
   await page.getByRole('link', { name: 'Zur Übersicht' }).click();
 
-  // Übersicht: Karten am Band, Kind, Trennzeile, Bürgin mit Zusatz.
-  await expect(page.getByRole('heading', { level: 1, name: 'Hallo Max.' })).toBeVisible();
-  await expect(page.locator('.karte')).toHaveText([/Max/, /Lea/, /Petra/]);
-  await expect(page.locator('.karte').filter({ hasText: 'Petra' })).toContainText('Zusatz');
+  // Tab „Mappe“ (B12b): je Person ein Blatt mit Reiter, Kind, Trennzeile, Bürgin darunter.
+  await expect(page.getByRole('heading', { level: 1, name: 'Eure Mappe' })).toBeVisible();
+  await expect(page.locator('.blatt .reiter')).toHaveText([/Max/, /Lea/, /Petra/]);
+  await expect(page.locator('.blatt').filter({ hasText: 'Petra' })).toContainText('Bürgin');
+  await expect(page.getByText('Zusätzlich, falls der Vermieter fragt')).toBeVisible();
   await expect(
     page.getByRole('link', {
       name: 'Haushalt bearbeiten: Zwei im Mietvertrag, ein Kind zieht mit ein. Eine Person bürgt.',
     }),
   ).toBeVisible();
-  await expect(page.getByText('Im Mietvertrag', { exact: true })).toBeVisible();
-  await expect(page.getByText('Bürgschaft', { exact: true })).toBeVisible();
   await expect(page.getByText('Zusätzlich, falls der Vermieter fragt')).toBeVisible();
   await expect(page.getByRole('link', { name: /^Unterlagen hinzufügen/ })).toBeVisible();
   if (bilder) {
@@ -212,7 +211,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   }
 
   // Personenansicht: ohne „zum Haushalt“, zurück heißt „Übersicht“.
-  await page.getByRole('link', { name: /^Max,/ }).click();
+  await page.getByRole('link', { name: /^Max Hauptmieter$/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Max', exact: true })).toBeVisible();
   await expect(page.getByText('zum Haushalt')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Übersicht' })).toBeVisible();
@@ -314,11 +313,11 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await expect(page.getByRole('link', { name: 'Ändern Petra' })).toHaveCount(0);
   await expect(page.getByRole('heading', { level: 2, name: 'Herausgenommen' })).toHaveCount(0);
   await page.getByRole('link', { name: 'Fertig', exact: true }).click();
-  await expect(page.locator('.karte')).toHaveCount(2);
+  await expect(page.locator('.blatt')).toHaveCount(2);
 
   // Nach dem Neuladen ist alles noch da.
   await page.reload();
-  await expect(page.locator('.karte')).toHaveCount(2);
+  await expect(page.locator('.blatt')).toHaveCount(2);
 
   expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
 });
@@ -369,12 +368,15 @@ test('Backup mit Passwort: sichern, alles löschen, einspielen ergibt denselben 
   if (browserName === 'chromium') await barrierefrei(page, 'Alles löschen');
   await page.getByRole('button', { name: 'Alles endgültig löschen' }).click();
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Eure Mappe für die Wohnungssuche.' }),
+    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
   ).toBeVisible();
 
   // Einspielen (S6–S8): falsches Passwort, dann richtiges.
+  // Ohne Haushalt am iPhone in Safari: erst der Hinweis auf die App (E30), dann das Einspielen.
   await page.goto('/#/einstellungen');
-  await page.locator('input[type=file]').setInputFiles(pfad);
+  await page.getByRole('link', { name: /^Backup einspielen/ }).click();
+  await page.getByRole('button', { name: 'Weiter im Browser', exact: true }).click();
+  await page.locator('input[type=file]').first().setInputFiles(pfad);
   await expect(page.getByRole('heading', { level: 1, name: 'Backup einspielen' })).toBeVisible();
   await expect(page.getByText('Sichtbar nach dem Passwort')).toBeVisible();
   // Die App ist leer: kein Hinweis „ersetzt alles“.
@@ -401,8 +403,8 @@ test('Backup mit Passwort: sichern, alles löschen, einspielen ergibt denselben 
   ).toBeVisible();
 
   // Vom ersten Start aus geht es gleich auf die Übersicht: Dahinter liegt kein alter Startbildschirm.
-  await expect(page.getByRole('heading', { level: 1, name: 'Hallo Max.' })).toBeVisible();
-  await expect(page.locator('.karte')).toHaveCount(3);
+  await expect(page.getByRole('heading', { level: 1, name: 'Eure Mappe' })).toBeVisible();
+  await expect(page.locator('.blatt')).toHaveCount(3);
   await expect(
     page.getByRole('link', {
       name: 'Haushalt bearbeiten: Zwei im Mietvertrag, ein Kind zieht mit ein. Eine Person bürgt.',

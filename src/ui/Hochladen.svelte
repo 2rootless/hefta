@@ -118,25 +118,9 @@
     border-radius: 50%;
   }
 
-  .farbe-1 {
-    background: var(--person-1);
-  }
-  .farbe-2 {
-    background: var(--person-2);
-  }
-  .farbe-3 {
-    background: var(--person-3);
-  }
-  .farbe-4 {
-    background: var(--person-4);
-  }
-
-  .farbe-5 {
-    background: var(--person-5);
-  }
-
-  .farbe-6 {
-    background: var(--person-6);
+  /* Personenfarbe aus den globalen Klassen .farbe-1 bis .farbe-12 (global.css). */
+  .punkt {
+    background: var(--farbe);
   }
 
   .waehlen {

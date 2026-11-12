@@ -25,6 +25,7 @@
     "vite.config.ts",
     "vite.vermieter.config.ts",
     "playwright.config.ts",
-    "build/**/*.ts"
+    "build/**/*.ts",
+    "functions/**/*.ts"
   ]
 }

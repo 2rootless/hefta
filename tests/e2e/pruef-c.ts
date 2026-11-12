@@ -58,7 +58,7 @@ export function pruefen() {
         r.setStart(n, m.index!);
         r.setEnd(n, m.index! + m[0].length);
         // Die Stücke zwischen den erlaubten Trennstellen: Nur dort darf ein Wort umbrechen.
-        const stuecke = [...m[0].matchAll(/[^\u00ad\u200b-]{2,}/g)].map((t) => {
+        const stuecke = [...m[0].matchAll(/[^\u00ad\u200b\-\u2013/]{2,}/g)].map((t) => {
           // Nach einer Trennstelle ohne das erste Zeichen: Dessen Range greift den Trennstrich am
           // Ende der Zeile davor mit, das sähe aus wie ein Umbruch im Stück.
           const s = document.createRange();
@@ -85,7 +85,8 @@ export function pruefen() {
       }
     }
   }
-  // C2: Trennung mitten im Wort. Erlaubt nur an weicher Trennstelle, Bindestrich und an der
+  // C2 („Wort gebrochen“ in pruef16.js, B18 Fassung 2): Trennung mitten im Wort. Erlaubt nur an
+  // weicher Trennstelle, nach Bindestrich, Gedankenstrich oder Schrägstrich und an der
   // Umbruchstelle nach „_“ in Dateinamen (Design X7): Hat ein Wort so eine Stelle, bricht es aber
   // woanders um („Ausbildung/svertrag“), zählt das auch (gelernt 2.11.). Dateinamen sind davon
   // ausgenommen: Ein langer Name passt manchmal in keine Zeile.
@@ -109,7 +110,7 @@ export function pruefen() {
           ziel.push(`${sel} ${e.tagName}: ${(e.textContent ?? '').trim().slice(0, 20)}`);
       });
     });
-  ragt('.karte', out.c3);
+  ragt('.karte, .blatt .zeilen, .aufgaben', out.c3);
   ragt('.formular, .kasten, .kachel, .feld, .liste, .personen, .leiste, .stufen', out.c9);
   // C4: Zeilen im Band überlappen nicht; Ziel und Backup-Zeile überlappen nicht
   const band = document.querySelector('.band');
@@ -124,7 +125,7 @@ export function pruefen() {
   // zum oberen und unteren Innenrand seines Kastens (umbrechende Links lagen auf der Unterkante).
   for (const t of texte) {
     // Nur was als Kasten zu sehen ist: Auf der Personenseite ist `.teil` bloß ein Abschnitt.
-    const AUSWAHL = '.kasten, .notiz, .karte, .abgleich, .teil, .backup';
+    const AUSWAHL = '.kasten, .notiz, .karte, .abgleich, .teil, .backup, .aufgaben, .blatt li';
     const gemalt = (e: Element) => {
       const st = getComputedStyle(e);
       return (
@@ -359,14 +360,18 @@ export function pruefen() {
     });
   });
   // C18 seit 3.11. auch für Nebenknöpfe: Sie bleiben einzeilig.
-  document.querySelectorAll('main .chip, dialog[open] .chip, main .knopf').forEach((b) => {
-    // Zeilen mit eigenem Aufbau (Name und Stand, Frage und Antwort) sind keine Knöpfe im Sinn von C18.
-    if (schrift >= 1.5 || !sichtbar(b) || b.querySelector(':scope > :not(svg)')) return;
-    const r = document.createRange();
-    r.selectNodeContents(b);
-    if (zeilenZahl(rechtecke(r)) > 1)
-      out.c18.push(`zweizeilig: ${b.textContent?.trim().slice(0, 30)}`);
-  });
+  // Ausnahme: Antworten der Rückmeldung dürfen zweizeilig sein (B19 Fassung 4, Abschnitt 2: lange Antworten
+  // brechen um, darum stark gerundet statt ganz rund).
+  document
+    .querySelectorAll('main .chip:not(.rueckmeldung .chip), dialog[open] .chip, main .knopf')
+    .forEach((b) => {
+      // Zeilen mit eigenem Aufbau (Name und Stand, Frage und Antwort) sind keine Knöpfe im Sinn von C18.
+      if (schrift >= 1.5 || !sichtbar(b) || b.querySelector(':scope > :not(svg)')) return;
+      const r = document.createRange();
+      r.selectNodeContents(b);
+      if (zeilenZahl(rechtecke(r)) > 1)
+        out.c18.push(`zweizeilig: ${b.textContent?.trim().slice(0, 30)}`);
+    });
   // C23, wie CHECK_JS in design/werkzeug/pruef_c.py: Tag und Monat brechen nie auseinander. Geprüft an
   // der Quelle: Zwischen „12.“ und „Juli“ steht ein geschütztes Leerzeichen.
   const monate =
@@ -393,7 +398,7 @@ export function pruefen() {
         `${(e.textContent ?? e.tagName).trim().slice(0, 24)} ${Math.round(r.left)}–${Math.round(r.right)}`,
       );
   });
-  document.querySelectorAll('.band .karte, .leiste .haupt').forEach((e) => {
+  document.querySelectorAll('.band .karte, .blatt .zeilen, .leiste .haupt').forEach((e) => {
     const r = e.getBoundingClientRect();
     if (r.width && r.right < window.innerWidth - 32)
       out.c25.push(`${(e.textContent ?? '').trim().slice(0, 20)} ${Math.round(r.right)}`);

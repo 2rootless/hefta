@@ -19,7 +19,8 @@
     beimWaehlen?: (farbe: number) => void;
   } = $props();
 
-  const FARBEN = [1, 2, 3, 4, 5, 6] as const;
+  // B14: zwölf Farben, nach Nummer.
+  const FARBEN = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
   const id = $props.id();
   let meldung = $state('');
   const farbName = (f: number) => t(`personSeite.farbNamen.${f as (typeof FARBEN)[number]}`);
@@ -127,7 +128,7 @@
   }
 
   .vergeben {
-    box-shadow: inset 0 0 0 1.5px rgba(25, 26, 44, 0.28);
+    box-shadow: inset 0 0 0 1.5px rgba(60, 40, 20, 0.28);
   }
 
   .farbe-1 {

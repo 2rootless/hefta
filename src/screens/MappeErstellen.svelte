@@ -13,6 +13,7 @@
     hinweise,
     schluessel,
     einstellungenNachLaden,
+    datensparsamUmstellen,
     standardEinstellungen,
     vorhanden,
     type ExportEinstellungen,
@@ -30,8 +31,8 @@
     type PersonStand,
     type UnterlagenStand,
     ohneTrennstellen,
+    DOKUMENTTYPEN,
   } from '../domain/regelkatalog';
-  import type { Schritt } from '../domain/selbstauskunft';
   import { groesse, t } from '../i18n';
   import { bewerbungLaden, bewerbungSpeichern } from '../storage/speicher';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
@@ -40,6 +41,7 @@
   import Sheet from '../ui/Sheet.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import WerIstDabeiAuswahl from '../ui/WerIstDabeiAuswahl.svelte';
+  import SchalterZeile from '../ui/SchalterZeile.svelte';
   import WarumBlatt from '../ui/WarumBlatt.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
   import { staendeAus, standardDateiname, zeichenFunde } from '../ui/mappeDaten';
@@ -114,6 +116,13 @@
     if (!daten.ansicht) return;
     bewerbung = await bewerbungLaden(await db(), daten.ansicht.haushalt.id);
     e = einstellungenNachLaden(bewerbung?.export, $state.snapshot(e));
+    // E49: „Datensparsam“ gibt es nicht mehr; dieselbe Mappe als „Eigene Auswahl“, mit dem Schalter.
+    if (e.modus === 'datensparsam')
+      e = datensparsamUmstellen(
+        e,
+        daten.ansicht.mitglieder.map((m) => m.person.id),
+        DOKUMENTTYPEN,
+      );
     geladen = true;
   });
 
@@ -125,6 +134,18 @@
   let deckbild = $state<string | null>(null);
   let baut = $state(false);
   let fehler = $state(false);
+  // B21, Mappe entsteht: Braucht der Bau länger als 400 ms, weicht der Knopf einem ruhigen Kasten mit
+  // echtem Fortschritt. Darunter erscheint nichts, damit es bei schnellen Bauten nicht flackert.
+  let bau = $state<{ fertig: number; gesamt: number } | null>(null);
+  let bauSichtbar = $state(false);
+  // Seitenzahl ändert sich: die neue Zahl steigt ein, nicht beim ersten Zeigen.
+  let seitenZuletzt: number | undefined;
+  const seitenNeu = $derived(
+    ergebnis !== null && seitenZuletzt !== undefined && ergebnis.seiten !== seitenZuletzt,
+  );
+  $effect(() => {
+    seitenZuletzt = ergebnis?.seiten;
+  });
   let zeitgeber: ReturnType<typeof setTimeout> | undefined;
   let lauf = 0;
   // Unterlagen, die fehlen, weil sich ihre Datei nicht lesen lässt: Das darf nicht still passieren.
@@ -231,6 +252,10 @@
     const nummer = ++lauf;
     const beiStart = aenderung;
     fehler = false;
+    bau = { fertig: 0, gesamt: 1 };
+    const uhr = setTimeout(() => {
+      if (nummer === lauf && bau) bauSichtbar = true;
+    }, 400);
     try {
       const verbindung = await db();
       const plain = $state.snapshot(e);
@@ -239,7 +264,16 @@
         export: plain,
       });
       const { mappeGebaut } = await import('../ui/mappeErstellen');
-      const neu = await mappeGebaut(verbindung, daten.ansicht, gespeichert, plain);
+      const neu = await mappeGebaut(
+        verbindung,
+        daten.ansicht,
+        gespeichert,
+        plain,
+        undefined,
+        (fertig, gesamt) => {
+          if (nummer === lauf) bau = { fertig, gesamt };
+        },
+      );
       if (nummer !== lauf) return;
       if (neu !== ergebnis) {
         ergebnis = neu;
@@ -249,7 +283,12 @@
     } catch {
       if (nummer === lauf) fehler = true;
     } finally {
+      clearTimeout(uhr);
       baustelle = false;
+      if (!nochEinmal) {
+        bau = null;
+        bauSichtbar = false;
+      }
       if (nochEinmal) void bauen();
       else if (nummer === lauf && beiStart === aenderung) baut = false;
     }
@@ -551,6 +590,23 @@
   </li>
 {/snippet}
 
+{#snippet bauKasten()}
+  <!-- B21, Stelle 6: Statusmeldung mit Fortschritt, ohne Schleife. Bei „Bewegung reduzieren“ springt die
+       Linie, und der Kasten ist sofort da. -->
+  <div class="bau" role="status">
+    <b>{t('mappe.legtZusammen')}</b>
+    <span
+      class="bau-linie"
+      role="progressbar"
+      aria-label={t('mappe.legtZusammen')}
+      aria-valuemin={0}
+      aria-valuemax={bau?.gesamt ?? 1}
+      aria-valuenow={bau?.fertig ?? 0}
+      ><i style:transform="scaleX({bau ? bau.fertig / Math.max(1, bau.gesamt) : 0})"></i></span
+    >
+  </div>
+{/snippet}
+
 {#snippet zeileInhalt(titel: string, sub: string)}
   <span class="tx"
     >{#if titel}<b>{titel}</b>{/if}<small>{sub}</small></span
@@ -658,11 +714,13 @@
         {:else}
           <p class="stand">
             <span class="zahlen">
-              <span
-                >{einzeln
-                  ? t('mappe.dateien', { anzahl: ergebnis.dateien.length })
-                  : t('mappe.seiten', { anzahl: ergebnis.seiten })}</span
-              >
+              {#key ergebnis.seiten}
+                <span class:zahl-neu={seitenNeu}
+                  >{einzeln
+                    ? t('mappe.dateien', { anzahl: ergebnis.dateien.length })
+                    : t('mappe.seiten', { anzahl: ergebnis.seiten })}</span
+                >
+              {/key}
               <span aria-hidden="true">·</span>
               <span>{baut ? t('mappe.groesseWird') : groesse(ergebnis.groesse)}</span>
             </span>
@@ -772,13 +830,14 @@
           weitere={ansicht?.haushalt.weitereErwachsene ?? 0}
           ohne={e.ohne}
           umschalten={buergeUmschalten}
+          {allein}
         />
       </section>
 
       <section class="abschnitt-oben">
         <h2>{t('mappe.wasRein')}</h2>
         <div class="reihe" role="radiogroup" aria-label={t('mappe.wasRein')}>
-          {#each ['alles', 'marktueblich', 'datensparsam'] as const as m (m)}
+          {#each ['marktueblich', 'alles'] as const as m (m)}
             <button
               type="button"
               class="chip"
@@ -788,7 +847,11 @@
             >
           {/each}
         </div>
-        <p class="hinweis">{t(`mappe.modus.${e.modus}.text`)}</p>
+        <p class="hinweis">
+          {e.modus === 'alles'
+            ? t(allein ? 'mappe.allesDu' : 'mappe.allesIhr')
+            : t(`mappe.modus.${e.modus}.text`)}
+        </p>
         <button
           type="button"
           class="linie eigene"
@@ -803,20 +866,18 @@
           )}
           <Symbol name="weiter" groesse={20} />
         </button>
-        {#if e.modus === 'datensparsam'}
-          <p class="unter">{t('mappe.schrittLabel')}</p>
-          <div class="reihe" role="radiogroup" aria-label={t('mappe.schrittLabel')}>
-            {#each ['besichtigung', 'will_wohnung', 'zusage'] as const as sch (sch)}
-              <button
-                type="button"
-                class="chip"
-                role="radio"
-                aria-checked={e.schritt === sch}
-                onclick={() => (e.schritt = sch as Schritt)}>{t(`mappe.schritt.${sch}`)}</button
-              >
-            {/each}
+        {#if e.modus === 'eigene_auswahl'}
+          <!-- E49 (B17a): gilt für alle Selbstauskünfte der Mappe; die ganze Zeile schaltet. -->
+          <div class="miet">
+            <SchalterZeile
+              an={!!e.mietrueckstaendeNachZusage}
+              titel={t('mappe.mietSchalter')}
+              text="{t(allein ? 'mappe.mietSatzDu' : 'mappe.mietSatzIhr')} {t(
+                allein ? 'mappe.mietSatz2Du' : 'mappe.mietSatz2Ihr',
+              )}"
+              onclick={() => (e.mietrueckstaendeNachZusage = !e.mietrueckstaendeNachZusage)}
+            />
           </div>
-        {:else if e.modus === 'eigene_auswahl'}
           <!-- Je Person aufklappbar, immer nur eine offen; „meist unnötig“ gesammelt am Ende. -->
           {#each dabei as s (s.person.id)}
             {@const zeilen = auswahlListe(s)}
@@ -920,6 +981,7 @@
         ? t('mappe.wirdErstellt')
         : undefined}
     onclick={teilenKlick}
+    statt={bauSichtbar && !ohneLatein.length ? bauKasten : undefined}
     neben={ergebnis && !baut && !ohneLatein.length
       ? einzeln
         ? { text: t('mappe.alsDateien'), onclick: () => (listeOffen = true) }
@@ -980,6 +1042,47 @@
 </Sheet>
 
 <style>
+  /* B21, Mappe entsteht: ruhiger Kasten an der Stelle des Knopfs, die Linie füllt sich mit dem Bau. */
+  .bau {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-height: 54px;
+    padding: 11px 16px 12px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+    animation: bw-blende var(--bw-kurz) var(--bw-weich) backwards;
+  }
+
+  .bau b {
+    font-size: calc(15 * var(--px));
+    line-height: calc(20 * var(--px));
+    font-weight: 650;
+  }
+
+  .bau-linie {
+    display: block;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--line);
+    overflow: hidden;
+  }
+
+  .bau-linie i {
+    display: block;
+    height: 100%;
+    background: var(--ink);
+    transform-origin: left center;
+    transition: transform var(--bw-kurz) var(--bw-weich);
+  }
+
+  /* B21, Seitenzahl ändert sich: Die neue Zahl steigt 5 px ein. */
+  .zahl-neu {
+    display: inline-block;
+    animation: bw-zahl var(--bw-kurz) var(--bw-weich) backwards;
+  }
+
   .seite {
     max-width: var(--content-width);
     min-height: 100dvh;
@@ -1196,6 +1299,11 @@
     border-radius: 50%;
     background: var(--action);
     color: var(--on-action);
+  }
+
+  .miet {
+    margin-top: 12px;
+    border-top: 1px solid var(--line);
   }
 
   .linie {
@@ -1431,7 +1539,7 @@
     display: inline-flex;
     flex-shrink: 0;
     transform: rotate(90deg);
-    transition: transform 150ms ease-out;
+    transition: transform var(--bw-kurz) var(--bw-weich);
   }
 
   .pfeil.auf {

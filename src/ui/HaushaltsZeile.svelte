@@ -51,7 +51,9 @@
   <span class="visually-hidden">{t('uebersicht.haushaltZeile', { liste: satz })}</span>
   <span class="figuren" aria-hidden="true">
     {#each vertrag as s (s.person.id)}
-      <span class="kreis kachel f{s.farbe}" class:zwei={kuerzel(s).length > 1}>{kuerzel(s)}</span>
+      <span class="kreis kachel farbe-{s.farbe} punkt" class:zwei={kuerzel(s).length > 1}
+        >{kuerzel(s)}</span
+      >
     {/each}
     {#each { length: weitere }, i (i)}
       <span class="kreis lila"><Symbol name="person" groesse={20} /></span>
@@ -92,7 +94,7 @@
     margin-left: calc(-1 * var(--ueber, 5px));
     border-radius: 50%;
     box-shadow: 0 0 0 2.5px var(--ground);
-    color: #191a2c;
+    color: var(--on-person);
     font-size: 15px;
     font-weight: 800;
   }
@@ -105,28 +107,9 @@
     font-size: 12px;
   }
 
-  .f1 {
-    background: var(--person-1);
-  }
-
-  .f2 {
-    background: var(--person-2);
-  }
-
-  .f3 {
-    background: var(--person-3);
-  }
-
-  .f4 {
-    background: var(--person-4);
-  }
-
-  .f5 {
-    background: var(--person-5);
-  }
-
-  .f6 {
-    background: var(--person-6);
+  /* Zwölf Personenfarben (B14) über die gemeinsamen Klassen `.farbe-N` in global.css. */
+  .punkt {
+    background: var(--farbe);
   }
 
   .lila {

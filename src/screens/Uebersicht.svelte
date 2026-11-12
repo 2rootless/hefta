@@ -1,28 +1,47 @@
 <script lang="ts">
-  import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
-  // Übersicht in Stil C (design/stil-c.md, design/uebersicht-kompakt.md): Kopfzeile mit Einstellungen,
-  // Haushaltszeile, bunte Karten am schwingenden Band, Hauptaktion „Unterlagen hinzufügen“ unten.
-  // Ohne Haushalt ein leerer Weg mit „Haushalt anlegen“.
-  import { onMount } from 'svelte';
+  // Tab „Mappe“ (B12b, B18 Fassung 2 und 3, Nachricht 10.11. k): „Eure Mappe“ mit dem Rahmen-Satz aus E25,
+  // Haushaltszeile, Aufgaben, je Person ein Blatt mit Reiter, Kinder, Bürgen, Hauptaktion und Backup.
+  // Gegrüßt wird im Tab „Wohnungen“. Ohne Haushalt beginnt alles dort.
+  import { onMount, untrack } from 'svelte';
   import { daten, gehe } from '../app/daten.svelte';
   import { speicherPruefen } from '../app/hinweise.svelte';
-  import { einstellungenZustand } from '../ui/einstellungen.svelte';
-  import ErsterStart from './ErsterStart.svelte';
+  import { mitziehendeTexte, werIstDabeiSatz } from '../domain/mappeWoerter';
   import { pruefhinweise } from '../domain/pruefhinweise';
-  import { listenText, offeneDinge, personStand, type PersonStand } from '../domain/regelkatalog';
-  import { pruefAnzeige } from '../ui/pruefTexte';
+  import {
+    offeneDinge,
+    personStand,
+    type PersonStand,
+    type UnterlagenStand,
+  } from '../domain/regelkatalog';
   import { fertig as rutschFertig } from '../domain/rutsch';
   import { neueUnterlagen, tageSeit } from '../domain/zeit';
   import { t, zahlwort } from '../i18n';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
-  import Band from '../ui/Band.svelte';
+  import BackupZeile from '../ui/BackupZeile.svelte';
+  import { bewegungReduziert } from '../ui/bewegung';
+  import { einstellungenZustand } from '../ui/einstellungen.svelte';
+  import GrafikPlatz from '../ui/GrafikPlatz.svelte';
   import HaushaltsZeile from '../ui/HaushaltsZeile.svelte';
   import HinweisKasten from '../ui/HinweisKasten.svelte';
-  import BackupZeile from '../ui/BackupZeile.svelte';
-  import KarteC from '../ui/KarteC.svelte';
-  import MitziehendeZeile from '../ui/MitziehendeZeile.svelte';
   import Kopfzeile from '../ui/Kopfzeile.svelte';
-  import { passend } from '../ui/passend';
+  import {
+    blickMerken,
+    keinWechsel,
+    letzterBlick,
+    mitGeistern,
+    wechselVon,
+    type Blick,
+    type Wechsel,
+    type ZeilenArt,
+  } from '../ui/mappeBlick';
+  import MitziehendeZeile from '../ui/MitziehendeZeile.svelte';
+  import PersonBlatt from '../ui/PersonBlatt.svelte';
+  import { pruefAnzeige } from '../ui/pruefTexte';
+  import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
+  import Symbol from '../ui/Symbol.svelte';
+  import TabLeiste from '../ui/TabLeiste.svelte';
+  import { naechsterText } from '../ui/texte';
+  import Wohnungen from './Wohnungen.svelte';
 
   onMount(() => void speicherPruefen());
 
@@ -40,9 +59,7 @@
     return s && u ? { person: s.person, farbe: s.farbe, stand: u } : null;
   });
 
-  function eintragen(s: PersonStand) {
-    const u = s.naechster;
-    if (!u) return;
+  function aufgabeOeffnen(s: PersonStand, u: UnterlagenStand) {
     if (u.typ.inAppErstellt) return gehe(`/selbstauskunft/${s.person.id}`);
     gewaehlt = { personId: s.person.id, typ: u.typ.id };
     hochladenOffen = true;
@@ -68,20 +85,31 @@
     ...staende.filter((s) => s.rolle === 'mitmieter'),
   ]);
   const buergen = $derived(staende.filter((s) => s.rolle === 'buerge'));
-  // PH1: je Person der erste Prüfhinweis. Was fehlt, geht vor; „Zu alt“ und „Neuer Monat“ warten.
-  const pruefFunde = $derived(pruefhinweise(staende));
-  function pruefung(s: PersonStand) {
-    const n = s.naechster;
-    if (n && n.status === 'fehlt' && !n.veraltet) return undefined;
-    const u = s.unterlagen.find((x) => pruefFunde.has(`${s.person.id}/${x.typ.id}`));
-    if (!u) return undefined;
-    const h = pruefFunde.get(`${s.person.id}/${u.typ.id}`)!;
-    return {
-      unterlage: listenText(u.typ),
-      kurz: pruefAnzeige(h, s.person.rufname || s.person.vorname).kurz,
-      href: `#/unterlage/${s.person.id}/${u.typ.id}`,
-    };
+  // Aufgaben: alles, was fehlt oder bald abläuft, Person für Person (Nachricht 10.11. k: alle).
+  const aufgaben = $derived(
+    [...vertrag, ...buergen].flatMap((stand) =>
+      stand.unterlagen
+        .filter((u) => u.status === 'fehlt' || u.status === 'bald')
+        .map((u) => ({ stand, u })),
+    ),
+  );
+  /** „für Max · neuer Monat“; „Fehlt noch“ sagt die Liste schon. */
+  function fuerText(s: PersonStand, grund: string): string {
+    const fuer = t('mappeTab.fuer', { name: s.person.rufname || s.person.vorname });
+    if (!grund || /^fehlt noch\.?$/i.test(grund)) return fuer;
+    return `${fuer} · ${grund.charAt(0).toLowerCase()}${grund.slice(1).replace(/\.$/, '')}`;
   }
+
+  // Prüfhinweise (PH1): Marke „prüfen“ an der Zeile (Nachricht 10.11. k).
+  const pruefFunde = $derived(pruefhinweise(staende));
+  function pruefKurz(s: PersonStand, typ: string): string | null {
+    const h = pruefFunde.get(`${s.person.id}/${typ}`);
+    return h ? pruefAnzeige(h, s.person.rufname || s.person.vorname).kurz : null;
+  }
+  const pruefZahl = $derived(
+    staende.reduce((n, s) => n + s.pfad.filter((u) => pruefKurz(s, u.typ.id)).length, 0),
+  );
+
   const offen = $derived(offeneDinge(staende));
   const fertig = $derived(staende.length > 0 && offen === 0);
   // U15: Backup älter als 30 Tage und seitdem Neues dazugekommen. Ohne Änderungen bleibt die Zeile ruhig.
@@ -92,91 +120,184 @@
     const neu = neueUnterlagen(daten.ansicht.versionen, zuletzt);
     return tage > 30 && neu > 0 ? { tage, neu } : null;
   });
-  const neustart = $derived(staende.length > 0 && (daten.ansicht?.versionen.length ?? 0) === 0);
   const allein = $derived(vertrag.length === 1);
   const kinder = $derived(daten.ansicht?.haushalt.kinder ?? 0);
   const weitere = $derived(daten.ansicht?.haushalt.weitereErwachsene ?? 0);
-  const rufname = $derived((vertrag[0] ?? staende[0])?.person.rufname ?? '');
   const rutsch = $derived(daten.einstellungen?.rutsch ?? null);
   const pausiert = $derived(!!rutsch && rutsch.index > 0 && !rutschFertig(rutsch));
+  // Rahmen-Satz aus E25, wie auf der Vermieterseite.
+  const rahmen = $derived(
+    werIstDabeiSatz(vertrag.length, mitziehendeTexte(kinder, weitere), buergen.length),
+  );
 
   const lead = $derived.by(() => {
-    if (fertig) return allein ? t('uebersicht.fertigDu') : t('uebersicht.fertigIhr');
-    if (neustart) return allein ? t('uebersicht.neustartDu') : t('uebersicht.neustartIhr');
     const werte = { anzahl: offen, zahl: zahlwort(offen) };
     return allein ? t('uebersicht.offenDu', werte) : t('uebersicht.offenIhr', werte);
   });
-
-  // Das Band als ein Bild mit einem Satz (design/unterlage-warum-haushalt.md, Abschnitt 4).
-  const bandSatz = $derived.by(() => {
-    const gesamt = staende.reduce((n, s) => n + s.pfad.length, 0);
-    const da = staende.reduce((n, s) => n + s.pfad.filter((u) => u.status === 'da').length, 0);
-    return da === gesamt
-      ? t('uebersicht.bandFertig', { gesamt: zahlwort(gesamt) })
-      : t('uebersicht.bandSatz', {
-          da: zahlwort(da),
-          gesamt: zahlwort(gesamt),
-          offen: zahlwort(gesamt - da),
-        });
-  });
+  // Nachricht 10.11. l und m: Ein offener Prüfhinweis ändert „startklar“, hält aber nicht auf.
+  const fertigSatz = $derived(
+    pruefZahl
+      ? t(allein ? 'mappeTab.pruefenDu' : 'mappeTab.pruefenIhr', { anzahl: pruefZahl })
+      : allein
+        ? t('mappeTab.startklarDu')
+        : t('mappeTab.startklarIhr'),
+  );
   const offenZahlwort = $derived(zahlwort(offen));
 
-  // Begrüßung immer einzeilig: 34 px, passt sie nicht, 28 px, dann 24 px (per Messung).
-  const BEGRUESSUNG = ['34px/36px', '28px/30px', '24px/28px'];
+  // B21: Bewegung seit dem letzten Blick auf den Tab. Was sich geändert hat, bewegt sich einmal, höchstens
+  // 400 ms lang; danach nimmt Hefta die Marken wieder weg und, was gegangen ist, ganz heraus.
+  type Aufgabe = (typeof aufgaben)[number];
+  function zeilenArt(s: PersonStand, u: UnterlagenStand): ZeilenArt {
+    if (pruefKurz(s, u.typ.id)) return 'pruef';
+    if (u.status === 'fehlt') return 'fehlt';
+    if (u.status === 'bald') return 'bald';
+    return 'da';
+  }
+  const haushaltId = $derived(daten.ansicht?.haushalt.id ?? '');
+  const blick = $derived<Blick<PersonStand, Aufgabe>>({
+    personen: [...vertrag, ...buergen].map((s) => ({ id: s.person.id, daten: s })),
+    zeilen: new Map(
+      [...vertrag, ...buergen].flatMap((s) =>
+        s.pfad.map((u) => [`${s.person.id}/${u.typ.id}`, zeilenArt(s, u)] as const),
+      ),
+    ),
+    aufgaben: aufgaben.map((a) => ({ schluessel: `${a.stand.person.id}/${a.u.typ.id}`, daten: a })),
+    offen,
+    startklar: fertig && pruefZahl === 0,
+    satz: fertig ? fertigSatz : lead,
+  });
+  const wechsel = $derived.by<Wechsel<PersonStand, Aufgabe>>(() => {
+    const jetzt = blick;
+    if (!haushaltId) return keinWechsel();
+    return wechselVon(
+      untrack(() => letzterBlick<PersonStand, Aufgabe>(haushaltId)),
+      jetzt,
+    );
+  });
+  $effect(() => blickMerken(haushaltId, blick));
+  let vorbei = $state(0);
+  const reduziert = bewegungReduziert();
+  $effect(() => {
+    const nr = wechsel.nr;
+    if (!nr) return;
+    const uhr = setTimeout(() => (vorbei = nr), 450);
+    return () => clearTimeout(uhr);
+  });
+  const aktiv = $derived(wechsel.nr > 0 && wechsel.nr !== vorbei);
+  const bw = $derived(aktiv ? wechsel : keinWechsel<PersonStand, Aufgabe>());
+  const geister = $derived(aktiv && !reduziert);
+  function zeilenFuer(s: PersonStand): Set<string> {
+    return new Set(
+      [...bw.kam, ...bw.pruef].flatMap((k) => {
+        const [person, typ] = k.split('/');
+        return person === s.person.id && typ ? [typ] : [];
+      }),
+    );
+  }
+  const aufgabenListe = $derived(
+    mitGeistern(
+      aufgaben,
+      geister ? bw.wegAufgaben.map((a) => ({ platz: a.platz, daten: a.daten })) : [],
+    ),
+  );
+  const blaetter = $derived(
+    mitGeistern(
+      [...vertrag, ...buergen],
+      geister ? bw.wegPersonen.map((p) => ({ platz: p.platz, daten: p.daten })) : [],
+    ),
+  );
+  const blaetterVertrag = $derived(blaetter.filter((b) => b.wert.rolle !== 'buerge'));
+  const blaetterBuergen = $derived(blaetter.filter((b) => b.wert.rolle === 'buerge'));
+  // Person geht: lang; sonst schließt eine Aufgabe ihren Platz in „mittel“.
+  const zuDauer = $derived(bw.wegPersonen.length ? 'var(--bw-lang)' : 'var(--bw-mittel)');
 </script>
 
+{#snippet blattPlatz(b: { wert: PersonStand; geist: boolean })}
+  {#if b.geist}
+    <div class="platz geist" style:--zu={zuDauer} inert aria-hidden="true">
+      <div><PersonBlatt stand={b.wert} pruefen={() => null} /></div>
+    </div>
+  {:else}
+    <div class="platz" class:neu={bw.neuePersonen.has(b.wert.person.id)}>
+      <div>
+        <PersonBlatt
+          stand={b.wert}
+          pruefen={(typ) => pruefKurz(b.wert, typ)}
+          kam={zeilenFuer(b.wert)}
+        />
+      </div>
+    </div>
+  {/if}
+{/snippet}
+
 {#if !daten.ansicht}
-  <ErsterStart />
+  <!-- Hefta 2: Ohne Haushalt beginnt alles im Tab „Wohnungen“ (E45, B15, B16). -->
+  <Wohnungen />
 {:else}
+  <TabLeiste aktiv="mappe" />
   <main class="uebersicht">
     <Kopfzeile />
     <div class="titelblock">
-      <h1 class="display begruessung" use:passend={BEGRUESSUNG}>
-        {fertig ? t('uebersicht.fertigTitel') : t('uebersicht.hallo', { name: rufname })}
-      </h1>
+      <h1 class="titel">{allein ? t('mappeTab.titelDu') : t('mappeTab.titelIhr')}</h1>
+      <p class="rahmen">{rahmen}</p>
       <HaushaltsZeile {vertrag} {weitere} {kinder} buergen={buergen.length} />
       {#if meldung}<p class="meldung" role="status">{meldung}</p>{/if}
-      <p class="lead">{lead}</p>
     </div>
 
     <HinweisKasten />
 
-    <Band bild={bandSatz} {fertig} merken="uebersicht" ansage={t('uebersicht.fertigTitel')}>
-      {#if buergen.length}
-        <h2 class="abschnitt" data-band="track">{t('uebersicht.abschnittVertrag')}</h2>
-      {/if}
-      {#each vertrag as s (s.person.id)}
-        <KarteC
-          stand={s}
-          ebene={buergen.length ? 3 : 2}
-          oneintragen={() => eintragen(s)}
-          pruefung={pruefung(s)}
-        />
-      {/each}
-      <MitziehendeZeile {kinder} {weitere} />
-
-      {#if buergen.length}
-        <h2 class="abschnitt" data-band="open">{t('uebersicht.abschnittBuergen')}</h2>
-        <p class="trenner" data-band="open">{t('uebersicht.zusatzZeile')}</p>
-        {#each buergen as s (s.person.id)}
-          <KarteC
-            stand={s}
-            zusatz
-            ebene={3}
-            oneintragen={() => eintragen(s)}
-            pruefung={pruefung(s)}
-          />
-        {/each}
-      {/if}
-
-      <div class="zielzeile" data-band-ziel>
-        {#if fertig}
-          <span class="erreicht">{t('uebersicht.zielErreicht')}</span>
-        {:else}
-          <a class="textlink" href="#/mappe">{t('uebersicht.trotzdem')}</a>
-        {/if}
+    {#if fertig}
+      <!-- B21, Stelle 2: „Alles da“ ist der Moment der Vorfreude, nur ohne offenen Prüfhinweis. -->
+      <div class="aufgaben fertig" class:moment={bw.startklar}>
+        <GrafikPlatz name="alles-da" hoehe={96}>
+          <span class="zeichen" aria-hidden="true"><Symbol name="haken" groesse={24} /></span>
+        </GrafikPlatz>
+        <p class:blende={bw.satz && !bw.startklar}>
+          <b>{fertigSatz}</b><small>{t('mappeTab.bereit')}</small>
+        </p>
       </div>
-    </Band>
+    {:else}
+      <section class="aufgaben" aria-labelledby="aufgaben-titel">
+        <h2 id="aufgaben-titel" class:blende={bw.satz}>{lead}</h2>
+        <ul>
+          {#each aufgabenListe as { wert: a, geist } ((geist ? 'g:' : '') + `${a.stand.person.id}/${a.u.typ.id}`)}
+            {@const text = naechsterText(a.u, a.stand.person)}
+            <li
+              class:geist
+              class:neu={!geist && bw.neueAufgaben.has(`${a.stand.person.id}/${a.u.typ.id}`)}
+              style:--zu={geist ? zuDauer : undefined}
+              inert={geist}
+              aria-hidden={geist ? 'true' : undefined}
+            >
+              <div class="platz-innen">
+                <button type="button" class="aufgabe" onclick={() => aufgabeOeffnen(a.stand, a.u)}>
+                  <span class="sym" aria-hidden="true"
+                    ><Symbol name={a.u.typ.symbol} groesse={20} /></span
+                  >
+                  <span class="tx">
+                    <b>{text.unterlage}</b>
+                    <small>{fuerText(a.stand, text.grund)}</small>
+                  </span>
+                  <Symbol name="weiter" groesse={16} />
+                </button>
+              </div>
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
+
+    {#each blaetterVertrag as b ((b.geist ? 'g:' : '') + b.wert.person.id)}
+      {@render blattPlatz(b)}
+    {/each}
+    <MitziehendeZeile {kinder} {weitere} />
+
+    {#if blaetterBuergen.length}
+      <p class="trenner">{t('uebersicht.zusatzZeile')}</p>
+      {#each blaetterBuergen as b ((b.geist ? 'g:' : '') + b.wert.person.id)}
+        {@render blattPlatz(b)}
+      {/each}
+    {/if}
 
     {#if backupAlt}
       <div class="backup alt">
@@ -197,19 +318,28 @@
   </main>
 
   {#if fertig}
-    <Aktionsleiste text={t('uebersicht.erstellen')} href="#/mappe" />
+    <Aktionsleiste
+      text={t('mappeTab.teilen')}
+      href="#/mappe"
+      einblenden={bw.startklar}
+      nebenGeist={bw.startklar && geister ? t('mappeTab.trotzdemTeilen') : undefined}
+    />
   {:else if pausiert && rutsch}
     <Aktionsleiste
       text={t('uebersicht.weitermachen')}
       zusatz={t('uebersicht.vonZusatz', { schritt: rutsch.index + 1, gesamt: rutsch.liste.length })}
+      zahlNeu={bw.zahl}
       href="#/rutsch"
+      neben={{ text: t('mappeTab.trotzdemTeilen'), onclick: () => gehe('/mappe') }}
     />
   {:else}
     <Aktionsleiste
       text={t('uebersicht.unterlagenHinzufuegen')}
       zusatz={t('uebersicht.offenZusatz', { anzahl: offen })}
+      zahlNeu={bw.zahl}
       ansage={t('uebersicht.hauptAnsage', { offen: offenZahlwort })}
       href="#/rutsch"
+      neben={{ text: t('mappeTab.trotzdemTeilen'), onclick: () => gehe('/mappe') }}
     />
   {/if}
 {/if}
@@ -234,51 +364,228 @@
   }
 
   .uebersicht {
+    --spalte: 0px;
     position: relative;
     max-width: var(--content-width);
     min-height: 100dvh;
     margin: 0 auto;
+    padding-inline: var(--space-5);
     /* Platz für die fixierte Hauptaktion */
     padding-bottom: max(
       calc(140px + env(safe-area-inset-bottom)),
-      calc(var(--leiste-hoehe, 0px) + 16px)
+      calc(var(--leiste-hoehe, 0px) + var(--tabs-hoehe, 0px) + 16px)
     );
   }
 
+  /* Der Tab hat eigene Seitenränder; der Hinweiskasten bringt seine für Seiten ohne mit (C21). */
+  .uebersicht > :global(.kasten) {
+    margin-inline: 0;
+  }
+
   .titelblock {
-    padding: 6px var(--space-5) 0;
+    padding: 6px 0 0;
   }
 
-  .begruessung {
-    margin-top: 10px;
-    white-space: nowrap;
-  }
-
-  .abschnitt {
-    margin: 0 0 8px var(--spalte);
-    font-size: calc(15 * var(--px));
-    line-height: calc(20 * var(--px));
+  .titel {
+    margin: 10px 0 4px;
+    font-size: calc(34 * var(--px));
+    line-height: calc(38 * var(--px));
     font-weight: 800;
   }
 
-  .abschnitt + .trenner {
-    margin-top: -6px;
+  .rahmen {
+    margin: 0 0 12px;
+    font-size: calc(17 * var(--px));
+    line-height: calc(23 * var(--px));
+    font-weight: 600;
+  }
+
+  .aufgaben {
+    margin: 18px 0 8px;
+    padding: 14px;
+    border-radius: 16px;
+    background: var(--accent-soft);
+  }
+
+  .aufgaben h2 {
+    margin: 0 0 10px;
+    font-size: calc(17 * var(--px));
+    line-height: calc(22 * var(--px));
+    font-weight: 700;
+  }
+
+  /* Eine Spalte, die schmaler werden darf als das längste Wort: Sonst ragt die Zeile bei 320 px
+     mit großer Schrift aus dem Kasten (C3). */
+  .aufgaben ul {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .aufgabe {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 64px;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .aufgabe .tx,
+  .aufgaben.fertig p {
+    display: grid;
+    flex: 1 1 12em;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .aufgabe b,
+  .aufgaben.fertig b {
+    overflow-wrap: break-word;
+    font-size: calc(17 * var(--px));
+    line-height: calc(22 * var(--px));
+    font-weight: 700;
+  }
+
+  .aufgabe small,
+  .aufgaben.fertig small {
+    color: var(--ink-muted);
+    font-size: calc(14 * var(--px));
+    line-height: calc(19 * var(--px));
+  }
+
+  /* Bei 320 px mit großer Schrift rückt der Satz unter das Zeichen, statt schmal daneben zu stehen (C21). */
+  .aufgaben.fertig {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    background: var(--passt);
+  }
+
+  .zeichen {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--passt-text);
+  }
+
+  /* B21: Platz öffnet und schließt sich über grid-template-rows, Inhalt steigt 8 px ein. Alles mit
+     `backwards`, damit das Ende jeder Bewegung der Ruhezustand ist. Bei „Bewegung reduzieren“ sind die
+     Dauern 0; was „knapp einblendet“, nimmt --bw-nur-reduziert. */
+  .platz {
+    display: grid;
+    grid-template-rows: 1fr;
+  }
+
+  .platz > div,
+  .platz-innen {
+    min-height: 0;
+  }
+
+  li.neu,
+  li.geist {
+    display: grid;
+    grid-template-rows: 1fr;
+  }
+
+  .platz.neu > div,
+  li.neu .platz-innen,
+  .platz.geist > div,
+  li.geist .platz-innen {
+    overflow: hidden;
+  }
+
+  .platz.neu,
+  li.neu {
+    animation: bw-auf var(--bw-mittel) var(--bw-ziel) backwards;
+  }
+
+  .platz.neu > div,
+  li.neu .platz-innen {
+    animation:
+      bw-steigen var(--bw-mittel) var(--bw-ziel) var(--bw-takt) backwards,
+      bw-blende var(--bw-nur-reduziert) var(--bw-gleich) backwards;
+  }
+
+  .platz.geist {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    animation: bw-zu var(--zu) var(--bw-ziel) backwards;
+  }
+
+  /* In der Liste fällt mit der Aufgabe auch ihr Abstand weg. */
+  li.geist {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    margin-bottom: -8px;
+    animation: aufgabe-zu var(--zu) var(--bw-ziel) backwards;
+  }
+
+  @keyframes aufgabe-zu {
+    0% {
+      grid-template-rows: 1fr;
+      opacity: 1;
+      margin-bottom: 0;
+    }
+    50% {
+      opacity: 0;
+    }
+    100% {
+      grid-template-rows: 0fr;
+      opacity: 0;
+      margin-bottom: -8px;
+    }
+  }
+
+  .blende {
+    animation: bw-blende var(--bw-kurz) var(--bw-weich) backwards;
+  }
+
+  /* „Alles da“: Der Kasten wird grün, der Satz steigt ein, der Haken zieht sich als Letztes. */
+  .aufgaben.fertig.moment {
+    animation:
+      fertig-grund var(--bw-mittel) var(--bw-weich) backwards,
+      bw-blende var(--bw-nur-reduziert) var(--bw-gleich) backwards;
+  }
+
+  .moment p {
+    animation: bw-steigen var(--bw-mittel) var(--bw-ziel) var(--bw-takt) backwards;
+  }
+
+  .moment .zeichen :global(svg path) {
+    stroke-dasharray: 30;
+    animation: bw-haken var(--bw-kurz) var(--bw-weich) calc(3 * var(--bw-takt)) backwards;
+  }
+
+  @keyframes fertig-grund {
+    from {
+      background-color: var(--accent-soft);
+    }
   }
 
   .trenner {
-    margin: 0 0 8px var(--spalte);
+    margin: 26px 0 0;
+    padding-top: 12px;
+    border-top: 1px dashed var(--control-border);
+    color: var(--ink-muted);
     font-size: calc(13 * var(--px));
     line-height: calc(18 * var(--px));
-    color: var(--ink-muted);
-  }
-
-  .zielzeile {
-    display: flex;
-    align-items: center;
-    min-height: 56px;
-    margin-left: calc(var(--spalte) + 20px);
-    font-size: calc(15 * var(--px));
-    font-weight: 700;
   }
 
   .backup {
@@ -287,14 +594,14 @@
     justify-content: space-between;
     align-items: center;
     gap: 10px;
-    margin: 22px var(--space-5) 0;
+    margin: 22px 0 0;
     font-size: calc(13 * var(--px));
     color: var(--ink-muted);
   }
 
   .backup.alt {
     flex-wrap: wrap;
-    margin: 22px var(--space-4) 0;
+    margin: 22px 0 0;
     padding: 6px 6px 6px 14px;
     border-radius: 16px;
     background: var(--surface);
