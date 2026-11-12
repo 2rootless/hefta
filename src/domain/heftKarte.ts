@@ -2,7 +2,8 @@ import type { Heft } from './modell';
 import { tageBis } from './tageslinie';
 
 // Was eine Zeile der Übersicht und der Kopf eines Hefts zeigen (B21 Fassung 4): Titel, Ort, Eckdaten,
-// und für die nächste Besichtigung die Karte mit Datum und Woche. Reine Rechnung, Texte als Schlüssel für i18n.
+// und für die nächste Besichtigung die Karte mit Datum und Woche. Reine Rechnung, Texte als Schlüssel
+// für i18n.
 
 const NB = ' ';
 const zahl = (n: number) => new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }).format(n);

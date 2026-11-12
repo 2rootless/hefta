@@ -2,7 +2,8 @@
 #
 # - „pruefen“ läuft bei jedem Push auf main und auf app/**: baut Web, iOS (Simulator, ohne Signatur) und
 #   Android (Debug). Braucht keine geheimen Werte.
-# - „testflight“ läuft nur von Hand (Actions → App → Run workflow, Haken „Zu TestFlight hochladen“) und nur
+# - „testflight“ läuft nur von Hand (Actions → App → Run workflow, Haken „Zu TestFlight hochladen“), von main
+#   oder app/hefta-2, und nur
 #   in der geschützten Umgebung „store“: Jeder Lauf wartet auf die Freigabe des Auftraggebers.
 #   Geheime Werte der Umgebung: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (Inhalt der .p8-Datei), APPLE_TEAM_ID.
 # - „play“ läuft nur von Hand (Haken „AAB für Google Play bauen“), ebenfalls in „store“ (E64): baut ein
@@ -98,7 +99,8 @@ jobs:
         run: ./gradlew --no-daemon assembleDebug
 
   testflight:
-    if: github.event_name == 'workflow_dispatch' && inputs.testflight && github.ref == 'refs/heads/main'
+    # Auch vom Zweig app/hefta-2 (E79): Testversion nur intern (E62), eingereicht wird nur von main.
+    if: github.event_name == 'workflow_dispatch' && inputs.testflight && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/app/hefta-2')
     needs: pruefen-ios
     runs-on: macos-15-intel
     timeout-minutes: 45
