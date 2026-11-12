@@ -224,3 +224,18 @@ test('Tab „Mappe“ mit nur einer Person: der Satz ohne doppelte Liste (12.11.
   await expect(kasten.getByRole('heading', { level: 2 })).toContainText(/dann bist du startklar/);
   await expect(kasten.locator('ul')).toBeHidden();
 });
+
+test('Aussehen: kein Rahmen um die Zeile nach dem Tippen, Rückmeldung an hallo@hefta.de (Design 12.11.)', async ({
+  page,
+}) => {
+  await haushaltMitMax(page);
+  await page.goto('/#/einstellungen');
+  const zeile = page.locator('.aussehen-zeile');
+  await page.getByRole('radio', { name: 'Hell' }).click();
+  await expect(zeile).toHaveCSS('outline-style', 'none');
+  await expect(page.getByRole('link', { name: /hallo@.?hefta\.de/ })).toHaveAttribute(
+    'href',
+    /^mailto:hallo@hefta\.de/,
+  );
+  await expect(page.locator('main')).not.toContainText('pm.me');
+});

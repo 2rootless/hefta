@@ -305,6 +305,18 @@
     gap: 8px;
   }
 
+  /* Kein Rahmen um die ganze Zeile nach dem Tippen (Design 12.11.): Der Fokusring sitzt nur bei Tastatur
+     auf dem einzelnen Segment. */
+  .aussehen-zeile:focus-within {
+    outline: none;
+  }
+
+  .segmente button:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
   /* Drei Segmente wie ein Schalter: das gewählte gefüllt. */
   /* Bei sehr großer Schrift brechen die Segmente in eine zweite Reihe statt mitten im Wort. */
   .segmente {

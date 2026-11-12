@@ -1,4 +1,5 @@
 import TEXT from '../../data/impressum.de.html?raw';
+import { APP_DOMAIN } from './name';
 
 // Das Impressum kommt aus dem Datenschutz-Generator (Gratisfassung, 5.11.2026) und steht unverändert in
 // data/impressum.de.html, ein Test prüft die Prüfsumme. Der Hinweis auf den Generator ist Bedingung der
@@ -16,11 +17,11 @@ export function impressumHtml(ebene: 3 | 4): string {
 }
 
 /**
- * Die Mailadresse aus dem Impressum, für die Rückmeldung (E52, B17c): Hefta schickt selbst nichts, es öffnet
- * nur das Mailprogramm. Sie steht nur im Impressum; ändert es sich, folgt die Rückmeldung von selbst.
+ * Die Mailadresse für die Rückmeldung (E52, B17c): Hefta schickt selbst nichts, es öffnet nur das
+ * Mailprogramm. Für Hefta gibt es nur hallo@hefta.de (E66, Planung 11u, Design 12.11.); das Impressum aus dem
+ * Generator bleibt, wie es ist.
  */
-export const RUECKMELDUNG_ADRESSE: string =
-  /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/.exec(TEXT)?.[0] ?? '';
+export const RUECKMELDUNG_ADRESSE = `hallo@${APP_DOMAIN}`;
 
 /** `mailto:` mit Betreff; der Betreff „Mehrere Geräte“ zählt für die Schwelle aus E34. */
 export function rueckmeldungLink(betreff: string): string {
