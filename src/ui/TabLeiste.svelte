@@ -4,19 +4,12 @@
   // und Seiten halten unten so viel Platz frei.
   import { daten } from '../app/daten.svelte';
   import { t } from '../i18n';
-  import { homescreenFragen } from './homescreen';
   import Symbol from './Symbol.svelte';
 
   let { aktiv }: { aktiv: 'wohnungen' | 'mappe' } = $props();
 
-  // Ohne Haushalt führt „Mappe“ gleich in die Einrichtung des Haushalts (Auftraggeber, 12.11.).
-  const mappeZiel = $derived(
-    daten.ansicht
-      ? '#/'
-      : homescreenFragen(daten.einstellungen)
-        ? '#/homescreen/einrichtung'
-        : '#/einrichtung',
-  );
+  // Ohne Haushalt zeigt „Mappe“ eine ruhige Startseite (B26, E93); erst ihr Knopf startet das Anlegen.
+  const mappeZiel = $derived(daten.ansicht ? '#/' : '#/mappe-start');
 
   let leiste = $state<HTMLElement>();
   $effect(() => {

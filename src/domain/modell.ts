@@ -76,6 +76,11 @@ export interface Haushalt extends Basis {
   haustiereText?: string;
   /** Ort für „Ort, Datum“ in jedem Bogen. */
   ort?: string;
+  /**
+   * B26 (E93): Der Haushalt ist angefangen, aber nicht fertig angelegt. Gesetzt mit der ersten Person,
+   * gelöscht mit „Haushalt anlegen“ oder „Niemand weiter“. Fehlt das Feld, gilt er als fertig (ältere Daten).
+   */
+  einrichtungOffen?: boolean;
   /** Gilt für alle Bewerbungen des Haushalts; fehlt es, gilt `AUSSEHEN_STANDARD`. */
   mappeAussehen?: MappenAussehen;
   /** Wer die Haushaltsangaben zuletzt eingetragen hat (Person-ID), für „Von Max: …“. */

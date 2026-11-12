@@ -40,6 +40,7 @@
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
   import Symbol from '../ui/Symbol.svelte';
   import TabLeiste from '../ui/TabLeiste.svelte';
+  import MappeStart from './MappeStart.svelte';
   import { naechsterText } from '../ui/texte';
   import Wohnungen from './Wohnungen.svelte';
 
@@ -236,6 +237,9 @@
 {#if !daten.ansicht}
   <!-- Hefta 2: Ohne Haushalt beginnt alles im Tab „Wohnungen“ (E45, B15, B16). -->
   <Wohnungen />
+{:else if daten.ansicht.haushalt.einrichtungOffen}
+  <!-- B26 (E93): Angefangen, aber nicht fertig: die wachsende Mappe statt der Übersicht. -->
+  <MappeStart />
 {:else}
   <TabLeiste aktiv="mappe" />
   <main class="uebersicht">

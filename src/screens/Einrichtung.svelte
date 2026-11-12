@@ -6,6 +6,7 @@
   import { t } from '../i18n';
   import {
     einstellungenAendern,
+    haushaltAendern,
     haushaltAnlegen,
     personAendern,
     zugehoerigkeitAendern,
@@ -75,11 +76,13 @@
       });
       await zugehoerigkeitAendern(verbindung, erste.zugehoerigkeit.id, { bezeichnung });
     } else {
-      await haushaltAnlegen(verbindung, {
+      const neu = await haushaltAnlegen(verbindung, {
         kinder: 0,
         weitereErwachsene: 0,
         personen: [{ ...angaben, rolle: 'hauptmieter' }],
       });
+      // Angefangen, bis Schritt 2 fertig ist (B26): Bricht man ab, zeigt der Tab „Mappe“ den Stand.
+      await haushaltAendern(verbindung, neu.id, { einrichtungOffen: true });
       // Dauerhaften Speicher anfragen, sobald es etwas zu bewahren gibt.
       try {
         await navigator.storage?.persist?.();

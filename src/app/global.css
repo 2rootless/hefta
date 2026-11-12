@@ -465,6 +465,13 @@ input[type='month']::-webkit-date-and-time-value {
   }
 }
 
+/* „Person kommt dazu“ (B21, B26): ein Zeichen setzt sich mit leichtem Überschwingen (Kurve `setzen`). */
+@keyframes bw-punkt {
+  from {
+    transform: scale(0);
+  }
+}
+
 @keyframes bw-haken {
   from {
     stroke-dashoffset: 30;

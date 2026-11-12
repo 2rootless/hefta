@@ -36,6 +36,7 @@
     rutsch: () => import('../screens/Rutsch.svelte'),
     homescreen: () => import('../screens/Homescreen.svelte'),
     wohnungen: () => import('../screens/Wohnungen.svelte'),
+    mappeStart: () => import('../screens/MappeStart.svelte'),
     heft: () => import('../screens/HeftSeite.svelte'),
     merkmal: () => import('../screens/MerkmalSeite.svelte'),
     termin: () => import('../screens/TerminSeite.svelte'),
@@ -224,6 +225,10 @@
     {:else if route.pfad === '/homescreen/rutsch'}
       {#await seiten.homescreen() then m}
         <m.default weiter="/rutsch" zweitesMal />
+      {/await}
+    {:else if route.pfad === '/mappe-start'}
+      {#await seiten.mappeStart() then m}
+        <m.default />
       {/await}
     {:else if route.pfad === '/wohnungen'}
       {#await seiten.wohnungen() then m}

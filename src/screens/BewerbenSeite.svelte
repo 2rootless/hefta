@@ -311,8 +311,12 @@
       {/each}
       <div class="mpf">
         <small
-          >{t(alles ? 'bewerben.alles' : 'bewerben.nurVerlangt')}{#if mappe && !mappeBaut}
-            · {t('bewerben.seiten', { anzahl: mappe.seiten })}{/if}</small
+          >{t(alles ? 'bewerben.alles' : 'bewerben.nurVerlangt')}{#if mappe && !mappeBaut}{' · '}{t(
+              'bewerben.seiten',
+              {
+                anzahl: mappe.seiten,
+              },
+            )}{/if}</small
         >
         <button class="mini" type="button" onclick={() => (alles = !alles)}
           >{t(alles ? 'bewerben.nurVerlangtMitschicken' : 'bewerben.allesMitschicken')}</button

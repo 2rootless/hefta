@@ -472,6 +472,31 @@ export async function mitgliedEntfernen(db: HeftaDb, zugehoerigkeitId: Id): Prom
 }
 
 /**
+ * „Von vorn beginnen“ (B26, E93): Ein angefangener Haushalt wird mit seinen Personen entfernt, nur nach dem
+ * Blatt „Von vorn beginnen?“. Hefte bleiben und gelten wieder als Hefte ohne Haushalt (E45).
+ */
+export async function haushaltVonVorn(db: HeftaDb, haushaltId: Id): Promise<void> {
+  const haushalt = await db.get('haushalte', haushaltId);
+  if (!haushalt?.einrichtungOffen)
+    throw new Error('Nur ein angefangener Haushalt beginnt von vorn');
+  const plaetze = await db.getAllFromIndex('zugehoerigkeiten', 'haushaltId', haushaltId);
+  for (const z of plaetze) {
+    const anderswo = (await db.getAllFromIndex('zugehoerigkeiten', 'personId', z.personId)).some(
+      (x) => x.haushaltId !== haushaltId,
+    );
+    if (anderswo) await db.delete('zugehoerigkeiten', z.id);
+    else await personGanzLoeschen(db, z.personId);
+  }
+  const tx = db.transaction(['haushalte', 'hefte', 'bewerbungen'], 'readwrite');
+  for (const h of await tx.objectStore('hefte').getAll())
+    if (h.haushaltId === haushaltId) await tx.objectStore('hefte').put({ ...h, haushaltId: null });
+  for (const b of await tx.objectStore('bewerbungen').index('haushaltId').getAll(haushaltId))
+    await tx.objectStore('bewerbungen').delete(b.id);
+  await tx.objectStore('haushalte').delete(haushaltId);
+  await tx.done;
+}
+
+/**
  * Löscht eine Person ganz: alle Plätze in Haushalten, Unterlagen mit allen Versionen und Dateien,
  * Selbstauskunft (design/person-und-haushalt.md, Abschnitt 4). Nur nach eigener Rückfrage-Seite aufrufen.
  */

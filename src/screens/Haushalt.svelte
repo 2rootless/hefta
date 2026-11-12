@@ -4,13 +4,14 @@
   // der Mitte, Bürge abgesetzt unten. Später „Euer Haushalt“: dieselben Inhalte als ruhige Liste ohne
   // Band, weil sie sich sonst kaum von der Übersicht unterschied (Wunsch des Auftraggebers, 2.11.).
   // Personen hinzufügen und ändern auf eigenem Bildschirm (Entscheidung F). Änderungen gelten sofort.
-  import { daten, db, neuLaden } from '../app/daten.svelte';
+  import { daten, db, neuLaden, stillLaden } from '../app/daten.svelte';
   import { abschliessen, ersetzen, neuAnfangen, zurueckGehen } from '../app/router.svelte';
   import { einmal } from '../ui/einmal';
   import type { Mitglied } from '../storage/speicher';
   import { rollenText, situationText } from '../domain/regelkatalog';
   import { t, tagZusammen } from '../i18n';
   import {
+    haushaltAendern,
     haushaltZaehlen,
     mitgliedZurueckholen,
     zugehoerigkeitAendern,
@@ -368,8 +369,15 @@
   <Aktionsleiste
     text={t('einrichtung.haushalt.anlegen')}
     href={homescreenNochmal(daten.einstellungen) ? '#/homescreen/rutsch' : '#/rutsch'}
-    onclick={() =>
-      neuAnfangen(homescreenNochmal(daten.einstellungen) ? '/homescreen/rutsch' : '/rutsch')}
+    onclick={async () => {
+      // Fertig angelegt (B26): Der Tab „Mappe“ zeigt ab jetzt die Mappe, nicht mehr den Stand.
+      const hh = daten.ansicht?.haushalt;
+      if (hh?.einrichtungOffen) {
+        await haushaltAendern(await db(), hh.id, { einrichtungOffen: false });
+        await stillLaden();
+      }
+      neuAnfangen(homescreenNochmal(daten.einstellungen) ? '/homescreen/rutsch' : '/rutsch');
+    }}
   />
 {:else}
   <Aktionsleiste

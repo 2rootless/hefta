@@ -97,6 +97,10 @@ test('Bewerben per Portal: Anschreiben, Angaben, Mappe, Text kopieren, dann der 
 
   // Gemerkt: „Als Nächstes: bewerben“.
   await expect(page.getByText('Als Nächstes: bewerben')).toBeVisible();
+  // Planung 12z: der geänderte Satz, allein „musst du“.
+  await expect(
+    page.getByText('Hefta legt Anschreiben und Mappe bereit. Abschicken musst du selbst.'),
+  ).toBeVisible();
   await page.getByRole('link', { name: 'Jetzt bewerben' }).click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'Bewerben in einer Minute' }),
@@ -115,6 +119,8 @@ test('Bewerben per Portal: Anschreiben, Angaben, Mappe, Text kopieren, dann der 
   await expect(anschreiben).toContainText('Einzug: 1. Januar 2027');
   await expect(anschreiben).toContainText('Wer einzieht: Eine Person im Mietvertrag.');
   await expect(page.getByText('Nur, was verlangt ist')).toBeVisible();
+  // Planung 12z: „Nur, was verlangt ist · 1 Seite“, mit Leerzeichen vor dem Punkt.
+  await expect(page.locator('.mpf small')).toHaveText(/^Nur, was verlangt ist · \d+ Seiten?$/);
   await expect(
     page.getByText('Hefta schickt deine Daten nirgendwohin. Was hinausgeht, schickst du selbst.'),
   ).toBeVisible();
