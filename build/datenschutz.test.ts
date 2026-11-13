@@ -26,7 +26,7 @@ describe('Datenschutzerklärung', () => {
       const html = datenschutzHtml(stimme);
       const an = html.indexOf('<!--email_off-->');
       const aus = html.indexOf('<!--/email_off-->');
-      const mail = html.indexOf('lleyton.sekyere@pm.me');
+      const mail = html.indexOf('hallo@hefta.de');
       expect(an).toBeGreaterThan(0);
       expect(mail).toBeGreaterThan(an);
       expect(aus).toBeGreaterThan(mail);
@@ -100,7 +100,7 @@ describe('Impressum', () => {
       'Lleyton Boateng Sekyere',
       'Friedensallee 378',
       '22761 Hamburg, Deutschland',
-      'lleyton.sekyere@pm.me',
+      'hallo@hefta.de',
     ]) {
       expect(text).toContain(angabe);
       expect(dse).toContain(angabe);

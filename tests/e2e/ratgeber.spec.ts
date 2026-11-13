@@ -104,9 +104,9 @@ test('Impressum aus dem Generator auf der Vermieter-Seite', async ({ page }) => 
   const impressum = page.locator('.vs-impressum');
   await expect(impressum.getByRole('heading', { name: 'Diensteanbieter' })).toBeVisible();
   await expect(impressum).toContainText('Friedensallee 378');
-  await expect(impressum.getByRole('link', { name: 'lleyton.sekyere@pm.me' })).toHaveAttribute(
+  await expect(impressum.getByRole('link', { name: 'hallo@hefta.de' })).toHaveAttribute(
     'href',
-    'mailto:lleyton.sekyere@pm.me',
+    'mailto:hallo@hefta.de',
   );
   await expect(
     impressum.getByRole('link', { name: /Erstellt mit kostenlosem Datenschutz-Generator/ }),
