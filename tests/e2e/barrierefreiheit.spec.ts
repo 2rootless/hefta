@@ -191,7 +191,10 @@ test('Bewegung reduzieren: kurzes Überblenden, kein Schieben', async ({ page })
   await laden(page, '01-standard');
   // E58: Die Tokens regeln es an einer Stelle. Überblenden bleibt (120 ms), alles andere ist 0.
   const werte = await page.evaluate(() => {
-    const e = document.querySelector('.einblenden')!;
+    // Eigene Probe: Die Klasse am Rahmen fällt nach dem Wechsel weg (PC8 A5).
+    const e = document.createElement('div');
+    e.className = 'einblenden';
+    document.body.append(e);
     const wurzel = getComputedStyle(document.documentElement);
     // Der Bau schreibt „120ms“ als „.12s“: in Millisekunden vergleichen.
     const ms = (w: string) => Math.round(parseFloat(w) * (w.trim().endsWith('ms') ? 1 : 1000));

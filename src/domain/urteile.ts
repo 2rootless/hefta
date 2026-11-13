@@ -260,11 +260,11 @@ function urteileVoll(w: Wohnung, wu: WuenscheVoll, geld: Haushaltsgeld): Urteil[
     }[w.tiere ?? 'ohne'] as Urteil,
   );
 
-  const b = w.befristung;
+  const b = w.befristung?.trim() || null;
   r.push(
     b === null
       ? { kriterium: 'Befristung', art: 'offen', wert: '–', abweichung: 'Befristung' }
-      : b === 'unbefristet'
+      : b.toLowerCase() === 'unbefristet'
         ? { kriterium: 'Befristung', art: 'passt', wert: 'unbefristet', abweichung: '' }
         : { kriterium: 'Befristung', art: 'nicht', wert: b, abweichung: `befristet auf ${b}` },
   );

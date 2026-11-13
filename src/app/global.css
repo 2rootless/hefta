@@ -581,3 +581,21 @@ body::before {
 :where(.farbe-12) {
   --farbe: var(--person-12);
 }
+
+/* PC8 A9: Langes Drücken auf Knöpfe und Reiter markiert nicht ihre Schrift und öffnet kein Menü.
+   Text zum Kopieren (Anschreiben, Felder) bleibt markierbar. */
+button,
+[role='button'],
+[role='tab'],
+.knopf,
+.btn,
+.chip,
+.tabs a,
+a.zurueck,
+a.weg,
+a.zeile,
+a.listenzeile {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}

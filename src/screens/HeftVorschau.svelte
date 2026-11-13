@@ -130,8 +130,10 @@
     const a = entwurf.angaben;
     if (!a) return [];
     const z: { wert: string; wort: string }[] = [];
+    // PC8 B3: immer die Miete, die bekannt ist, mit ihrer Art; geschätzt mit „ca.“ (E78).
     if (a.warm != null)
       z.push({ wert: `${a.warmCa ? `ca.${NB}` : ''}${eur(a.warm)}`, wort: t('vorschau.warm') });
+    else if (a.kalt != null) z.push({ wert: eur(a.kalt), wort: t('vorschau.kalt') });
     if (a.zimmer != null) z.push({ wert: zahl(a.zimmer), wort: t('vorschau.zimmer') });
     if (a.flaeche != null)
       z.push({

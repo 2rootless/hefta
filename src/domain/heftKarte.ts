@@ -79,6 +79,8 @@ export function eckdaten(h: Pick<Heft, 'angaben'>): string {
   if (!a) return '';
   const teile: string[] = [];
   if (a.warm != null) teile.push(`${a.warmCa ? `ca.${NB}` : ''}${eur(a.warm)}`);
+  // PC8 B3: Ohne Warmmiete die Kaltmiete, mit ihrer Art.
+  else if (a.kalt != null) teile.push(`${eur(a.kalt)}${NB}kalt`);
   if (a.zimmer != null) teile.push(`${zahl(a.zimmer)}${NB}Zi`);
   if (a.flaeche != null) teile.push(`${a.flaecheCa ? `ca.${NB}` : ''}${zahl(a.flaeche)}${NB}m²`);
   return teile.join(' · ');

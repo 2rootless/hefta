@@ -5,6 +5,7 @@
   // Jeder Schritt lässt sich überspringen. Hefta verschickt nichts selbst; es merkt sich, was hinausging,
   // und fragt danach einmal „Stimmt der Stand?“ im Heft, wenn es das Absenden nicht sicher weiß.
   import { daten, db, stillLaden } from '../app/daten.svelte';
+  import { zurueckGehen } from '../app/router.svelte';
   import { adresseZeilen } from '../domain/adresse';
   import {
     anschreibenText,
@@ -230,6 +231,9 @@
     if (a === 'abgebrochen') return;
     if (a === 'anhangSelbst') meldung = t('bewerben.anhangSelbst');
     await beworbenMerken('mail', a === 'gesendet', m);
+    // PC8 A6: Nach dem Senden zurück ins Heft; dort steht „Beworben“ oder der Vorschlag dazu. Nur wenn
+    // ihr die Mappe noch selbst anhängen müsst, bleibt der Hinweis dazu hier stehen.
+    if (a !== 'anhangSelbst') zurueckGehen(`/heft/${id}`);
   }
 
   async function kopieren(was: string, inhalt: string, merken: boolean) {
@@ -243,7 +247,9 @@
     const m = await mappeHolen();
     if (!m || !weg) return;
     const r = await mappeTeilen(m.dateien);
-    if (r.geteilt) await beworbenMerken(weg, false, m, r.ueber);
+    if (!r.geteilt) return;
+    await beworbenMerken(weg, false, m, r.ueber);
+    zurueckGehen(`/heft/${id}`);
   }
 
   function springen(nach: string) {
@@ -322,6 +328,16 @@
           >{t('bewerben.fertig')}</button
         >
       {:else}
+        <!-- PC8 B4: „Kopieren“ oben am Text, den er kopiert; der Text selbst ist markierbar. -->
+        <div class="mt-kopf">
+          <button
+            class="mini"
+            type="button"
+            aria-label={t('bewerben.kopierenLabel', { was: t('bewerben.anschreibenLabel') })}
+            onclick={() => kopieren('text', text, weg === 'portal')}
+            ><Symbol name="kopieren" groesse={16} /><span>{t('bewerben.kopieren')}</span></button
+          >
+        </div>
         <p class="mt">{text}</p>
         <button class="mini" type="button" onclick={() => (aendert = true)}
           >{t('bewerben.aendern')}</button
@@ -375,10 +391,7 @@
           ><Symbol name="mail" groesse={20} />{t('bewerben.mailOeffnen')}</button
         >
       {:else if weg === 'portal'}
-        <button class="btn" type="button" onclick={() => kopieren('text', text, true)}
-          ><Symbol name="kopieren" groesse={20} />{t('bewerben.textKopieren')}</button
-        >
-        <button class="btn zweit" type="button" onclick={teilen}
+        <button class="btn" type="button" onclick={teilen}
           ><Symbol name="hochladen" groesse={20} />{t('bewerben.mappeTeilen')}</button
         >
       {:else}
@@ -507,10 +520,19 @@
     background: var(--surface);
   }
 
+  .mt-kopf {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+
   .mt {
     margin: 10px 0 4px;
     line-height: 1.45;
     white-space: pre-line;
+    -webkit-touch-callout: default;
+    -webkit-user-select: text;
+    user-select: text;
   }
 
   textarea {

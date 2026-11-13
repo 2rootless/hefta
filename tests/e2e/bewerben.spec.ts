@@ -143,7 +143,8 @@ test('Bewerben per Portal: Anschreiben, Angaben, Mappe, Text kopieren, dann der 
 
   // Zurück zum Portal: Text kopieren merkt sich den Weg, unsicher.
   await page.getByRole('button', { name: 'Portal' }).click();
-  await page.getByRole('button', { name: 'Text kopieren' }).click();
+  // PC8 B4: „Kopieren“ steht oben am Anschreiben.
+  await page.getByRole('button', { name: 'Anschreiben kopieren' }).click();
   await expect(page.getByRole('status').filter({ hasText: /Kopier/ })).toBeVisible();
   if (browserName === 'chromium')
     expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(
@@ -238,4 +239,22 @@ test('Aussehen: kein Rahmen um die Zeile nach dem Tippen, Rückmeldung an hallo@
     /^mailto:hallo@hefta\.de/,
   );
   await expect(page.locator('main')).not.toContainText('pm.me');
+});
+
+test('PC8 A6: Nach dem Teilen der Mail kehrt Hefta ins Heft zurück, mit dem Vorschlag', async ({
+  page,
+}) => {
+  // Das Teilen-Blatt des Systems, wie Gmail: geteilt, aber ohne sichere Meldung „gesendet“.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'canShare', { value: () => true });
+    Object.defineProperty(navigator, 'share', { value: async () => {} });
+  });
+  await haushaltMitMax(page);
+  await hefteAnlegen(page, [heft('linden')]);
+  await heftOeffnen(page, 'linden');
+  await page.getByRole('link', { name: 'Jetzt bewerben' }).click();
+  await page.getByRole('button', { name: 'Mail', exact: true }).click();
+  await page.getByRole('button', { name: 'Mail mit Mappe öffnen' }).click();
+  await expect(page.getByText('Hefta schlägt vor: Beworben')).toBeVisible();
+  await expect(page).toHaveURL(/#\/heft\/linden$/);
 });

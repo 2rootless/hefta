@@ -1,6 +1,6 @@
 <script lang="ts">
   import { route } from '../app/router.svelte';
-  import { wechselArt } from '../ui/wechsel';
+  import { WECHSEL_HOECHSTENS_MS, wechselArt } from '../ui/wechsel';
   import { haushaltsNetto } from '../domain/netto';
   // Ein Heft (B21 Fassung 4), erster Stand: Umschlag mit Titel, Adresse,
   // Eckdaten und Quelle, die Leiste „Stand x von 4“, die Besichtigung, Notizen und der Abgleich mit den
@@ -31,7 +31,7 @@
   import Rueckmeldung from '../ui/Rueckmeldung.svelte';
   import RueckmeldungMail from '../ui/RueckmeldungMail.svelte';
   import { passend } from '../ui/passend';
-  import { untrack } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import TabLeiste from '../ui/TabLeiste.svelte';
   import { inDenKalender } from '../ui/kalenderEintrag';
   import BesichtigungsFragen from '../ui/BesichtigungsFragen.svelte';
@@ -50,6 +50,22 @@
     !daten.ansicht ||
       daten.ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
   );
+
+  // Öffnen eines Hefts mit dem Scharnier (B21). PC8 A5: Bis zu ihrem Start hält die Animation alles unter
+  // dem Umschlag unsichtbar (`backwards`). Bleibt WebKit dort stehen, etwa nach der Rückkehr aus einer
+  // anderen App, blieb „Jetzt bewerben“ und alles darunter weg. Darum fällt die Animation nach ihrer Dauer
+  // sicher weg, und sofort, wenn die Seite wieder sichtbar wird.
+  let auf = $state(untrack(() => wechselArt(route.von, route.pfad, route.richtung) === 'heft'));
+  onMount(() => {
+    if (!auf) return;
+    const ende = () => (auf = false);
+    const uhr = setTimeout(ende, WECHSEL_HOECHSTENS_MS);
+    document.addEventListener('visibilitychange', ende);
+    return () => {
+      clearTimeout(uhr);
+      document.removeEventListener('visibilitychange', ende);
+    };
+  });
 
   const st = $derived(heft ? stand(heft.ereignisse, jetzt) : 'gemerkt');
   const nummer = $derived(standNummer(st));
@@ -235,7 +251,7 @@
 </script>
 
 <!-- Öffnen eines Hefts: das Scharnier am Umschlag (`auf`, B21), der Rest folgt (Design 12.11.). -->
-<main class="seite" class:auf={wechselArt(route.von, route.pfad, route.richtung) === 'heft'}>
+<main class="seite" class:auf>
   <header class="kopf">
     <Zurueck href="#/wohnungen" text={t('heft.zurueck')} />
   </header>

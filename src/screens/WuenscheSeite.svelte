@@ -67,6 +67,14 @@
     }
   }
 
+  /** Zimmer „ab n“ setzen; derselbe Chip noch einmal nimmt den Wunsch zurück (PC9). */
+  async function zimmerWaehlen(n: number) {
+    if (!hh) return;
+    const neu: Wuensche = { ...wu, zimmerAb: wu.zimmerAb === n ? null : n };
+    await haushaltAendern(await db(), hh.id, { wuensche: neu, mietgrenze: hh.mietgrenze ?? null });
+    await stillLaden();
+  }
+
   const nummer = (s: string) => (s.trim() ? zahl(s.replace(/[€%m²\s]/g, '')) : null);
 
   async function uebernehmen(k: Schluessel) {
@@ -211,7 +219,24 @@
 
     <div class="blatt">
       {#each zeilen as z (z.k)}
-        {#if offen === z.k}
+        {#if z.k === 'zimmer'}
+          <!-- PC9 (CP8 F1): die Wahl der Zimmer sofort sichtbar; ein zweiter Tipp nimmt sie zurück. -->
+          <div class="wz fest zimmer">
+            <span class="l" id="w-zimmer-l">{z.name}</span>{@render wert(z)}
+            <div class="chips" role="group" aria-labelledby="w-zimmer-l">
+              {#each [1, 2, 3, 4, 5] as n (n)}
+                <button
+                  class="chip"
+                  class:on={wu.zimmerAb === n}
+                  type="button"
+                  aria-pressed={wu.zimmerAb === n}
+                  aria-label={t('wuensche.ab', { wert: zahlText(n) })}
+                  onclick={() => zimmerWaehlen(n)}>{n}</button
+                >
+              {/each}
+            </div>
+          </div>
+        {:else if offen === z.k}
           {@render editor(z.k, z.name)}
         {:else}
           <button class="wz" type="button" onclick={() => oeffnen(z.k)}>
@@ -357,6 +382,33 @@
   .p {
     display: flex;
     color: var(--ink-quiet);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    grid-column: 1 / -1;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .chip {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: var(--radius-full);
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: calc(15 * var(--px));
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .chip.on {
+    border-color: var(--ink);
+    background: var(--ground);
   }
 
   .wz small {

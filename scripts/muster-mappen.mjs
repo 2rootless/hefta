@@ -69,6 +69,23 @@ async function mappenBauen(page) {
       for (let i = 0; i < roh.length; i++) bytes[i] = roh.charCodeAt(i);
       const db = await datenbankOeffnen(`muster-mappen-${Date.now()}`);
       await sicherungEinspielen(db, new Blob([bytes]), passwort);
+      // Das Backup ist vom 5.11. und trägt die Farbnummern von damals (1, 2, 3). Ein heute angelegter
+      // Haushalt bekommt sie in der Reihenfolge aus B14: Apricot, Lavendel, Minze (PC7).
+      const { VERGABE } = await import('/src/domain/personenfarben.ts');
+      const vorher = await sp.haushaltLaden(db);
+      for (const [i, m] of vorher.mitglieder.entries()) {
+        if (m.zugehoerigkeit.farbe !== VERGABE[i])
+          await sp.farbeSetzen(db, m.zugehoerigkeit.id, VERGABE[i]);
+        // PC9: Die Muster-Mappen sind öffentlich. Telefonnummern nur aus dem Block, den die
+        // Bundesnetzagentur für Medienproduktionen freihält („Drama Numbers“: 0171 39200 00 bis 99).
+        if (m.person.kontakt?.telefon?.trim())
+          await sp.personAendern(db, m.person.id, {
+            kontakt: {
+              ...m.person.kontakt,
+              telefon: `0171 39200${String(i + 1).padStart(2, '0')}`,
+            },
+          });
+      }
       const ansicht = await sp.haushaltLaden(db);
       const geladen = await sp.bewerbungLaden(db, ansicht.haushalt.id);
       const bewerbung = await sp.bewerbungAendern(db, geladen.id, {
@@ -253,7 +270,7 @@ async function fremdeMappe(page) {
     '',
     'Mit freundlichen Grüßen',
     'Jonas Becker und Sara Klein',
-    'Telefon 0151 2345678',
+    'Telefon 0171 3920050',
   ]);
   textSeite('Mieterselbstauskunft', [
     'Mietinteressent 1: Jonas Becker, geb. 12.04.1993',

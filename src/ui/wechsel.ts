@@ -36,3 +36,26 @@ export function wechselArt(
 export function wechselDauerToken(w: Wechsel): string {
   return w === 'folgen' ? '--bw-aufschlagen' : w === 'zurueck' ? '--bw-mittel' : '--bw-kurz';
 }
+
+/** Längster Wechsel samt Takt, mit Luft: danach ist jede Bewegung des Wechsels vorbei. */
+export const WECHSEL_HOECHSTENS_MS = 900;
+
+/**
+ * PC8 A5: Die Bewegungen des Wechsels halten den Bildschirm bis zu ihrem Start unsichtbar (`backwards`).
+ * Bleibt WebKit dort stehen, etwa nach der Rückkehr aus einer anderen App, blieb der Inhalt weg. Darum
+ * nimmt diese Aktion die Klasse des Wechsels nach seiner Dauer sicher ab, und sofort, wenn die Seite
+ * wieder sichtbar wird.
+ */
+export function wechselEnde(knoten: HTMLElement): { destroy(): void } {
+  const ende = () => {
+    if (knoten.className) knoten.className = '';
+  };
+  const uhr = setTimeout(ende, WECHSEL_HOECHSTENS_MS);
+  document.addEventListener('visibilitychange', ende);
+  return {
+    destroy() {
+      clearTimeout(uhr);
+      document.removeEventListener('visibilitychange', ende);
+    },
+  };
+}

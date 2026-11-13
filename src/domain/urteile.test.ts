@@ -40,6 +40,13 @@ describe('Urteile (B16, Nachricht 9.11. b und c, E50)', () => {
     ]);
   });
 
+  it('PC8 A4: „Unbefristet“ mit großem Anfang oder Leerzeichen passt wie „unbefristet“', () => {
+    expect(art({ ...LINDEN, befristung: 'Unbefristet' }, 'Befristung')).toBe('passt');
+    expect(art({ ...LINDEN, befristung: ' unbefristet ' }, 'Befristung')).toBe('passt');
+    expect(art({ ...LINDEN, befristung: '2 Jahre' }, 'Befristung')).toBe('nicht');
+    expect(art({ ...LINDEN, befristung: '  ' }, 'Befristung')).toBe('offen');
+  });
+
   it('Schwellen: Warmmiete bis 5 %, Fläche bis 10 % darunter, Lage bis 10 % weiter', () => {
     expect(art({ ...LINDEN, warm: 1260 }, 'Warmmiete')).toBe('knapp');
     expect(art({ ...LINDEN, warm: 1261 }, 'Warmmiete')).toBe('nicht');

@@ -78,7 +78,7 @@ describe('Werte aus den Angaben', () => {
 describe('Mail', () => {
   it('Empfänger aus dem Inserat, Text sicher kodiert', () => {
     const l = mailLink('a@b.de', 'Wohnung & mehr', 'Zeile 1\nZeile 2');
-    expect(l).toBe('mailto:a@b.de?subject=Wohnung%20%26%20mehr&body=Zeile%201%0AZeile%202');
+    expect(l).toBe('mailto:a@b.de?subject=Wohnung%20%26%20mehr&body=Zeile%201%0D%0AZeile%202');
     expect(mailLink(null, 'x', 'y')).toBe('mailto:?subject=x&body=y');
   });
 });

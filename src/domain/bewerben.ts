@@ -7,8 +7,9 @@ import type { HeftAngaben } from './modell';
 export type BewerbungsWeg = 'portal' | 'mail' | 'website';
 
 /**
- * Welcher Weg vorgewählt ist: Nennt das Inserat eine Mailadresse, die Mail; verweist es auf ein eigenes
- * Formular, die Website; kam das Heft aus einem Portal, das Portal; sonst die Mail.
+ * Welcher Weg vorgewählt ist: Nennt das Inserat eine Mailadresse, die Mail; kam das Heft aus einem Portal,
+ * das Portal; sonst die Mail. Die Website nie (PC8 A8): Hefta kennt keine eigene Website des Anbieters,
+ * „Website öffnen“ führte nur zum Inserat. Gewählt werden kann sie weiter von Hand.
  */
 export function wegVorschlag(o: {
   inseratText: string | null;
@@ -16,7 +17,6 @@ export function wegVorschlag(o: {
 }): BewerbungsWeg {
   const e = erkennen(o.inseratText ?? '');
   if (e.mail) return 'mail';
-  if (e.wege.includes('formular')) return 'website';
   if (o.angaben?.portal) return 'portal';
   return 'mail';
 }

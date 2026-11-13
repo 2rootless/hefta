@@ -46,10 +46,10 @@
     return Number.isFinite(ms) ? (wert.trim().endsWith('ms') ? ms : ms * 1000) : 0;
   }
 
-  async function knopfSetzen(verzoegerung = 0) {
+  async function knopfSetzen(verzoegerung = 0, nochmal = true) {
     if (!plugin || !platz || !mitKnopf) return;
     const r = platz.getBoundingClientRect();
-    const { geht } = await plugin.knopf({
+    const { geht, sichtbar: imBild } = await plugin.knopf({
       x: r.left,
       y: r.top,
       breite: r.width,
@@ -58,6 +58,14 @@
     });
     knopfGeht = geht;
     if (!geht) feldOffen = true;
+    // PC8 A1: Steht der Knopf nicht im Bild, einmal neu setzen, wenn der Bildschirm steht. Bleibt er
+    // unsichtbar, steht das Feld da, damit die Karte nie leer ist.
+    else if (imBild === false) {
+      if (nochmal) {
+        await new Promise((fertig) => setTimeout(fertig, 300));
+        await knopfSetzen(0, false);
+      } else feldOffen = true;
+    }
   }
 
   async function ablagePruefen() {

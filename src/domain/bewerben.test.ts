@@ -22,6 +22,12 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
     expect(wegVorschlag({ inseratText: null, angaben: undefined })).toBe('mail');
   });
 
+  it('PC8 A8: wählt die Website nie vor, auch wenn das Inserat auf ein Formular verweist', () => {
+    const text = 'Bitte bewerben Sie sich über das Kontaktformular auf unserer Website.';
+    expect(wegVorschlag({ inseratText: text, angaben: { portal: 'ImmoScout24' } })).toBe('portal');
+    expect(wegVorschlag({ inseratText: text, angaben: undefined })).toBe('mail');
+  });
+
   it('nimmt die Anrede aus dem Namen, sonst neutral', () => {
     expect(anrede('Frau Hansen')).toBe('Sehr geehrte Frau Hansen,');
     expect(anrede('Herr Dr. Okafor')).toBe('Sehr geehrter Herr Dr. Okafor,');

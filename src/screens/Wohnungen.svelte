@@ -75,6 +75,12 @@
       </button>
     {/if}
     <HeftUebersicht {hefte} {jetzt} />
+    {#if !mitHaushalt && istApp()}
+      <!-- PC8 B1: auch mit Heften, solange es keinen Haushalt gibt. -->
+      <p class="vermieter">
+        {t('mappeStart.vermieter')} <a href={VERMIETER_ADRESSE}>{VERMIETER_DOMAIN}</a>.
+      </p>
+    {/if}
   {:else if mitHaushalt}
     <p class="sub">{t(ihr ? 'wohnungen.subIhr' : 'wohnungen.subDu')}</p>
     <section class="leer" aria-labelledby="leer-titel">
@@ -126,6 +132,11 @@
         <span class="zeile">{t('ersterStart.vermieterFrage')}</span>
         {t('ersterStart.vermieterVor')}
         <a href={VERMIETER_ADRESSE}>{VERMIETER_DOMAIN}</a>{t('ersterStart.vermieterNach')}
+      </p>
+    {:else if !mitHaushalt}
+      <!-- PC8 B1: in der App auch hier, solange es keinen Haushalt gibt; Wortlaut wie im Reiter „Mappe“. -->
+      <p class="vermieter">
+        {t('mappeStart.vermieter')} <a href={VERMIETER_ADRESSE}>{VERMIETER_DOMAIN}</a>.
       </p>
     {/if}
   {/if}

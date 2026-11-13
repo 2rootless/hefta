@@ -351,7 +351,15 @@ final class TeilenElement: NSObject, UIActivityItemSource {
     func activityViewControllerPlaceholderItem(_ controller: UIActivityViewController) -> Any { wert }
 
     func activityViewController(_ controller: UIActivityViewController,
-                                itemForActivityType typ: UIActivity.ActivityType?) -> Any? { wert }
+                                itemForActivityType typ: UIActivity.ActivityType?) -> Any? {
+        // PC8 A7: In Gmail gingen die Absätze verloren. Text geht darum mit Zeilenumbrüchen als CRLF hinaus,
+        // wie Mail sie kennt. Kein HTML: Läse eine App es als Text, stünde „<br>“ in der Bewerbung.
+        if let text = wert as? String {
+            return text.replacingOccurrences(of: "\r\n", with: "\n")
+                .replacingOccurrences(of: "\n", with: "\r\n")
+        }
+        return wert
+    }
 
     func activityViewController(_ controller: UIActivityViewController,
                                 subjectForActivityType typ: UIActivity.ActivityType?) -> String { betreff }
@@ -432,28 +440,41 @@ public class HeftaInseratPlugin: CAPPlugin, CAPBridgedPlugin {
             // (TestFlight 12.11.: er blieb sonst an seinem Ort stehen).
             let oben = web.scrollView
             let knopf: UIPasteControl
-            if let vorhanden = self.knopfAnsicht as? UIPasteControl {
+            if let vorhanden = self.knopfAnsicht as? UIPasteControl, vorhanden.superview === oben {
                 knopf = vorhanden
             } else {
+                self.knopfAnsicht?.removeFromSuperview()
                 let konf = UIPasteControl.Configuration()
                 konf.displayMode = .iconAndLabel
                 konf.cornerStyle = .capsule
                 konf.baseForegroundColor = HeftaInseratPlugin.grund
                 konf.baseBackgroundColor = HeftaInseratPlugin.tinte
                 knopf = UIPasteControl(configuration: konf)
-                if self.empfaenger.superview == nil { oben.addSubview(self.empfaenger) }
+                if self.empfaenger.superview !== oben { oben.addSubview(self.empfaenger) }
                 knopf.target = self.empfaenger
                 knopf.alpha = 0
-                knopf.isHidden = self.tastaturOffen
                 oben.addSubview(knopf)
                 self.knopfAnsicht = knopf
                 UIView.animate(withDuration: 0.15, delay: verzoegerung,
                                options: [.curveEaseOut, .allowUserInteraction]) { knopf.alpha = 1 }
             }
-            // CSS-Pixel der Web-Ansicht sind Punkte; umgerechnet in die Lage über der Web-Ansicht.
-            let versatz = oben.contentOffset
-            knopf.frame = CGRect(x: x + versatz.x, y: y + versatz.y, width: breite, height: hoehe)
-            call.resolve(["geht": true])
+            // PC8 A1 (TestFlight 13.11.): Die Karte war leer. WebKit legt eigene Ansichten in die
+            // Scroll-Ansicht und kann die Seite über den Knopf schieben. Darum liegt er bei jedem Setzen ganz
+            // vorn, auch in der Tiefe der Ebenen.
+            knopf.layer.zPosition = 1000
+            oben.bringSubviewToFront(knopf)
+            // Die Tastatur zählt nur, wenn sie wirklich auf dem Bildschirm steht. Ein verpasstes „geht weg“
+            // ließ den Knopf sonst dauerhaft verborgen.
+            knopf.isHidden = self.tastaturOffen && self.tastaturSichtbar()
+            if !knopf.isHidden && self.tastaturOffen { self.tastaturOffen = false }
+            // CSS-Pixel der Web-Ansicht sind Punkte; umgerechnet in die Lage in der Scroll-Ansicht.
+            let ursprung = web.convert(CGPoint(x: x, y: y), to: oben)
+            knopf.frame = CGRect(x: ursprung.x, y: ursprung.y, width: breite, height: hoehe)
+            // Steht der Knopf wirklich im Bild? Sonst zeigt die Seite das Feld (PC8 A1).
+            let imBild = web.convert(knopf.frame, from: oben)
+            let sichtbar = knopf.window != nil && !knopf.isHidden && breite > 0 && hoehe > 0
+                && web.bounds.contains(imBild)
+            call.resolve(["geht": true, "sichtbar": sichtbar])
         }
     }
 
@@ -465,13 +486,28 @@ public class HeftaInseratPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
-    @objc private func tastaturKommt() {
+    @objc private func tastaturKommt(_ meldung: Notification) {
+        // Nur eine Tastatur, die im Bild endet, verdeckt den Knopf (nicht die Leiste einer externen Tastatur).
+        if let ende = meldung.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+            letzteTastatur = ende
+            guard tastaturSichtbar() else { return }
+        }
         tastaturOffen = true
         knopfAnsicht?.isHidden = true
     }
 
+    private var letzteTastatur: CGRect = .zero
+
+    /// Steht die zuletzt gemeldete Tastatur mit nennenswerter Höhe auf dem Bildschirm?
+    private func tastaturSichtbar() -> Bool {
+        guard let fenster = bridge?.webView?.window else { return false }
+        let schnitt = fenster.convert(fenster.bounds, to: nil).intersection(letzteTastatur)
+        return !schnitt.isNull && schnitt.height > 80
+    }
+
     @objc private func tastaturGeht() {
         tastaturOffen = false
+        letzteTastatur = .zero
         knopfAnsicht?.isHidden = false
     }
 

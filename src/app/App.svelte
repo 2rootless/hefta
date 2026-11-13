@@ -17,7 +17,7 @@
   import { fehlerBeobachten, hinweise } from './hinweise.svelte';
   import { route } from './router.svelte';
   import { linkWegDa } from './plattform';
-  import { wechselArt } from '../ui/wechsel';
+  import { wechselArt, wechselEnde } from '../ui/wechsel';
 
   // Der Technik-Test (M0-Spike) wird nur bei Bedarf geladen, damit PDF.js nicht im Start-Bundle steckt.
   const technikTest = () => import('../spike/TechnikTest.svelte');
@@ -202,7 +202,7 @@
   {#if hinweise.fehler && route.pfad !== '/' && route.pfad !== ''}
     <div class="stoerung-oben"><HinweisKasten nurFehler /></div>
   {/if}
-  <div class={wechselKlasse}>
+  <div class={wechselKlasse} use:wechselEnde>
     {#if route.pfad === '/technik-test'}
       {#await technikTest() then modul}
         <modul.default />

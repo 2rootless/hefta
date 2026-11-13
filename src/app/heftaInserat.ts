@@ -20,14 +20,17 @@ export interface InseratGelesen {
 }
 
 export interface HeftaInseratPlugin {
-  /** Legt den Knopf an diese Stelle (CSS-Pixel); `geht: false` vor iOS 16. */
+  /**
+   * Legt den Knopf an diese Stelle (CSS-Pixel); `geht: false` vor iOS 16. `sichtbar: false`, wenn er
+   * danach nicht ganz im Bild steht (PC8 A1); ältere Bauten melden es nicht.
+   */
   knopf(o: {
     x: number;
     y: number;
     breite: number;
     hoehe: number;
     verzoegerung?: number;
-  }): Promise<{ geht: boolean }>;
+  }): Promise<{ geht: boolean; sichtbar?: boolean }>;
   knopfWeg(): Promise<void>;
   /** Still geprüft, ohne die Zwischenablage zu lesen. */
   ablage(): Promise<{ link: boolean; inhalt: boolean }>;

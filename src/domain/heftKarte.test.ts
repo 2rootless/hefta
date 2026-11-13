@@ -123,3 +123,12 @@ describe('Zurück-Link von den Seiten im Heft (P003)', () => {
     expect(zurueckZumHeft(null)).toBeNull();
   });
 });
+
+describe('PC8 B3: Miete in den Eckdaten', () => {
+  it('nennt ohne Warmmiete die Kaltmiete mit „kalt“', () => {
+    expect(eckdaten({ angaben: { kalt: 1471.02, zimmer: 2 } as never })).toBe(
+      '1.471 € kalt · 2 Zi',
+    );
+    expect(eckdaten({ angaben: { warm: 1961, kalt: 1471 } as never })).toBe('1.961 €');
+  });
+});

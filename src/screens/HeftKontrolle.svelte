@@ -8,7 +8,8 @@
   // Beträge (E78): genau wie im Inserat, mit Cent, wenn es sie nennt; gerechnet gerundet mit „ca.“.
   import { daten, db, stillLaden } from '../app/daten.svelte';
   import { abschliessen, abschliessenMit, route } from '../app/router.svelte';
-  import { wechselArt } from '../ui/wechsel';
+  import { WECHSEL_HOECHSTENS_MS, wechselArt } from '../ui/wechsel';
+  import { onMount, untrack } from 'svelte';
   import { heftTitel } from '../domain/heftKarte';
   import type { HeftAngaben } from '../domain/modell';
   import { monatVorher, urteile, type Urteil } from '../domain/urteile';
@@ -25,6 +26,19 @@
   import Zurueck from '../ui/Zurueck.svelte';
 
   const NB = ' ';
+  // PC8 A5: wie im Heft fällt die Bewegung der Gruppen nach ihrer Dauer sicher weg.
+  let werte = $state(untrack(() => wechselArt(route.von, route.pfad, route.richtung) === 'werte'));
+  onMount(() => {
+    if (!werte) return;
+    const ende = () => (werte = false);
+    const uhr = setTimeout(ende, WECHSEL_HOECHSTENS_MS);
+    document.addEventListener('visibilitychange', ende);
+    return () => {
+      clearTimeout(uhr);
+      document.removeEventListener('visibilitychange', ende);
+    };
+  });
+
   const ihr = $derived(
     // Ohne Haushalt „ihr“ (E74.4, Design 12.11.), sonst ab zwei Personen ohne Bürgen.
     !daten.ansicht ||
@@ -328,12 +342,25 @@
     }
   }
 
-  function uebernehmen(z: Zeile) {
+  /** „Unbefristet“ mit großem Anfang (Tastatur am iPhone) oder „keine“ meint dasselbe (PC8 A4). */
+  function befristungText(w: string): string | null {
+    if (!w) return null;
+    return /^(un\s*befristet|keine(\s+befristung)?|nein|ohne)$/i.test(w) ? 'unbefristet' : w;
+  }
+
+  function uebernehmen(z: Zeile, form?: HTMLFormElement) {
     if (!entwurf.angaben) return;
+    // PC8 A3: Das Datumsfeld von iOS meldet die Wahl nicht immer als Eingabe. Darum gilt, was beim Tipp
+    // auf „Fertig“ in den Feldern steht.
+    const felder = form ? [...form.querySelectorAll<HTMLInputElement>('input, select')] : [];
+    if (felder[0]) eingabe = felder[0].value;
+    if (felder[1]) eingabe2 = felder[1].value;
     const w = eingabe.trim();
     const angaben = entwurf.angaben as unknown as Record<string, unknown>;
     if (z.art === 'adresse') {
       entwurf.adresse = w || eingabe2.trim() ? `${w}\n${eingabe2.trim()}` : '';
+    } else if (z.schluessel === 'befristung') {
+      angaben.befristung = befristungText(w);
     } else if (z.art === 'text' || z.art === 'wahl') {
       angaben[z.schluessel] = w || null;
     } else if (z.art === 'datum') {
@@ -374,7 +401,7 @@
           class="z offen-z"
           onsubmit={(e) => {
             e.preventDefault();
-            uebernehmen(z);
+            uebernehmen(z, e.currentTarget);
           }}
         >
           <label class="l" for={`f-${z.schluessel}`}>{z.name}</label>
@@ -390,7 +417,12 @@
               bind:value={eingabe2}
             />
           {:else if z.art === 'datum'}
-            <input id={`f-${z.schluessel}`} type="date" bind:value={eingabe} />
+            <input
+              id={`f-${z.schluessel}`}
+              type="date"
+              bind:value={eingabe}
+              onchange={(e) => (eingabe = e.currentTarget.value)}
+            />
           {:else if z.art === 'wahl'}
             <select id={`f-${z.schluessel}`} bind:value={eingabe}>
               {#each z.wahl ?? [] as w (w.wert)}
@@ -459,7 +491,7 @@
 {/snippet}
 
 <!-- Vorschau → Kontrolle wie `werte` aus B18 (Design 12.11.): Kopf steht, die Gruppen folgen versetzt. -->
-<main class="seite" class:werte={wechselArt(route.von, route.pfad, route.richtung) === 'werte'}>
+<main class="seite" class:werte>
   <header class="kopf">
     <!-- B23: „Abbrechen“ beendet den ganzen Ablauf und führt zur Übersicht; nichts ist gespeichert. -->
     <Zurueck
@@ -512,11 +544,6 @@
                     ><b>{t(URTEIL_WORT[art]!)}:</b> {namen(art).join(', ')}</span
                   >
                 </li>
-              {:else if hh}
-                <div class="zus">
-                  <p class="zf">{t(ihr ? 'wuensche.ohneIhr' : 'wuensche.ohneDu')}</p>
-                  <a class="wlink" href="#/wuensche">{t('wuensche.festlegen')}</a>
-                </div>
               {/if}
             {/each}
           </ul>
@@ -524,6 +551,12 @@
               {t('neuesHeft.sonstPasst')}
             </p>{/if}
         {/if}
+      </div>
+    {:else if hh && !wu}
+      <!-- PC8 A2: der Hinweis nur, wenn keine Wünsche gesetzt sind, nie neben dem Abgleich. -->
+      <div class="zus">
+        <p class="zf">{t(ihr ? 'wuensche.ohneIhr' : 'wuensche.ohneDu')}</p>
+        <a class="wlink" href="#/wuensche">{t('wuensche.festlegen')}</a>
       </div>
     {/if}
 

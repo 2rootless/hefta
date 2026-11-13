@@ -98,7 +98,11 @@ export function angabenWerte(
   return werte;
 }
 
-/** Mail mit fertigem Text. Einen Anhang kann so ein Link nicht tragen. */
+/**
+ * Mail mit fertigem Text. Einen Anhang kann so ein Link nicht tragen. Zeilenumbrüche als CRLF, wie RFC 6068
+ * es für `mailto:` verlangt; sonst verlieren manche Mail-Apps die Absätze (PC8 A7).
+ */
 export function mailLink(an: string | null, betreff: string, text: string): string {
-  return `mailto:${an ?? ''}?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(text)}`;
+  const body = encodeURIComponent(text.replace(/\r?\n/g, '\r\n'));
+  return `mailto:${an ?? ''}?subject=${encodeURIComponent(betreff)}&body=${body}`;
 }
