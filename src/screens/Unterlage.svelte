@@ -242,7 +242,7 @@
 
 <main class="seite farbe-{stand?.farbe ?? 1}">
   <div class="kopf">
-    <Zurueck href="#/person/{personId}" text={name || t('person.zurueck')} />
+    <Zurueck href="#/person/{personId}" text={name || t('allgemein.zurueck')} />
   </div>
 
   {#if !stand || !u}

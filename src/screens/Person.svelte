@@ -129,7 +129,7 @@
 
 <main class="seite farbe-{stand?.farbe ?? 1}">
   <div class="kopf">
-    <Zurueck href="#/" text={t('person.zurueck')} />
+    <Zurueck href="#/" text={t('tabs.mappe')} />
     {#if stand}
       <a class="textlink" href="#/person-aendern/{id}/person">{t('person.aendern')}</a>
     {/if}

@@ -277,7 +277,7 @@
 
 <main class="seite">
   <div class="kopf">
-    <Zurueck href="#{zurueck}" text={v ? versionTitel(v) : t('person.zurueck')} />
+    <Zurueck href="#{zurueck}" text={v ? versionTitel(v) : t('allgemein.zurueck')} />
   </div>
   {#if !u || !v}
     <p class="leer">{t('person.nichtGefunden')}</p>

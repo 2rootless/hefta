@@ -4,6 +4,7 @@
   // „Weiter“ legt den Haushalt mit der ersten Person an (oder ändert sie) und führt zu Schritt 2.
   import { daten, db, neuLaden } from '../app/daten.svelte';
   import { abschliessen } from '../app/router.svelte';
+  import { herkunftsReiter } from '../ui/herkunft.svelte';
   import { t } from '../i18n';
   import {
     einstellungenAendern,
@@ -97,11 +98,13 @@
     // Angelegt: Der Schritt ist fertig, Zurück führt nicht noch einmal ins Formular (Auftraggeber 12.11.).
     abschliessen('/einrichtung/2');
   }
+  // Zurück zum Reiter, aus dem man kam (Auftraggeber 13.11.).
+  const herkunft = $derived(herkunftsReiter());
 </script>
 
 <main class="seite">
   <div class="kopf">
-    <Zurueck href="#/" text={t('allgemein.zurueck')} />
+    <Zurueck href={herkunft.href} text={herkunft.text} />
     <span class="zaehler">{t('allgemein.schrittVon', { schritt: 1, gesamt: 2 })}</span>
   </div>
   <div class="titelblock">

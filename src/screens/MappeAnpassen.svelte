@@ -281,7 +281,17 @@
 </script>
 
 <main class="seite">
-  <div class="kopf"><Zurueck href="#/mappe" text={t('mappe.titel')} /></div>
+  <!-- Wie „Fertig“: erst speichern, dann zurück; sonst käme die Mappe mit der alten Wahl an. -->
+  <div class="kopf">
+    <Zurueck
+      href="#/mappe"
+      text={t('mappe.titel')}
+      onclick={async () => {
+        await speichern();
+        zurueckGehen('/mappe');
+      }}
+    />
+  </div>
   <div class="titelblock">
     <h1 class="display frage" use:passend={TITEL}>{t('mappe.anpassen')}</h1>
     <p class="lead">{t('mappe.anpassenSeite.lead')}</p>

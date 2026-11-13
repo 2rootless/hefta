@@ -70,6 +70,13 @@
   // Aus der Personenansicht: nur die Unterlagen dieser Person, ohne den Stand des Haushalts-Rutschs.
   let { nurPerson = null }: { nurPerson?: string | null } = $props();
   const heim = untrack(() => (nurPerson ? `/person/${nurPerson}` : '/'));
+  // Wohin „Zurück“ führt, mit seinem Namen: die Person oder der Reiter Mappe (Auftraggeber 13.11.).
+  const heimName = $derived(
+    (nurPerson &&
+      (daten.ansicht?.mitglieder.find((m) => m.person.id === nurPerson)?.person.rufname ||
+        daten.ansicht?.mitglieder.find((m) => m.person.id === nurPerson)?.person.vorname)) ||
+      t('tabs.mappe'),
+  );
   const gespeichert = untrack(() => (nurPerson ? null : (daten.einstellungen?.rutsch ?? null)));
   const fortsetzen = !!gespeichert && gespeichert.index > 0 && !fertig(gespeichert);
   let stand = $state<RutschStand>(
@@ -480,7 +487,7 @@
 
 <main class="seite">
   {#if phase === 'start'}
-    <div class="kopf"><Zurueck href="#{heim}" text={t('navigation.uebersicht')} /></div>
+    <div class="kopf"><Zurueck href="#{heim}" text={heimName} /></div>
     <div class="titelblock">
       <h1 use:passend={TITEL} class="display frage">{t('rutsch.startTitel')}</h1>
       {#if stand.liste.length}
@@ -517,7 +524,7 @@
       <p class="tipp">{t('rutsch.tipp')}</p>
     {/if}
   {:else if phase === 'ende'}
-    <div class="kopf"><Zurueck href="#{heim}" text={t('navigation.uebersicht')} /></div>
+    <div class="kopf"><Zurueck href="#{heim}" text={heimName} /></div>
     <div class="titelblock">
       <h1 use:passend={TITEL} class="display frage">{endeTitel}</h1>
       <p class="lead">{endeLead}</p>

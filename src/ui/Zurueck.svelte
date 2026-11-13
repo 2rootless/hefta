@@ -1,10 +1,6 @@
 <script lang="ts">
-  // Oben links: tut dasselbe wie die Wischgeste, eine Seite zurück. Kam man von woanders her als von der
-  // übergeordneten Seite, nennt der Link die vorige Seite, wenn sie einen kurzen Namen hat, sonst heißt er
-  // „Zurück“ (Planung 12r), damit der Name stimmt.
-  import { route, zurueckGehen } from '../app/router.svelte';
-  import { t } from '../i18n';
-  import { seitenName } from './seitenName';
+  // Oben links (Auftraggeber 13.11., ersetzt Planung 12r): führt immer zur Seite darüber und nennt sie.
+  import { abschliessen, route, zurueckGehen } from '../app/router.svelte';
   import Symbol from './Symbol.svelte';
 
   let {
@@ -19,7 +15,9 @@
   } = $props();
 
   const oben = $derived(href.replace(/^#/, '') || '/');
-  const anderswoher = $derived(!onclick && !!route.vorher && route.vorher !== oben);
+  // Regel 2 (Auftraggeber 13.11.): immer zur Seite darüber, mit ihrem Namen. Kam man auf dem üblichen Weg,
+  // ist das ein Schritt zurück wie die Wischgeste; sonst springt Hefta dorthin.
+  const ueblich = $derived(route.vorher === oben);
 </script>
 
 <a
@@ -28,11 +26,9 @@
   onclick={(e) => {
     e.preventDefault();
     if (onclick) onclick();
-    else zurueckGehen(oben);
-  }}
-  ><Symbol name="zurueck" groesse={20} />{anderswoher
-    ? (seitenName(route.vorher!) ?? t('allgemein.zurueck'))
-    : text}</a
+    else if (ueblich) zurueckGehen(oben);
+    else abschliessen(oben);
+  }}><Symbol name="zurueck" groesse={20} />{text}</a
 >
 
 <style>

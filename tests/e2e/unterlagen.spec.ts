@@ -171,7 +171,7 @@ test('drei Gehaltsabrechnungen ergeben eine Serie, eine vierte schiebt sie weite
   // Bleibt nach dem Neuladen; Übersicht zeigt Gehalt als erledigt.
   await page.reload();
   await expect(zeile).toContainText('August bis Oktober');
-  await page.getByRole('link', { name: 'Übersicht' }).click();
+  await page.locator('a.zurueck').click();
   await expect(page.getByText('Noch zwei Dinge, dann bist du startklar.')).toBeVisible();
   if (browserName === 'chromium') {
     await animationenFertig(page);

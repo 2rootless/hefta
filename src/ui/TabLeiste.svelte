@@ -3,6 +3,7 @@
   // Tab-Leiste (B12c). Ihre Höhe steht als --tabs-hoehe an der Wurzel: Die Aktionsleiste sitzt darüber,
   // und Seiten halten unten so viel Platz frei.
   import { daten } from '../app/daten.svelte';
+  import { reiterWechseln } from '../app/router.svelte';
   import { t } from '../i18n';
   import Symbol from './Symbol.svelte';
 
@@ -30,10 +31,24 @@
 </script>
 
 <nav class="tabs" aria-label={t('tabs.bereiche')} bind:this={leiste}>
-  <a href="#/wohnungen" aria-current={aktiv === 'wohnungen' ? 'page' : undefined}>
+  <a
+    href="#/wohnungen"
+    aria-current={aktiv === 'wohnungen' ? 'page' : undefined}
+    onclick={(e) => {
+      e.preventDefault();
+      reiterWechseln('/wohnungen');
+    }}
+  >
     <Symbol name="wohnung" groesse={24} />{t('tabs.wohnungen')}
   </a>
-  <a href={mappeZiel} aria-current={aktiv === 'mappe' ? 'page' : undefined}>
+  <a
+    href={mappeZiel}
+    aria-current={aktiv === 'mappe' ? 'page' : undefined}
+    onclick={(e) => {
+      e.preventDefault();
+      reiterWechseln(mappeZiel.slice(1));
+    }}
+  >
     <Symbol name="mappe" groesse={24} />{t('tabs.mappe')}
   </a>
 </nav>

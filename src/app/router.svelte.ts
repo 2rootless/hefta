@@ -172,3 +172,24 @@ export function abschliessenMit(ziel: string, pfad: string, ablauf?: string): vo
   danach.push({ pfad, ersetzt: false });
   history.go((anfang === 0 ? 0 : anfang - 1) - verlauf.stelle);
 }
+
+/**
+ * Wechsel des Reiters (Auftraggeber 13.11., Regel 1): Reiter sind Wurzeln. Der Verlauf beginnt mit dem
+ * neuen Reiter, statt länger zu werden; so führen Zurück und Wischen nicht von Reiter zu Reiter und durch
+ * alles, was vorher offen war.
+ */
+export function reiterWechseln(pfad: string): void {
+  if (pfad === aktuell() && verlauf.stelle === 0) return;
+  if (verlauf.stelle === 0) {
+    ersetzen(pfad);
+    return;
+  }
+  // Steht der Reiter schon am Anfang, genügt der Sprung dorthin.
+  if (verlauf.stapel[0] !== pfad) danach.push({ pfad, ersetzt: true });
+  history.go(-verlauf.stelle);
+}
+
+/** Der erste Eintrag im Verlauf: seit Regel 1 der Reiter, aus dem man kam. */
+export function verlaufsAnfang(): string {
+  return verlauf.stapel[0] ?? '/';
+}

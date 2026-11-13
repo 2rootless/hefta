@@ -27,9 +27,12 @@
   import { passend } from '../ui/passend';
   import Sheet from '../ui/Sheet.svelte';
   import Symbol from '../ui/Symbol.svelte';
+  import Zurueck from '../ui/Zurueck.svelte';
+  import { herkunftsReiter } from '../ui/herkunft.svelte';
   import { nachLoeschen } from '../app/haushaltGeloescht.svelte';
 
   let { einrichtung = false }: { einrichtung?: boolean } = $props();
+  const herkunft = $derived(herkunftsReiter());
 
   const mitglieder = $derived(daten.ansicht?.mitglieder ?? []);
   const vertrag = $derived([
@@ -213,14 +216,8 @@
 <main class="seite">
   <div class="kopf">
     {#if einrichtung}
-      <a
-        class="zurueck"
-        href="#/einrichtung"
-        onclick={(e) => {
-          e.preventDefault();
-          zurueckGehen('/einrichtung');
-        }}><Symbol name="zurueck" groesse={20} />{t('allgemein.zurueck')}</a
-      >
+      <!-- Schritt 1 ist abgeschlossen (12.11.): Zurück führt zum Reiter, aus dem man kam. -->
+      <Zurueck href={herkunft.href} text={herkunft.text} />
       <span class="zaehler-schritt">{t('allgemein.schrittVon', { schritt: 2, gesamt: 2 })}</span>
     {:else}
       <a
@@ -229,7 +226,7 @@
         onclick={(e) => {
           e.preventDefault();
           zurueckGehen('/');
-        }}><Symbol name="zurueck" groesse={20} />{t('navigation.uebersicht')}</a
+        }}><Symbol name="zurueck" groesse={20} />{t('tabs.mappe')}</a
       >
     {/if}
   </div>

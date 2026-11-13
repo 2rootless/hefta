@@ -28,7 +28,9 @@ function zurueck() {
     return;
   }
   const pfad = window.location.hash.replace(/^#/, '');
-  if (pfad === '' || pfad === '/') void App.minimizeApp();
+  // Reiter sind Wurzeln (Auftraggeber 13.11.): Auf „Mappe“ und „Wohnungen“ schließt die Taste die App.
+  if (pfad === '' || pfad === '/' || pfad === '/wohnungen' || pfad === '/mappe-start')
+    void App.minimizeApp();
   else if (window.history.length > 1) window.history.back();
   else gehe('/');
 }

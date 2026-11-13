@@ -7,7 +7,8 @@
 #   in der geschützten Umgebung „store“: Jeder Lauf wartet auf die Freigabe des Auftraggebers.
 #   Geheime Werte der Umgebung: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (Inhalt der .p8-Datei), APPLE_TEAM_ID.
 # - „play“ läuft nur von Hand (Haken „AAB für Google Play bauen“), ebenfalls in „store“ (E64): baut ein
-#   signiertes Android App Bundle und legt es als Datei am Lauf ab. Hochladen in die Play Console von Hand.
+#   signiertes Android App Bundle und legt es als Datei am Lauf ab, von main oder app/hefta-2 (E97).
+#   Hochladen in die Play Console von Hand.
 #   Geheime Werte: ANDROID_UPLOAD_KEYSTORE (Keystore als Base64), ANDROID_UPLOAD_PASSWORT, ANDROID_UPLOAD_ALIAS.
 # - Läufe aus Forks bekommen nie geheime Werte (GitHub), und pull_request startet hier nichts.
 name: App
@@ -176,7 +177,8 @@ jobs:
         run: rm -rf "$RUNNER_TEMP/asc"
 
   play:
-    if: github.event_name == 'workflow_dispatch' && inputs.play && github.ref == 'refs/heads/main'
+    # E97: Hefta 2 ist die erste öffentliche Android-Fassung; jeder Bau geht in denselben geschlossenen Test.
+    if: github.event_name == 'workflow_dispatch' && inputs.play && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/app/hefta-2')
     needs: pruefen-android
     runs-on: ubuntu-24.04
     timeout-minutes: 30

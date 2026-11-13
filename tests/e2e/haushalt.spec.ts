@@ -214,7 +214,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await page.getByRole('link', { name: /^Max Hauptmieter$/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Max', exact: true })).toBeVisible();
   await expect(page.getByText('zum Haushalt')).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Übersicht' })).toBeVisible();
+  await expect(page.locator('a.zurueck')).toBeVisible();
 
   // Selbstauskunft auf eigener Seite: ausgefüllt, als PDF ansehen zeigt sie in der Seitenansicht.
   await page.getByRole('link', { name: /^Selbst.?auskunft/ }).click();
@@ -247,7 +247,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await expect(page.getByRole('listitem').filter({ hasText: 'Gehalts' })).toHaveCount(0);
 
   // Haushalt bearbeiten über die Kopfzeile: Petra herausnehmen.
-  await page.getByRole('link', { name: 'Übersicht' }).click();
+  await page.locator('a.zurueck').click();
   await page.getByRole('link', { name: /^Haushalt bearbeiten: / }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Euer Haushalt' })).toBeVisible();
   if (bilder) {

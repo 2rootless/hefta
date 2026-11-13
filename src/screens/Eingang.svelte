@@ -32,7 +32,7 @@
 
 <main class="seite">
   <div class="kopf">
-    <Zurueck href="#/" text={t('navigation.uebersicht')} />
+    <Zurueck href="#/" text={t('tabs.mappe')} />
   </div>
   {#if !gewaehlt}
     <div class="titelblock">

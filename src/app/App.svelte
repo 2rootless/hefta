@@ -27,7 +27,6 @@
     mappe: () => import('../screens/MappeErstellen.svelte'),
     anpassen: () => import('../screens/MappeAnpassen.svelte'),
     bitte: () => import('../screens/MappeBitte.svelte'),
-    nachricht: () => import('../screens/MappeNachricht.svelte'),
     person: () => import('../screens/Person.svelte'),
     personLoeschen: () => import('../screens/PersonLoeschen.svelte'),
     personSeite: () => import('../screens/PersonSeite.svelte'),
@@ -366,10 +365,6 @@
       {/key}
     {:else if route.pfad === '/mappe'}
       {#await seiten.mappe() then m}
-        <m.default />
-      {/await}
-    {:else if route.pfad === '/mappe/nachricht'}
-      {#await seiten.nachricht() then m}
         <m.default />
       {/await}
     {:else if route.pfad === '/mappe/deckblatt'}

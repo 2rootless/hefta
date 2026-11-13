@@ -133,7 +133,7 @@ test('Zurück oben links tut dasselbe wie die Wischgeste', async ({ page }) => {
   await page.goForward();
   await expect(page.getByLabel('Vorname')).toHaveValue('Lea');
   await page.goBack();
-  await page.getByRole('link', { name: 'Übersicht' }).click();
+  await page.locator('a.zurueck').click();
   await expect(page.locator('main h1')).toContainText('Mappe');
 });
 

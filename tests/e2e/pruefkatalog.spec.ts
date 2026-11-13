@@ -408,53 +408,8 @@ const FAKTEN = (seite: Record<string, unknown>) => ({
   seiten: [0],
 });
 
-/** Nachricht ans Inserat: Beispieltexte aus design/werkzeug/screens23.py. */
-const INSERATE: Record<string, string> = {
-  'PN2-nichts-verlangt':
-    'Schöne 3-Zimmer-Wohnung in Altona, Balkon, ab sofort. Bei Interesse melden Sie sich gern.',
-  'PN3-kontakt':
-    'Bitte geben Sie bei der Anfrage Ihren vollständigen Namen, Ihre Telefonnummer und Ihre aktuelle Anschrift an.',
-  'PN4-einkommen':
-    'Bitte nennen Sie uns Name, Adresse, Telefonnummer und Angaben zum Einkommen sowie die Anzahl der Personen, die einziehen.',
-  'PN5-formular':
-    'Bewerben Sie sich bitte ausschließlich über unser Bewerbungsformular auf unserer Webseite.',
-  'PN6-mail-mit-mappe':
-    'Senden Sie Ihre Bewerbungsunterlagen bitte direkt an vermietung@beispiel-hausverwaltung.de.',
-  'PN7-besichtigung':
-    'Offene Besichtigung am Samstag von 10 bis 12 Uhr, einfach vorbeikommen. Selbstauskunft bitte vor Ort ausfüllen.',
-  'PN8-unzulaessig':
-    'Bitte senden Sie uns mit der Anfrage eine Ausweiskopie, Ihren Familienstand und Ihre Staatsangehörigkeit.',
-  'PN9-langer-text':
-    'Helle 2,5-Zimmer-Wohnung im 2. OG eines gepflegten Altbaus in Eimsbüttel. Einbauküche, Dielenboden, Südbalkon, Keller. Kaltmiete 980 €, Nebenkosten 240 €. Bitte nennen Sie uns in Ihrer Anfrage Ihren Beruf und Arbeitgeber, Ihr Nettoeinkommen, den gewünschten Einzugstermin und ob Sie Haustiere haben. Besichtigungen finden nach Vereinbarung statt. Wir freuen uns auf Ihre Nachricht.',
-  'PN10-nur-auskunft':
-    'Gemütliche 2-Zimmer-Wohnung in Barmbek. Haustiere nach Absprache. Einzug ab sofort möglich. Rauchen in der Wohnung nicht gestattet. Zur Besichtigung bitte den Personalausweis mitbringen.',
-};
-
 const BILDER: Bild[] = [
-  { id: 'PN1-standard', gruppe: 'N', szenario: '01-standard', pfad: '/mappe/nachricht' },
-  ...Object.entries(INSERATE).map(([id, text]): Bild => ({
-    id,
-    gruppe: 'N',
-    szenario: '01-standard',
-    pfad: '/mappe/nachricht',
-    vorher: async (page) => {
-      await page.getByLabel('Text des Inserats, freiwillig').fill(text);
-      if (id === 'PN6-mail-mit-mappe') {
-        await page.getByRole('switch', { name: 'Mappe anhängen' }).click();
-        await page.getByText(/\d+\s*Seiten? · /).waitFor({ timeout: 30_000 });
-      }
-    },
-  })),
-  {
-    id: 'PN4b-aendern',
-    gruppe: 'N',
-    szenario: '01-standard',
-    pfad: '/mappe/nachricht',
-    vorher: async (page) => {
-      await page.getByLabel('Text des Inserats, freiwillig').fill(INSERATE['PN4-einkommen']!);
-      await page.getByRole('button', { name: 'Ändern' }).click();
-    },
-  },
+  // „Nachricht ans Inserat“ (Gruppe N) ist seit 13.11. entfernt: Das macht „Bewerben“ im Heft.
   {
     id: 'ME11-deckblatt-gross',
     gruppe: 'X',

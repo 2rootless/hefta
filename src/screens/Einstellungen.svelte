@@ -18,6 +18,7 @@
   import Zurueck from '../ui/Zurueck.svelte';
   import { homescreenFragen } from '../ui/homescreen';
   import { aussehenSetzen, aussehenWahl, type Aussehen } from '../app/theme';
+  import { herkunftsReiter } from '../ui/herkunft.svelte';
   import { erinnerungenMoeglich, mitteilungen } from '../app/erinnerungen.svelte';
   import { einstellungenAendern } from '../storage/speicher';
   import { stillLaden } from '../app/daten.svelte';
@@ -81,6 +82,9 @@
     await stillLaden();
   }
 
+  // Zurück zum Reiter, aus dem man kam (Auftraggeber 13.11.).
+  const herkunft = $derived(herkunftsReiter());
+
   // Aussehen (Auftraggeber, 12.11.): System, Hell oder Dunkel, nur auf diesem Gerät.
   let aussehen = $state<Aussehen>(aussehenWahl());
   const AUSSEHEN: { wert: Aussehen; text: string }[] = [
@@ -116,7 +120,7 @@
 {/snippet}
 
 <main class="seite">
-  <div class="kopf"><Zurueck href="#/" text={t('navigation.uebersicht')} /></div>
+  <div class="kopf"><Zurueck href={herkunft.href} text={herkunft.text} /></div>
   <div class="titelblock">
     <h1 use:passend={TITEL} class="display">{t('einstellungen.titel')}</h1>
     {#if meldung}<p class="meldung" role="status">{meldung}</p>{/if}

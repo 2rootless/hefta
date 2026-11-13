@@ -93,7 +93,7 @@
 
 <main class="seite">
   <div class="kopf">
-    <Zurueck href="#{basis}" text={u ? listenText(u.typ) : t('person.zurueck')} />
+    <Zurueck href="#{basis}" text={u ? listenText(u.typ) : t('allgemein.zurueck')} />
   </div>
 
   {#if !u || !v}
