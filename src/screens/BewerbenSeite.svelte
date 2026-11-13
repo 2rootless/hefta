@@ -176,7 +176,7 @@
 
   // Schritt 4: Abschicken. Danach steht das Heft auf „Beworben“, aber nur sicher, wenn das System es meldet.
   let meldung = $state('');
-  async function beworbenMerken(w: BewerbungsWeg, sicher: boolean, m?: MappenErgebnis) {
+  async function beworbenMerken(w: BewerbungsWeg, sicher: boolean, m?: MappenErgebnis, ueber = '') {
     if (!heft) return;
     const e = heft.ereignisse;
     // Datenspur (B21 „Was hinausging“): nur, wenn die Mappe wirklich mitging.
@@ -194,6 +194,7 @@
           unterlagen: unterlagen.length,
           seiten: m.seiten,
           personen: aktive.map((p) => p.person.rufname || p.person.vorname),
+          ...(ueber ? { ueber } : {}),
         })
       : undefined;
     if (e.beworben?.sicher && !sicher) {
@@ -240,7 +241,8 @@
     meldung = '';
     const m = await mappeHolen();
     if (!m || !weg) return;
-    if (await mappeTeilen(m.dateien)) await beworbenMerken(weg, false, m);
+    const r = await mappeTeilen(m.dateien);
+    if (r.geteilt) await beworbenMerken(weg, false, m, r.ueber);
   }
 
   function springen(nach: string) {

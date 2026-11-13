@@ -3,8 +3,8 @@
 import type { SpurEintrag } from './modell';
 
 /**
- * Wer es bekam: aus dem Namen im Inserat „Herrn Kraus“ oder „Frau Peters“ (wie in „Mail an …“), sonst die
- * Mail-Adresse, beim Portal sein Name. Leer, wenn Hefta nichts weiß.
+ * Wer es bekam: aus dem Namen im Inserat „Herrn Kraus“ oder „Frau Peters“ (wie in „Mail an …“), eine Firma
+ * so, wie sie dastand, sonst die Mail-Adresse; beim Portal sein Name. Leer, wenn Hefta nichts weiß.
  */
 export function spurAn(o: {
   anbieter: string | null | undefined;
@@ -17,7 +17,8 @@ export function spurAn(o: {
     /^(Frau|Herr|Herrn)\s+((?:Dr\.\s+)?[A-ZÄÖÜ][\p{L}'-]+(?:\s+[A-ZÄÖÜ][\p{L}'-]+)?)$/u.exec(name);
   if (o.weg === 'portal') return (o.portal ?? '').trim();
   if (m) return `${m[1] === 'Frau' ? 'Frau' : 'Herrn'} ${m[2]}`;
-  return (o.mail ?? '').trim();
+  // Eine Firma oder ein Name ohne Anrede steht, wie er im Inserat stand; sonst die Adresse.
+  return name || (o.mail ?? '').trim();
 }
 
 /** Ein neuer Eintrag ans Ende; bei der Mappe zählt die Fassung die Sendungen an diese Wohnung. */

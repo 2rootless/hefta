@@ -1,5 +1,5 @@
 // Erinnerungen in der App (Zeile 9): Nach jedem Laden plant Hefta die Mitteilungen neu, aus dem, was gerade
-// gilt. Bisher nur unter iOS; unter Android und im Web gibt es keine (Web ohne Server: Bericht 61).
+// gilt. In der App unter iOS und Android; im Web gibt es keine (ohne Server keine Mitteilungen, Bericht 61).
 import { erinnerungenPlanen, erinnerungsNummer, type Erinnerung } from '../domain/erinnerungen';
 import { heftTitel } from '../domain/heftKarte';
 import type { Heft } from '../domain/modell';
@@ -7,13 +7,13 @@ import { t } from '../i18n';
 import { uhrzeit } from '../ui/terminWorte';
 import type { HaushaltAnsicht } from '../storage/speicher';
 import type { Einstellungen } from '../domain/modell';
-import { istIosApp } from './plattform';
+import { istApp } from './plattform';
 
 /** Ob das System Mitteilungen erlaubt; null, solange Hefta nicht gefragt hat. */
 export const mitteilungen = $state<{ erlaubt: boolean | null }>({ erlaubt: null });
 
 export function erinnerungenMoeglich(): boolean {
-  return istIosApp();
+  return istApp();
 }
 
 const MONATE = new Intl.DateTimeFormat('de-DE', { month: 'long' });

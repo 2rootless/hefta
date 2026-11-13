@@ -73,15 +73,23 @@ export async function ablageLeeren(): Promise<void> {
 
 /** Teilen-Blatt des Systems. False, wenn abgebrochen. */
 export async function appTeilen(dateien: File[], text?: string): Promise<boolean> {
+  return (await appTeilenWohin(dateien, text)).geteilt;
+}
+
+/** Wie `appTeilen`, dazu die Kennung der gewählten App, wenn das System sie nennt (Zeile 8). */
+export async function appTeilenWohin(
+  dateien: File[],
+  text?: string,
+): Promise<{ geteilt: boolean; kennung: string | null }> {
   await ablageLeeren();
   const files: string[] = [];
   for (const datei of dateien) files.push(await ablegen(datei));
   const { Share } = await import('@capacitor/share');
   try {
-    await Share.share(text ? { files, text } : { files });
-    return true;
+    const { activityType } = await Share.share(text ? { files, text } : { files });
+    return { geteilt: true, kennung: activityType ?? null };
   } catch {
-    return false;
+    return { geteilt: false, kennung: null };
   }
 }
 

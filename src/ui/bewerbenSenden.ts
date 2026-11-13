@@ -1,7 +1,15 @@
 // Was beim Bewerben hinausgeht (Zeile 8): Hefta verschickt nichts selbst. Es öffnet die Mail mit Mappe,
 // kopiert Text, teilt die Mappe oder öffnet die Website, und sagt danach, ob es sicher weiß, dass etwas
 // hinausging. Sicher nur, wenn das System „gesendet“ meldet (Mailfenster unter iOS, 09b).
-import { ablageLeeren, ablegen, appTeilen, istApp, istIosApp } from '../app/plattform';
+import {
+  ablageLeeren,
+  ablegen,
+  appTeilen,
+  appTeilenWohin,
+  istApp,
+  istIosApp,
+} from '../app/plattform';
+import { teilenZiel } from '../domain/teilenZiel';
 import { mailLink } from '../domain/nachricht';
 import { sichern } from './mappeErstellen';
 
@@ -81,19 +89,25 @@ export async function mailOhneAnhang(o: {
   return 'geoeffnet';
 }
 
-/** Die Mappe teilen, ohne Text (Portal, Website). */
-export async function mappeTeilen(dateien: File[]): Promise<boolean> {
-  if (istApp()) return appTeilen(dateien);
+/**
+ * Die Mappe teilen, ohne Text (Portal, Website). `ueber`: die App, die das Teilen-Blatt nennt (Zeile 8,
+ * „Ziel beim Teilen“); leer, wenn das System es nicht sagt (Web) oder die App unbekannt ist.
+ */
+export async function mappeTeilen(dateien: File[]): Promise<{ geteilt: boolean; ueber: string }> {
+  if (istApp()) {
+    const { geteilt, kennung } = await appTeilenWohin(dateien);
+    return { geteilt, ueber: geteilt ? teilenZiel(kennung) : '' };
+  }
   if (navigator.canShare?.({ files: dateien })) {
     try {
       await navigator.share({ files: dateien });
-      return true;
+      return { geteilt: true, ueber: '' };
     } catch {
-      return false;
+      return { geteilt: false, ueber: '' };
     }
   }
   sichern(dateien);
-  return true;
+  return { geteilt: true, ueber: '' };
 }
 
 export async function textKopieren(text: string): Promise<boolean> {

@@ -250,6 +250,8 @@ export interface SpurEintrag {
   seiten?: number;
   /** Wessen Angaben darin standen (Rufnamen). */
   personen?: string[];
+  /** Über welche App geteilt, wenn das Teilen-Blatt es nennt („WhatsApp“, „Mail“); Zeile 8. */
+  ueber?: string;
 }
 
 export interface Heft extends Basis {

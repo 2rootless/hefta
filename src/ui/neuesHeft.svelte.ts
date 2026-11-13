@@ -3,6 +3,7 @@ import { linkWegDa } from '../app/plattform';
 import { abschliessenMit, gehe } from '../app/router.svelte';
 import type { HeftAngaben } from '../domain/modell';
 import { adresseAus, angabenAus } from '../lesen/angaben';
+import { anbieterLesen } from '../lesen/anbieter';
 import { adresseLesen, lesen, type Gelesen } from '../lesen/leser';
 
 // Entwurf eines neuen Hefts zwischen „Text einfügen“ und „Heft anlegen“ (B23). Er lebt nur im Speicher
@@ -55,9 +56,10 @@ export function entwurfLesen(): void {
   const g = lesen({ text: entwurf.text, url: link || undefined });
   const a = adresseLesen(entwurf.text);
   entwurf.gelesen = g;
-  entwurf.angaben = angabenAus(g, a, null, link || null);
+  const anbieter = anbieterLesen(entwurf.text);
+  entwurf.angaben = { ...angabenAus(g, a, null, link || null), anbieter };
   entwurf.adresse = adresseAus(a);
-  entwurf.gelesenAngaben = angabenAus(g, a, null, link || null);
+  entwurf.gelesenAngaben = { ...angabenAus(g, a, null, link || null), anbieter };
   entwurf.gelesenAdresse = entwurf.adresse;
 }
 
@@ -89,9 +91,11 @@ export function entwurfAusVorschau(g: InseratGelesen, link: string): void {
   entwurf.text = text;
   entwurf.link = link;
   entwurf.gelesen = gelesen;
-  entwurf.angaben = angabenAus(gelesen, a, titel, link);
+  // Anbieter aus der Seite (Zeile 4): für die Anrede und die Datenspur.
+  const anbieter = anbieterLesen(text);
+  entwurf.angaben = { ...angabenAus(gelesen, a, titel, link), anbieter };
   entwurf.adresse = adresseAus(a);
-  entwurf.gelesenAngaben = angabenAus(gelesen, a, titel, link);
+  entwurf.gelesenAngaben = { ...angabenAus(gelesen, a, titel, link), anbieter };
   entwurf.gelesenAdresse = entwurf.adresse;
   entwurf.bild = g.bild ?? null;
   entwurf.bildHoch = !!g.bildHoch;

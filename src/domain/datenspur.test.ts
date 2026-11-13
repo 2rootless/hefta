@@ -7,8 +7,9 @@ describe('Datenspur', () => {
     expect(spurAn({ ...o, anbieter: 'Herr Kraus', weg: 'mail' })).toBe('Herrn Kraus');
     expect(spurAn({ ...o, anbieter: 'Frau Dr. Peters', weg: 'mail' })).toBe('Frau Dr. Peters');
     expect(spurAn({ ...o, anbieter: 'Hausverwaltung Nord', weg: 'mail' })).toBe(
-      'kraus@example.org',
+      'Hausverwaltung Nord',
     );
+    expect(spurAn({ ...o, anbieter: null, weg: 'mail' })).toBe('kraus@example.org');
     expect(spurAn({ ...o, anbieter: 'Herr Kraus', weg: 'portal' })).toBe('ImmoScout24');
     expect(spurAn({ anbieter: null, mail: null, portal: null, weg: 'website' })).toBe('');
   });

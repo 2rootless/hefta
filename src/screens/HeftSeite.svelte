@@ -103,7 +103,7 @@
     return t('heft.spurSonst');
   }
 
-  // Hefta erinnert selbst: in der App unter iOS, Schalter an, Mitteilungen nicht verboten.
+  // Hefta erinnert selbst: in der App, Schalter an, Mitteilungen nicht verboten.
   const leiseBescheid = $derived(
     erinnerungenMoeglich() &&
       daten.einstellungen?.erinnerungBesichtigungen !== false &&
@@ -446,6 +446,9 @@
                     .filter(Boolean)
                     .join(' · ')}</small
                 >
+                {#if e.ueber}
+                  <small>{t('heft.spurUeber', { app: e.ueber })}</small>
+                {/if}
                 {#if e.personen?.length}
                   <small>{t('heft.spurPersonen', { namen: namenListe(e.personen) })}</small>
                 {/if}

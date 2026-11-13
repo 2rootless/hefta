@@ -3,6 +3,9 @@
 
     <!-- Keine Internet-Berechtigung: Die App kann technisch nichts nach außen schicken. Kein
          automatisches Backup: Die Unterlagen sollen nicht in Googles Cloud landen. -->
+    <!-- Erinnerungen (Zeile 9): Mitteilungen auf dem Gerät, ab Android 13 mit Erlaubnis. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:allowBackup="false"
         android:fullBackupContent="false"
@@ -47,6 +50,8 @@
             </intent-filter>
 
         </activity>
+
+        <receiver android:name=".ErinnerungEmpfaenger" android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -2,7 +2,7 @@ import { App } from '@capacitor/app';
 import { gehe } from './daten.svelte';
 import { eingang } from './eingang.svelte';
 import { HeftaNativ } from './heftaNativ';
-import { ablageLeeren, appDateiLesen, istIosApp } from './plattform';
+import { ablageLeeren, appDateiLesen } from './plattform';
 import { geteiltOeffnen } from '../ui/neuesHeft.svelte';
 
 // Nur in der App: Zurück-Knopf von Android, PDFs, die andere Apps an Hefta schicken, und Inserate, die eine
@@ -44,6 +44,6 @@ export async function appStarten(): Promise<void> {
     });
   });
   // Tipp auf eine Erinnerung (Zeile 9): an die Stelle, um die es geht.
-  if (istIosApp()) await HeftaNativ.addListener('erinnerung', ({ ziel }) => ziel && gehe(ziel));
+  await HeftaNativ.addListener('erinnerung', ({ ziel }) => ziel && gehe(ziel));
   await ablageLeeren();
 }

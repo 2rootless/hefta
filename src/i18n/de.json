@@ -312,7 +312,7 @@
     "erinnerungen": "Erinnerungen",
     "erinnerungBesichtigungen": "Besichtigungen und Nachfassen",
     "erinnerungGehalt": "Neuer Monat beim Gehaltsnachweis",
-    "mitteilungenAus": "Mitteilungen von {app} sind in den Einstellungen des iPhone aus. Dort lassen sie sich einschalten.",
+    "mitteilungenAus": "Mitteilungen von {app} sind in den Einstellungen des Geräts aus. Dort lassen sie sich einschalten.",
     "aussehenSystem": "System",
     "aussehenHell": "Hell",
     "aussehenDunkel": "Dunkel"
@@ -1597,6 +1597,7 @@
       "other": "{anzahl} Seiten"
     },
     "spurPersonen": "Mit Angaben von {namen}.",
+    "spurUeber": "Geteilt über {app}",
     "spurLoeschbitte": "Löschbitte an {an}",
     "spurLoeschbitteOhne": "Löschbitte",
     "spurNachfrage": "Nachfrage an {an}",
