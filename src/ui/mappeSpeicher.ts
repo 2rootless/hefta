@@ -59,9 +59,20 @@ export const kleineDateien = new Zwischenspeicher<Blob>(100 * 1024 * 1024);
  * Inhalt statt nur dem Änderungsdatum: Eine alte Mappe mit einem alten Namen wäre schlimmer als ein
  * längerer Schlüssel.
  */
+/**
+ * Wofür die Mappe gebaut wird: die Angaben der Bewerbung, dazu aus dem Heft die Zeilen fürs Deckblatt
+ * (B14, E39): „Zu Ihrem Inserat auf …“, „Einzug möglich ab …“, „Fassung 2 vom …“. Fehlt eine, fällt ihre
+ * Zeile weg.
+ */
+export type MappenAnlass = Pick<Bewerbung, 'adresse' | 'satz' | 'bitteSatz'> & {
+  deckInserat?: string;
+  deckEinzug?: string;
+  deckFassung?: string;
+};
+
 export function bauSchluessel(
   ansicht: HaushaltAnsicht,
-  bewerbung: Pick<Bewerbung, 'adresse' | 'satz' | 'bitteSatz'> | null,
+  bewerbung: MappenAnlass | null,
   e: ExportEinstellungen,
   aussehen?: MappenAussehen,
   heute: Date = new Date(),
@@ -72,6 +83,9 @@ export function bauSchluessel(
     bewerbung?.adresse ?? '',
     bewerbung?.satz ?? '',
     bewerbung?.bitteSatz ?? null,
+    bewerbung?.deckInserat ?? null,
+    bewerbung?.deckEinzug ?? null,
+    bewerbung?.deckFassung ?? null,
     aussehen ?? ansicht.haushalt.mappeAussehen ?? null,
     ansicht.haushalt,
     ansicht.mitglieder,

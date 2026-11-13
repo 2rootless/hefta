@@ -18,7 +18,8 @@
     terminVorbei,
   } from '../domain/heftStand';
   import { homescreenFragen } from '../ui/homescreen';
-  import type { HeftEreignisse } from '../domain/modell';
+  import type { HeftEreignisse, SpurEintrag } from '../domain/modell';
+  import { namenListe } from '../domain/datenspur';
   import { tageBis } from '../domain/tageslinie';
   import { abweichungen, urteile } from '../domain/urteile';
   import { t, type TextSchluessel } from '../i18n';
@@ -29,6 +30,7 @@
   import TabLeiste from '../ui/TabLeiste.svelte';
   import { inDenKalender } from '../ui/kalenderEintrag';
   import BesichtigungsFragen from '../ui/BesichtigungsFragen.svelte';
+  import HeftFotos from '../ui/HeftFotos.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import TerminKarte from '../ui/TerminKarte.svelte';
   import UrteilZeichen from '../ui/UrteilZeichen.svelte';
@@ -87,6 +89,19 @@
     if (sofortWeg) momentWeg = true;
   }
   let momentWeg = $state(false);
+
+  /** „Mail an Herrn Kraus“, „Über ImmoScout24“, „Löschbitte an …“: die erste Zeile eines Eintrags. */
+  function spurKopf(e: SpurEintrag): string {
+    if (e.art === 'loeschbitte')
+      return e.an ? t('heft.spurLoeschbitte', { an: e.an }) : t('heft.spurLoeschbitteOhne');
+    if (e.art === 'nachfrage')
+      return e.an ? t('heft.spurNachfrage', { an: e.an }) : t('heft.spurNachfrageOhne');
+    if (e.weg === 'mail') return e.an ? t('heft.spurMail', { an: e.an }) : t('heft.spurMailOhne');
+    if (e.weg === 'portal')
+      return e.an ? t('heft.spurPortal', { an: e.an }) : t('heft.spurPortalOhne');
+    if (e.weg === 'website') return t('heft.spurWebsite');
+    return t('heft.spurSonst');
+  }
 
   // Hefta erinnert selbst: in der App unter iOS, Schalter an, Mitteilungen nicht verboten.
   const leiseBescheid = $derived(
@@ -409,6 +424,39 @@
         bind:value={notiz}
         onblur={notizSichern}></textarea>
     </section>
+
+    <!-- B21: Fotos der Besichtigung unter den Notizen, nur auf dem Gerät. -->
+    <HeftFotos {heft} />
+
+    {#if heft.spur?.length}
+      <!-- Datenspur (B21 „Was hinausging“): neueste zuerst, nur auf dem Gerät. -->
+      <section class="teil spur">
+        <h2>{t('heft.spurTitel')}</h2>
+        <ul>
+          {#each [...heft.spur].reverse() as e (e.am + e.art)}
+            <li>
+              <b>{tagKurz(e.am)} · {spurKopf(e)}</b>
+              {#if e.art === 'mappe'}
+                <small
+                  >{[
+                    t('heft.spurMappe', { fassung: e.fassung ?? 1 }),
+                    e.unterlagen ? t('heft.spurUnterlagen', { anzahl: e.unterlagen }) : '',
+                    e.seiten ? t('heft.spurSeiten', { anzahl: e.seiten }) : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}</small
+                >
+                {#if e.personen?.length}
+                  <small>{t('heft.spurPersonen', { namen: namenListe(e.personen) })}</small>
+                {/if}
+              {:else if e.art === 'loeschbitte'}
+                <small>{t('heft.spurGeloescht')}</small>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
 
     {#if abgleich}
       <section class="teil">
@@ -789,6 +837,36 @@
 
   .teil {
     margin-top: 26px;
+  }
+
+  .spur ul {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+    list-style: none;
+  }
+
+  .spur li {
+    display: grid;
+    gap: 2px;
+  }
+
+  .spur li + li {
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+
+  .spur b {
+    font-size: calc(15 * var(--px));
+  }
+
+  .spur small {
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
   }
 
   .teil h2 {

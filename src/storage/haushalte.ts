@@ -35,6 +35,11 @@ export function teilbestand(daten: Datensaetze, haushaltId: string): Teilbestand
     dateien.add(v.original);
     if (v.aufbereitet) dateien.add(v.aufbereitet);
   }
+  const hefte = (daten.hefte ?? []).filter(
+    (h) => (h as { haushaltId: string | null }).haushaltId === haushaltId,
+  );
+  // Fotos der Besichtigung (Zeile 9) gehören zum Heft und kommen mit.
+  for (const h of hefte as { fotos?: string[] }[]) for (const f of h.fotos ?? []) dateien.add(f);
   return {
     daten: {
       haushalte: (daten.haushalte ?? []).filter((h) => (h as MitId).id === haushaltId),
@@ -45,9 +50,7 @@ export function teilbestand(daten: Datensaetze, haushaltId: string): Teilbestand
       bewerbungen: (daten.bewerbungen ?? []).filter(
         (b) => (b as { haushaltId: string }).haushaltId === haushaltId,
       ),
-      hefte: (daten.hefte ?? []).filter(
-        (h) => (h as { haushaltId: string | null }).haushaltId === haushaltId,
-      ),
+      hefte,
     },
     dateien: [...dateien],
   };

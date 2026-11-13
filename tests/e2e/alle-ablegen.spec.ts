@@ -99,6 +99,12 @@ test('„Keine Antwort“ im Heft: nachfragen und Löschbitte, Hefta merkt sich 
     page.getByText(/^Löschbitte geschickt am .*Ob gelöscht wurde, kann Hefta nicht wissen\.$/),
   ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Löschbitte schreiben' })).toHaveCount(0);
+  // Datenspur (B21 „Was hinausging“): neueste zuerst.
+  const spur = page.locator('section.spur li');
+  await expect(spur).toHaveCount(2);
+  await expect(spur.nth(0)).toContainText('· Löschbitte');
+  await expect(spur.nth(0)).toContainText('Ob gelöscht wurde, kann Hefta nicht wissen.');
+  await expect(spur.nth(1)).toContainText('· Nachfrage');
 
   await page.getByRole('button', { name: 'Ablegen', exact: true }).click();
   await expect(page.getByText('Das Heft liegt bei den abgelegten.')).toBeVisible();

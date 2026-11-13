@@ -1580,6 +1580,28 @@
     "abgelegtAm": "Abgelegt am {datum}",
     "abgelegtSatz": "Das Heft liegt bei den abgelegten.",
     "hervorholen": "Wieder hervorholen",
+    "spurTitel": "Was hinausging",
+    "spurMail": "Mail an {an}",
+    "spurMailOhne": "Mail",
+    "spurPortal": "Über {an}",
+    "spurPortalOhne": "Über das Portal",
+    "spurWebsite": "Über die Website",
+    "spurSonst": "Geteilt",
+    "spurMappe": "Die Mappe, Fassung {fassung}",
+    "spurUnterlagen": {
+      "one": "{anzahl} Unterlage",
+      "other": "{anzahl} Unterlagen"
+    },
+    "spurSeiten": {
+      "one": "{anzahl} Seite",
+      "other": "{anzahl} Seiten"
+    },
+    "spurPersonen": "Mit Angaben von {namen}.",
+    "spurLoeschbitte": "Löschbitte an {an}",
+    "spurLoeschbitteOhne": "Löschbitte",
+    "spurNachfrage": "Nachfrage an {an}",
+    "spurNachfrageOhne": "Nachfrage",
+    "spurGeloescht": "Ob gelöscht wurde, kann {app} nicht wissen.",
     "unterlagenNochIhr": "Der Vermieter hat noch eure Unterlagen.",
     "unterlagenNochDu": "Der Vermieter hat noch deine Unterlagen.",
     "loeschbitteSchreiben": "Löschbitte schreiben",
@@ -1847,6 +1869,14 @@
     "mehrDu": "Beim ersten Mal steht {app} oft erst unter „Mehr“, am Ende der Reihe. Dort kannst du es nach vorn holen.",
     "zweit": "Oder den Link kopieren und auf „Wohnung hinzufügen“ einsetzen.",
     "schritt4": "Danach zeigt {app} eine kleine Vorschau. Passt sie, „Ja, einlesen“ tippen."
+  },
+  "fotos": {
+    "titel": "Fotos",
+    "aufnehmen": "Aufnehmen",
+    "auswaehlen": "Auswählen",
+    "zeigen": "Foto {nummer} ansehen",
+    "loeschen": "Foto löschen",
+    "geloescht": "Foto gelöscht"
   },
   "erinnerung": {
     "vorabendTitel": "Morgen Besichtigung",

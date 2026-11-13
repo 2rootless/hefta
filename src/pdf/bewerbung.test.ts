@@ -805,6 +805,26 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       expect(deckOhne).not.toContain(VERMIETER_DOMAIN);
     });
 
+    it('E39: Inserat und Einzug im Kopf, die Fassung unten in der Leiste; fehlen sie, keine Zeile', async () => {
+      const mit = await bewerbungBauen(
+        await auftrag({
+          hinweis: true,
+          inserat: 'Zu Ihrem Inserat auf ImmoScout24',
+          einzug: 'Einzug möglich ab 1. Februar 2027',
+          fassung: 'Fassung 2 vom 13. November 2026',
+        }),
+      );
+      const [deck] = await textJeSeite(mit.bytes);
+      const flach = deck!.replace(/\s+/g, ' ');
+      expect(flach).toContain('Zu Ihrem Inserat auf ImmoScout24');
+      expect(flach).toContain('Einzug möglich ab 1. Februar 2027');
+      expect(flach).toContain('Fassung 2 vom 13. November 2026');
+      const ohne = await bewerbungBauen(await auftrag({ hinweis: true }));
+      const [deckOhne] = await textJeSeite(ohne.bytes);
+      expect(deckOhne).not.toContain('Inserat');
+      expect(deckOhne).not.toContain('Fassung');
+    });
+
     describe('Fläche hinter „Wer einzieht“ (AM5c)', () => {
       const block = (farbe: string, rolleId: Rolle) => ({ person: { farbe, rolleId } });
 

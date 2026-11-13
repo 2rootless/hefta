@@ -855,10 +855,12 @@ export async function verwaisteDateienLoeschen(
   schonfristMs = 10 * 60_000,
 ): Promise<void> {
   const grenze = new Date(Date.now() - schonfristMs).toISOString();
-  const tx = db.transaction(['versionen', 'dateien'], 'readwrite');
-  const genutzt = new Set(
-    (await tx.objectStore('versionen').getAll()).flatMap((v) => [v.original, v.aufbereitet]),
-  );
+  const tx = db.transaction(['versionen', 'hefte', 'dateien'], 'readwrite');
+  const genutzt = new Set([
+    ...(await tx.objectStore('versionen').getAll()).flatMap((v) => [v.original, v.aufbereitet]),
+    // Fotos der Besichtigung hängen am Heft, nicht an einer Version.
+    ...(await tx.objectStore('hefte').getAll()).flatMap((h) => h.fotos ?? []),
+  ]);
   for (const id of await tx.objectStore('dateien').getAllKeys()) {
     if (genutzt.has(id)) continue;
     const datei = await tx.objectStore('dateien').get(id);
@@ -1040,6 +1042,30 @@ export async function heftAendern(
   await tx.store.put(neu);
   await tx.done;
   return neu;
+}
+
+/**
+ * Fotos der Besichtigung (Zeile 9): Die Datei zuerst, dann der Verweis am Heft. Bricht es dazwischen ab,
+ * räumt `verwaisteDateienLoeschen` die Datei später weg.
+ */
+export async function heftFotosHinzufuegen(db: HeftaDb, heftId: Id, bilder: Blob[]): Promise<Id[]> {
+  const neu: Id[] = [];
+  for (const b of bilder) neu.push(await dateiSpeichern(db, b));
+  const heft = await db.get('hefte', heftId);
+  if (!heft) return [];
+  await heftAendern(db, heftId, { fotos: [...(heft.fotos ?? []), ...neu] });
+  return neu;
+}
+
+/**
+ * Ein Foto aus dem Heft nehmen. Die Datei bleibt, bis `verwaisteDateienLoeschen` läuft: So kann
+ * „Rückgängig“ den Verweis zurücksetzen, und Safari verliert den Inhalt nicht vorher.
+ */
+export async function heftFotoEntfernen(db: HeftaDb, heftId: Id, fotoId: Id): Promise<Id[]> {
+  const heft = await db.get('hefte', heftId);
+  const vorher = heft?.fotos ?? [];
+  await heftAendern(db, heftId, { fotos: vorher.filter((f) => f !== fotoId) });
+  return vorher;
 }
 
 /** Ein neues Heft, „Gemerkt“, mit eigener Kennung für die Lesehilfe (E6). */

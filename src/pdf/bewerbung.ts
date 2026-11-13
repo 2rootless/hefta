@@ -108,6 +108,11 @@ export interface BewerbungAuftrag {
   /** Adresse der Wohnung in Zeilen; leer: der Name steht als Titel. */
   adresse: string[];
   satz: string;
+  /** B14, E39: „Zu Ihrem Inserat auf ImmoScout24“ und „Einzug möglich ab …“ im Kopf unter der Lage. */
+  inserat?: string;
+  einzug?: string;
+  /** B14, E39: „Fassung 2 vom 8. November 2026“, leise unten in der Leiste. */
+  fassung?: string;
   /** Kinder und weitere Personen ohne Vertrag, je Art ein Eintrag: „Zwei Kinder“. */
   mitziehende: Mitziehend[];
   /** „Erstellt mit …“ klein auf dem Deckblatt, dazu die Lesehilfe als Anhang. */
@@ -547,6 +552,13 @@ function deckblattSetzen(
     text('Bewerbung um eine Wohnung', kopfX, kopfY, 21, s.titel);
     kopfY -= 6 * MM;
   }
+  // E39: Inserat und Einzug, das Erste, was ein Vermieter abgleicht. Fehlt eine, fällt ihre Zeile weg;
+  // lange Portalnamen brechen um, gekürzt wird nie.
+  for (const zeile of [a.inserat, a.einzug].filter((z): z is string => !!z?.trim()))
+    for (const teil of umbrechen(zeichenbar(zeile, s), s.regular, 10, kopfBreite)) {
+      text(teil, kopfX, kopfY, 10, s.regular, DRUCK);
+      kopfY -= 4.8 * MM;
+    }
 
   // Seitenleiste: mit wem man es zu tun hat und wie man sie erreicht.
   const leisteX = 14 * MM;
@@ -691,7 +703,9 @@ function deckblattSetzen(
   const stufe =
     K <= 1
       ? (LEISTE_STUFEN.filter((st) => st.kl <= K).find(
-          (st) => leiste(st.kl, false, st.ohneBeruf, st.ohneBuergen) >= leisteUnten + 11 * MM,
+          (st) =>
+            leiste(st.kl, false, st.ohneBeruf, st.ohneBuergen) >=
+            leisteUnten + (a.fassung ? 15 : 11) * MM,
         ) ?? LEISTE_STUFEN.at(-1)!)
       : { kl: K, ohneBeruf: false, ohneBuergen: false };
   leiste(stufe.kl, true, stufe.ohneBeruf, stufe.ohneBuergen);
@@ -701,6 +715,8 @@ function deckblattSetzen(
     const lesehilfe = `Lesehilfe: ${VERMIETER_DOMAIN}`;
     const lesehilfeY = leisteUnten + 4.8 * MM;
     text(`Erstellt mit ${APP_NAME}`, px, leisteUnten + 8.2 * MM, 7.5, s.regular, DRUCK);
+    if (a.fassung)
+      text(zeichenbar(a.fassung, s), px, leisteUnten + 11.6 * MM, 7.5, s.regular, DRUCK);
     text(lesehilfe, px, lesehilfeY, 7.5, s.regular, DRUCK);
     links.push({
       seite: 0,

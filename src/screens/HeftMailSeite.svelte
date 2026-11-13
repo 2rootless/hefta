@@ -6,6 +6,7 @@
   import { abschliessen } from '../app/router.svelte';
   import { adresseZeilen } from '../domain/adresse';
   import { loeschbitteText, nachfassText } from '../domain/bewerben';
+  import { spurAn, spurEintragen } from '../domain/datenspur';
   import { erkennen } from '../domain/nachricht';
   import { t } from '../i18n';
   import { heftAendern } from '../storage/speicher';
@@ -58,6 +59,13 @@
     const e = $state.snapshot(heft.ereignisse);
     await heftAendern(await db(), heft.id, {
       ereignisse: art === 'loeschbitte' ? { ...e, loeschbitteAm: am } : { ...e, nachgefasstAm: am },
+      // Datenspur: auch diese Mail ging mit euren Namen hinaus.
+      spur: spurEintragen($state.snapshot(heft.spur), {
+        am,
+        art: art === 'loeschbitte' ? 'loeschbitte' : 'nachfrage',
+        weg: 'mail',
+        an: spurAn({ anbieter: heft.angaben?.anbieter, mail: an, portal: null, weg: 'mail' }),
+      }),
     });
     await stillLaden();
     abschliessen(`/heft/${heft.id}`);

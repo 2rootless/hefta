@@ -13,6 +13,8 @@
     werZiehtEin,
     type BewerbungsWeg,
   } from '../domain/bewerben';
+  import { spurAn, spurEintragen } from '../domain/datenspur';
+  import { deckZeilen } from '../domain/deckZeilen';
   import { bloecke, standardEinstellungen, type ExportEinstellungen } from '../domain/export';
   import type { HeftEreignisse } from '../domain/modell';
   import { angabenWerte, erkennen } from '../domain/nachricht';
@@ -148,7 +150,13 @@
       mappe = await mappeGebaut(
         await db(),
         ansicht,
-        { adresse: heft.adresse, satz: heft.satz, bitteSatz: heft.bitteSatz },
+        {
+          adresse: heft.adresse,
+          satz: heft.satz,
+          bitteSatz: heft.bitteSatz,
+          // B14, E39: Inserat, Einzug und Fassung aufs Deckblatt.
+          ...deckZeilen($state.snapshot(heft), heute),
+        },
         $state.snapshot(einstellungen) as ExportEinstellungen,
       );
       gebautFuer = schluessel;
@@ -168,17 +176,43 @@
 
   // Schritt 4: Abschicken. Danach steht das Heft auf „Beworben“, aber nur sicher, wenn das System es meldet.
   let meldung = $state('');
-  async function beworbenMerken(w: BewerbungsWeg, sicher: boolean) {
+  async function beworbenMerken(w: BewerbungsWeg, sicher: boolean, m?: MappenErgebnis) {
     if (!heft) return;
     const e = heft.ereignisse;
-    if (e.beworben?.sicher && !sicher) return;
+    // Datenspur (B21 „Was hinausging“): nur, wenn die Mappe wirklich mitging.
+    const spur = m
+      ? spurEintragen($state.snapshot(heft.spur), {
+          am: new Date().toISOString(),
+          art: 'mappe',
+          weg: w,
+          an: spurAn({
+            anbieter: heft.angaben?.anbieter,
+            mail: erkannt.mail,
+            portal: heft.angaben?.portal ?? heft.quelle,
+            weg: w,
+          }),
+          unterlagen: unterlagen.length,
+          seiten: m.seiten,
+          personen: aktive.map((p) => p.person.rufname || p.person.vorname),
+        })
+      : undefined;
+    if (e.beworben?.sicher && !sicher) {
+      if (spur) {
+        await heftAendern(await db(), heft.id, { spur });
+        await stillLaden();
+      }
+      return;
+    }
     const neu: HeftEreignisse = {
       ...e,
       beworben: { am: new Date().toISOString(), weg: w, sicher },
       // Hinausgegangen ist etwas Neues: „Stimmt der Stand?“ darf wieder einmal fragen.
       gefragtAm: sicher ? e.gefragtAm : null,
     };
-    await heftAendern(await db(), heft.id, { ereignisse: $state.snapshot(neu) });
+    await heftAendern(await db(), heft.id, {
+      ereignisse: $state.snapshot(neu),
+      ...(spur ? { spur } : {}),
+    });
     await stillLaden();
   }
 
@@ -193,7 +227,7 @@
     const a = await mailMitMappe({ an: erkannt.mail, betreff, text, dateien: m.dateien });
     if (a === 'abgebrochen') return;
     if (a === 'anhangSelbst') meldung = t('bewerben.anhangSelbst');
-    await beworbenMerken('mail', a === 'gesendet');
+    await beworbenMerken('mail', a === 'gesendet', m);
   }
 
   async function kopieren(was: string, inhalt: string, merken: boolean) {
@@ -206,7 +240,7 @@
     meldung = '';
     const m = await mappeHolen();
     if (!m || !weg) return;
-    if (await mappeTeilen(m.dateien)) await beworbenMerken(weg, false);
+    if (await mappeTeilen(m.dateien)) await beworbenMerken(weg, false, m);
   }
 
   function springen(nach: string) {

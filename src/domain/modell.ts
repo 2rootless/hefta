@@ -234,8 +234,30 @@ export interface Bewerbung extends Basis {
  * Hefta 2 (Schema 2): eine Wohnung als Heft (Bericht 61, docs/32-bauplan-hefta-2-schritt-1.md). Der Stand
  * steht hier nicht; er rechnet sich aus den Ereignissen (E43). Ein Heft geht auch ohne Haushalt (E45).
  */
+/**
+ * Datenspur (E31, Zeilen 8 und 9, B21 „Was hinausging“): Was mit euren Daten hinausging und an wen, so wie
+ * Hefta es weiß. Nur auf dem Gerät; Hefta schickt nichts selbst.
+ */
+export interface SpurEintrag {
+  am: Zeitpunkt;
+  art: 'mappe' | 'loeschbitte' | 'nachfrage';
+  weg: 'mail' | 'portal' | 'website' | 'sonst';
+  /** „Herrn Kraus“, eine Mail-Adresse oder das Portal; leer, wenn Hefta es nicht weiß. */
+  an: string;
+  /** Nur bei der Mappe: die wievielte Sendung an diese Wohnung, wie viele Unterlagen und Seiten. */
+  fassung?: number;
+  unterlagen?: number;
+  seiten?: number;
+  /** Wessen Angaben darin standen (Rufnamen). */
+  personen?: string[];
+}
+
 export interface Heft extends Basis {
   haushaltId: Id | null;
+  /** Datenspur; fehlt sie, ging (soweit Hefta weiß) nichts hinaus. */
+  spur?: SpurEintrag[];
+  /** Fotos der Besichtigung (Zeile 9, B21): Kennungen im Speicherort `dateien`, nur auf dem Gerät. */
+  fotos?: Id[];
   /** Wie die Adresse in Version 1: erste Zeile Straße und Lage, zweite Postleitzahl und Ort. */
   adresse: string;
   /** Link zum Inserat; Hefta lädt ihn nie selbst. */

@@ -1,6 +1,6 @@
 import { hatPruefcode } from '../domain/pruefhinweise';
 import { AUSSEHEN_STANDARD, type MappenAussehen } from '../domain/modell';
-import { bauSchluessel, gebauteMappen, kleineDateien } from './mappeSpeicher';
+import { bauSchluessel, gebauteMappen, kleineDateien, type MappenAnlass } from './mappeSpeicher';
 import { serienQuellen } from '../domain/aufteilen';
 import { appSichern, appTeilen, istApp } from '../app/plattform';
 import {
@@ -12,7 +12,6 @@ import {
   bitteSatzAus,
 } from '../domain/export';
 import { aktuelleVersionen } from '../domain/fristen';
-import type { Bewerbung } from '../domain/modell';
 import {
   eintragenText,
   listenText,
@@ -108,7 +107,7 @@ async function alsBilder(daten: Uint8Array): Promise<Uint8Array> {
 export async function mappeErstellen(
   db: HeftaDb,
   ansicht: HaushaltAnsicht,
-  bewerbung: Pick<Bewerbung, 'adresse' | 'satz' | 'bitteSatz'> | null,
+  bewerbung: MappenAnlass | null,
   e: ExportEinstellungen,
   heute = new Date(),
   /** Für die Vorschau in „Mappe anpassen“: dieser Bau, aber mit der gerade gewählten Art. */
@@ -324,6 +323,9 @@ export async function mappeErstellen(
           .filter(Boolean)
       : [],
     satz: bewerbung?.satz ?? '',
+    inserat: bewerbung?.deckInserat,
+    einzug: bewerbung?.deckEinzug,
+    fassung: bewerbung?.deckFassung,
     mitziehende,
     // Nur für die Lesehilfe; die Vorschau mit Platzhaltern braucht keine.
     kennung:
@@ -370,7 +372,7 @@ export async function mappeErstellen(
 export async function mappeGebaut(
   db: HeftaDb,
   ansicht: HaushaltAnsicht,
-  bewerbung: Pick<Bewerbung, 'adresse' | 'satz' | 'bitteSatz'> | null,
+  bewerbung: MappenAnlass | null,
   e: ExportEinstellungen,
   aussehen?: MappenAussehen,
   fortschritt?: (fertig: number, gesamt: number) => void,
