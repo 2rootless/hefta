@@ -56,10 +56,11 @@
     }).format(n)}${NB}€`;
   const zahlText = (n: number) =>
     new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 }).format(n);
+  // Tag und Monat bleiben zusammen (Prüfkatalog C23), das Jahr darf umbrechen.
   const tag = (d: string) =>
-    new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short', year: 'numeric' }).format(
-      new Date(`${d}T12:00`),
-    );
+    new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })
+      .format(new Date(`${d}T12:00`))
+      .replace(/^(\d+\.) /, `$1${NB}`);
 
   type Art = 'geld' | 'zahl' | 'flaeche' | 'datum' | 'text' | 'adresse' | 'wahl';
   type Schluessel = keyof HeftAngaben | 'adresse';

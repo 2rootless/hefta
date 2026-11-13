@@ -5,6 +5,7 @@ import { dirname } from 'node:path';
 import { crc32, deflateSync } from 'node:zlib';
 import { backupErstellen } from '../../src/storage/backup';
 import { SCHEMA_VERSION } from '../../src/storage/db';
+import { wuenscheSetzen } from './hefte-hilfen';
 import { animationenFertig } from './hilfen';
 import { pruefen } from './pruef-c';
 import { HEUTE, SZENARIEN, datensaetze } from './szenarien';
@@ -12,6 +13,8 @@ import { HEUTE, SZENARIEN, datensaetze } from './szenarien';
 // Prüfkatalog (design/pruefkatalog.md, Stil C): alle Szenarien der Übersicht, der Einrichtung und
 // des Rutschs in allen Ansichten, automatische Prüfungen C1 bis C12 (ohne C8, entfällt in Stil C),
 // Kontaktbögen für die Sichtprüfung in docs/screenshots/bogen-{U,E,R}-<ansicht>.png.
+// Die Bilder entstehen nur mit KATALOG_BILDER=1 (vor einem Bericht an Design und vor Schritt 11);
+// die Prüfungen laufen immer.
 // Nur Chromium: WebKit unter Windows stellt die variable Schrift falsch dar (Maße wären falsch).
 
 interface Ansicht {
@@ -369,6 +372,70 @@ const amVorschau = async (page: Page) => {
 };
 
 /** Ändert gespeicherte Versionen wie im echten Leben (dieselbe Datei, Gelesenes) und lädt neu. */
+/** Erfundenes Inserat (keine Rohdaten aus den Proben: Der Katalog liegt auch im öffentlichen Repo). */
+const IS24 = {
+  url: 'https://www.immobilienscout24.de/expose/100000001',
+  text: [
+    'Besonders Wohnen direkt an den Landungsbrücken!',
+    'Musterweg 12, 20359 Hamburg',
+    'Kaltmiete 1.420 €',
+    'Nebenkosten 290 €',
+    'Heizkosten 120 €',
+    'Gesamtmiete 1.830 €',
+    'Zimmer 2',
+    'Wohnfläche ca. 59,5 m²',
+    'Bezugsfrei ab 01.03.2027',
+    'Kaution 3 Kaltmieten',
+  ].join('\n'),
+};
+const KATALOG_TITEL = 'Besonders Wohnen direkt an den Landungsbrücken!';
+
+/** Wünsche wie im Test der Kontrolle, damit Vorschau und Kontrolle Abweichungen zeigen; lädt neu. */
+async function katalogWuensche(page: Page) {
+  await wuenscheSetzen(page, {
+    warmBis: 1800,
+    zimmerAb: 3,
+    flaecheAb: 60,
+    ort: null,
+    einzugVon: '2026-12-01',
+    einzugBis: '2027-02-28',
+  });
+  await page.reload();
+  await page.locator('main h1').first().waitFor();
+}
+
+/**
+ * Das Plugin der App für „Neues Heft“ (wie in neues-heft-app.spec.ts), nur auf dieser geladenen Seite:
+ * Der nächste Bildschirm des Katalogs lädt neu und ist wieder das Web.
+ */
+async function inseratNachstellen(page: Page) {
+  await page.evaluate(
+    ({ titel, text }) => {
+      const w = window as unknown as Record<string, unknown>;
+      w.__heftaInseratTest = {
+        knopf: async () => ({ geht: true }),
+        knopfWeg: async () => {},
+        ablage: async () => ({ link: true, inhalt: true }),
+        vorschau: async ({ url }: { url: string }) => ({
+          url,
+          zustand: 'ok',
+          h1: titel,
+          titel: 'ImmoScout24',
+          text,
+          bild: null,
+        }),
+        vorschauAbbrechen: async () => {},
+        seite: async () => {},
+        addListener: async (_e: string, tun: unknown) => {
+          w.__einsetzen = tun;
+          return { remove: async () => {} };
+        },
+      };
+    },
+    { titel: KATALOG_TITEL, text: IS24.text },
+  );
+}
+
 async function versionenPatchen(
   page: Page,
   endung: string,
@@ -407,6 +474,9 @@ const FAKTEN = (seite: Record<string, unknown>) => ({
   eigene: [0],
   seiten: [0],
 });
+
+/** Bildschirmfotos und Kontaktbögen nur auf Wunsch: KATALOG_BILDER=1 (Auftraggeber 13.11.). */
+const BILDER_AN = process.env.KATALOG_BILDER === '1';
 
 const BILDER: Bild[] = [
   // „Nachricht ans Inserat“ (Gruppe N) ist seit 13.11. entfernt: Das macht „Bewerben“ im Heft.
@@ -1167,6 +1237,39 @@ const BILDER: Bild[] = [
     szenario: '04-fertig',
     pfad: '/heft/kh-beworben/bewerben',
     hefte: katalogHefte,
+  },
+  // „Neues Heft“: Der Entwurf lebt nur im Speicher der Seite, deshalb führt `vorher` den Weg einmal.
+  {
+    id: 'H9-vorschau',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/wohnungen',
+    vorher: async (page) => {
+      await katalogWuensche(page);
+      await inseratNachstellen(page);
+      await page.evaluate(() => (location.hash = '#/wohnung-neu'));
+      await page.waitForFunction(() => typeof (window as never)['__einsetzen'] === 'function');
+      await page.evaluate(
+        (url) =>
+          (window as never as { __einsetzen: (x: unknown) => void }).__einsetzen({ url }),
+        IS24.url,
+      );
+      await page.getByRole('heading', { level: 2, name: KATALOG_TITEL }).waitFor();
+      await page.locator('.punkte li').first().waitFor();
+    },
+  },
+  {
+    id: 'H10-kontrolle',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/wohnung-neu/text',
+    vorher: async (page) => {
+      await katalogWuensche(page);
+      await page.getByRole('textbox', { name: 'Text der Anzeige hier einfügen' }).fill(IS24.text);
+      await page.getByRole('textbox', { name: 'Link zur Anzeige' }).fill(IS24.url);
+      await page.getByRole('button', { name: 'Eckdaten lesen' }).click();
+      await page.getByRole('heading', { level: 1, name: 'Letzte Kontrolle' }).waitFor();
+    },
   },
   { id: 'Z1-uebersicht', gruppe: 'Z', szenario: '18-zeit', pfad: '/' },
   {
@@ -2067,41 +2170,47 @@ test.describe('Prüfkatalog Stil C', () => {
         );
         const ueber = Math.round(r.hoehe * (ansicht.zoom ?? 1)) - ansicht.hoehe;
         if (ueber > 0) scrollen[bild.id] = ueber;
-        // Ganzseitenbild: die feste Leiste ans Seitenende setzen (so sieht man es nach dem Scrollen).
-        await page.evaluate(() => {
-          document.body.style.position = 'relative';
-          document
-            .querySelectorAll<HTMLElement>('.leiste')
-            .forEach((e) => (e.style.position = 'absolute'));
-        });
-        // Ein Vollbild-Dialog deckt nur den Bildschirm; ein Ganzseiten-Bild zeigte die Seite darunter.
-        const vollbild = await page.evaluate(() => !!document.querySelector('dialog[open]'));
-        // „Welches Datum?“ scrollt als Ganzes: im Bogen die ganze Seite zeigen, nicht nur den Anfang.
-        const ganzeHoehe = await page.evaluate(() => {
-          // Ein Blatt nimmt höchstens 92 % des Bildschirms: so hoch, dass es ganz zu sehen ist.
-          const blatt = document.querySelector('dialog[open]:not(.ansicht)');
-          if (blatt) return blatt.scrollHeight / 0.92 + 8;
-          const inhalt = document.querySelector('dialog.ansicht .inhalt');
-          if (!inhalt) return 0;
-          // Der Ausschnitt hängt an vh: festhalten, sonst wächst er mit dem größeren Bild.
-          inhalt.querySelectorAll<HTMLElement>('.flaeche').forEach((f) => {
-            f.style.height = getComputedStyle(f).height;
+        // Bilder nur auf Wunsch (Auftraggeber 13.11.): KATALOG_BILDER=1 vor einem Bericht an Design und
+        // vor Schritt 11. Geprüft wird jede Ansicht trotzdem.
+        if (BILDER_AN) {
+          // Ganzseitenbild: die feste Leiste ans Seitenende setzen (so sieht man es nach dem Scrollen).
+          await page.evaluate(() => {
+            document.body.style.position = 'relative';
+            document
+              .querySelectorAll<HTMLElement>('.leiste')
+              .forEach((e) => (e.style.position = 'absolute'));
           });
-          return inhalt.getBoundingClientRect().top + inhalt.scrollHeight;
-        });
-        if (ganzeHoehe)
-          await page.setViewportSize({
-            width: ansicht.breite,
-            height: Math.ceil(Math.max(ganzeHoehe * (ansicht.zoom ?? 1), ansicht.hoehe)),
+          // Ein Vollbild-Dialog deckt nur den Bildschirm; ein Ganzseiten-Bild zeigte die Seite darunter.
+          const vollbild = await page.evaluate(() => !!document.querySelector('dialog[open]'));
+          // „Welches Datum?“ scrollt als Ganzes: im Bogen die ganze Seite zeigen, nicht nur den Anfang.
+          const ganzeHoehe = await page.evaluate(() => {
+            // Ein Blatt nimmt höchstens 92 % des Bildschirms: so hoch, dass es ganz zu sehen ist.
+            const blatt = document.querySelector('dialog[open]:not(.ansicht)');
+            if (blatt) return blatt.scrollHeight / 0.92 + 8;
+            const inhalt = document.querySelector('dialog.ansicht .inhalt');
+            if (!inhalt) return 0;
+            // Der Ausschnitt hängt an vh: festhalten, sonst wächst er mit dem größeren Bild.
+            inhalt.querySelectorAll<HTMLElement>('.flaeche').forEach((f) => {
+              f.style.height = getComputedStyle(f).height;
+            });
+            return inhalt.getBoundingClientRect().top + inhalt.scrollHeight;
           });
-        const png = await page.screenshot({ fullPage: !vollbild });
-        if (ganzeHoehe)
-          await page.setViewportSize({ width: ansicht.breite, height: ansicht.hoehe });
-        await page.evaluate(() => {
-          document.body.style.position = '';
-          document.querySelectorAll<HTMLElement>('.leiste').forEach((e) => (e.style.position = ''));
-        });
-        bilder.push({ id: bild.id, gruppe: bild.gruppe, png: png.toString('base64') });
+          if (ganzeHoehe)
+            await page.setViewportSize({
+              width: ansicht.breite,
+              height: Math.ceil(Math.max(ganzeHoehe * (ansicht.zoom ?? 1), ansicht.hoehe)),
+            });
+          const png = await page.screenshot({ fullPage: !vollbild });
+          if (ganzeHoehe)
+            await page.setViewportSize({ width: ansicht.breite, height: ansicht.hoehe });
+          await page.evaluate(() => {
+            document.body.style.position = '';
+            document
+              .querySelectorAll<HTMLElement>('.leiste')
+              .forEach((e) => (e.style.position = ''));
+          });
+          bilder.push({ id: bild.id, gruppe: bild.gruppe, png: png.toString('base64') });
+        }
         if (bild.tastatur) {
           const c12 = await tastaturPruefen(page, ansicht);
           if (c12) fehler.c12 = c12;
@@ -2119,29 +2228,31 @@ test.describe('Prüfkatalog Stil C', () => {
       });
 
       // Kontaktbögen für die Sichtprüfung (eigene leere Seite, ohne CSP der App)
-      const bogenKontext = await page.context().browser()!.newContext({ deviceScaleFactor: 1.5 });
-      const bogen = await bogenKontext.newPage();
-      for (const gruppe of ['U', 'E', 'R', 'S', 'P', 'X', 'B', 'Z', 'D', 'G', 'N', 'H']) {
-        if (!bilder.some((b) => b.gruppe === gruppe)) continue;
-        await bogen.setViewportSize({ width: 1200, height: 800 });
-        await bogen.setContent(
-          `<body style="margin:0;background:#c9ccd6;display:flex;gap:30px;align-items:flex-start;width:max-content;font:14px sans-serif">` +
-            bilder
-              .filter((b) => b.gruppe === gruppe)
-              .map(
-                (b) =>
-                  `<figure style="margin:0"><figcaption style="padding:6px 0">${b.id}</figcaption><img style="display:block;width:${ansicht.breite}px${ansicht.grau ? ';filter:grayscale(1)' : ''}" src="data:image/png;base64,${b.png}"></figure>`,
-              )
-              .join('') +
-            '</body>',
-        );
-        await bogen.waitForLoadState('load');
-        await bogen.screenshot({
-          path: `docs/screenshots/bogen-${gruppe}-${ansicht.id}.png`,
-          fullPage: true,
-        });
+      if (BILDER_AN) {
+        const bogenKontext = await page.context().browser()!.newContext({ deviceScaleFactor: 1.5 });
+        const bogen = await bogenKontext.newPage();
+        for (const gruppe of ['U', 'E', 'R', 'S', 'P', 'X', 'B', 'Z', 'D', 'G', 'N', 'H']) {
+          if (!bilder.some((b) => b.gruppe === gruppe)) continue;
+          await bogen.setViewportSize({ width: 1200, height: 800 });
+          await bogen.setContent(
+            `<body style="margin:0;background:#c9ccd6;display:flex;gap:30px;align-items:flex-start;width:max-content;font:14px sans-serif">` +
+              bilder
+                .filter((b) => b.gruppe === gruppe)
+                .map(
+                  (b) =>
+                    `<figure style="margin:0"><figcaption style="padding:6px 0">${b.id}</figcaption><img style="display:block;width:${ansicht.breite}px${ansicht.grau ? ';filter:grayscale(1)' : ''}" src="data:image/png;base64,${b.png}"></figure>`,
+                )
+                .join('') +
+              '</body>',
+          );
+          await bogen.waitForLoadState('load');
+          await bogen.screenshot({
+            path: `docs/screenshots/bogen-${gruppe}-${ansicht.id}.png`,
+            fullPage: true,
+          });
+        }
+        await bogenKontext.close();
       }
-      await bogenKontext.close();
 
       expect(befunde).toEqual({});
     });

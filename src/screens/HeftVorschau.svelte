@@ -23,6 +23,7 @@
   import { lageAnwenden } from '../domain/lage';
   import { plzTabelle } from '../ui/plz.svelte';
   import Hauptbutton from '../ui/Hauptbutton.svelte';
+  import { passend } from '../ui/passend';
   import {
     entwurf,
     entwurfAusVorschau,
@@ -37,6 +38,9 @@
 
   const NB = ' ';
   const plugin = heftaInserat();
+  /** Titel der Karte: 19 px, ohne Foto 21 px (wie im CSS), bei langen Wörtern stufenweise kleiner. */
+  const STUFEN = ['19px/24px', '17px/21px', '15px/19px'];
+  const STUFEN_OHNE_FOTO = ['21px/26px', '19px/24px', '17px/21px', '15px/19px'];
   const ihr = $derived(
     // Ohne Haushalt „ihr“ (E74.4, Design 12.11.), sonst ab zwei Personen ohne Bürgen.
     !daten.ansicht ||
@@ -258,7 +262,10 @@
       {/if}
       <div class="t">
         {#if quelle}<p class="q">{quelle}</p>{/if}
-        <h2 class="titel">{alt ? heftTitel(alt).text : titel}</h2>
+        <!-- Lange Wörter wie „Landungsbrücken!“ brechen nie mitten im Wort (Prüfkatalog C2). -->
+        <h2 class="titel" use:passend={!entwurf.bild || alt ? STUFEN_OHNE_FOTO : STUFEN}>
+          {alt ? heftTitel(alt).text : titel}
+        </h2>
         {#if alt}
           {#if eckdaten(alt)}<p class="eckzeile">{eckdaten(alt)}</p>{/if}
         {:else if eck.length}

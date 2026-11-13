@@ -205,6 +205,11 @@ export function pruefen() {
       if (/sticky|fixed/.test(getComputedStyle(p).position)) return;
     for (const t of texte) {
       if (e.contains(t.el) || t.el.closest('.leiste')) continue;
+      // Ebenso umgekehrt: Ein Knopf rollt unter den Text einer festen Leiste („Heft anlegen“, Kontrolle).
+      let fest = false;
+      for (let p: Element | null = t.el; p && p !== document.body; p = p.parentElement)
+        if (/sticky|fixed/.test(getComputedStyle(p).position)) fest = true;
+      if (fest) continue;
       if (t.el.closest('dialog') !== e.closest('dialog')) continue;
       for (const tr of t.rects)
         if (
