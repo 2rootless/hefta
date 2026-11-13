@@ -48,6 +48,19 @@ function gebauterTitel(a: Heft['angaben'] | null, erstellt?: string): string {
   return `Wohnung vom ${d.getDate()}.${NB}${MONAT[d.getMonth()]}`;
 }
 
+/** Ab dieser Länge steht im Zurück-Link wieder das Wort „Heft“ (Planung P003). */
+export const ZURUECK_HOECHSTENS = 14;
+
+/**
+ * Text des Zurück-Links von den Seiten im Heft (P003): das Merkmal, sonst die Straße. Ist der Name 15 Zeichen
+ * oder länger oder fehlt er, `null`; dann steht dort „Heft“.
+ */
+export function zurueckZumHeft(h: Pick<Heft, 'adresse' | 'angaben'> | null): string | null {
+  if (!h) return null;
+  const name = (h.angaben?.merkmal ?? '').trim() || zeilen(h.adresse)[0] || h.adresse.trim();
+  return name && [...name].length <= ZURUECK_HOECHSTENS ? name : null;
+}
+
 /** Stadtteil, sonst der Ort aus der Adresse; leer, wenn beides fehlt. */
 export function heftOrt(h: Pick<Heft, 'adresse' | 'angaben'>): string {
   return (h.angaben?.stadtteil ?? '').trim() || ortAusAdresse(h.adresse);

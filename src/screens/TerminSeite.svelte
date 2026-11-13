@@ -6,7 +6,7 @@
   import { daten, db, stillLaden } from '../app/daten.svelte';
   import { abschliessen } from '../app/router.svelte';
   import { tagAus } from '../domain/fristen';
-  import { terminKurz } from '../domain/heftKarte';
+  import { terminKurz, zurueckZumHeft } from '../domain/heftKarte';
   import { stand, terminEntfernen, terminSetzen } from '../domain/heftStand';
   import { t } from '../i18n';
   import { heftAendern } from '../storage/speicher';
@@ -90,7 +90,7 @@
 
 <main class="seite">
   <header class="kopf">
-    <Zurueck href={`#/heft/${id}`} text={t('termin.zurueck')} />
+    <Zurueck href={`#/heft/${id}`} text={zurueckZumHeft(heft) ?? t('termin.zurueck')} />
   </header>
 
   {#if !heft}

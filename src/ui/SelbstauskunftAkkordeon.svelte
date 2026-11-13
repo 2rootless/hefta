@@ -309,7 +309,7 @@
           placeholder={t('selbstauskunft.erklaerenBeispiel')}></textarea>
       </label>
       {@const laenge = (eingabe.sa[ERKLAERUNG[f]] ?? '').length}
-      <!-- Nachricht 10.11. k: ruhiger Zähler ab 500, kein Hinweis in Koralle, das ist kein Fehler. -->
+      <!-- Nachricht 10.11. k: ruhiger Zähler ab 500, kein Hinweis im Akzent, das ist kein Fehler. -->
       <small class="zaehler" aria-live="polite"
         >{laenge >= ERLAEUTERUNG_ZAEHLER_AB
           ? t('selbstauskunft.zeichen', { n: laenge, max: ERLAEUTERUNG_MAX })

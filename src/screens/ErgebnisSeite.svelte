@@ -3,7 +3,7 @@
   // Hefta legt das Heft danach ab; „Wieder hervorholen“ im Heft nimmt das zurück.
   import { daten, db, stillLaden } from '../app/daten.svelte';
   import { abschliessen } from '../app/router.svelte';
-  import { heftTitel } from '../domain/heftKarte';
+  import { heftTitel, zurueckZumHeft } from '../domain/heftKarte';
   import { ergebnisSetzen } from '../domain/heftStand';
   import type { HeftEreignisse } from '../domain/modell';
   import { t } from '../i18n';
@@ -31,7 +31,7 @@
 
 <main class="seite">
   <header class="kopf">
-    <Zurueck href={`#/heft/${id}`} text={t('ergebnis.zurueck')} />
+    <Zurueck href={`#/heft/${id}`} text={zurueckZumHeft(heft) ?? t('ergebnis.zurueck')} />
   </header>
 
   {#if !heft}

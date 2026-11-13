@@ -24,7 +24,7 @@ const schriften = {
   titel: readFileSync(join(SCHRIFTEN, 'Archivo-ExtraBold-Wide.ttf')),
 };
 
-const FARBEN = ['#ff8466', '#b8e07c', '#e3b25a', '#ffadc9'];
+const FARBEN = ['#e9a970', '#b8e07c', '#e3b25a', '#ffadc9'];
 const BUERGE = '#c8abff';
 
 async function zeilen(

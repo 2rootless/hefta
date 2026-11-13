@@ -35,7 +35,7 @@ async function auftrag(teil: Partial<BewerbungAuftrag> = {}): Promise<BewerbungA
         person: {
           name: 'Max Mustermann',
           rolle: 'Hauptmieter',
-          farbe: '#ff8466',
+          farbe: '#e9a970',
           rolleId: 'hauptmieter',
         },
         teile: [

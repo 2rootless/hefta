@@ -117,7 +117,7 @@
       </button>
     </div>
     <GrafikPlatz name="erster-start" />
-    <p class="kasten">{t('wohnungen.kasten')}</p>
+    <p class="kasten">{t(mitHaushalt && !ihr ? 'wohnungen.kastenDu' : 'wohnungen.kastenIhr')}</p>
     <!-- Ohne Haushalt „ihr“ (E74.4). -->
     {#if istApp()}{@render anleitung(true)}{/if}
     {#if !istApp()}

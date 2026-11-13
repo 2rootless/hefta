@@ -4,7 +4,7 @@
   // setzt nur Hefta (B16).
   import { daten, db, stillLaden } from '../app/daten.svelte';
   import { abschliessen, gehe } from '../app/router.svelte';
-  import { heftTitel } from '../domain/heftKarte';
+  import { heftTitel, zurueckZumHeft } from '../domain/heftKarte';
   import { stand, standSetzen } from '../domain/heftStand';
   import { t, type TextSchluessel } from '../i18n';
   import { heftAendern } from '../storage/speicher';
@@ -52,7 +52,7 @@
 
 <main class="seite">
   <header class="kopf">
-    <Zurueck href={`#/heft/${id}`} text={t('standSetzen.zurueck')} />
+    <Zurueck href={`#/heft/${id}`} text={zurueckZumHeft(heft) ?? t('standSetzen.zurueck')} />
   </header>
 
   {#if !heft}

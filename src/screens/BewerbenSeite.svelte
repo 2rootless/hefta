@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { zurueckZumHeft } from '../domain/heftKarte';
   // Bewerben in einer Minute (Zeile 8, B23 `s=bewerben`, B12a, Planung 11i): Weg wählen (Portal, Mail,
   // Website), dann vier Schritte als Angebot: Anschreiben, was das Inserat wissen will, Mappe, Abschicken.
   // Jeder Schritt lässt sich überspringen. Hefta verschickt nichts selbst; es merkt sich, was hinausging,
@@ -275,7 +276,7 @@
 
 <main class="seite">
   <header class="kopf">
-    <Zurueck href={`#/heft/${id}`} text={strasse || t('termin.zurueck')} />
+    <Zurueck href={`#/heft/${id}`} text={zurueckZumHeft(heft) ?? t('termin.zurueck')} />
   </header>
 
   {#if !heft}

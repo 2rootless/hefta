@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  zurueckZumHeft,
   eckdaten,
   heftAdresseKurz,
   heftOrt,
@@ -102,5 +103,23 @@ describe('Karte der Besichtigung', () => {
   it('kurzes Datum', () => {
     expect(terminKurz(new Date(2026, 10, 12, 18).toISOString(), true)).toBe('Do, 18:00');
     expect(terminKurz(new Date(2026, 10, 6, 18).toISOString(), false)).toBe(`Fr, 6.${NB}Nov.`);
+  });
+});
+
+describe('Zurück-Link von den Seiten im Heft (P003)', () => {
+  const heft = (adresse: string, merkmal?: string) => ({
+    adresse,
+    angaben: merkmal ? ({ merkmal } as never) : undefined,
+  });
+  it('nimmt das Merkmal, sonst die Straße', () => {
+    expect(zurueckZumHeft(heft('Lindenallee 3\n20259 Hamburg', 'Mit Balkon'))).toBe('Mit Balkon');
+    expect(zurueckZumHeft(heft('Lindenallee 3\n20259 Hamburg'))).toBe('Lindenallee 3');
+  });
+  it('ab 15 Zeichen oder ohne Namen bleibt „Heft“', () => {
+    expect(zurueckZumHeft(heft('Lindenallee 3, EG'))).toBeNull(); // 17 Zeichen
+    expect(zurueckZumHeft(heft('Rosenweg 12345A'))).toBeNull(); // genau 15
+    expect(zurueckZumHeft(heft('Rosenweg 1234A'))).toBe('Rosenweg 1234A'); // 14
+    expect(zurueckZumHeft(heft(''))).toBeNull();
+    expect(zurueckZumHeft(null)).toBeNull();
   });
 });

@@ -4,6 +4,13 @@ import { chromium } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Seit D002 (Planung PC3) kommen App-Icon und Symbol der Erinnerungen aus design/d002 (scripts/icon-einsetzen.mjs).
+// Dieses Skript würde sie mit dem alten Symbol aus B11 auf Koralle überschreiben; darum läuft es nicht mehr.
+if (!process.env.B11_TROTZDEM) {
+  console.error('Veraltet seit D002: node scripts/icon-einsetzen.mjs benutzen.');
+  process.exit(1);
+}
+
 const B11 = 'design/symbole-b11/app';
 const IOS = 'ios/App/App/Assets.xcassets';
 const RES = 'android/app/src/main/res';
@@ -128,12 +135,12 @@ for (const [d, f] of DICHTEN) {
     fs.rmSync(`${RES}/drawable-${lage}-${d}`, { recursive: true, force: true });
 }
 fs.rmSync(`${RES}/drawable/splash.png`, { force: true });
-// Kreis von 160 dp in Koralle gleich ins Bild: Die Hintergrundfarbe des Symbols setzt nicht jede
+// Kreis von 160 dp im Grund des Icons gleich ins Bild: Die Hintergrundfarbe des Symbols setzt nicht jede
 // Android-Fassung um (Emulator, 7.11.).
 {
   const svg = fs
     .readFileSync(`${B11}/android/hefta-android-start-symbol-960.svg`, 'utf8')
-    .replace(/(<svg[^>]*>)/, '$1<circle cx="480" cy="480" r="320" fill="#ff8466"/>');
+    .replace(/(<svg[^>]*>)/, '$1<circle cx="480" cy="480" r="320" fill="#3f130b"/>');
   fs.writeFileSync(`${RES}/drawable-xxxhdpi/.start.svg`, svg);
   await png(`${RES}/drawable-xxxhdpi/start_symbol.png`, `${RES}/drawable-xxxhdpi/.start.svg`, 960);
   fs.rmSync(`${RES}/drawable-xxxhdpi/.start.svg`);

@@ -17,11 +17,11 @@
     </style>
 
 
-    <!-- Startbild nach B11: Symbol in Koralle im Kreis auf dem Grund der App, hell und dunkel. -->
+    <!-- Startbild nach D002: das adaptive Icon im Kreis auf dem Grund der App, hell und dunkel. -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/hefta_grund</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/start_symbol</item>
-        <item name="windowSplashScreenIconBackgroundColor">@color/hefta_koralle</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/hefta_zeichen</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

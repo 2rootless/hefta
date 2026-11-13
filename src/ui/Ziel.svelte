@@ -105,7 +105,7 @@
   }
 
   .fertig .rahmen {
-    fill: #ff8466;
+    fill: var(--app-zeichen);
     stroke: none;
   }
 
@@ -119,7 +119,7 @@
   }
 
   .fertig .klammer {
-    stroke: #ffffff;
+    stroke: var(--app-zeichen-haus);
     stroke-opacity: 1;
   }
 </style>

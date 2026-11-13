@@ -1,7 +1,7 @@
 <script lang="ts">
   // Blatt einer Person im Tab „Mappe“ (B12b, B18 Fassung 2 und 3): Der Kopf ist ein Reiter, der oben
   // aus dem Blatt ragt, mit Kachel, Name und Rolle. Darunter alle Unterlagen der Person, rechts der
-  // Stand: Haken, Ring in Koralle (fehlt), Marke „läuft bald ab“ oder „prüfen“ in Ocker.
+  // Stand: Haken, Ring im Akzent (fehlt), Marke „läuft bald ab“ oder „prüfen“ in Ocker.
   import {
     listenText,
     rollenText,

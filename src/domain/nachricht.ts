@@ -1,4 +1,3 @@
-import { APP_NAME } from '../app/name';
 import woerter from '../../data/nachricht.de.json';
 import type { Person } from './modell';
 import { betragText, type Einziehend, type HaushaltsAngaben, type Schritt } from './selbstauskunft';
@@ -97,103 +96,6 @@ export function angabenWerte(
   if (hh.haustiere === 'ja') werte.haustiere = hh.haustiereText.trim() || 'ja';
   if (hh.haustiere === 'nein') werte.haustiere = 'keine';
   return werte;
-}
-
-export interface NachrichtAuftrag {
-  name: string;
-  telefon: string;
-  mail: string;
-  /** „Hauptstraße 12, 3. OG links“; ohne: „die angebotene Wohnung“. */
-  wohnung: string;
-  satz: string;
-  /** Was mitgeht, mit Wert. */
-  angaben: Partial<Record<AngabeId, string>>;
-  mappe: boolean;
-}
-
-export function nachrichtText(a: NachrichtAuftrag): string {
-  const z: string[] = ['Guten Tag,', ''];
-  z.push(
-    a.wohnung
-      ? `ich interessiere mich für die Wohnung ${a.wohnung}.`
-      : 'ich interessiere mich für die angebotene Wohnung.',
-  );
-  if (a.satz.trim()) z.push(a.satz.trim());
-  const zeilen = ANGABEN.filter((x) => a.angaben[x.id]).map((x) => `${x.text}: ${a.angaben[x.id]}`);
-  if (zeilen.length) z.push('', ...zeilen);
-  z.push(
-    '',
-    a.mappe
-      ? 'Meine Bewerbungsmappe mit Selbstauskunft und Nachweisen hängt an.'
-      : 'Eine vollständige Bewerbungsmappe schicke ich gern, sobald Sie sie brauchen.',
-    'Über einen Besichtigungstermin freue ich mich.',
-    '',
-    'Freundliche Grüße',
-    a.name,
-  );
-  const kontakt = [a.telefon.trim(), a.mail.trim()].filter(Boolean).join(' · ');
-  if (kontakt) z.push(kontakt);
-  return z.join('\n');
-}
-
-/** Steckt in einem Punkt schon ein „und“, verbindet „sowie“: „Einzugstermin sowie Beruf und Arbeitgeber“. */
-const aufzaehlen = (l: string[]) => {
-  if (l.length < 2) return l[0] ?? '';
-  const verbinder = l.some((x) => x.includes(' und ')) ? 'sowie' : 'und';
-  return `${l.slice(0, -1).join(', ')} ${verbinder} ${l[l.length - 1]}`;
-};
-const imSatz = (id: AngabeId) => {
-  const a = ANGABEN.find((x) => x.id === id)!;
-  return a.imSatz ?? a.text;
-};
-const schrittVon = (id: AngabeId) => ANGABEN.find((a) => a.id === id)!.schritt;
-
-/** Der eine Satz unter der Nachricht (PN3): sagt zu jeder Ergänzung, warum sie dasteht. */
-export function erklaerung({
-  mitText,
-  gefragt,
-  dabei,
-  unzulaessig,
-  mailImInserat,
-  unterlagenGefragt,
-}: {
-  /** Ist überhaupt ein Inseratstext da? Ohne ihn sagt der Satz nichts über das Inserat. */
-  mitText: boolean;
-  gefragt: AngabeId[];
-  dabei: AngabeId[];
-  unzulaessig: string[];
-  mailImInserat: boolean;
-  unterlagenGefragt: boolean;
-}): string {
-  const s: string[] = [];
-  if (dabei.length) {
-    s.push(`Mit ${aufzaehlen(dabei.map(imSatz))}, weil das Inserat danach fragt.`);
-    const spaet = dabei.filter((id) => schrittVon(id) !== 'besichtigung');
-    if (spaet.length)
-      s.push(
-        `${spaet.length === 1 ? 'Das' : 'Diese Angaben'} sieht die Datenschutzkonferenz erst ab dem Mietwunsch vor; du gibst hier mehr als nötig.`,
-      );
-  } else {
-    s.push(
-      mitText && !gefragt.length
-        ? 'Name und Telefon genügen für die erste Nachricht. Mehr verlangt das Inserat nicht.'
-        : 'Name und Telefon genügen für die erste Nachricht.',
-    );
-  }
-  const fehlend = gefragt.filter((id) => !dabei.includes(id));
-  if (fehlend.length)
-    s.push(
-      `Nach ${aufzaehlen(fehlend.map(imSatz))} fragt das Inserat auch; das steht nicht in der Nachricht.`,
-    );
-  if (unzulaessig.length)
-    s.push(
-      `Nicht dabei: ${aufzaehlen(unzulaessig)}. Diese Fragen halten die Datenschutzbehörden für unzulässig, und ${APP_NAME} fragt sie nicht ab.`,
-    );
-  if (mailImInserat)
-    s.push('Das Inserat nennt eine Mailadresse; dort kannst du die Mappe gleich anhängen.');
-  else if (unterlagenGefragt)
-    s.push('Das Inserat fragt nach Unterlagen; du kannst die Mappe anhängen.');
-  return s.join(' ');
 }
 
 /** Mail mit fertigem Text. Einen Anhang kann so ein Link nicht tragen. */

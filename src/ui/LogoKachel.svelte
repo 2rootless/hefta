@@ -1,5 +1,6 @@
 <script lang="ts">
-  // Die Kachel: weiße Klammer auf Koralle wie das App-Symbol, in allen Themen gleich (design/logo).
+  // Die Kachel: Klammer in Papier auf dem Deckel des App-Icons, in allen Themen gleich (D002, design/logo).
+  // Nur die Klammer: Die Seiten des Icons wären hier zu fein.
   import { KLAMMER } from '../domain/logo';
   import { t } from '../i18n';
 
@@ -14,7 +15,12 @@
   role="img"
   aria-label={t('logo.alt')}
 >
-  <rect width={groesse} height={groesse} rx={Math.round(groesse * 0.225)} fill="#ff8466" />
+  <rect
+    width={groesse}
+    height={groesse}
+    rx={Math.round(groesse * 0.225)}
+    fill="var(--app-zeichen)"
+  />
   <svg
     x={(groesse - marke) / 2}
     y={(groesse - marke) / 2}
@@ -25,7 +31,7 @@
     <path
       d={KLAMMER}
       fill="none"
-      stroke="#ffffff"
+      stroke="var(--app-zeichen-haus)"
       stroke-width="3.2"
       stroke-linecap="round"
       stroke-linejoin="round"

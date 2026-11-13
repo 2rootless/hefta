@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- App-Symbol nach B11: Koralle als Farbe, Marke im Vordergrund, einfarbig für getönte Symbole. -->
+<!-- App-Icon nach D002: Grund #3f130b, Deckel, Klammer und Seiten im Vordergrund, einfarbig für getönte Symbole. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background"/>
     <foreground android:drawable="@mipmap/ic_launcher_foreground"/>

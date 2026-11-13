@@ -5,7 +5,7 @@
   // leeres Feld heißt: wieder der Vorschlag von Hefta.
   import { daten, db, stillLaden } from '../app/daten.svelte';
   import { zurueckGehen } from '../app/router.svelte';
-  import { heftTitel } from '../domain/heftKarte';
+  import { heftTitel, zurueckZumHeft } from '../domain/heftKarte';
   import type { HeftAngaben } from '../domain/modell';
   import { t } from '../i18n';
   import { heftAendern } from '../storage/speicher';
@@ -66,7 +66,7 @@
 
 <main class="seite">
   <header class="kopf">
-    <Zurueck href={`#/heft/${id}`} text={t('merkmal.zurueck')} />
+    <Zurueck href={`#/heft/${id}`} text={zurueckZumHeft(heft) ?? t('merkmal.zurueck')} />
   </header>
 
   {#if !heft}

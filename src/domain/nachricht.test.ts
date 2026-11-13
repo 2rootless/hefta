@@ -1,26 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import beispiele from '../../data/nachricht-faelle.de.json';
-import {
-  ANGABEN,
-  angabenWerte,
-  erkennen,
-  erklaerung,
-  mailLink,
-  nachrichtText,
-  type AngabeId,
-} from './nachricht';
+import { ANGABEN, angabenWerte, erkennen, mailLink } from './nachricht';
 
 const text = (name: string) => beispiele.faelle.find((f) => f.name === name)!.text;
-
-const AUFTRAG = {
-  name: 'Max Mustermann',
-  telefon: '0151 23456789',
-  mail: 'max.mustermann@example.com',
-  wohnung: 'Hauptstraße 12, 3. OG links',
-  satz: 'Wir sind ein ruhiges Paar.',
-  angaben: {},
-  mappe: false,
-};
 
 describe('PN4: Erkennen im Inseratstext', () => {
   // Jeder Fall mit Text und Erwartung steht in data/nachricht-faelle.de.json: Neuer Fall, neue Zeile.
@@ -44,121 +26,6 @@ describe('PN4: Erkennen im Inseratstext', () => {
   it('nennt die Mailadresse aus dem Text', () => {
     expect(erkennen(text('mail')).mail).toBe('vermietung@beispiel-hausverwaltung.de');
     expect(erkennen(text('kontakt')).mail).toBeNull();
-  });
-});
-
-describe('Die Nachricht', () => {
-  it('PN1: ohne Inseratstext nur Name, Kontakt, Wohnung und Satz', () => {
-    expect(nachrichtText(AUFTRAG)).toBe(
-      [
-        'Guten Tag,',
-        '',
-        'ich interessiere mich für die Wohnung Hauptstraße 12, 3. OG links.',
-        'Wir sind ein ruhiges Paar.',
-        '',
-        'Eine vollständige Bewerbungsmappe schicke ich gern, sobald Sie sie brauchen.',
-        'Über einen Besichtigungstermin freue ich mich.',
-        '',
-        'Freundliche Grüße',
-        'Max Mustermann',
-        '0151 23456789 · max.mustermann@example.com',
-      ].join('\n'),
-    );
-  });
-
-  it('ohne Wohnung, ohne Satz, mit Mappe', () => {
-    const t = nachrichtText({ ...AUFTRAG, wohnung: '', satz: '', mappe: true });
-    expect(t).toContain('für die angebotene Wohnung.');
-    expect(t).toContain('Meine Bewerbungsmappe mit Selbstauskunft und Nachweisen hängt an.');
-    expect(t).not.toContain('sobald Sie sie brauchen');
-  });
-
-  it('Ergänzungen stehen als kurze Zeilen, in fester Reihenfolge', () => {
-    const t = nachrichtText({
-      ...AUFTRAG,
-      angaben: { einkommen: '2.643 € netto im Monat', adresse: 'Alte Straße 7, 22765 Hamburg' },
-    });
-    expect(t).toContain('Adresse: Alte Straße 7, 22765 Hamburg\nEinkommen: 2.643 € netto im Monat');
-  });
-
-  it('PN2: Unzulässiges steht nie in der Nachricht', () => {
-    const { angaben } = erkennen(text('unzulaessig'));
-    const t = nachrichtText({
-      ...AUFTRAG,
-      angaben: Object.fromEntries(angaben.map((a) => [a, 'x'])),
-    });
-    for (const wort of ['Ausweis', 'Familienstand', 'Staatsangehörigkeit'])
-      expect(t).not.toContain(wort);
-    expect(ANGABEN.map((a) => a.text).join()).not.toMatch(/Ausweis|Familienstand|Religion/);
-  });
-});
-
-describe('Der Satz darunter', () => {
-  const satz = (teil: Partial<Parameters<typeof erklaerung>[0]>) =>
-    erklaerung({
-      mitText: true,
-      gefragt: [],
-      dabei: [],
-      unzulaessig: [],
-      mailImInserat: false,
-      unterlagenGefragt: false,
-      ...teil,
-    });
-
-  it('sagt ohne Inseratstext nichts über das Inserat', () => {
-    expect(satz({ mitText: false })).toBe('Name und Telefon genügen für die erste Nachricht.');
-    expect(satz({})).toContain('Mehr verlangt das Inserat nicht.');
-  });
-
-  it('PN3: Jede Ergänzung ist begründet, ab dem Mietwunsch mit „mehr als nötig“', () => {
-    const nur: AngabeId[] = ['adresse'];
-    expect(satz({ gefragt: nur, dabei: nur })).toBe('Mit Adresse, weil das Inserat danach fragt.');
-    const t = satz({ gefragt: ['adresse', 'einkommen'], dabei: ['adresse', 'einkommen'] });
-    expect(t).toContain('Mit Adresse und Einkommen, weil das Inserat danach fragt.');
-    expect(t).toContain('du gibst hier mehr als nötig');
-  });
-
-  it('sagt, wonach gefragt wird, das nicht in der Nachricht steht', () => {
-    expect(satz({ gefragt: ['haustiere', 'einkommen'], dabei: ['einkommen'] })).toContain(
-      'Nach Haustieren fragt das Inserat auch',
-    );
-  });
-
-  it('Steckt in einem Punkt schon ein „und“, verbindet „sowie“: nie zwei „und“ hintereinander', () => {
-    const zwei: AngabeId[] = ['einzug', 'beruf'];
-    expect(satz({ gefragt: zwei })).toContain(
-      'Nach Einzugstermin sowie Beruf und Arbeitgeber fragt das Inserat auch',
-    );
-    const drei: AngabeId[] = ['einzug', 'beruf', 'einkommen'];
-    expect(satz({ gefragt: drei, dabei: drei })).toContain(
-      'Mit Einzugstermin, Beruf und Arbeitgeber sowie Einkommen, weil',
-    );
-    expect(satz({ gefragt: ['beruf'], dabei: ['beruf'] })).toContain(
-      'Mit Beruf und Arbeitgeber, weil',
-    );
-    const ohne: AngabeId[] = ['adresse', 'einzug', 'einkommen'];
-    expect(satz({ gefragt: ohne, dabei: ohne })).toContain(
-      'Mit Adresse, Einzugstermin und Einkommen, weil',
-    );
-  });
-
-  it('Im Satz stehen die Angaben so, wie man sie sagt, nicht wie die Zeile heißt', () => {
-    const beide: AngabeId[] = ['einzug', 'personen'];
-    expect(satz({ gefragt: beide, dabei: beide })).toContain(
-      'Mit Einzugstermin und Personenzahl, weil das Inserat danach fragt.',
-    );
-  });
-
-  it('Unzulässiges als Einschätzung der Behörden, nie als „darf nicht“', () => {
-    const t = satz({ unzulaessig: ['Ausweiskopie', 'Religion'] });
-    expect(t).toContain('Nicht dabei: Ausweiskopie und Religion.');
-    expect(t).toContain('halten die Datenschutzbehörden für unzulässig');
-    expect(t).not.toMatch(/dürfen|darf/);
-  });
-
-  it('Mailadresse und Unterlagen', () => {
-    expect(satz({ mailImInserat: true })).toContain('Das Inserat nennt eine Mailadresse');
-    expect(satz({ unterlagenGefragt: true })).toContain('fragt nach Unterlagen');
   });
 });
 
@@ -196,9 +63,6 @@ describe('Werte aus den Angaben', () => {
     expect(angabenWerte(person, wer, hh, 'Ab sofort').einzug).toBe('sofort');
     expect(angabenWerte(person, wer, hh, '  ').einzug).toBeUndefined();
     expect(angabenWerte(person, wer, hh).einzug).toBeUndefined();
-    expect(nachrichtText({ ...AUFTRAG, angaben: { einzug: '1. Januar 2027' } })).toContain(
-      'Einzug ab: 1. Januar 2027',
-    );
   });
 
   it('Anschrift nur, wenn sie eingetragen ist', () => {

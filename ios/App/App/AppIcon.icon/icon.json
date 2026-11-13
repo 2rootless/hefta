@@ -97,11 +97,11 @@
           "name" : "Seite 1",
           "opacity-specializations" : [
             {
-              "value" : 0.95
+              "value" : 0.9
             },
             {
               "appearance" : "dark",
-              "value" : 0.44
+              "value" : 0.42
             }
           ]
         },
@@ -124,11 +124,11 @@
           "name" : "Seite 2",
           "opacity-specializations" : [
             {
-              "value" : 0.78
+              "value" : 0.81
             },
             {
               "appearance" : "dark",
-              "value" : 0.32
+              "value" : 0.36
             }
           ]
         },
@@ -151,11 +151,11 @@
           "name" : "Seite 3",
           "opacity-specializations" : [
             {
-              "value" : 0.58
+              "value" : 0.72
             },
             {
               "appearance" : "dark",
-              "value" : 0.22
+              "value" : 0.3
             }
           ]
         }

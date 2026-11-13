@@ -33,7 +33,7 @@ const max = {
   name: 'Max Mustermann',
   rolle: 'Hauptmieter',
   beruf: 'Elektroniker',
-  farbe: '#ff8466',
+  farbe: '#e9a970',
 };
 const lea = { name: 'Lea Mustermann', rolle: 'Mitmieterin', farbe: '#b8e07c' };
 const petra = { name: 'Petra Mustermann', rolle: 'Bürgin', farbe: '#c8abff', buerge: true };
@@ -837,15 +837,15 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
 
       it('Personenfarbe ist die der Hauptperson, gibt es keine, die der ersten', () => {
         const aussehen = { art: 'personen' } as const;
-        const koralle = flaechenTon('personen', undefined, '#ff8466');
+        const apricot = flaechenTon('personen', undefined, '#e9a970');
         const gruen = flaechenTon('personen', undefined, '#b8e07c');
-        expect(koralle).not.toBe(gruen);
+        expect(apricot).not.toBe(gruen);
         expect(
-          leistenTon(aussehen, [block('#ff8466', 'mitmieter'), block('#b8e07c', 'hauptmieter')]),
+          leistenTon(aussehen, [block('#e9a970', 'mitmieter'), block('#b8e07c', 'hauptmieter')]),
         ).toBe(gruen);
         expect(
-          leistenTon(aussehen, [block('#ff8466', 'mitmieter'), block('#b8e07c', 'mitmieter')]),
-        ).toBe(koralle);
+          leistenTon(aussehen, [block('#e9a970', 'mitmieter'), block('#b8e07c', 'mitmieter')]),
+        ).toBe(apricot);
       });
 
       it('Akzentfarbe, Hellgrau und Keine', () => {

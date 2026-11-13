@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { zurueckZumHeft } from '../domain/heftKarte';
   // Löschbitte und „Kurz nachfragen“ (B18 `s=loeschbitte`, `s=nachfassen`; Zeile 9): eine kurze Mail mit
   // Betreff und Text, die man vor dem Öffnen ändern kann. Hefta verschickt nichts selbst; es merkt sich,
   // dass die Mail geöffnet wurde. Ob der Vermieter gelöscht hat, kann Hefta nicht wissen.
@@ -84,7 +85,7 @@
 
 <main class="seite">
   <header class="kopf">
-    <Zurueck href={`#/heft/${id}`} text={t('heftMail.zurueck')} />
+    <Zurueck href={`#/heft/${id}`} text={zurueckZumHeft(heft) ?? t('heftMail.zurueck')} />
   </header>
 
   {#if !heft}

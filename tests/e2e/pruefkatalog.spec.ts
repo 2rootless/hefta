@@ -1250,8 +1250,7 @@ const BILDER: Bild[] = [
       await page.evaluate(() => (location.hash = '#/wohnung-neu'));
       await page.waitForFunction(() => typeof (window as never)['__einsetzen'] === 'function');
       await page.evaluate(
-        (url) =>
-          (window as never as { __einsetzen: (x: unknown) => void }).__einsetzen({ url }),
+        (url) => (window as never as { __einsetzen: (x: unknown) => void }).__einsetzen({ url }),
         IS24.url,
       );
       await page.getByRole('heading', { level: 2, name: KATALOG_TITEL }).waitFor();

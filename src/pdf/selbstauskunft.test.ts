@@ -56,7 +56,7 @@ async function bauen(
     name: 'Max Mustermann',
     rolle: rolleText,
     buerge: rolle === 'buerge',
-    farbe: '#ff8466',
+    farbe: '#e9a970',
     bloecke: selbstauskunftBloecke(person, rolle, WER, HH, teil.schritt ?? 'zusage', { rolleText }),
     ortDatum: 'Hamburg, 6. November 2026',
     schriften: pdfSchriften(),
