@@ -7,6 +7,7 @@
   // Wünschen. Fragen für die Besichtigung, Fotos und „Was hinausging“ kommen mit Schritt 8 und 9.
   import { daten, db, stillLaden } from '../app/daten.svelte';
   import { istApp } from '../app/plattform';
+  import { erinnerungenMoeglich, mitteilungen } from '../app/erinnerungen.svelte';
   import { eckdaten, heftAdresseKurz, heftTitel, tagKurz, terminKurz } from '../domain/heftKarte';
   import {
     ergebnisSetzen,
@@ -22,7 +23,9 @@
   import { abweichungen, urteile } from '../domain/urteile';
   import { t, type TextSchluessel } from '../i18n';
   import { wohnungAus } from '../lesen/angaben';
-  import { heftAendern } from '../storage/speicher';
+  import { einstellungenAendern, heftAendern } from '../storage/speicher';
+  import Rueckmeldung from '../ui/Rueckmeldung.svelte';
+  import { untrack } from 'svelte';
   import TabLeiste from '../ui/TabLeiste.svelte';
   import { inDenKalender } from '../ui/kalenderEintrag';
   import BesichtigungsFragen from '../ui/BesichtigungsFragen.svelte';
@@ -62,6 +65,34 @@
   // Ohne Haushalt führt „Wer zieht ein?“ in die Einrichtung, wie der Tab „Mappe“.
   const haushaltZiel = $derived(
     homescreenFragen(daten.einstellungen) ? '#/homescreen/einrichtung' : '#/einrichtung',
+  );
+
+  // Moment der Rückmeldung (B19, Zeile 9b): nur, wenn er beim Öffnen des Hefts noch offen war. So bleibt
+  // er nach einer Antwort stehen und zeigt „Danke“, kommt danach aber nie wieder.
+  const momentDa = untrack(
+    () =>
+      !daten.einstellungen?.rueckmeldungMomentFertig &&
+      !daten.einstellungen?.rueckmeldung?.geholfen,
+  );
+  $effect(() => {
+    if (
+      daten.einstellungen?.rueckmeldung?.geholfen &&
+      !daten.einstellungen.rueckmeldungMomentFertig
+    )
+      void momentFertig(false);
+  });
+  async function momentFertig(sofortWeg = true) {
+    await einstellungenAendern(await db(), { rueckmeldungMomentFertig: true });
+    await stillLaden();
+    if (sofortWeg) momentWeg = true;
+  }
+  let momentWeg = $state(false);
+
+  // Hefta erinnert selbst: in der App unter iOS, Schalter an, Mitteilungen nicht verboten.
+  const leiseBescheid = $derived(
+    erinnerungenMoeglich() &&
+      daten.einstellungen?.erinnerungBesichtigungen !== false &&
+      mitteilungen.erlaubt !== false,
   );
 
   let kalenderMeldung = $state('');
@@ -228,7 +259,18 @@
       {:else if st === 'beworben'}
         <div class="nx">
           <b>{beworbenWort}</b>
-          <p>{t(ihr ? 'heft.beworbenSatzIhr' : 'heft.beworbenSatzDu')}</p>
+          <!-- E90.2: „sagt Hefta leise Bescheid“ nur, wo Hefta wirklich erinnert. -->
+          <p>
+            {t(
+              leiseBescheid
+                ? ihr
+                  ? 'heft.beworbenSatzLeiseIhr'
+                  : 'heft.beworbenSatzLeiseDu'
+                : ihr
+                  ? 'heft.beworbenSatzIhr'
+                  : 'heft.beworbenSatzDu',
+            )}
+          </p>
           <a class="knopf breit" href={`#/heft/${heft.id}/termin`}
             ><Symbol name="kalender" groesse={20} />{t('heft.terminEintragen')}</a
           >
@@ -279,6 +321,15 @@
             onclick={() => ereignisse(hervorholen(heft.ereignisse))}>{t('heft.hervorholen')}</button
           >
         </div>
+        {#if momentDa && !momentWeg && (heft.ereignisse.ergebnis?.art === 'zusage' || heft.ereignisse.ergebnis?.art === 'absage')}
+          <!-- B19-10 bis 15: der eine Moment, gleich unter dem Ergebnis, einmal je Gerät. -->
+          <div class="moment">
+            <Rueckmeldung fragen={['geholfen']} />
+            <button class="leis" type="button" onclick={() => momentFertig()}
+              >{t('rueckmeldung.nichtMehrFragen')}</button
+            >
+          </div>
+        {/if}
       {:else if standFragen(heft.ereignisse) && heft.ereignisse.beworben}
         <!-- „Stimmt der Stand?“ (B16, B21): einmal, wenn etwas hinausging, Hefta das Absenden aber nicht
              sicher weiß. -->
@@ -701,6 +752,18 @@
   }
 
   .nx .leis {
+    margin-top: 0;
+  }
+
+  /* B19: auf einem Blatt ohne eigene Farbe, gleich unter dem Ergebnis. */
+  .moment {
+    margin-top: 12px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+  }
+
+  .moment .leis {
     margin-top: 0;
   }
 

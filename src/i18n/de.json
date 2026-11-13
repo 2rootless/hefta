@@ -21,6 +21,7 @@
   },
   "rueckmeldung": {
     "titel": "Über {app}",
+    "nichtMehrFragen": "Nicht mehr fragen",
     "fragen": {
       "geholfen": "Hat dir {app} bei der Bewerbung geholfen?",
       "naechstes": "Was soll {app} als Nächstes können?",
@@ -308,6 +309,10 @@
     "gesichert": "Gesichert. Letztes Backup: gerade eben.",
     "eingespielt": "Eingespielt, Stand {stand}: {unterlagen}. {personen}",
     "aussehen": "Aussehen",
+    "erinnerungen": "Erinnerungen",
+    "erinnerungBesichtigungen": "Besichtigungen und Nachfassen",
+    "erinnerungGehalt": "Neuer Monat beim Gehaltsnachweis",
+    "mitteilungenAus": "Mitteilungen von {app} sind in den Einstellungen des iPhone aus. Dort lassen sie sich einschalten.",
     "aussehenSystem": "System",
     "aussehenHell": "Hell",
     "aussehenDunkel": "Dunkel"
@@ -1562,6 +1567,8 @@
     "beworbenTage": "Beworben am {datum}, seit {tage} Tagen",
     "beworbenSatzIhr": "Meldet sich jemand, tragt den Termin ein. Nach drei Wochen ohne Antwort steht das Heft bei „Keine Antwort“.",
     "beworbenSatzDu": "Meldet sich jemand, trag den Termin ein. Nach drei Wochen ohne Antwort steht das Heft bei „Keine Antwort“.",
+    "beworbenSatzLeiseIhr": "Meldet sich jemand, tragt den Termin ein. Nach drei Wochen ohne Antwort sagt {app} leise Bescheid.",
+    "beworbenSatzLeiseDu": "Meldet sich jemand, trag den Termin ein. Nach drei Wochen ohne Antwort sagt {app} leise Bescheid.",
     "terminEintragen": "Termin eintragen",
     "inDenKalender": "In den Kalender",
     "terminAendern": "Termin ändern",
@@ -1840,6 +1847,15 @@
     "mehrDu": "Beim ersten Mal steht {app} oft erst unter „Mehr“, am Ende der Reihe. Dort kannst du es nach vorn holen.",
     "zweit": "Oder den Link kopieren und auf „Wohnung hinzufügen“ einsetzen.",
     "schritt4": "Danach zeigt {app} eine kleine Vorschau. Passt sie, „Ja, einlesen“ tippen."
+  },
+  "erinnerung": {
+    "vorabendTitel": "Morgen Besichtigung",
+    "baldTitel": "In einer Stunde: Besichtigung",
+    "terminText": "{titel}, um {uhr}.",
+    "keineAntwortTitel": "Noch keine Antwort",
+    "keineAntwortText": "{titel}: seit drei Wochen. Kurz nachfragen oder ablegen, das geht im Heft.",
+    "gehaltTitel": "Neuer Monat",
+    "gehaltText": "Die Gehaltsabrechnung von {name} für {monat} ist meist jetzt da."
   },
   "heftMail": {
     "zurueck": "Heft",

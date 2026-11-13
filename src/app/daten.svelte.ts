@@ -66,6 +66,10 @@ async function laden(): Promise<void> {
   daten.einstellungen = einstellungen;
   daten.geladen = true;
   daten.fehler = null;
+  // Erinnerungen folgen dem Stand (nur in der App unter iOS); ein Fehler dort stört das Laden nicht.
+  void import('./erinnerungen.svelte')
+    .then((m) => m.erinnerungenAbgleichen({ hefte, ansicht, einstellungen }))
+    .catch(() => {});
 }
 
 export async function neuLaden(): Promise<void> {

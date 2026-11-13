@@ -40,6 +40,14 @@ export interface HeftaNativPlugin {
   }>;
   /** Nur iOS: Teilen-Blatt, das Mail-Apps den Betreff mitgibt (ohne Konto in Apple Mail). */
   teilen(o: { dateien: string[]; text?: string; betreff: string }): Promise<{ geteilt: boolean }>;
+  /** Nur iOS: Erinnerungen neu planen (Zeile 9). `erlaubt`: Mitteilungen sind erlaubt. */
+  erinnerungenSetzen(o: {
+    liste: { nummer: number; am: number; titel: string; text: string; ziel: string }[];
+  }): Promise<{ erlaubt: boolean }>;
+  addListener(
+    ereignis: 'erinnerung',
+    aufruf: (daten: { ziel: string }) => void,
+  ): Promise<PluginListenerHandle>;
   addListener(
     ereignis: 'eingang',
     aufruf: (daten: { dateien: EmpfangeneDatei[] }) => void,

@@ -103,3 +103,57 @@ test('„Keine Antwort“ im Heft: nachfragen und Löschbitte, Hefta merkt sich 
   await page.getByRole('button', { name: 'Ablegen', exact: true }).click();
   await expect(page.getByText('Das Heft liegt bei den abgelegten.')).toBeVisible();
 });
+
+test('Moment der Rückmeldung nach der Zusage: einmal, „Nicht mehr fragen“ beendet ihn (B19)', async ({
+  page,
+}) => {
+  await haushaltMitMax(page);
+  await page.evaluate(
+    () =>
+      new Promise<void>((fertig, fehler) => {
+        const r = indexedDB.open('hefta');
+        r.onsuccess = () => {
+          const db = r.result;
+          const tx = db.transaction(['hefte'], 'readwrite');
+          const vor = new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString();
+          tx.objectStore('hefte').put({
+            id: 'besucht',
+            createdAt: vor,
+            updatedAt: vor,
+            haushaltId: null,
+            adresse: 'Weg 9\n20259 Hamburg',
+            link: null,
+            quelle: '',
+            inseratText: null,
+            kennung: 'k-besucht',
+            ereignisse: {
+              beworben: { am: vor, weg: 'mail', sicher: true },
+              gefragtAm: null,
+              termin: {
+                am: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
+                ort: '',
+                treffpunkt: '',
+              },
+              ergebnis: null,
+            },
+            notiz: '',
+          });
+          tx.oncomplete = () => {
+            db.close();
+            fertig();
+          };
+          tx.onerror = () => fehler(tx.error);
+        };
+        r.onerror = () => fehler(r.error);
+      }),
+  );
+  await page.goto('/#/heft/besucht');
+  await page.reload();
+  await expect(page.getByText('Hat dir Hefta bei der Bewerbung geholfen?')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Zusage', exact: true }).click();
+  await expect(page.getByText('Hat dir Hefta bei der Bewerbung geholfen?')).toBeVisible();
+  await page.getByRole('button', { name: 'Nicht mehr fragen' }).click();
+  await expect(page.getByText('Hat dir Hefta bei der Bewerbung geholfen?')).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByText('Hat dir Hefta bei der Bewerbung geholfen?')).toHaveCount(0);
+});

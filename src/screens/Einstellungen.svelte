@@ -18,6 +18,10 @@
   import Zurueck from '../ui/Zurueck.svelte';
   import { homescreenFragen } from '../ui/homescreen';
   import { aussehenSetzen, aussehenWahl, type Aussehen } from '../app/theme';
+  import { erinnerungenMoeglich, mitteilungen } from '../app/erinnerungen.svelte';
+  import { einstellungenAendern } from '../storage/speicher';
+  import { stillLaden } from '../app/daten.svelte';
+  import SchalterZeile from '../ui/SchalterZeile.svelte';
 
   const meldung = einstellungenZustand.meldung;
   einstellungenZustand.meldung = '';
@@ -68,6 +72,14 @@
 
   // Stand des Regelkatalogs als „Oktober 2026“ (mit Jahr, darum ein Bezugsdatum in einem anderen Jahr).
   const stand = monatName(KATALOG_STAND.slice(0, 7), new Date(0));
+
+  async function erinnerungUmschalten(
+    feld: 'erinnerungBesichtigungen' | 'erinnerungGehalt',
+    an: boolean,
+  ) {
+    await einstellungenAendern(await db(), { [feld]: an });
+    await stillLaden();
+  }
 
   // Aussehen (Auftraggeber, 12.11.): System, Hell oder Dunkel, nur auf diesem Gerät.
   let aussehen = $state<Aussehen>(aussehenWahl());
@@ -199,6 +211,40 @@
     </ul>
   </section>
 
+  {#if erinnerungenMoeglich()}
+    <!-- Zeile 9, B21: zwei Schalter; beide sind an, bis man sie ausschaltet. -->
+    <section class="abschnitt" aria-labelledby="g-erinnerungen">
+      <h2 id="g-erinnerungen">{t('einstellungen.erinnerungen')}</h2>
+      <ul class="zeilen">
+        <li>
+          <SchalterZeile
+            an={daten.einstellungen?.erinnerungBesichtigungen !== false}
+            titel={t('einstellungen.erinnerungBesichtigungen')}
+            onclick={() =>
+              void erinnerungUmschalten(
+                'erinnerungBesichtigungen',
+                daten.einstellungen?.erinnerungBesichtigungen === false,
+              )}
+          />
+        </li>
+        <li>
+          <SchalterZeile
+            an={daten.einstellungen?.erinnerungGehalt !== false}
+            titel={t('einstellungen.erinnerungGehalt')}
+            onclick={() =>
+              void erinnerungUmschalten(
+                'erinnerungGehalt',
+                daten.einstellungen?.erinnerungGehalt === false,
+              )}
+          />
+        </li>
+      </ul>
+      {#if mitteilungen.erlaubt === false}
+        <p class="hinweis-klein">{t('einstellungen.mitteilungenAus')}</p>
+      {/if}
+    </section>
+  {/if}
+
   <section class="abschnitt" aria-labelledby="g-ueber">
     <h2 id="g-ueber">{t('rueckmeldung.titel')}</h2>
     <!-- E54 (B19 Fassung 4 und 5): Antworten zum Antippen, mit Rückfrage; längere Kommentare per Mail. -->
@@ -299,6 +345,12 @@
 
 <style>
   /* Der Schalter unter der Beschriftung, über die volle Breite: passt auch bei 320 px mit 130 %. */
+  .hinweis-klein {
+    margin: 8px 4px 0;
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
+  }
+
   .aussehen-zeile {
     flex-direction: column;
     align-items: stretch;

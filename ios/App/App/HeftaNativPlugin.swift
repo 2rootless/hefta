@@ -5,6 +5,7 @@ import MessageUI
 import Network
 import UIKit
 import UniformTypeIdentifiers
+import UserNotifications
 import WebKit
 
 /// Eigene Gerätefunktionen der App: PDFs von anderen Apps empfangen und Dateien über den
@@ -20,7 +21,8 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
         CAPPluginMethod(name: "termin", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "aussehen", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "mail", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "teilen", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "teilen", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "erinnerungenSetzen", returnType: CAPPluginReturnPromise)
     ]
 
     private var sichernAufruf: CAPPluginCall?
@@ -37,6 +39,54 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
             name: .capacitorOpenURL,
             object: nil
         )
+        // Tipp auf eine Erinnerung von Hefta: Capacitor reicht lokale Mitteilungen hierher weiter.
+        bridge?.notificationRouter.localNotificationHandler = self
+    }
+
+    // MARK: - Erinnerungen (Zeile 9, B21)
+
+    private static let erinnerungsVorsatz = "hefta-erinnerung-"
+
+    /// Plant die Erinnerungen neu: alte von Hefta weg, die neue Liste hinein. Fragt beim ersten Mal, sobald es
+    /// etwas zu erinnern gibt, nach der Erlaubnis. Antwort: `erlaubt`, damit die Einstellungen es zeigen können.
+    @objc func erinnerungenSetzen(_ call: CAPPluginCall) {
+        let liste = (call.getArray("liste") ?? []).compactMap { $0 as? JSObject }
+        let zentrale = UNUserNotificationCenter.current()
+        zentrale.getPendingNotificationRequests { offen in
+            let alte = offen.map(\.identifier).filter { $0.hasPrefix(HeftaNativPlugin.erinnerungsVorsatz) }
+            zentrale.removePendingNotificationRequests(withIdentifiers: alte)
+            guard !liste.isEmpty else {
+                zentrale.getNotificationSettings { s in
+                    call.resolve(["erlaubt": s.authorizationStatus == .authorized])
+                }
+                return
+            }
+            zentrale.requestAuthorization(options: [.alert, .sound]) { erlaubt, _ in
+                guard erlaubt else {
+                    call.resolve(["erlaubt": false])
+                    return
+                }
+                for e in liste {
+                    guard let nummer = e["nummer"] as? Int ?? (e["nummer"] as? Double).map({ Int($0) }),
+                          let am = e["am"] as? Double ?? (e["am"] as? Int).map({ Double($0) }),
+                          let titel = e["titel"] as? String,
+                          let text = e["text"] as? String else { continue }
+                    let inhalt = UNMutableNotificationContent()
+                    inhalt.title = titel
+                    inhalt.body = text
+                    inhalt.sound = .default
+                    inhalt.userInfo = ["ziel": (e["ziel"] as? String) ?? ""]
+                    let datum = Date(timeIntervalSince1970: am / 1000)
+                    let teile = Calendar.current.dateComponents(
+                        [.year, .month, .day, .hour, .minute], from: datum)
+                    let ausloeser = UNCalendarNotificationTrigger(dateMatching: teile, repeats: false)
+                    zentrale.add(UNNotificationRequest(
+                        identifier: "\(HeftaNativPlugin.erinnerungsVorsatz)\(nummer)",
+                        content: inhalt, trigger: ausloeser))
+                }
+                call.resolve(["erlaubt": true])
+            }
+        }
     }
 
     /// Unterlagen liegen im Speicher der Web-Ansicht; sie sollen das Gerät nicht verlassen.
@@ -273,6 +323,18 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
             }
             self.bridge?.viewController?.present(blatt, animated: true)
         }
+    }
+}
+
+/// Erinnerungen von Hefta: im Vordergrund als Banner zeigen, ein Tipp führt in die App an die Stelle.
+extension HeftaNativPlugin: NotificationHandlerProtocol {
+    public func willPresent(notification: UNNotification) -> UNNotificationPresentationOptions {
+        [.banner, .sound]
+    }
+
+    public func didReceive(response: UNNotificationResponse) {
+        let ziel = response.notification.request.content.userInfo["ziel"] as? String ?? ""
+        notifyListeners("erinnerung", data: ["ziel": ziel], retainUntilConsumed: true)
     }
 }
 

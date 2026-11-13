@@ -352,6 +352,10 @@ export interface Einstellungen {
    * dort schon beantwortet.
    */
   ausgeblendeteFragen?: import('./besichtigungsFragen').AusgeblendeteFrage[];
+  /** Erinnerungen (Zeile 9, B21): „Besichtigungen und Nachfassen“; fehlt der Wert, sind sie an. */
+  erinnerungBesichtigungen?: boolean;
+  /** Erinnerungen: „Neuer Monat beim Gehaltsnachweis“; fehlt der Wert, sind sie an. */
+  erinnerungGehalt?: boolean;
 }
 
 /** Eine gespeicherte Datei. `daten` ist ein Blob oder, wo Blobs nicht gehen, ein ArrayBuffer. */
