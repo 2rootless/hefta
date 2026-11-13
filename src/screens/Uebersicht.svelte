@@ -114,6 +114,9 @@
   // Nachname freiwillig beim Anlegen (E96, 3), fehlt er, ist er ein eigener Punkt im Kasten.
   const ohneNachname = $derived([...vertrag, ...buergen].filter((s) => !s.person.nachname.trim()));
   const offen = $derived(offeneDinge(staende) + ohneNachname.length);
+  // Schwelle (Auftraggeber 13.11.): Oben höchstens drei Aufgaben; der Rest steht ohnehin unten bei den
+  // Personen. Frisch angelegt wären es sonst zehn und mehr, oben und unten doppelt.
+  const OBEN = 3;
   const fertig = $derived(staende.length > 0 && offen === 0);
   // U15: Backup älter als 30 Tage und seitdem Neues dazugekommen. Ohne Änderungen bleibt die Zeile ruhig.
   const backupAlt = $derived.by(() => {
@@ -269,7 +272,7 @@
       <section class="aufgaben" aria-labelledby="aufgaben-titel">
         <h2 id="aufgaben-titel" class:blende={bw.satz}>{lead}</h2>
         <ul hidden={nurEinBlatt}>
-          {#each aufgabenListe as { wert: a, geist } ((geist ? 'g:' : '') + `${a.stand.person.id}/${a.u.typ.id}`)}
+          {#each aufgabenListe.slice(0, OBEN) as { wert: a, geist } ((geist ? 'g:' : '') + `${a.stand.person.id}/${a.u.typ.id}`)}
             {@const text = naechsterText(a.u, a.stand.person)}
             <li
               class:geist
@@ -293,6 +296,11 @@
             </li>
           {/each}
         </ul>
+        {#if !nurEinBlatt && aufgaben.length > OBEN}
+          <p class="mehr-unten">
+            {t('uebersicht.weitereUnten', { anzahl: aufgaben.length - OBEN })}
+          </p>
+        {/if}
         {#if ohneNachname.length}
           <ul class="namen">
             {#each ohneNachname as s (s.person.id)}
@@ -455,6 +463,12 @@
   }
 
   /* Nur eine Person: nur der Satz (siehe `nurEinBlatt`). */
+  .mehr-unten {
+    margin: 8px 2px 0;
+    color: var(--ink-muted);
+    font-size: calc(14 * var(--px));
+  }
+
   .aufgaben ul.namen {
     margin-top: 8px;
   }

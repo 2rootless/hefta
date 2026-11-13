@@ -129,6 +129,10 @@
     "hauptAnsage": "Unterlagen hinzufügen, {offen} offen",
     "neustartIhr": "Fangt oben an, Person für Person.",
     "neustartDu": "Fang mit deiner Selbstauskunft an.",
+    "weitereUnten": {
+      "one": "Dazu eine weitere, unten bei den Personen.",
+      "other": "Dazu {anzahl} weitere, unten bei den Personen."
+    },
     "weitereUnterlagen": {
       "one": "und {anzahl} weitere Unterlage",
       "other": "und {anzahl} weitere Unterlagen"
@@ -295,7 +299,7 @@
     "version": "Version",
     "versionWert": "{version}, Regelkatalog Stand {stand}",
     "lizenz": "Freie Software",
-    "lizenzWert": "{app} steht unter der AGPL-3.0, die Schrift Archivo unter der OFL-1.1. Alle Lizenztexte liegen der App als lizenzen.txt bei. Der Quellcode steht offen auf GitHub.",
+    "lizenzWert": "{app} steht unter der AGPL-3.0, die Schrift Archivo unter der OFL-1.1. Die Postleitzahlen für die Luftlinie stammen von GeoNames (geonames.org) unter CC BY 4.0. Alle Lizenztexte liegen der App als lizenzen.txt bei. Der Quellcode steht offen auf GitHub.",
     "quellcode": "Quellcode ansehen",
     "rueckmeldung": "Was fehlt dir? Schreib uns.",
     "rueckmeldungBetreff": "Rückmeldung zu {app}",
@@ -1824,6 +1828,8 @@
     "wegKlein": "Bis {km} km Luftlinie. Fahrzeiten mit Bahn und Rad kommen später.",
     "wegOrt": "Ort, etwa Arbeit, Uni oder Kita",
     "wegKm": "Höchstens entfernt",
+    "wegPlz": "Postleitzahl des Orts",
+    "wegPlzHilfe": "Damit rechnet {app} die Luftlinie, ungefähr und nur auf diesem Gerät.",
     "von": "Frühestens",
     "bis": "Spätestens",
     "einzugVonBis": "{von} bis {bis}",

@@ -92,3 +92,20 @@ test('Nachname fehlt: eigener Punkt im Kasten, führt zum Ändern und zurück zu
   await expect(page.getByRole('heading', { level: 1, name: 'Eure Mappe' })).toBeVisible();
   await expect(page.getByRole('link', { name: /Nachname von Max fehlt/ })).toHaveCount(0);
 });
+
+test('Schwelle oben (13.11.): frisch angelegt höchstens drei Aufgaben, der Rest unten', async ({
+  page,
+}) => {
+  await erstePerson(page, { vorname: 'Max', bezeichnung: 'Hauptmieter' });
+  await personHinzufuegen(page, /Mitmieter hinzufügen/, {
+    vorname: 'Lea',
+    bezeichnung: 'Mitmieterin',
+  });
+  await page.getByRole('link', { name: 'Haushalt anlegen' }).click();
+  await appHinweisNochmal(page);
+  await page.getByRole('button', { name: 'Später', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Eure Mappe' })).toBeVisible();
+  const oben = page.locator('section.aufgaben > ul:not(.namen) > li');
+  await expect(oben).toHaveCount(3);
+  await expect(page.getByText(/^Dazu \d+ weitere, unten bei den Personen\.$/)).toBeVisible();
+});

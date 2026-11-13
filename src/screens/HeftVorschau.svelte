@@ -20,6 +20,8 @@
   import { monatVorher, wichtigsteAbweichungen, type AbweichungsZeile } from '../domain/urteile';
   import { t } from '../i18n';
   import { portalAus, wohnungAus } from '../lesen/angaben';
+  import { lageAnwenden } from '../domain/lage';
+  import { plzTabelle } from '../ui/plz.svelte';
   import Hauptbutton from '../ui/Hauptbutton.svelte';
   import {
     entwurf,
@@ -140,7 +142,8 @@
     const a = entwurf.angaben;
     const wu = hh?.wuensche;
     if (!a || !wu) return null;
-    return wichtigsteAbweichungen(wohnungAus(a), wu, {
+    const l = lageAnwenden(wohnungAus(a), entwurf.adresse, wu, plzTabelle());
+    return wichtigsteAbweichungen(l.w, l.wu, {
       netto: hh ? haushaltsNetto(hh, daten.ansicht?.mitglieder ?? []) : null,
       grenze: hh?.mietgrenze ?? null,
       ihr,

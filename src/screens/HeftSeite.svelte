@@ -24,6 +24,8 @@
   import { abweichungen, urteile } from '../domain/urteile';
   import { t, type TextSchluessel } from '../i18n';
   import { wohnungAus } from '../lesen/angaben';
+  import { lageAnwenden } from '../domain/lage';
+  import { plzTabelle } from '../ui/plz.svelte';
   import { einstellungenAendern, heftAendern } from '../storage/speicher';
   import Rueckmeldung from '../ui/Rueckmeldung.svelte';
   import { passend } from '../ui/passend';
@@ -54,7 +56,9 @@
     const a = heft?.angaben;
     const hh = daten.ansicht?.haushalt;
     if (!a || !hh?.wuensche) return null;
-    return urteile(wohnungAus(a), hh.wuensche, {
+    // Lage aus den Postleitzahlen (E46, E50), sobald die Tabelle geladen ist.
+    const l = lageAnwenden(wohnungAus(a), heft!.adresse, hh.wuensche, plzTabelle());
+    return urteile(l.w, l.wu, {
       netto: haushaltsNetto(hh, daten.ansicht?.mitglieder ?? []),
       grenze: hh.mietgrenze ?? null,
       ihr,

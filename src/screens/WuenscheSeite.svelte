@@ -44,11 +44,14 @@
   let offen = $state<Schluessel | null>(null);
   let e1 = $state('');
   let e2 = $state('');
+  /** Postleitzahl des eigenen Orts (E46): daraus die Luftlinie, nur auf dem Gerät. */
+  let e3 = $state('');
 
   function oeffnen(k: Schluessel) {
     offen = k;
     const zahlOderLeer = (n: number | null | undefined) => (n != null ? zahlText(n) : '');
     e2 = '';
+    e3 = '';
     if (k === 'warm') e1 = zahlOderLeer(wu.warmBis);
     if (k === 'zimmer') e1 = zahlOderLeer(wu.zimmerAb);
     if (k === 'flaeche') e1 = zahlOderLeer(wu.flaecheAb);
@@ -56,6 +59,7 @@
     if (k === 'weg') {
       e1 = wu.ort?.name ?? '';
       e2 = wu.ort ? zahlText(wu.ort.kmBis) : '';
+      e3 = wu.ort?.plz ?? '';
     }
     if (k === 'einzug') {
       e1 = wu.einzugVon ?? '';
@@ -74,7 +78,11 @@
     if (k === 'flaeche') neu.flaecheAb = nummer(e1);
     if (k === 'weg') {
       const km = nummer(e2);
-      neu.ort = e1.trim() && km ? { name: e1.trim(), kmBis: km } : null;
+      const plz = e3.replace(/\D/g, '');
+      neu.ort =
+        e1.trim() && km
+          ? { name: e1.trim(), kmBis: km, ...(plz.length === 5 ? { plz } : {}) }
+          : null;
     }
     if (k === 'einzug') {
       neu.einzugVon = /^\d{4}-\d{2}-\d{2}$/.test(e1) ? e1 : null;
@@ -168,6 +176,15 @@
           bind:value={e2}
         /><span aria-hidden="true">km</span>
       </span>
+      <input
+        aria-label={t('wuensche.wegPlz')}
+        placeholder={t('wuensche.wegPlz')}
+        inputmode="numeric"
+        autocomplete="postal-code"
+        maxlength="5"
+        bind:value={e3}
+      />
+      <p class="hilfe">{t('wuensche.wegPlzHilfe')}</p>
     {:else if k === 'einzug'}
       <label class="unter" for={`w-${k}`}>{t('wuensche.von')}</label>
       <input id={`w-${k}`} type="date" bind:value={e1} />

@@ -51,7 +51,14 @@ export interface Wuensche {
    * Der Ort in der Mitte, nur sein Name, etwa „UKE“ oder „Kita Sonnenschein“ (Nachricht 10.11. k:
    * ohne Präposition), mit Umkreis in km.
    */
-  ort: { name: string; kmBis: number; ungefaehr?: boolean; spanne?: number } | null;
+  ort: {
+    name: string;
+    kmBis: number;
+    /** Postleitzahl des Orts: daraus Lage und Spanne (E46, E50). */
+    plz?: string;
+    ungefaehr?: boolean;
+    spanne?: number;
+  } | null;
   /** Einzug von bis, als „JJJJ-MM-TT“; jede Grenze für sich freiwillig. */
   einzugVon: string | null;
   einzugBis: string | null;

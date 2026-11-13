@@ -14,6 +14,8 @@
   import { monatVorher, urteile, type Urteil } from '../domain/urteile';
   import { t, type TextSchluessel } from '../i18n';
   import { wohnungAus } from '../lesen/angaben';
+  import { lageAnwenden } from '../domain/lage';
+  import { plzTabelle } from '../ui/plz.svelte';
   import { datum as datumLesen, zahl } from '../lesen/leser';
   import { heftAnlegen } from '../storage/speicher';
   import Hauptbutton from '../ui/Hauptbutton.svelte';
@@ -34,7 +36,8 @@
 
   const u = $derived.by((): Urteil[] => {
     if (!a || !wu) return [];
-    return urteile(wohnungAus(a), wu, {
+    const l = lageAnwenden(wohnungAus(a), entwurf.adresse, wu, plzTabelle());
+    return urteile(l.w, l.wu, {
       netto: hh ? haushaltsNetto(hh, daten.ansicht?.mitglieder ?? []) : null,
       grenze: hh?.mietgrenze ?? null,
       ihr,

@@ -38,6 +38,34 @@
     if (!offen && dialog.open) dialog.close();
   });
 
+  // Tastatur offen (iOS legt sie über die Seite, das feste Blatt bliebe darunter): Das Blatt rückt um ihre
+  // Höhe nach oben und wird nicht höher als der sichtbare Teil; das Feld mit dem Fokus bleibt sichtbar
+  // (TestFlight 13.11.: Adresse fürs Deckblatt verdeckt).
+  $effect(() => {
+    const fenster = window.visualViewport;
+    if (!offen || !dialog || !fenster) return;
+    const d = dialog;
+    const anpassen = () => {
+      const tastatur = Math.max(0, window.innerHeight - (fenster.height + fenster.offsetTop));
+      d.style.marginBottom = tastatur > 40 ? `${tastatur}px` : '';
+      d.style.maxHeight = tastatur > 40 ? `${fenster.height - 12}px` : '';
+      const fokus = document.activeElement;
+      if (tastatur > 40 && fokus instanceof HTMLElement && d.contains(fokus))
+        fokus.scrollIntoView({ block: 'nearest' });
+    };
+    anpassen();
+    fenster.addEventListener('resize', anpassen);
+    fenster.addEventListener('scroll', anpassen);
+    d.addEventListener('focusin', anpassen);
+    return () => {
+      fenster.removeEventListener('resize', anpassen);
+      fenster.removeEventListener('scroll', anpassen);
+      d.removeEventListener('focusin', anpassen);
+      d.style.marginBottom = '';
+      d.style.maxHeight = '';
+    };
+  });
+
   // Am Griff nach unten wischen schließt.
   let start = 0;
   let weg = 0;

@@ -75,6 +75,12 @@ test('Zwei Hefte ohne Antwort: kein „Alle ablegen“', async ({ page }) => {
 test('„Keine Antwort“ im Heft: nachfragen und Löschbitte, Hefta merkt sich die Löschbitte (B18)', async ({
   page,
 }) => {
+  // Der Mail-Link wird nur festgehalten: WebKit wartete unter Last sonst auf die Navigation zu mailto:.
+  await page.addInitScript(() => {
+    const w = window as unknown as { __heftaMailTest: (l: string) => void; __mails: string[] };
+    w.__mails = [];
+    w.__heftaMailTest = (l) => w.__mails.push(l);
+  });
   await haushaltMitMax(page);
   await hefteOhneAntwort(page, 2);
   await page.goto('/#/heft/ohne-1');
@@ -90,6 +96,11 @@ test('„Keine Antwort“ im Heft: nachfragen und Löschbitte, Hefta merkt sich 
   await expect(page.getByText('Hefta verschickt nichts selbst.')).toBeVisible();
   await page.getByRole('button', { name: 'Mail öffnen' }).click();
   await expect(page.getByText(/^Nachgefragt am /)).toBeVisible();
+  const mails = await page.evaluate(() => (window as unknown as { __mails: string[] }).__mails);
+  expect(mails).toHaveLength(1);
+  expect(mails[0]!.startsWith('mailto:?subject=Nachfrage%20zur%20Wohnung%20Weg%202&body=')).toBe(
+    true,
+  );
 
   await page.getByRole('link', { name: 'Löschbitte schreiben' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Löschbitte' })).toBeVisible();

@@ -60,8 +60,19 @@ export async function mailMitMappe(o: {
     }
   }
   sichern(o.dateien);
-  window.location.href = mailLink(o.an, o.betreff, o.text);
+  mailLinkOeffnen(mailLink(o.an, o.betreff, o.text));
   return 'anhangSelbst';
+}
+
+/**
+ * Öffnet das Mailprogramm über einen Mail-Link. Browsertests setzen `window.__heftaMailTest` als Ersatz
+ * (wie `__heftaInseratTest`): WebKit wartet unter Last sonst auf das Ende einer Navigation zu `mailto:`.
+ */
+function mailLinkOeffnen(link: string): void {
+  const ersatz = (window as unknown as { __heftaMailTest?: (link: string) => void })
+    .__heftaMailTest;
+  if (ersatz) ersatz(link);
+  else window.location.href = link;
 }
 
 /**
@@ -85,7 +96,7 @@ export async function mailOhneAnhang(o: {
     if (status === 'abgebrochen') return 'abgebrochen';
     if (status !== 'keinKonto') return 'geoeffnet';
   }
-  window.location.href = mailLink(o.an, o.betreff, o.text);
+  mailLinkOeffnen(mailLink(o.an, o.betreff, o.text));
   return 'geoeffnet';
 }
 

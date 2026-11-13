@@ -35,6 +35,13 @@ function pdfjsDateien(): { quelle: string; ziel: string }[] {
   return liste;
 }
 
+/** Stand der Tabelle der Postleitzahlen. */
+function plzStand(): string {
+  return (
+    JSON.parse(readFileSync(join(wurzel, 'data', 'plz.de.json'), 'utf8')) as { stand: string }
+  ).stand;
+}
+
 /** Alle Lizenztexte in einer Datei: die App, die Schrift und jede Bibliothek, die mitgeliefert wird. */
 export function lizenzenText(): string {
   const paket = JSON.parse(readFileSync(join(wurzel, 'package.json'), 'utf8')) as {
@@ -69,6 +76,11 @@ export function lizenzenText(): string {
     `Schrift Archivo\n\n${readFileSync(join(wurzel, 'src', 'pdf', 'fonts', 'OFL.txt'), 'utf8')}`,
     `Schrift Source Serif 4\n\n${readFileSync(join(wurzel, 'src', 'pdf', 'fonts', 'LICENSE-SourceSerif4.txt'), 'utf8')}`,
     `Schrift IBM Plex Sans\n\n${readFileSync(join(wurzel, 'src', 'pdf', 'fonts', 'LICENSE-IBMPlexSans.txt'), 'utf8')}`,
+    // Postleitzahlen für die Luftlinie (E46, E50): data/plz.de.json, aufbereitet mit werkzeug/plz-aufbereiten.py.
+    `Postleitzahlen und Mittelpunkte: GeoNames (www.geonames.org), Stand ${plzStand()}\n\n` +
+      'Lizenz: Creative Commons Namensnennung 4.0 International (CC BY 4.0),\n' +
+      'https://creativecommons.org/licenses/by/4.0/deed.de\n\n' +
+      `${APP_NAME} hat die Daten verändert: je Postleitzahl ein Mittelpunkt (Median der Orte) und eine Spanne.`,
     ...[...bibliotheken.keys()].sort().map((n) => bibliotheken.get(n)!),
   ].join(`\n\n${'='.repeat(72)}\n\n`);
 }
