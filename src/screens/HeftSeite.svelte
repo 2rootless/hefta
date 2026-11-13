@@ -6,7 +6,7 @@
   // Eckdaten und Quelle, die Leiste „Stand x von 4“, die Besichtigung, Notizen und der Abgleich mit den
   // Wünschen. Fragen für die Besichtigung, Fotos und „Was hinausging“ kommen mit Schritt 8 und 9.
   import { daten, db, stillLaden } from '../app/daten.svelte';
-  import { istApp } from '../app/plattform';
+  import { istAndroidApp, istApp } from '../app/plattform';
   import { erinnerungenMoeglich, mitteilungen } from '../app/erinnerungen.svelte';
   import { eckdaten, heftAdresseKurz, heftTitel, tagKurz, terminKurz } from '../domain/heftKarte';
   import {
@@ -19,7 +19,8 @@
   } from '../domain/heftStand';
   import { homescreenFragen } from '../ui/homescreen';
   import type { HeftEreignisse, SpurEintrag } from '../domain/modell';
-  import { namenListe } from '../domain/datenspur';
+  import { namenListe, spurAn, spurEintragen } from '../domain/datenspur';
+  import { erkennen } from '../domain/nachricht';
   import { tageBis } from '../domain/tageslinie';
   import { abweichungen, urteile } from '../domain/urteile';
   import { t, type TextSchluessel } from '../i18n';
@@ -28,6 +29,7 @@
   import { plzTabelle } from '../ui/plz.svelte';
   import { einstellungenAendern, heftAendern } from '../storage/speicher';
   import Rueckmeldung from '../ui/Rueckmeldung.svelte';
+  import RueckmeldungMail from '../ui/RueckmeldungMail.svelte';
   import { passend } from '../ui/passend';
   import { untrack } from 'svelte';
   import TabLeiste from '../ui/TabLeiste.svelte';
@@ -92,6 +94,56 @@
     if (sofortWeg) momentWeg = true;
   }
   let momentWeg = $state(false);
+
+  // E100: Löschbitte oder Nachfrage geöffnet, aber nicht sicher hinaus: einmal fragen.
+  const mailFragen = $derived.by(() => {
+    const e = heft?.ereignisse;
+    if (!e) return [];
+    const liste: { art: 'loeschbitte' | 'nachfrage'; frage: TextSchluessel }[] = [];
+    if (e.loeschbitteOffen && !e.loeschbitteAm)
+      liste.push({
+        art: 'loeschbitte',
+        frage: ihr ? 'heft.loeschbitteFrageIhr' : 'heft.loeschbitteFrageDu',
+      });
+    if (e.nachfrageOffen)
+      liste.push({
+        art: 'nachfrage',
+        frage: ihr ? 'heft.nachfrageFrageIhr' : 'heft.nachfrageFrageDu',
+      });
+    return liste;
+  });
+
+  async function mailBestaetigen(art: 'loeschbitte' | 'nachfrage', ja: boolean) {
+    if (!heft) return;
+    const e = $state.snapshot(heft.ereignisse);
+    const am =
+      (art === 'loeschbitte' ? e.loeschbitteOffen : e.nachfrageOffen) ?? new Date().toISOString();
+    // „Noch nicht“ lässt den Stand, wie er war; Hefta fragt erst nach dem nächsten Öffnen wieder.
+    const neu =
+      art === 'loeschbitte'
+        ? { ...e, loeschbitteOffen: null, ...(ja ? { loeschbitteAm: am } : {}) }
+        : { ...e, nachfrageOffen: null, ...(ja ? { nachgefasstAm: am } : {}) };
+    const an = spurAn({
+      anbieter: heft.angaben?.anbieter,
+      mail: erkennen(heft.inseratText ?? '').mail,
+      portal: null,
+      weg: 'mail',
+    });
+    await heftAendern(await db(), heft.id, {
+      ereignisse: neu,
+      ...(ja
+        ? {
+            spur: spurEintragen($state.snapshot(heft.spur), {
+              am,
+              art: art === 'loeschbitte' ? 'loeschbitte' : 'nachfrage',
+              weg: 'mail',
+              an,
+            }),
+          }
+        : {}),
+    });
+    await stillLaden();
+  }
 
   /** „Mail an Herrn Kraus“, „Über ImmoScout24“, „Löschbitte an …“: die erste Zeile eines Eintrags. */
   function spurKopf(e: SpurEintrag): string {
@@ -345,7 +397,10 @@
         {#if momentDa && !momentWeg && (heft.ereignisse.ergebnis?.art === 'zusage' || heft.ereignisse.ergebnis?.art === 'absage')}
           <!-- B19-10 bis 15: der eine Moment, gleich unter dem Ergebnis, einmal je Gerät. -->
           <div class="moment">
-            <Rueckmeldung fragen={['geholfen']} />
+            <!-- Unter Android die Mail statt der Frage (Planung 13.11.). -->
+            {#if istAndroidApp()}<RueckmeldungMail />{:else}<Rueckmeldung
+                fragen={['geholfen']}
+              />{/if}
             <button class="leis" type="button" onclick={() => momentFertig()}
               >{t('rueckmeldung.nichtMehrFragen')}</button
             >
@@ -433,6 +488,24 @@
 
     <!-- B21: Fotos der Besichtigung unter den Notizen, nur auf dem Gerät. -->
     <HeftFotos {heft} />
+
+    {#each mailFragen as f (f.art)}
+      <!-- E100: Die Mail wurde geöffnet, ob sie hinausging, weiß Hefta nicht sicher. -->
+      <section class="teil">
+        <div class="nx vorschlag">
+          <small class="vk">{t('heft.vorschlag')}</small>
+          <b>{t(f.frage)}</b>
+          <div class="knopfreihe">
+            <button class="knopf haupt" type="button" onclick={() => mailBestaetigen(f.art, true)}
+              >{t('heft.mailJa')}</button
+            >
+            <button class="knopf" type="button" onclick={() => mailBestaetigen(f.art, false)}
+              >{t('heft.nochNicht')}</button
+            >
+          </div>
+        </div>
+      </section>
+    {/each}
 
     {#if heft.spur?.length}
       <!-- Datenspur (B21 „Was hinausging“): neueste zuerst, nur auf dem Gerät. -->

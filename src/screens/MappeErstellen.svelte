@@ -718,18 +718,22 @@
             >
           {:else}
             <!-- Ein Tipp zeigt das Deckblatt groß; dort lassen sich Wohnung, Satz und Aussehen ändern. -->
-            <button
-              type="button"
-              class="deck-mini"
-              aria-label={e.deckblatt
-                ? t('mappe.deckGross.groesser')
-                : t('mappe.mappeAnsehen', { anzahl: ergebnis?.seiten ?? 0 })}
-              aria-disabled={!ergebnis}
-              onclick={() =>
-                e.deckblatt ? gehe('/mappe/deckblatt') : ansehen(ergebnis?.dateien[0], 0)}
-            >
-              {#if deckbild}<img src={deckbild} alt="" />{/if}
-            </button>
+            <div class="mini-spalte">
+              <button
+                type="button"
+                class="deck-mini"
+                aria-label={e.deckblatt
+                  ? t('mappe.deckGross.groesser')
+                  : t('mappe.mappeAnsehen', { anzahl: ergebnis?.seiten ?? 0 })}
+                aria-disabled={!ergebnis}
+                onclick={() =>
+                  e.deckblatt ? gehe('/mappe/deckblatt') : ansehen(ergebnis?.dateien[0], 0)}
+              >
+                {#if deckbild}<img src={deckbild} alt="" />{/if}
+              </button>
+              <!-- E100: leiser Link zur großen Ansicht des Deckblatts. -->
+              <a class="deck-link" href="#/mappe/deckblatt">{t('mappe.deckblattAendern')}</a>
+            </div>
           {/if}
           <div class="wahl-rechts">
             <div class="reihe" role="radiogroup" aria-label={t('mappe.wasRein')}>
@@ -1014,6 +1018,22 @@
     border-radius: 6px;
     background: var(--surface);
     cursor: pointer;
+  }
+
+  .mini-spalte {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+  }
+
+  .deck-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    color: var(--accent-text);
+    font-size: calc(13 * var(--px));
+    font-weight: 600;
+    text-align: center;
   }
 
   .deck-mini img {

@@ -57,6 +57,16 @@
     if (ergebnis === 'abgebrochen') return;
     const am = new Date().toISOString();
     const e = $state.snapshot(heft.ereignisse);
+    // E100: Sicher nur, wenn das Mailfenster „gesendet“ meldet; sonst fragt Hefta einmal im Heft.
+    if (ergebnis !== 'gesendet') {
+      await heftAendern(await db(), heft.id, {
+        ereignisse:
+          art === 'loeschbitte' ? { ...e, loeschbitteOffen: am } : { ...e, nachfrageOffen: am },
+      });
+      await stillLaden();
+      abschliessen(`/heft/${heft.id}`);
+      return;
+    }
     await heftAendern(await db(), heft.id, {
       ereignisse: art === 'loeschbitte' ? { ...e, loeschbitteAm: am } : { ...e, nachgefasstAm: am },
       // Datenspur: auch diese Mail ging mit euren Namen hinaus.

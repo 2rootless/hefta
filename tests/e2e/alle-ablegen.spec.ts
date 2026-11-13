@@ -95,9 +95,15 @@ test('„Keine Antwort“ im Heft: nachfragen und Löschbitte, Hefta merkt sich 
   );
   await expect(page.getByText('Hefta verschickt nichts selbst.')).toBeVisible();
   await page.getByRole('button', { name: 'Mail öffnen' }).click();
+  // E100: Ohne „gesendet“ aus dem Mailfenster fragt Hefta einmal; „Noch nicht“ lässt alles, wie es war.
+  await page.getByRole('button', { name: 'Noch nicht' }).click();
+  await expect(page.getByText(/^Nachgefragt am /)).toHaveCount(0);
+  await page.getByRole('link', { name: 'Kurz nachfragen' }).click();
+  await page.getByRole('button', { name: 'Mail öffnen' }).click();
+  await page.getByRole('button', { name: 'Ja, abgeschickt' }).click();
   await expect(page.getByText(/^Nachgefragt am /)).toBeVisible();
   const mails = await page.evaluate(() => (window as unknown as { __mails: string[] }).__mails);
-  expect(mails).toHaveLength(1);
+  expect(mails).toHaveLength(2);
   expect(mails[0]!.startsWith('mailto:?subject=Nachfrage%20zur%20Wohnung%20Weg%202&body=')).toBe(
     true,
   );
@@ -106,6 +112,7 @@ test('„Keine Antwort“ im Heft: nachfragen und Löschbitte, Hefta merkt sich 
   await expect(page.getByRole('heading', { level: 1, name: 'Löschbitte' })).toBeVisible();
   await expect(page.getByLabel('Betreff')).toHaveValue('Bitte um Löschung meiner Unterlagen');
   await page.getByRole('button', { name: 'Mail öffnen' }).click();
+  await page.getByRole('button', { name: 'Ja, abgeschickt' }).click();
   await expect(
     page.getByText(/^Löschbitte geschickt am .*Ob gelöscht wurde, kann Hefta nicht wissen\.$/),
   ).toBeVisible();

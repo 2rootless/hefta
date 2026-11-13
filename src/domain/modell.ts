@@ -336,6 +336,12 @@ export interface HeftEreignisse {
   loeschbitteAm: Zeitpunkt | null;
   nachgefasstAm: Zeitpunkt | null;
   abgelegtAm: Zeitpunkt | null;
+  /**
+   * E100: Die Mail wurde geöffnet, aber nicht sicher abgeschickt (kein „gesendet“ aus dem Mailfenster).
+   * Hefta fragt dann einmal im Heft; erst „Ja“ setzt das Datum und die Datenspur.
+   */
+  loeschbitteOffen?: Zeitpunkt | null;
+  nachfrageOffen?: Zeitpunkt | null;
 }
 
 export const KEINE_EREIGNISSE: HeftEreignisse = {

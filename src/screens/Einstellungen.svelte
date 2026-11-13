@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { backupKlick, istApp } from '../app/plattform';
+  import { backupKlick, istAndroidApp, istApp } from '../app/plattform';
   // Einstellungen in Gruppen (design/mappe-erstellen-einstellungen.md, Abschnitt 2, S1/S2):
   // Sicherung, Speicher, App, Daten. Backup erstellen, einspielen und alles löschen sind eigene Seiten.
   import { onMount } from 'svelte';
@@ -15,6 +15,7 @@
   import Symbol from '../ui/Symbol.svelte';
   import { passend, TITEL } from '../ui/passend';
   import Rueckmeldung from '../ui/Rueckmeldung.svelte';
+  import RueckmeldungMail from '../ui/RueckmeldungMail.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
   import { homescreenFragen } from '../ui/homescreen';
   import { aussehenSetzen, aussehenWahl, type Aussehen } from '../app/theme';
@@ -252,7 +253,10 @@
   <section class="abschnitt" aria-labelledby="g-ueber">
     <h2 id="g-ueber">{t('rueckmeldung.titel')}</h2>
     <!-- E54 (B19 Fassung 4 und 5): Antworten zum Antippen, mit Rückfrage; längere Kommentare per Mail. -->
-    <div class="blatt-rueck"><Rueckmeldung /></div>
+    <!-- Unter Android ohne Internet-Berechtigung: statt der Fragen eine Mail (Planung 13.11.). -->
+    <div class="blatt-rueck">
+      {#if istAndroidApp()}<RueckmeldungMail />{:else}<Rueckmeldung />{/if}
+    </div>
     <ul class="zeilen">
       <li>
         <div class="listenzeile rueck">
