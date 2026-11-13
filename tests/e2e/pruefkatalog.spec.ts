@@ -43,7 +43,16 @@ const ANSICHTEN: Ansicht[] = [
     breite: 390,
     hoehe: 844,
     schrift: 2,
-    nur: ['01-standard', 'R1-schritt', 'X1-'],
+    nur: [
+      '01-standard',
+      'R1-schritt',
+      'X1-',
+      'H2-heft',
+      'H3-heft',
+      'H5-heft',
+      'H7-termin',
+      'H8-bewerben',
+    ],
   },
 ];
 
@@ -1181,6 +1190,13 @@ const BILDER: Bild[] = [
     gruppe: 'H',
     szenario: '01-standard',
     pfad: '/heft/kh-beworben/termin',
+    hefte: katalogHefte,
+  },
+  {
+    id: 'H8-bewerben',
+    gruppe: 'H',
+    szenario: '04-fertig',
+    pfad: '/heft/kh-beworben/bewerben',
     hefte: katalogHefte,
   },
   { id: 'Z1-uebersicht', gruppe: 'Z', szenario: '18-zeit', pfad: '/' },

@@ -164,8 +164,10 @@
     color: var(--ink-muted);
   }
 
+  /* Wochentag und Monat brechen nie um, auch nicht bei 200 % (Prüfkatalog C2). */
   .dt i {
     display: block;
+    white-space: nowrap;
     font-size: calc(11.5 * var(--px));
     font-style: normal;
     font-weight: 650;

@@ -257,7 +257,11 @@
 {#snippet kopf(nr: number)}
   {@const schritt = SCHRITTE[nr - 1]!}
   <h2 class="schritt" id="schritt-{schritt}">
-    <span class="nr" aria-hidden="true">{nr}</span>{t(`bewerben.schritt.${schritt}`)}
+    <!-- Nummer und Titel als Einheit: Wird es eng, rutscht „überspringen“ in die nächste Zeile (C21). -->
+    <span class="titelzeile"
+      ><span class="nr" aria-hidden="true">{nr}</span><span>{t(`bewerben.schritt.${schritt}`)}</span
+      ></span
+    >
     {#if nr < 4}
       <button
         class="ueber"
@@ -455,11 +459,19 @@
 
   .schritt {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: 4px 10px;
     margin: 26px 2px 8px;
     font-size: calc(16 * var(--px));
     font-weight: 650;
+  }
+
+  .titelzeile {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 10px;
   }
 
   .nr {

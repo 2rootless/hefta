@@ -685,8 +685,11 @@
   }
 
   /* Knöpfe bleiben einzeilig; die Reihe bricht um (Prüfkatalog C18). */
+  /* Weniger Rand, damit „Löschbitte schreiben“ bei 320 px mit 130 % in eine Zeile passt (C18); bei
+     200 % darf es umbrechen, statt aus der Karte zu ragen (C24). */
   .knopfreihe .knopf {
-    white-space: nowrap;
+    padding: 0 10px;
+    font-size: calc(14 * var(--px));
   }
 
   .knopfreihe {
