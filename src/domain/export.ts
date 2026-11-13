@@ -287,3 +287,18 @@ export function datensparsamUmstellen(
     mietrueckstaendeNachZusage: e.schritt !== 'zusage',
   };
 }
+
+/**
+ * „Was in der Mappe liegt“ (B23 `s=teilen`): je Unterlagenart einmal, in der Reihenfolge der Mappe, mit
+ * den Personen, für die sie drinliegt. Gemeinsame Unterlagen (Mietzahlungen) zählen für jede Person einmal.
+ */
+export function mappeInhalt(b: Block[]): { typ: UnterlagenStand['typ']; fuer: PersonStand[] }[] {
+  const nachTyp = new Map<string, { typ: UnterlagenStand['typ']; fuer: PersonStand[] }>();
+  for (const block of b)
+    for (const teil of block.teile) {
+      const da = nachTyp.get(teil.stand.typ.id) ?? { typ: teil.stand.typ, fuer: [] };
+      if (!da.fuer.includes(block.person)) da.fuer.push(block.person);
+      nachTyp.set(teil.stand.typ.id, da);
+    }
+  return [...nachTyp.values()];
+}

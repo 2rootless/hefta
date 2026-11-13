@@ -36,7 +36,7 @@ test.describe('Nachricht ans Inserat', () => {
     page,
   }) => {
     await laden(page, '04-fertig', '/mappe');
-    await page.getByRole('link', { name: /^Nachricht ans Inserat/ }).click();
+    await page.evaluate(() => (location.hash = '#/mappe/nachricht'));
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Nachricht ans Inserat');
     await expect(nachricht(page)).toContainText('Guten Tag,');
     await expect(nachricht(page)).toContainText('Freundliche Grüße');

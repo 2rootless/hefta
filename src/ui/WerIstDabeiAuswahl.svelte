@@ -2,13 +2,7 @@
   // „Wer ist dabei?“ in „Mappe erstellen“ (Aufgabe 56, E25): drei Gruppen. Im Mietvertrag und wer mit
   // einzieht sind immer dabei, ohne Kästchen. Bürgen lassen sich je Zeile weglassen; die ganze Zeile
   // schaltet. Ohne Bürgen ist der Abschnitt nur zum Ansehen.
-  import {
-    GRUPPE_BUERGT,
-    GRUPPE_MIT,
-    GRUPPE_VERTRAG,
-    mitEinSatz,
-    werIstDabeiHinweis,
-  } from '../domain/mappeWoerter';
+  import { mitEinSatz, werIstDabeiHinweis } from '../domain/mappeWoerter';
   import { rollenText, type PersonStand } from '../domain/regelkatalog';
   import { t } from '../i18n';
   import Symbol from './Symbol.svelte';
@@ -42,33 +36,34 @@
   );
 
   const name = (s: PersonStand) => s.person.rufname || s.person.vorname;
+  const anfang = (s: PersonStand) => [...name(s)][0]?.toUpperCase() ?? '';
 </script>
 
+<!-- B23 `s=teilen`: eine Karte mit Reitern; Kinder ohne Unterlagen; Bürgen abgesetzt und abwählbar. -->
 <div class="wer">
-  {#if vertrag.length}
-    <h3>{GRUPPE_VERTRAG}</h3>
-    <ul>
-      {#each vertrag as s (s.person.id)}
-        <li class="zeile">
-          <span class="punkt" style:--farbe="var(--person-{s.farbe})" aria-hidden="true"></span>
-          <span class="tx"
-            ><b>{name(s)}</b> <small>{rollenText(s.rolle, s.bezeichnung)}</small></span
-          >
-        </li>
-      {/each}
-    </ul>
-  {/if}
-
-  {#if kinder + weitere}
-    <h3>{GRUPPE_MIT}</h3>
-    <ul>
-      <li class="zeile"><span class="tx">{mitEinSatz(kinder, weitere)}</span></li>
-    </ul>
-  {/if}
+  <ul>
+    {#each vertrag as s (s.person.id)}
+      <li class="zeile">
+        <span class="reiter" style:--farbe="var(--person-{s.farbe})" aria-hidden="true"
+          >{anfang(s)}</span
+        >
+        <span class="tx"><b>{name(s)}</b><small>{rollenText(s.rolle, s.bezeichnung)}</small></span>
+      </li>
+    {/each}
+    {#if kinder + weitere}
+      <li class="zeile">
+        <span class="kreis" aria-hidden="true"><Symbol name="kind" groesse={20} /></span>
+        <span class="tx"
+          ><span class="mit">{mitEinSatz(kinder, weitere)}</span><small
+            >{t('uebersicht.mitKeineUnterlagen', { anzahl: kinder + weitere })}</small
+          ></span
+        >
+      </li>
+    {/if}
+  </ul>
 
   {#if buergen.length}
-    <h3>{GRUPPE_BUERGT}</h3>
-    <p class="satz">{satz}</p>
+    <p class="zusatz">{t('uebersicht.zusatzZeile')}</p>
     <ul>
       {#each buergen as s (s.person.id)}
         {@const an = !ohne.includes(s.person.id)}
@@ -82,13 +77,14 @@
             style:--farbe="var(--person-{s.farbe})"
             onclick={() => umschalten(s.person.id)}
           >
-            <span class="kasten" aria-hidden="true"
-              >{#if an}<Symbol name="haken" groesse={16} />{/if}</span
-            >
+            <span class="reiter" aria-hidden="true">{anfang(s)}</span>
             <span class="tx"
-              ><b>{name(s)}</b> <small>{rollenText(s.rolle, s.bezeichnung)}</small>{#if !an}<span
+              ><b>{name(s)}</b><small>{rollenText(s.rolle, s.bezeichnung)}</small>{#if !an}<span
                   class="nicht">{t('mappe.nichtInMappe')}</span
                 >{/if}</span
+            >
+            <span class="kasten" aria-hidden="true"
+              >{#if an}<Symbol name="haken" groesse={16} />{/if}</span
             >
           </button>
         </li>
@@ -96,22 +92,14 @@
     </ul>
   {/if}
 </div>
+<p class="satz">{satz}</p>
 
 <style>
   .wer {
-    margin: 0 var(--space-1);
-  }
-
-  h3 {
-    margin: 12px 0 2px;
-    color: var(--ink-muted);
-    font-size: calc(13 * var(--px));
-    font-weight: 700;
-    line-height: calc(18 * var(--px));
-  }
-
-  h3:first-child {
-    margin-top: 0;
+    padding: 4px 14px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
   }
 
   ul {
@@ -124,20 +112,25 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: var(--tap-target);
-    padding: 4px 0;
+    min-height: 52px;
+    padding: 6px 0;
     color: var(--ink);
-    font-size: calc(15 * var(--px));
-    line-height: calc(20 * var(--px));
   }
 
   .tx {
+    display: grid;
+    flex: 1;
     min-width: 0;
     overflow-wrap: break-word;
   }
 
   b {
-    font-weight: 800;
+    font-size: calc(15 * var(--px));
+    font-weight: 700;
+  }
+
+  .mit {
+    font-size: calc(15 * var(--px));
   }
 
   small {
@@ -145,21 +138,43 @@
     font-size: calc(13 * var(--px));
   }
 
-  /* Kachel wie das Quadrat der Person in der Mappe (B11, hefta-zeichen-vertrag-16). */
-  .punkt {
+  /* Reiter wie in der Mappe (B14): Quadrat in der Farbe der Person mit dem Anfangsbuchstaben. */
+  .reiter {
+    display: grid;
     flex: none;
-    width: 14px;
-    height: 14px;
-    margin: 0 5px;
-    border-radius: 1.5px;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
     background: var(--farbe);
+    color: var(--on-person);
+    font-size: calc(12 * var(--px));
+    font-weight: 800;
+  }
+
+  .kreis {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+  }
+
+  .zusatz {
+    margin: 4px 0 0;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line-strong);
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
   }
 
   .satz {
-    margin: 0 0 2px;
+    margin: 8px 2px 0;
     color: var(--ink-muted);
-    font-size: calc(14 * var(--px));
-    line-height: calc(19 * var(--px));
+    font-size: calc(13 * var(--px));
+    line-height: calc(18 * var(--px));
   }
 
   .wahl {
@@ -189,7 +204,8 @@
   }
 
   .aus b,
-  .aus small {
+  .aus small,
+  .aus .reiter {
     opacity: 0.55;
   }
 

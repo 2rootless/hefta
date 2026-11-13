@@ -280,7 +280,7 @@ test('Mappe entsteht (B21-06): nach 400 ms ein ruhiger Kasten mit echtem Fortsch
   for (const b of await bewegungen(page)) expect(b.schleife).toBe(false);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   await expect(page.locator('.bau')).toHaveCount(0, { timeout: 60_000 });
-  await expect(page.getByRole('button', { name: /^Teilen/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Als PDF teilen' })).toBeVisible();
   const { gesehen } = await aufgezeichnet(page);
   expect(gesehen['.bau[role="status"]']).toContain('Hefta legt die Mappe zusammen.');
 });

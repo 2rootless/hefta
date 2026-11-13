@@ -45,7 +45,7 @@ async function laden(page: Page, szenario: string) {
   );
   await page.goto('about:blank');
   await page.goto('/#/mappe');
-  await expect(page.getByRole('heading', { level: 1, name: 'Mappe erstellen' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Mappe teilen' })).toBeVisible();
 }
 
 const seitenZahl = (page: Page) => page.getByText(/^\d+ Seiten?$/);
@@ -130,13 +130,15 @@ test('Mappe erstellen: Vorschau, Modi, Bürgin abwählen, Adresse, Download', as
   await miet.click();
   await page.getByRole('radio', { name: /^Nur das Übliche/ }).click();
 
-  // Adresse eintragen: Deckblatt und Dateiname.
-  await page.getByRole('button', { name: 'Adresse eintragen' }).click();
+  // Adresse eintragen (seit B23 über die große Ansicht des Deckblatts): Deckblatt und Dateiname.
+  await page.evaluate(() => (location.hash = '#/mappe/deckblatt'));
+  await page.getByRole('button', { name: 'Wohnung ändern' }).click();
   await page
     .getByLabel('Adresse der Wohnung (freiwillig)')
     .fill('Hauptstraße 12, 3. OG links\n22767 Hamburg');
   await page.getByRole('button', { name: 'Übernehmen' }).click();
-  await expect(page.getByText('Hauptstraße 12', { exact: true })).toBeVisible();
+  await page.evaluate(() => (location.hash = '#/mappe'));
+  await expect(page.getByRole('heading', { level: 1, name: 'Mappe teilen' })).toBeVisible();
   await warten(page);
   const [zweiter] = await Promise.all([
     page.waitForEvent('download'),
@@ -145,7 +147,7 @@ test('Mappe erstellen: Vorschau, Modi, Bürgin abwählen, Adresse, Download', as
   expect(zweiter.suggestedFilename()).toBe('Bewerbung_Mustermann_Hauptstr12.pdf');
 
   // Mappe anpassen (X8): Einzeldateien, dann „Alle teilen“ und eine Liste der Dateien (X7).
-  await page.getByRole('link', { name: /Mappe anpassen/ }).click();
+  await page.evaluate(() => (location.hash = '#/mappe/anpassen'));
   await expect(page.getByRole('heading', { level: 1, name: 'Mappe anpassen' })).toBeVisible();
   await page.getByRole('radio', { name: 'Einzeldateien' }).click();
   await page.getByRole('button', { name: 'Fertig' }).click();
@@ -234,7 +236,7 @@ test('Tab „Mappe“: „Mappe trotzdem teilen“ führt zu „Mappe erstellen�
   await expect(
     page.getByRole('link', { name: /^Bonitäts.?nachweis von Petra Fehlt noch/ }),
   ).toBeVisible();
-  await page.getByRole('link', { name: 'Übersicht' }).click();
+  await page.getByRole('link', { name: 'Mappe', exact: true }).first().click();
   await page.getByRole('button', { name: 'Mappe trotzdem teilen' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Mappe erstellen' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Mappe teilen' })).toBeVisible();
 });

@@ -983,7 +983,12 @@
     "eintragStand": "{fertig} von {gesamt} fertig"
   },
   "mappe": {
-    "titel": "Mappe erstellen",
+    "titel": "Mappe teilen",
+    "leadIhr": "Eine PDF mit Deckblatt und Lesehilfe. Ihr schickt sie, wohin ihr wollt.",
+    "leadDu": "Eine PDF mit Deckblatt und Lesehilfe. Du schickst sie, wohin du willst.",
+    "alsPdfTeilen": "Als PDF teilen",
+    "fuerBeide": "für beide",
+    "fuerAlle": "für alle {zahl}",
     "karteIhr": "Eure Mappe",
     "karteDu": "Deine Mappe",
     "bewerbungUm": "Bewerbung um",
@@ -1023,7 +1028,7 @@
     "werDabei": "Wer ist dabei?",
     "buergenWeglassen": "Bürgen kannst du für diese Bewerbung weglassen, zum Beispiel für die Besichtigung.",
     "nichtInMappe": "Nicht in dieser Mappe",
-    "wasRein": "Was soll rein?",
+    "wasRein": "Was in der Mappe liegt",
     "empfohlen": "Empfohlen",
     "modus": {
       "alles": {
@@ -1065,7 +1070,7 @@
       "groesser": "Deckblatt groß ansehen",
       "satzAendern": "Satz ändern",
       "aussehen": "Aussehen",
-      "hinweis": "Wer einzieht und was beiliegt, kommt aus dem Haushalt und aus „Was soll rein?“.",
+      "hinweis": "Wer einzieht und was beiliegt, kommt aus dem Haushalt und aus „Was in der Mappe liegt“.",
       "seite": "Seite 1 von {gesamt}",
       "ganze": "Ganze Mappe ansehen",
       "alt": "Deckblatt der Mappe: Bewerbung um {wohnung}. {wer} Was beiliegt: je Person die Unterlagen mit Seitenzahl.",

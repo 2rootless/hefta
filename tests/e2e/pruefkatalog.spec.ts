@@ -245,20 +245,34 @@ async function vorschau(page: Page) {
   await page.waitForTimeout(200);
 }
 
+// Seit „Mappe teilen“ (B23): Wohnung und Satz ändert man auf der großen Ansicht des Deckblatts.
+const zumDeckblatt = async (page: Page) => {
+  await page.evaluate(() => (location.hash = '#/mappe/deckblatt'));
+  await page.getByRole('heading', { level: 1, name: 'Deckblatt' }).waitFor();
+};
+const zurueckZurMappe = async (page: Page) => {
+  await page.evaluate(() => (location.hash = '#/mappe'));
+  await page.getByRole('heading', { level: 1, name: 'Mappe teilen' }).waitFor();
+};
+
 const wohnungEintragen = async (page: Page, adresse: string) => {
-  await page.getByRole('button', { name: /^Adresse eintragen/ }).click();
+  await zumDeckblatt(page);
+  await page.getByRole('button', { name: 'Wohnung ändern' }).click();
   const blatt = page.getByRole('dialog', { name: 'Für welche Wohnung?' });
   await blatt.getByRole('textbox').fill(adresse);
   await blatt.getByRole('button', { name: 'Übernehmen' }).click();
   await blatt.waitFor({ state: 'hidden' });
+  await zurueckZurMappe(page);
 };
 
 const satzEintragen = async (page: Page, satz: string) => {
-  await page.getByRole('button', { name: /^Einen Satz zu/ }).click();
+  await zumDeckblatt(page);
+  await page.getByRole('button', { name: 'Satz ändern' }).click();
   const blatt = page.getByRole('dialog', { name: /^Ein Satz zu/ });
   await blatt.getByRole('textbox').fill(satz);
   await blatt.getByRole('button', { name: 'Übernehmen' }).click();
   await blatt.waitFor({ state: 'hidden' });
+  await zurueckZurMappe(page);
 };
 
 /** Hefte für Gruppe H, Zeiten relativ zu HEUTE. */

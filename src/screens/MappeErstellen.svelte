@@ -8,6 +8,8 @@
   import { onDestroy, onMount, untrack } from 'svelte';
   import { daten, db, gehe } from '../app/daten.svelte';
   import {
+    bloecke,
+    mappeInhalt,
     fehlendeUnterlagen,
     zuAlteUnterlagen,
     hinweise,
@@ -20,7 +22,7 @@
     type ExportModus,
   } from '../domain/export';
   import { adresseTeile, adresseZeilen } from '../domain/adresse';
-  import { AUSSEHEN_STANDARD, type Bewerbung } from '../domain/modell';
+  import type { Bewerbung } from '../domain/modell';
   import { lateinFehlt } from '../domain/namen';
   import {
     dokumenttyp,
@@ -33,7 +35,8 @@
     ohneTrennstellen,
     DOKUMENTTYPEN,
   } from '../domain/regelkatalog';
-  import { groesse, t } from '../i18n';
+  import { groesse, t, zahlwort } from '../i18n';
+  import { namenListe } from '../domain/datenspur';
   import { bewerbungLaden, bewerbungSpeichern } from '../storage/speicher';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
   import Eingeklappt from '../ui/Eingeklappt.svelte';
@@ -44,7 +47,7 @@
   import SchalterZeile from '../ui/SchalterZeile.svelte';
   import WarumBlatt from '../ui/WarumBlatt.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
-  import { staendeAus, standardDateiname, zeichenFunde } from '../ui/mappeDaten';
+  import { staendeAus, zeichenFunde } from '../ui/mappeDaten';
   import { werIstDabeiKurz } from '../domain/mappeWoerter';
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
   import { passend, TITEL } from '../ui/passend';
@@ -106,6 +109,15 @@
     ),
   );
   const vertrag = $derived(staende.filter((s) => s.rolle !== 'buerge'));
+  // „Was in der Mappe liegt“ (B23): je Unterlagenart einmal, mit den Personen, für die sie drinliegt.
+  const inhaltBloecke = $derived(bloecke(staende, e));
+  const inhalt = $derived(mappeInhalt(inhaltBloecke));
+  function fuerText(fuer: PersonStand[]): string {
+    const alle = inhaltBloecke.length;
+    if (fuer.length > 1 && fuer.length === alle)
+      return alle === 2 ? t('mappe.fuerBeide') : t('mappe.fuerAlle', { zahl: zahlwort(alle) });
+    return namenListe(fuer.map((x) => x.person.rufname || x.person.vorname));
+  }
   const buergen = $derived(staende.filter((s) => s.rolle === 'buerge'));
   const liste = $derived(hinweise(staende, e));
   // Ältere Daten oder ein Backup: Der Name steht noch nicht in lateinischen Buchstaben (K8). Mappe
@@ -509,51 +521,6 @@
     sichern(ergebnis.dateien);
   }
 
-  const aussehenName = $derived.by(() => {
-    const art = (ansicht?.haushalt.mappeAussehen ?? AUSSEHEN_STANDARD).art;
-    if (art === 'schlicht') return t('mappe.aussehen.schlicht');
-    return art === 'einefarbe' ? t('mappe.aussehen.eineFarbe') : t('mappe.aussehen.personen');
-  });
-  const anpassenText = $derived(
-    einzeln
-      ? [t('mappe.einzeln'), aussehenName].join(' · ')
-      : [
-          t('mappe.eine'),
-          aussehenName,
-          // Unsichtbare Trennstelle nach jedem Unterstrich: Der Dateiname ist sonst ein zu breites Wort (C2).
-          (e.dateiname.trim()
-            ? `${e.dateiname.trim().replace(/\.pdf$/i, '')}.pdf`
-            : standardDateiname(staende, adresseText)
-          ).replaceAll('_', '_\u200b'),
-        ].join(' · '),
-  );
-  /**
-   * Höchstens zwei Zeilen, dann Auslassung (ME1): per Messung gekürzt, nicht per CSS. Ausgeblendete
-   * Zeilen lägen sonst unsichtbar über dem Stand darunter und unter der Karte heraus (C26, C3).
-   */
-  function zweiZeilen(node: HTMLElement, text: string) {
-    const setzen = (t: string) => {
-      node.textContent = `„${t}“`;
-      const zeile = parseFloat(getComputedStyle(node).lineHeight) || 19;
-      let woerter = t.split(' ');
-      while (node.scrollHeight > zeile * 2 + 2 && woerter.length > 1) {
-        woerter = woerter.slice(0, -1);
-        node.textContent = `„${woerter.join(' ')}…“`;
-      }
-    };
-    setzen(text);
-    const beobachter = new ResizeObserver(() => setzen(text));
-    beobachter.observe(node);
-    return {
-      update(neu: string) {
-        text = neu;
-        setzen(text);
-      },
-      destroy() {
-        beobachter.disconnect();
-      },
-    };
-  }
   const leer = $derived(!!ergebnis && ergebnis.seiten <= 1 && e.ausgabe === 'eine');
 
   const deckAlt = $derived(
@@ -651,116 +618,12 @@
       {/if}
     </div>
   {:else}
-    <div class="kopf"><Zurueck href="#/" text={t('navigation.uebersicht')} /></div>
+    <div class="kopf"><Zurueck href="#/" text={t('tabs.mappe')} /></div>
     {#if ansicht}
       <div class="titelblock">
         <h1 class="display frage" use:passend={TITEL}>{t('mappe.titel')}</h1>
+        <p class="lead">{t(allein ? 'mappe.leadDu' : 'mappe.leadIhr')}</p>
       </div>
-
-      <!-- Die Mappe selbst: Adresse und Satz stehen auf dem Deckblatt, das man hier sieht. -->
-      <section class="karte" aria-label={allein ? t('mappe.karteDu') : t('mappe.karteIhr')}>
-        <div class="held">
-          {#if einzeln}
-            <button
-              type="button"
-              class="stapel"
-              aria-label={t('mappe.alsDateien')}
-              onclick={() => (listeOffen = true)}><i></i><i></i><i></i></button
-            >
-          {:else}
-            <button
-              type="button"
-              class="deck"
-              aria-label={e.deckblatt
-                ? t('mappe.deckGross.groesser')
-                : t('mappe.mappeAnsehen', { anzahl: ergebnis?.seiten ?? 0 })}
-              aria-disabled={!ergebnis}
-              onclick={() =>
-                e.deckblatt ? gehe('/mappe/deckblatt') : ansehen(ergebnis?.dateien[0], 0)}
-            >
-              {#if deckbild}<img src={deckbild} alt="" />{/if}
-            </button>
-          {/if}
-          <div class="wohnung">
-            {#if wohnung.strasse}
-              <p class="klein">{t('mappe.bewerbungUm')}</p>
-              <p class="strasse">{wohnung.strasse}</p>
-              {#if wohnung.rest}<p class="lage">{wohnung.rest}</p>{/if}
-              <button type="button" class="textlink" onclick={adresseOeffnen}
-                >{t('mappe.wohnungAendern')}</button
-              >
-            {:else}
-              <p class="klein">{t('mappe.bewerbungEine')}</p>
-              <button type="button" class="neu" onclick={adresseOeffnen}>
-                <span class="plus" aria-hidden="true"><Symbol name="plus" groesse={16} /></span>
-                {@render zeileInhalt(t('mappe.adresseEintragen'), t('mappe.adresseGross'))}
-              </button>
-            {/if}
-          </div>
-        </div>
-        {#if !einzeln}
-          <button type="button" class="linie" onclick={satzOeffnen}>
-            {#if satzText}
-              <span class="tx"
-                ><b>{allein ? t('mappe.satzDein') : t('mappe.satzEuer')}</b><small
-                  class="zwei"
-                  use:zweiZeilen={satzText}
-                ></small></span
-              >
-            {:else}
-              {@render zeileInhalt(
-                allein ? t('mappe.satzEintragenDu') : t('mappe.satzEintragen'),
-                t('mappe.satzFreiwillig'),
-              )}
-            {/if}
-            <Symbol name="weiter" groesse={20} />
-          </button>
-        {/if}
-        {#if fehler}
-          <p class="stand-text" role="alert">{t('mappe.fehler')}</p>
-        {:else if !ergebnis}
-          <p class="stand-text" role="status">{t('mappe.wirdErstellt')}</p>
-        {:else}
-          <p class="stand">
-            <span class="zahlen">
-              {#key ergebnis.seiten}
-                <span class:zahl-neu={seitenNeu}
-                  >{einzeln
-                    ? t('mappe.dateien', { anzahl: ergebnis.dateien.length })
-                    : t('mappe.seiten', { anzahl: ergebnis.seiten })}</span
-                >
-              {/key}
-              <span aria-hidden="true">·</span>
-              <span>{baut ? t('mappe.groesseWird') : groesse(ergebnis.groesse)}</span>
-            </span>
-            {#if e.kleiner && !baut}<span class="still">{t('mappe.verkleinert')}</span>{/if}
-            {#if allesDa}<span class="da"
-                ><Symbol name="haken" groesse={20} />{t('allgemein.allesDa')}</span
-              >{/if}
-          </p>
-          {#if leer}<p class="stand-text">{t('mappe.nichtsDrin')}</p>{/if}
-        {/if}
-        {#if e.kleiner}
-          <!-- Verkleinert wird nur beim Bauen; die gespeicherten Originale bleiben unberührt. -->
-          {#if baut}<p class="stand-text" role="status">{t('mappe.kleinerLaeuft')}</p>{/if}
-          <button type="button" class="textlink" onclick={() => (e.kleiner = false)}
-            >{t('mappe.kleinerZurueck')}</button
-          >
-        {/if}
-        {#if einzeln}
-          <button type="button" class="linie" onclick={() => (listeOffen = true)}>
-            {@render zeileInhalt(t('mappe.alsDateien'), t('mappe.dateienZeile'))}
-            <Symbol name="weiter" groesse={20} />
-          </button>
-        {/if}
-      </section>
-
-      <section class="abschnitt-oben">
-        <a class="karte zeile" href="#/mappe/nachricht">
-          {@render zeileInhalt(t('nachricht.titel'), t('nachricht.zeile'))}
-          <Symbol name="weiter" groesse={20} />
-        </a>
-      </section>
 
       {#if vorherAnzahl}
         <!-- Alles, was man vor dem Senden wissen sollte, an einer Stelle. Die Größe ist die letzte Zeile. -->
@@ -845,22 +708,48 @@
 
       <section class="abschnitt-oben">
         <h2>{t('mappe.wasRein')}</h2>
-        <div class="reihe" role="radiogroup" aria-label={t('mappe.wasRein')}>
-          {#each ['marktueblich', 'alles'] as const as m (m)}
+        <div class="wahl">
+          {#if einzeln}
             <button
               type="button"
-              class="chip"
-              role="radio"
-              aria-checked={e.modus === m}
-              onclick={() => modusSetzen(m)}>{t(`mappe.modus.${m}.titel`)}</button
+              class="stapel"
+              aria-label={t('mappe.alsDateien')}
+              onclick={() => (listeOffen = true)}><i></i><i></i><i></i></button
             >
-          {/each}
+          {:else}
+            <!-- Ein Tipp zeigt das Deckblatt groß; dort lassen sich Wohnung, Satz und Aussehen ändern. -->
+            <button
+              type="button"
+              class="deck-mini"
+              aria-label={e.deckblatt
+                ? t('mappe.deckGross.groesser')
+                : t('mappe.mappeAnsehen', { anzahl: ergebnis?.seiten ?? 0 })}
+              aria-disabled={!ergebnis}
+              onclick={() =>
+                e.deckblatt ? gehe('/mappe/deckblatt') : ansehen(ergebnis?.dateien[0], 0)}
+            >
+              {#if deckbild}<img src={deckbild} alt="" />{/if}
+            </button>
+          {/if}
+          <div class="wahl-rechts">
+            <div class="reihe" role="radiogroup" aria-label={t('mappe.wasRein')}>
+              {#each ['marktueblich', 'alles'] as const as m (m)}
+                <button
+                  type="button"
+                  class="chip"
+                  role="radio"
+                  aria-checked={e.modus === m}
+                  onclick={() => modusSetzen(m)}>{t(`mappe.modus.${m}.titel`)}</button
+                >
+              {/each}
+            </div>
+            <p class="hinweis">
+              {e.modus === 'alles'
+                ? t(allein ? 'mappe.allesDu' : 'mappe.allesIhr')
+                : t(`mappe.modus.${e.modus}.text`)}
+            </p>
+          </div>
         </div>
-        <p class="hinweis">
-          {e.modus === 'alles'
-            ? t(allein ? 'mappe.allesDu' : 'mappe.allesIhr')
-            : t(`mappe.modus.${e.modus}.text`)}
-        </p>
         <button
           type="button"
           class="linie eigene"
@@ -875,6 +764,18 @@
           )}
           <Symbol name="weiter" groesse={20} />
         </button>
+        {#if e.modus !== 'eigene_auswahl' && inhalt.length}
+          <ul class="inhalt">
+            {#each inhalt as z (z.typ.id)}
+              <li>
+                <span class="sym" aria-hidden="true"
+                  ><Symbol name={z.typ.symbol} groesse={20} /></span
+                >
+                <span class="tx"><b>{listenText(z.typ)}</b><small>{fuerText(z.fuer)}</small></span>
+              </li>
+            {/each}
+          </ul>
+        {/if}
         {#if e.modus === 'eigene_auswahl'}
           <!-- E49 (B17a): gilt für alle Selbstauskünfte der Mappe; die ganze Zeile schaltet. -->
           <div class="miet">
@@ -965,11 +866,45 @@
         {/each}
       </section>
 
-      <section class="abschnitt-oben">
-        <a class="karte zeile" href="#/mappe/anpassen">
-          {@render zeileInhalt(t('mappe.anpassen'), anpassenText)}
-          <Symbol name="weiter" groesse={20} />
-        </a>
+      <!-- Seiten, Größe und Zustand der Mappe, am Ende der Liste (B23: „11 Seiten“). -->
+      <section class="stand-unten" aria-live="polite">
+        {#if fehler}
+          <p class="stand-text" role="alert">{t('mappe.fehler')}</p>
+        {:else if !ergebnis}
+          <p class="stand-text" role="status">{t('mappe.wirdErstellt')}</p>
+        {:else}
+          <p class="stand">
+            <span class="zahlen">
+              {#key ergebnis.seiten}
+                <span class:zahl-neu={seitenNeu}
+                  >{einzeln
+                    ? t('mappe.dateien', { anzahl: ergebnis.dateien.length })
+                    : t('mappe.seiten', { anzahl: ergebnis.seiten })}</span
+                >
+              {/key}
+              <span aria-hidden="true">·</span>
+              <span>{baut ? t('mappe.groesseWird') : groesse(ergebnis.groesse)}</span>
+            </span>
+            {#if e.kleiner && !baut}<span class="still">{t('mappe.verkleinert')}</span>{/if}
+            {#if allesDa}<span class="da"
+                ><Symbol name="haken" groesse={20} />{t('allgemein.allesDa')}</span
+              >{/if}
+          </p>
+          {#if leer}<p class="stand-text">{t('mappe.nichtsDrin')}</p>{/if}
+        {/if}
+        {#if e.kleiner}
+          <!-- Verkleinert wird nur beim Bauen; die gespeicherten Originale bleiben unberührt. -->
+          {#if baut}<p class="stand-text" role="status">{t('mappe.kleinerLaeuft')}</p>{/if}
+          <button type="button" class="textlink" onclick={() => (e.kleiner = false)}
+            >{t('mappe.kleinerZurueck')}</button
+          >
+        {/if}
+        {#if einzeln}
+          <button type="button" class="linie" onclick={() => (listeOffen = true)}>
+            {@render zeileInhalt(t('mappe.alsDateien'), t('mappe.dateienZeile'))}
+            <Symbol name="weiter" groesse={20} />
+          </button>
+        {/if}
       </section>
     {/if}
   {/if}
@@ -982,8 +917,7 @@
   />
 {:else}
   <Aktionsleiste
-    text={einzeln ? t('mappe.alleTeilen') : t('mappe.teilen')}
-    zusatz={ergebnis && !baut ? groesse(ergebnis.groesse) : undefined}
+    text={einzeln ? t('mappe.alleTeilen') : t('mappe.alsPdfTeilen')}
     grund={ohneLatein.length
       ? t('personSeite.grundLatein')
       : !ergebnis || baut
@@ -1051,6 +985,97 @@
 </Sheet>
 
 <style>
+  .lead {
+    margin: 6px 0 0;
+    color: var(--ink-muted);
+  }
+
+  /* B23: kleines Bild der Mappe links, die Stufen rechts. */
+  .wahl {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  /* Ist rechts zu wenig Platz (320 px mit großer Schrift), rutschen die Stufen unter das Bild (C18). */
+  .wahl-rechts {
+    flex: 1 1 11em;
+    min-width: 0;
+  }
+
+  .deck-mini {
+    display: block;
+    width: 76px;
+    aspect-ratio: 210 / 297;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    cursor: pointer;
+  }
+
+  .deck-mini img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .wahl-rechts .hinweis {
+    margin-top: 8px;
+  }
+
+  .inhalt {
+    margin: 12px 0 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+    list-style: none;
+  }
+
+  .inhalt li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 8px 14px;
+  }
+
+  .inhalt li + li {
+    border-top: 1px solid var(--line);
+  }
+
+  .inhalt .sym {
+    display: grid;
+    flex: none;
+    place-items: center;
+    color: var(--ink-muted);
+  }
+
+  .inhalt .tx {
+    display: grid;
+    min-width: 0;
+  }
+
+  .inhalt b {
+    overflow-wrap: break-word;
+    font-size: calc(15 * var(--px));
+  }
+
+  .inhalt small {
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
+  }
+
+  .stand-unten {
+    margin-top: 16px;
+    padding: 0 2px;
+  }
+
   /* B21, Mappe entsteht: ruhiger Kasten an der Stelle des Knopfs, die Linie füllt sich mit dem Bau. */
   .bau {
     display: flex;
@@ -1121,11 +1146,15 @@
     margin-top: 24px;
   }
 
+  /* B23: Abschnitte klein in Großbuchstaben, wie im Heft. */
   h2 {
     margin: 0 var(--space-1) 8px;
-    font-size: calc(17 * var(--px));
-    line-height: calc(22 * var(--px));
-    font-weight: 800;
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
+    line-height: 1.2;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
   .hinweis {
@@ -1185,8 +1214,16 @@
     font-size: calc(13 * var(--px));
     line-height: calc(18 * var(--px));
   }
+  /* B23: „Eigene Auswahl“ als umrandete Zeile; gewählt mit kräftigerem Rand. */
   .eigene {
-    border-top: 0;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+  }
+
+  .eigene[aria-current='true'] {
+    border-color: var(--ink);
   }
   .deck {
     display: block;
@@ -1202,14 +1239,6 @@
       0 6px 14px rgb(25 26 44 / 0.12);
     overflow: hidden;
     cursor: pointer;
-  }
-
-  .deck img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: top;
   }
 
   .stapel {
@@ -1258,30 +1287,11 @@
     min-width: 0;
   }
 
-  .wohnung p {
-    margin: 0;
-  }
-
   .klein {
     font-size: calc(13 * var(--px));
     line-height: calc(17 * var(--px));
     font-weight: 700;
     color: var(--ink-muted);
-  }
-
-  .wohnung .strasse {
-    margin-top: 2px;
-    font-size: calc(19 * var(--px));
-    line-height: calc(23 * var(--px));
-    font-weight: 800;
-    font-stretch: 108%;
-    overflow-wrap: break-word;
-  }
-
-  .wohnung .lage {
-    margin-top: 2px;
-    font-size: calc(15 * var(--px));
-    line-height: calc(20 * var(--px));
   }
 
   .neu {
@@ -1349,10 +1359,6 @@
     line-height: calc(19 * var(--px));
     color: var(--ink-muted);
     overflow-wrap: anywhere;
-  }
-
-  .tx .zwei {
-    overflow: hidden;
   }
 
   .stand {
@@ -1510,6 +1516,7 @@
   }
 
   .reihe .chip {
+    white-space: nowrap;
     padding: 0 14px;
     font-size: calc(15 * var(--px));
     line-height: calc(19 * var(--px));

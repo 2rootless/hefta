@@ -192,11 +192,11 @@ test('Mappe erstellen: Das Deckblatt öffnet die ganze Mappe; Einzeldateien übe
   await expect(ansicht).toBeHidden();
 
   // Das große Deckblatt führt zurück zu „Mappe erstellen“.
-  await page.getByRole('link', { name: 'Mappe erstellen' }).click();
-  await page.getByRole('link', { name: /Mappe anpassen/ }).click();
+  await page.getByRole('link', { name: 'Mappe teilen' }).click();
+  await page.evaluate(() => (location.hash = '#/mappe/anpassen'));
   await page.getByRole('radio', { name: 'Einzeldateien' }).click();
   await page
-    .getByRole('link', { name: /Mappe erstellen|Zurück/ })
+    .getByRole('link', { name: /Mappe teilen|Zurück/ })
     .first()
     .click();
   await page.getByText(/^\d+ Dateien$/).waitFor({ timeout: 30000 });
@@ -213,7 +213,7 @@ test('Mappe erstellen: Das Deckblatt öffnet die ganze Mappe; Einzeldateien übe
   expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
 });
 
-test('Mappe erstellen: Karte oben, eine Liste, Größe im Knopf, Auswahl je Person (ME1, ME5, ME8)', async ({
+test('Mappe teilen (B23): Satz, Liste, Stand unten, Auswahl je Person (ME5, ME8)', async ({
   page,
 }) => {
   await laden(page, '04-fertig', '/mappe');
@@ -221,24 +221,17 @@ test('Mappe erstellen: Karte oben, eine Liste, Größe im Knopf, Auswahl je Pers
     .getByText(/^\d+ Seiten$/)
     .first()
     .waitFor({ timeout: 30000 });
-  const karte = page.getByRole('region', { name: 'Eure Mappe' });
-  await expect(karte.getByText('Bewerbung um eine Wohnung')).toBeVisible();
-  await expect(karte.getByText('Alles da')).toBeVisible();
-
-  // Adresse wie auf dem Deckblatt geteilt; die Größe steht im Knopf.
-  await karte.getByRole('button', { name: /^Adresse eintragen/ }).click();
-  const blatt = page.getByRole('dialog', { name: 'Für welche Wohnung?' });
-  await blatt.getByRole('textbox').fill('Hauptstraße 12, 3. OG links\n22767 Hamburg');
-  await blatt.getByRole('button', { name: 'Übernehmen' }).click();
-  await expect(karte.getByText('Hauptstraße 12', { exact: true })).toBeVisible();
-  await expect(karte.getByText('3. OG links · 22767 Hamburg')).toBeVisible();
-  await expect(karte.getByRole('button', { name: 'Wohnung ändern' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Teilen\s*\d/ })).toBeVisible({ timeout: 30000 });
-
-  // Mappe anpassen sagt, was gewählt ist.
-  await expect(page.getByRole('link', { name: /Mappe anpassen/ })).toContainText(
-    'Eine PDF · Farben der Personen · Bewerbung_',
-  );
+  // B23 „Mappe teilen“: Satz unter dem Titel, Liste, was drinliegt, Stand unten, „Als PDF teilen“.
+  await expect(
+    page.getByText('Eine PDF mit Deckblatt und Lesehilfe. Ihr schickt sie, wohin ihr wollt.'),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Was in der Mappe liegt' })).toBeVisible();
+  await expect(page.locator('ul.inhalt li').first()).toContainText('Selbst');
+  await expect(page.locator('.stand-unten').getByText('Alles da')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Als PDF teilen' })).toBeVisible({
+    timeout: 30000,
+  });
+  await expect(page.getByRole('link', { name: /Nachricht ans Inserat/ })).toHaveCount(0);
 
   // Eigene Auswahl: immer nur eine Person offen, mit Stand.
   await page.getByRole('button', { name: /^Eigene Auswahl/ }).click();
@@ -259,9 +252,13 @@ test('Mappe erstellen: Karte oben, eine Liste, Größe im Knopf, Auswahl je Pers
     .first()
     .waitFor({ timeout: 30000 });
   await expect(page.getByRole('heading', { name: 'Wer ist dabei?' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Im Mietvertrag' })).toBeVisible();
+  await expect(
+    page.getByText('Wer im Mietvertrag steht, ist immer dabei.', { exact: false }),
+  ).toBeVisible();
   await expect(page.getByRole('checkbox')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /^Einen Satz zu dir ergänzen/ })).toBeVisible();
+  await expect(
+    page.getByText('Eine PDF mit Deckblatt und Lesehilfe. Du schickst sie, wohin du willst.'),
+  ).toBeVisible();
   expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
 });
 
@@ -487,7 +484,7 @@ test('Fehlt eine Datei, nennt die Mappe sie mit Rufname und führt zur Seite der
     page.getByRole('link', { name: /^Bonitätsnachweis von Max Lässt sich nicht lesen/ }),
   ).toBeVisible({ timeout: 30_000 });
   // „Teilen“ bleibt: Der Rest der Mappe geht.
-  await expect(page.getByRole('button', { name: 'Teilen' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Als PDF teilen' })).toBeVisible();
   await expect(page.getByText('Eine Datei fehlt in der Mappe')).toBeVisible();
   await expect(page.getByText('Lad sie noch einmal hoch. Teilen geht trotzdem.')).toBeVisible();
   await page.getByRole('link', { name: /^Bonitätsnachweis von Max/ }).click();
@@ -560,7 +557,7 @@ test('Dieselbe Datei in mehreren Monaten: aufteilen, Rückgängig (OR1, OR2)', a
   // Keine Seite geht verloren: Vor und nach dem Aufteilen steht gleich viel in der Mappe.
   const seitenInMappe = async () => {
     await page.evaluate(() => (location.hash = '#/mappe'));
-    await expect(page.getByRole('heading', { level: 1, name: 'Mappe erstellen' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Mappe teilen' })).toBeVisible();
     await expect(page.locator('main')).toHaveCount(1);
     const zahl = page
       .locator('main')
@@ -740,7 +737,7 @@ test('Prüfhinweis Name: Übersicht, Person, Seite, Mappe; „Passt so“ gilt f
 
   await page.evaluate(() => (location.hash = '#/mappe'));
   await expect(page.getByText('Eine Sache solltest du vorher ansehen')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Teilen' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Als PDF teilen' })).toBeVisible();
 
   await page.evaluate(() => (location.hash = '#/unterlage/p-04-fertig-0/bonitaet'));
   const kasten = page.getByRole('group', { name: 'Bitte prüfen' });
@@ -914,8 +911,8 @@ test('Prüfcode abgelaufen ist kein Mangel: Es steht nicht im Block', async ({ p
     ausstellungsdatum: '2026-08-28',
   });
   await page.evaluate(() => (location.hash = '#/mappe'));
-  await expect(page.getByRole('heading', { level: 1, name: 'Mappe erstellen' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Teilen' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Mappe teilen' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Als PDF teilen' })).toBeVisible();
   await expect(page.getByText(/solltest du vorher ansehen/)).toHaveCount(0);
 });
 

@@ -174,11 +174,11 @@ test('Der freiwillige Satz steht bei „Mappe erstellen“ und kommt aufs Deckbl
     .waitFor({ timeout: 30_000 });
 
   // Nicht doppelt: In „Mappe anpassen“ ist er weg.
-  await page.getByRole('link', { name: /Mappe anpassen/ }).click();
+  await page.evaluate(() => (location.hash = '#/mappe/anpassen'));
   await page.getByRole('heading', { name: 'Mappe anpassen' }).waitFor();
   await expect(page.getByText('Ein Satz zu euch')).toHaveCount(0);
   await page
-    .getByRole('link', { name: /Mappe erstellen|Zurück/ })
+    .getByRole('link', { name: /Mappe teilen|Zurück/ })
     .first()
     .click();
   await page
@@ -187,11 +187,12 @@ test('Der freiwillige Satz steht bei „Mappe erstellen“ und kommt aufs Deckbl
     .waitFor({ timeout: 30_000 });
 
   const SATZ = 'Wir sind ein ruhiges Paar und suchen ab Januar.';
-  await page.getByRole('button', { name: 'Einen Satz zu euch ergänzen' }).click();
+  await page.evaluate(() => (location.hash = '#/mappe/deckblatt'));
+  await page.getByRole('button', { name: 'Satz ändern' }).click();
   const blatt = page.getByRole('dialog', { name: 'Ein Satz zu euch' });
   await blatt.getByRole('textbox').fill(SATZ);
   await blatt.getByRole('button', { name: 'Übernehmen' }).click();
-  await expect(page.getByText(`„${SATZ}“`)).toBeVisible();
+  await page.evaluate(() => (location.hash = '#/mappe'));
   await page.getByRole('button', { name: 'PDF ansehen' }).waitFor({ timeout: 30_000 });
   await expect(page.getByRole('button', { name: 'PDF ansehen' })).toBeEnabled({ timeout: 30_000 });
 
@@ -209,14 +210,17 @@ test('Der freiwillige Satz steht bei „Mappe erstellen“ und kommt aufs Deckbl
 
   // Bleibt, und „Übernehmen“ ohne Änderung lässt die Mappe nicht auf „wird berechnet“ stehen.
   await page.reload();
-  await expect(page.getByText(`„${SATZ}“`)).toBeVisible();
   await page
     .getByText(/^\d+ Seiten$/)
     .first()
     .waitFor({ timeout: 30_000 });
-  await page.getByRole('button', { name: /^Euer Satz/ }).click();
+  // Seit B23 steht der Satz auf der großen Ansicht des Deckblatts zum Ändern bereit.
+  await page.evaluate(() => (location.hash = '#/mappe/deckblatt'));
+  await page.getByRole('button', { name: 'Satz ändern' }).click();
+  await expect(blatt.getByRole('textbox')).toHaveValue(SATZ);
   await blatt.getByRole('button', { name: 'Übernehmen' }).click();
   await expect(blatt).toBeHidden();
+  await page.evaluate(() => (location.hash = '#/mappe'));
   await expect(page.getByRole('button', { name: 'PDF ansehen' })).toBeEnabled({ timeout: 10_000 });
   expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
 });
@@ -346,7 +350,7 @@ test('Bitte zum Löschen: aus als Standard, Satz auf eigener Seite, auf dem Deck
 
   // In der Mappe: auf dem Deckblatt und zeichengleich im Anhang.
   await page.getByRole('button', { name: 'Fertig' }).click();
-  await page.getByRole('heading', { name: 'Mappe erstellen' }).waitFor();
+  await page.getByRole('heading', { name: 'Mappe teilen' }).waitFor();
   await expect(page.getByRole('button', { name: 'PDF ansehen' })).toBeEnabled({ timeout: 30_000 });
   const [download] = await Promise.all([
     page.waitForEvent('download'),
