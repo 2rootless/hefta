@@ -52,7 +52,7 @@ const TASTATUR = 291;
 
 interface Bild {
   id: string;
-  gruppe: 'U' | 'E' | 'R' | 'S' | 'P' | 'X' | 'B' | 'Z' | 'D' | 'G' | 'N';
+  gruppe: 'U' | 'E' | 'R' | 'S' | 'P' | 'X' | 'B' | 'Z' | 'D' | 'G' | 'N' | 'H';
   /** Szenario aus szenarien.ts oder null für ein leeres Gerät. */
   szenario: string | null;
   pfad: string;
@@ -61,6 +61,8 @@ interface Bild {
   tastatur?: boolean;
   /** Zustand des Geräts für diesen Bildschirm (siehe `geraetNachstellen`). */
   geraet?: 'kein-speicher' | 'knapp' | 'neue-version';
+  /** Hefta 2: Hefte, die mit dem Szenario eingespielt werden (am ersten Haushalt). */
+  hefte?: () => object[];
   /** Andere Datei hinter allen Versionen des Szenarios statt der kleinen Beispiel-PDF. */
   pdf?: () => number[];
 }
@@ -249,6 +251,83 @@ const satzEintragen = async (page: Page, satz: string) => {
   await blatt.getByRole('button', { name: 'Übernehmen' }).click();
   await blatt.waitFor({ state: 'hidden' });
 };
+
+/** Hefte für Gruppe H, Zeiten relativ zu HEUTE. */
+function katalogHefte(): object[] {
+  const tag = (n: number, stunde = 12) => {
+    const d = new Date(HEUTE);
+    d.setDate(d.getDate() + n);
+    d.setHours(stunde, 0, 0, 0);
+    return d.toISOString();
+  };
+  const leer = { beworben: null, gefragtAm: null, termin: null, ergebnis: null };
+  const heft = (id: string, adresse: string, ereignisse: object, extra: object = {}) => ({
+    id,
+    createdAt: tag(-30),
+    updatedAt: tag(-1),
+    adresse,
+    link: null,
+    quelle: 'ImmoScout24',
+    inseratText: null,
+    kennung: `k-${id}`,
+    notiz: '',
+    angaben: {
+      titel: 'Helle Altbauwohnung mit Balkon und Blick ins Grüne',
+      stadtteil: 'Eimsbüttel',
+      warm: 1240,
+      zimmer: 3,
+      flaeche: 74,
+      portal: 'ImmoScout24',
+      anbieter: 'Frau Hansen',
+    },
+    ereignisse: { ...leer, ...ereignisse },
+    ...extra,
+  });
+  const mappe = {
+    am: tag(-25),
+    art: 'mappe',
+    weg: 'mail',
+    an: 'Frau Hansen',
+    fassung: 1,
+    unterlagen: 4,
+    seiten: 9,
+    personen: ['Max', 'Lea'],
+  };
+  return [
+    heft(
+      'kh-beworben',
+      'Lindenallee 3, EG\n20259 Hamburg',
+      {
+        beworben: { am: tag(-5), weg: 'mail', sicher: true },
+      },
+      { spur: [{ ...mappe, am: tag(-5) }] },
+    ),
+    heft(
+      'kh-keine',
+      'Bismarckstraße 56\n20259 Hamburg',
+      {
+        beworben: { am: tag(-25), weg: 'mail', sicher: true },
+        nachgefasstAm: tag(-2),
+      },
+      { spur: [mappe, { am: tag(-2), art: 'nachfrage', weg: 'mail', an: 'Frau Hansen' }] },
+    ),
+    heft(
+      'kh-zusage',
+      'Kaiser-Friedrich-Ufer 9\n20253 Hamburg',
+      {
+        beworben: { am: tag(-20), weg: 'portal', sicher: true },
+        termin: { am: tag(-6, 17), ort: '', treffpunkt: '' },
+        ergebnis: { art: 'absage', am: tag(-1) },
+        abgelegtAm: tag(-1),
+      },
+      { spur: [{ ...mappe, weg: 'portal', an: 'ImmoScout24', ueber: 'WhatsApp' }] },
+    ),
+    heft('kh-termin', 'Grindelallee 140\n20146 Hamburg', {
+      beworben: { am: tag(-8), weg: 'mail', sicher: true },
+      termin: { am: tag(2, 18), ort: '', treffpunkt: 'Vor dem Haus' },
+    }),
+  ];
+}
 
 const los = (page: Page) => page.getByRole('button', { name: 'Los geht’s' }).click();
 
@@ -1054,6 +1133,56 @@ const BILDER: Bild[] = [
   { id: 'G4-erster-start', gruppe: 'G', szenario: null, pfad: '/' },
   { id: 'G4b-homescreen', gruppe: 'G', szenario: null, pfad: '/homescreen/einrichtung' },
   { id: 'G5-speicher-knapp', gruppe: 'G', szenario: '01-standard', pfad: '/', geraet: 'knapp' },
+  // Hefta 2 (Zeile 11): Wohnungen und Heft in ihren Ständen, Löschbitte, Termin.
+  {
+    id: 'H1-wohnungen',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/wohnungen',
+    hefte: katalogHefte,
+  },
+  {
+    id: 'H2-heft-beworben',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/heft/kh-beworben',
+    hefte: katalogHefte,
+  },
+  {
+    id: 'H3-heft-keine',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/heft/kh-keine',
+    hefte: katalogHefte,
+  },
+  {
+    id: 'H4-heft-abgelegt',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/heft/kh-zusage',
+    hefte: katalogHefte,
+  },
+  {
+    id: 'H5-heft-termin',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/heft/kh-termin',
+    hefte: katalogHefte,
+  },
+  {
+    id: 'H6-loeschbitte',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/heft/kh-keine/loeschbitte',
+    hefte: katalogHefte,
+  },
+  {
+    id: 'H7-termin-eintragen',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/heft/kh-beworben/termin',
+    hefte: katalogHefte,
+  },
   { id: 'Z1-uebersicht', gruppe: 'Z', szenario: '18-zeit', pfad: '/' },
   {
     id: 'Z2-rutsch-zu-alt',
@@ -1668,7 +1797,7 @@ async function laden(page: Page, bild: Bild) {
   }
   await page.goto('/__leer');
   await page.evaluate(
-    async ({ daten, pdf }) => {
+    async ({ daten, pdf, hefte }) => {
       const db = await new Promise<IDBDatabase>((ok, fehler) => {
         const r = indexedDB.open('hefta');
         r.onsuccess = () => ok(r.result);
@@ -1679,6 +1808,9 @@ async function laden(page: Page, bild: Bild) {
       for (const ort of orte) tx.objectStore(ort).clear();
       for (const [ort, liste] of Object.entries(daten ?? {}))
         for (const d of liste as object[]) tx.objectStore(ort).put(d);
+      const haushaltId =
+        (daten as { haushalte?: { id: string }[] } | null)?.haushalte?.[0]?.id ?? null;
+      for (const h of hefte ?? []) tx.objectStore('hefte').put({ ...h, haushaltId });
       if (daten && pdf) {
         const bytes = Uint8Array.from(atob(pdf), (z) => z.charCodeAt(0));
         for (const v of (daten as { versionen: { original: string }[] }).versionen)
@@ -1697,6 +1829,7 @@ async function laden(page: Page, bild: Bild) {
       daten: s ? datensaetze(s) : null,
       // Als Text: Eine Zahlenliste überträgt Playwright Wert für Wert, das kostete ein Viertel der Zeit.
       pdf: Buffer.from(bild.pdf?.() ?? beispielPdf).toString('base64'),
+      hefte: bild.hefte?.() ?? null,
     },
   );
   await page.goto(`/${bild.geraet ? `?geraet=${bild.geraet}` : ''}#${bild.pfad}`);
@@ -2003,7 +2136,7 @@ test.describe('Prüfkatalog Stil C', () => {
       // Kontaktbögen für die Sichtprüfung (eigene leere Seite, ohne CSP der App)
       const bogenKontext = await page.context().browser()!.newContext({ deviceScaleFactor: 1.5 });
       const bogen = await bogenKontext.newPage();
-      for (const gruppe of ['U', 'E', 'R', 'S', 'P', 'X', 'B', 'Z', 'D', 'G', 'N']) {
+      for (const gruppe of ['U', 'E', 'R', 'S', 'P', 'X', 'B', 'Z', 'D', 'G', 'N', 'H']) {
         if (!bilder.some((b) => b.gruppe === gruppe)) continue;
         await bogen.setViewportSize({ width: 1200, height: 800 });
         await bogen.setContent(

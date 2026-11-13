@@ -100,7 +100,8 @@
 
     <h2 class="h3"><label for="nachricht-betreff">{t('heftMail.betreff')}</label></h2>
     <div class="feld">
-      <input id="nachricht-betreff" autocomplete="off" bind:value={betreff} />
+      <!-- Zwei Zeilen: Ein langer Betreff bricht um, statt aus dem Feld zu ragen (Prüfkatalog C15). -->
+      <textarea id="nachricht-betreff" class="betreff" rows="2" bind:value={betreff}></textarea>
     </div>
 
     <h2 class="h3"><label for="nachricht-text">{t('heftMail.text')}</label></h2>
@@ -166,7 +167,6 @@
     border-color: var(--ink);
   }
 
-  .feld input,
   .feld textarea {
     flex: 1;
     min-width: 0;
@@ -178,7 +178,8 @@
     font: inherit;
   }
 
-  .feld input {
+  .feld .betreff {
+    resize: none;
     font-weight: 600;
   }
 

@@ -491,11 +491,12 @@
     border-bottom: 1px solid var(--line);
   }
 
+  /* 44 px hoch zum Tippen, aber schmaler: mehr Platz für die Frage bei 320 px (Prüfkatalog C21). */
   .kasten {
     display: grid;
     flex: none;
     place-items: center;
-    width: 44px;
+    width: 36px;
     height: 44px;
     border: 0;
     background: none;
@@ -611,7 +612,7 @@
   .punkte {
     display: grid;
     place-items: center;
-    width: 44px;
+    width: 36px;
     height: 44px;
     margin-right: -10px;
     border: 0;

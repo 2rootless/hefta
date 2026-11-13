@@ -1597,7 +1597,7 @@
       "other": "{anzahl} Seiten"
     },
     "spurPersonen": "Mit Angaben von {namen}.",
-    "spurUeber": "Geteilt über {app}",
+    "spurUeber": "Geteilt über {ziel}",
     "spurLoeschbitte": "Löschbitte an {an}",
     "spurLoeschbitteOhne": "Löschbitte",
     "spurNachfrage": "Nachfrage an {an}",
@@ -1962,7 +1962,7 @@
       "zustand": "Gibt es Mängel, Feuchtigkeit oder Schimmel? Was wird vor dem Einzug noch gemacht?",
       "uebernahme": "Muss etwas vom Vormieter übernommen werden, etwa Küche oder Möbel? Zu welchem Preis?",
       "haus": "Gibt es Keller, Fahrradraum oder Waschküche?",
-      "internet": "Welcher Internetanschluss liegt an?",
+      "internet": "Welcher Internet\u00adanschluss liegt an?",
       "nebenkosten": "Wie hoch waren die Nebenkosten zuletzt? Gibt es die letzte Abrechnung?",
       "heizung": "Wie wird geheizt, und steckt die Heizung in der Warmmiete?",
       "kaution": "Wie hoch ist die Kaution, und wie wird sie gezahlt?",

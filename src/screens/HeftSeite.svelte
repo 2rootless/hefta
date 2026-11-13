@@ -26,6 +26,7 @@
   import { wohnungAus } from '../lesen/angaben';
   import { einstellungenAendern, heftAendern } from '../storage/speicher';
   import Rueckmeldung from '../ui/Rueckmeldung.svelte';
+  import { passend } from '../ui/passend';
   import { untrack } from 'svelte';
   import TabLeiste from '../ui/TabLeiste.svelte';
   import { inDenKalender } from '../ui/kalenderEintrag';
@@ -48,8 +49,6 @@
 
   const st = $derived(heft ? stand(heft.ereignisse, jetzt) : 'gemerkt');
   const nummer = $derived(standNummer(st));
-
-  const datum = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short' });
 
   const alleUrteile = $derived.by(() => {
     const a = heft?.angaben;
@@ -102,6 +101,8 @@
     if (e.weg === 'website') return t('heft.spurWebsite');
     return t('heft.spurSonst');
   }
+
+  const TITEL_STUFEN = ['25px/28px', '22px/25px', '20px/23px', '18px/21px', '16px/19px'];
 
   // Hefta erinnert selbst: in der App, Schalter an, Mitteilungen nicht verboten.
   const leiseBescheid = $derived(
@@ -190,7 +191,8 @@
     {@const eck = eckdaten(heft)}
     {@const kommt = st === 'besichtigung'}
     <section class="umschlag" class:kommt class:abgelegt={st === 'abgelegt'}>
-      <h1>{titel.text}</h1>
+      <!-- Lange Wörter nie mitten im Wort trennen: lieber kleinere Schrift (Prüfkatalog C2). -->
+      <h1 use:passend={TITEL_STUFEN}>{titel.text}</h1>
       {#if !titel.strasse}<p class="adr">{heftAdresseKurz(heft)}</p>{/if}
       <a class="merk" href={`#/heft/${heft.id}/merkmal`}
         >{t(
@@ -206,9 +208,9 @@
         {heft.angaben?.portal
           ? t('heft.gefunden', {
               portal: heft.angaben.portal,
-              datum: datum.format(new Date(heft.createdAt)),
+              datum: tagKurz(heft.createdAt),
             })
-          : t('heft.gefundenAm', { datum: datum.format(new Date(heft.createdAt)) })}
+          : t('heft.gefundenAm', { datum: tagKurz(heft.createdAt) })}
         {#if heft.link}
           · <a href={heft.link} target="_blank" rel="noopener noreferrer"
             >{t('heft.inseratOeffnen')}</a
@@ -219,7 +221,7 @@
 
     <section class="stand" class:kommt>
       <div
-        class="leiste"
+        class="standleiste"
         class:abgelegt={st === 'abgelegt'}
         role="img"
         aria-label={t('heft.standLabel', { stand: t(`heft.stand.${st}` as TextSchluessel) })}
@@ -447,7 +449,7 @@
                     .join(' · ')}</small
                 >
                 {#if e.ueber}
-                  <small>{t('heft.spurUeber', { app: e.ueber })}</small>
+                  <small>{t('heft.spurUeber', { ziel: e.ueber })}</small>
                 {/if}
                 {#if e.personen?.length}
                   <small>{t('heft.spurPersonen', { namen: namenListe(e.personen) })}</small>
@@ -611,25 +613,25 @@
     background: var(--surface);
   }
 
-  .leiste {
+  .standleiste {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
     gap: 2px 10px;
   }
 
-  .leiste b {
+  .standleiste b {
     font-size: calc(20 * var(--px));
     font-weight: 700;
     font-stretch: 108%;
     line-height: 1.2;
   }
 
-  .kommt .leiste b {
+  .kommt .standleiste b {
     color: var(--termin);
   }
 
-  .leiste small {
+  .standleiste small {
     color: var(--ink-muted);
     font-size: calc(13 * var(--px));
   }
@@ -663,8 +665,8 @@
     background: var(--termin);
   }
 
-  .leiste.abgelegt .seg i.c,
-  .leiste.abgelegt .seg i.d {
+  .standleiste.abgelegt .seg i.c,
+  .standleiste.abgelegt .seg i.d {
     border-color: var(--ink-quiet);
     background: var(--ink-quiet);
   }
@@ -680,6 +682,11 @@
     margin: 4px 0 12px;
     color: var(--ink-muted);
     font-size: calc(14 * var(--px));
+  }
+
+  /* Knöpfe bleiben einzeilig; die Reihe bricht um (Prüfkatalog C18). */
+  .knopfreihe .knopf {
+    white-space: nowrap;
   }
 
   .knopfreihe {
@@ -708,6 +715,9 @@
 
   .knopf.breit {
     width: 100%;
+    /* Einzeilig auch bei 320 px mit großer Schrift (Prüfkatalog C18): weniger Rand statt Umbruch. */
+    padding: 0 10px;
+    white-space: nowrap;
   }
 
   .knopf.haupt {

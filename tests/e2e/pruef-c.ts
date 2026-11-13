@@ -199,6 +199,10 @@ export function pruefen() {
     // Die Vollbild-Dialoge scrollen in sich: Was unten abgeschnitten ist, läge sonst scheinbar
     // über der festen Zeile darunter.
     if (!r.width || !sichtbar(e) || e.closest('.leiste, dialog.ansicht')) return;
+    // Wie bei C26: Unter einen festen Knopf (sticky, fixed) rollt Text wie unter die Leiste (Zeile 11,
+    // „Termin speichern“ bei 320 px mit 130 %).
+    for (let p: Element | null = e; p && p !== document.body; p = p.parentElement)
+      if (/sticky|fixed/.test(getComputedStyle(p).position)) return;
     for (const t of texte) {
       if (e.contains(t.el) || t.el.closest('.leiste')) continue;
       if (t.el.closest('dialog') !== e.closest('dialog')) continue;
@@ -262,7 +266,8 @@ export function pruefen() {
   );
   // C19: keine Null als Menge im Satz („0 hast du übersprungen“) und keine leeren Gruppen.
   const seitenText = `${(main as HTMLElement).innerText} ${(leiste as HTMLElement | null)?.innerText ?? ''}`;
-  const nullImSatz = seitenText.match(/(^|[\s(])0 [a-zäöüA-ZÄÖÜ]\S*/);
+  // „0 von 7“ ist ein Zähler (B21, Fragen für die Besichtigung), kein Satz mit einer Null.
+  const nullImSatz = seitenText.match(/(^|[\s(])0 (?!von\b)[a-zäöüA-ZÄÖÜ]\S*/);
   if (nullImSatz) out.c19.push(nullImSatz[0].trim());
   document.querySelectorAll('main ul, main ol').forEach((l) => {
     if (!l.children.length && !l.textContent?.trim()) out.c19.push(`leere Liste ${l.className}`);
