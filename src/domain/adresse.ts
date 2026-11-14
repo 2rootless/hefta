@@ -21,7 +21,8 @@ export function adresseTeile(zeilen: string[]): { strasse: string; rest: string 
   const komma = erste.indexOf(',');
   const strasse = (komma < 0 ? erste : erste.slice(0, komma)).trim();
   const lage = komma < 0 ? '' : erste.slice(komma + 1).trim();
-  return { strasse, rest: zusammenhalten([lage, ...weitere].filter(Boolean).join(' · ')) };
+  // DP30: Komma statt Mittelpunkt, wie auf dem Deckblatt.
+  return { strasse, rest: zusammenhalten([lage, ...weitere].filter(Boolean).join(', ')) };
 }
 
 /** Die Adresse in getrennten Teilen, aus dem freien Feld gelesen (E6). Das freie Feld bleibt maßgeblich. */

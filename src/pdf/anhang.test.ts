@@ -114,7 +114,7 @@ describe('Lesehilfe für Vermieter (hefta.json)', () => {
     expect(a!.bewerbung.kennung).toBe(kennung);
     expect(a!.bewerbung.wohnung).toEqual({
       strasse: 'Hauptstraße 12',
-      rest: '3. OG links · 22767 Hamburg',
+      rest: '3. OG links, 22767 Hamburg',
       teile: {
         strasse: 'Hauptstraße',
         hausnummer: '12',

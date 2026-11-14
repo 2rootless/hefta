@@ -87,8 +87,10 @@ export async function appTeilenWohin(
   const { Share } = await import('@capacitor/share');
   try {
     const { activityType } = await Share.share(text ? { files, text } : { files });
+    void import('./testbauAnzeige').then((m) => m.teilenMelden(activityType, true));
     return { geteilt: true, kennung: activityType ?? null };
   } catch {
+    void import('./testbauAnzeige').then((m) => m.teilenMelden(null, false));
     return { geteilt: false, kennung: null };
   }
 }

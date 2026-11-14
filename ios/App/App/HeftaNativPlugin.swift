@@ -22,7 +22,8 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
         CAPPluginMethod(name: "aussehen", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "mail", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "teilen", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "erinnerungenSetzen", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "erinnerungenSetzen", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "testbau", returnType: CAPPluginReturnPromise)
     ]
 
     private var sichernAufruf: CAPPluginCall?
@@ -297,6 +298,17 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
         mailAufruf = nil
     }
 
+    /// PC25 B6: Läuft ein Testbau? Ein Bau aus TestFlight (oder aus Xcode) trägt den Beleg der
+    /// Sandbox, einer aus dem App Store nicht. Die Anzeige zum Teilen gibt es nur dann.
+    @objc func testbau(_ call: CAPPluginCall) {
+        let beleg = Bundle.main.appStoreReceiptURL?.lastPathComponent ?? ""
+        #if DEBUG
+        call.resolve(["ja": true])
+        #else
+        call.resolve(["ja": beleg == "sandboxReceipt"])
+        #endif
+    }
+
     /// Teilen-Blatt mit Betreff (ohne Mailkonto in Apple Mail): Mail-Apps übernehmen den Betreff, statt
     /// den Dateinamen mit Unterstrichen zu nehmen. Der Text geht als Text mit, nicht als Datei.
     @objc func teilen(_ call: CAPPluginCall) {
@@ -312,8 +324,9 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
                 }
             }
             let blatt = UIActivityViewController(activityItems: elemente, applicationActivities: nil)
-            blatt.completionWithItemsHandler = { _, fertig, _, _ in
-                call.resolve(["geteilt": fertig])
+            blatt.completionWithItemsHandler = { art, fertig, _, _ in
+                // PC25 B6: die gewählte App mit, für die Anzeige im Testbau.
+                call.resolve(["geteilt": fertig, "app": art?.rawValue ?? ""])
             }
             if let ansicht = self.bridge?.viewController?.view,
                let pop = blatt.popoverPresentationController {

@@ -178,15 +178,15 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
     for (const t of [
       'Bewerbung um die Wohnung',
       'Hauptstraße 12',
-      '3. OG links · 22767 Hamburg',
+      '3. OG links, 22767 Hamburg',
       'Wir sind ein ruhiges Paar',
       'Im Mietvertrag',
-      'Was beiliegt',
+      'WAS BEILIEGT',
       'Max Mustermann',
       'Hauptmieter, Elektroniker',
       'Gehaltsnachweise, Juli bis September',
       '3–5',
-      'Bonitätsnachweis, vom 20. Oktober 2026',
+      'Bonitätsnachweis vom 20. Oktober 2026',
       'Ein Kind',
       'Ziehen mit ein',
       'Bürgschaft',
@@ -211,8 +211,8 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
     const erwartet: [number, string, string][] = [
       [2, 'Max Mustermann', 'Selbstauskunft'],
       [3, 'Max Mustermann', 'Gehaltsnachweis September 2026'],
-      [4, 'Max Mustermann', 'Gehaltsnachweis August 2026 · Seite 1 von 2'],
-      [5, 'Max Mustermann', 'Gehaltsnachweis August 2026 · Seite 2 von 2'],
+      [4, 'Max Mustermann', 'Gehaltsnachweis August 2026, Seite 1 von 2'],
+      [5, 'Max Mustermann', 'Gehaltsnachweis August 2026, Seite 2 von 2'],
       [6, 'Max Mustermann', 'Bonitätsnachweis vom 20. Oktober 2026'],
       [7, 'Lea Mustermann', 'Mietzahlungen'],
       [10, 'Petra Mustermann', 'Bürgschaftserklärung'],
@@ -222,33 +222,39 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       expect(t).toContain(name);
       expect(t).toContain(kopf);
       expect(t).toContain(`Seite ${nummer} von 10`);
-      expect(t).toContain('Bewerbung Hauptstraße 12 · Max und Lea Mustermann');
+      // DP30: Komma statt Mittelpunkt in der Fußzeile.
+      expect(t).toContain('Bewerbung Hauptstraße 12, Max und Lea Mustermann');
     }
-    expect(texte[1]).toContain('· Hauptmieter');
+    // DP30: Die Selbstauskunft trägt den Briefkopf, ihr Titel nennt die Person und die Rolle.
+    expect(texte[1]).toContain('Hauptmieter, im Mietvertrag.');
     // Bürgen: „Bürgschaft“ statt der Rolle.
-    expect(texte[9]).toContain('· Bürgschaft');
+    expect(texte[9]).toContain('Petra Mustermann');
+    expect(texte[9]).toContain(', Bürgin');
     expect(texte[5]).toContain('B2');
     expect(texte[5]).not.toContain('B1');
   });
 
   it('P6, P7: Fremde Seiten im Inhaltsbereich, nie vergrößert, hochkant mindestens 80 %', async () => {
+    const OBEN = 14.5 * MM + 9.5 * 0.75;
     const e = await bewerbungBauen(await auftrag());
     const pdf = await PDFDocument.load(e.bytes);
     expect(e.fremde).toHaveLength(8);
     for (const { seite, skala, box } of e.fremde) {
       const p = pdf.getPage(seite - 1);
-      expect(box.x0).toBeGreaterThanOrEqual(12 * MM - 0.5);
-      expect(box.x1).toBeLessThanOrEqual(p.getWidth() - 12 * MM + 0.5);
+      // DP31: 18 mm seitlich, oben unter der Kopfzeile (9 mm, Zeile, 2,5 mm, Linie, 3 mm).
+      expect(box.x0).toBeGreaterThanOrEqual(18 * MM - 0.5);
+      expect(box.x1).toBeLessThanOrEqual(p.getWidth() - 18 * MM + 0.5);
       expect(box.y0).toBeGreaterThanOrEqual(16 * MM - 0.5);
-      expect(box.y1).toBeLessThanOrEqual(p.getHeight() - 19 * MM + 0.5);
+      expect(box.y1).toBeLessThanOrEqual(p.getHeight() - OBEN + 0.5);
       expect(skala).toBeLessThanOrEqual(1);
-      // Querformat passt nur kleiner auf A4 hochkant: etwa 62 %, zum Lesen lässt es sich vergrößern.
-      expect(skala).toBeGreaterThanOrEqual(box.x1 - box.x0 > box.y1 - box.y0 ? 0.6 : 0.8);
+      // Querformat passt nur kleiner auf A4 hochkant: bei 174 mm Satzbreite (DP31) etwa 59 %, zum Lesen
+      // lässt es sich vergrößern.
+      expect(skala).toBeGreaterThanOrEqual(box.x1 - box.x0 > box.y1 - box.y0 ? 0.55 : 0.8);
     }
     // A5 bleibt in Originalgröße, oben mittig.
     const a5 = e.fremde.find((f) => f.seite === 8)!;
     expect(a5.skala).toBe(1);
-    expect(a5.box.y1).toBeCloseTo(841.89 - 19 * MM, 1);
+    expect(a5.box.y1).toBeCloseTo(841.89 - OBEN, 1);
     expect((a5.box.x0 + a5.box.x1) / 2).toBeCloseTo(595.28 / 2, 1);
   });
 
@@ -270,7 +276,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
               ['Gehaltsnachweis August 2026', 4],
             ],
           ],
-          ['Bonitätsnachweis, vom 20. Oktober 2026', 6],
+          ['Bonitätsnachweis vom 20. Oktober 2026', 6],
         ],
       ],
       [
@@ -420,7 +426,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
     expect(e.ersetzt).toEqual(['ООО Ромашка']);
   });
 
-  it('P18: Die Fußzeile nennt jeden Nachnamen ganz und bricht vor der Seitenzahl um', async () => {
+  it('P18: Die Fußzeile nennt jeden Nachnamen ganz, bleibt bei 8 pt und bricht vor der Seitenzahl um', async () => {
     const lang =
       'Müller-Lüdenscheidt-Hohenzollern, Wiśniewski-Kowalczyk-Brzęczyszczykiewicz, von und zu Guttenberg-Sachsen-Coburg und Becker';
     const e = await bewerbungBauen(await auftrag({ fussName: lang }));
@@ -436,7 +442,8 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
     expect(links.length).toBeGreaterThan(1);
     for (const zeile of links) {
       expect(zeile.transform[0]! + zeile.width).toBeLessThan(seite.transform[4]!);
-      expect(zeile.transform[3]).toBeCloseTo(6.5, 1);
+      // DP30: nie unter 8 pt, lieber eine Zeile mehr.
+      expect(zeile.transform[3]).toBeCloseTo(8, 1);
     }
   });
 
@@ -452,35 +459,35 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       }));
     }
 
-    it('P28: „Weiter auf Seite 2“ steht genau dann da, wenn das Deckblatt zwei Seiten hat', async () => {
-      const zwei = await bewerbungBauen(await auftrag({ bloecke: await lang() }));
+    it('DP30: Über 16 Verzeichniszeilen zwei Seiten, kein Wort „Fortsetzung“, eine Person nie geteilt', async () => {
+      const zwei = await bewerbungBauen(await auftrag({ bloecke: await lang(), hinweis: true }));
       expect(zwei.deckSeiten).toBe(2);
-      expect((await textJeSeite(zwei.bytes))[0]).toContain('Weiter auf Seite 2');
+      const texte = await textJeSeite(zwei.bytes);
+      expect(texte.slice(0, 2).join(' ')).not.toMatch(/Fortsetzung|Weiter auf Seite/);
+      // Jede Person steht genau einmal im Verzeichnis: Geteilt würde ihr Name auf Seite 2 wiederholt.
+      // („Lea Mustermann“ steht auch in der Fußzeile „Max und Lea Mustermann“, darum ohne Lea.)
+      const verzeichnis = (i: number) => texte[i]!.slice(texte[i]!.indexOf('WAS BEILIEGT'));
+      for (const vorname of ['Max', 'Tom', 'Anna', 'Ben']) {
+        const mal = [0, 1].reduce(
+          (n, i) => n + (verzeichnis(i).split(`${vorname} Mustermann`).length - 1),
+          0,
+        );
+        expect(mal, vorname).toBe(1);
+      }
+      // „Erstellt mit Hefta“ nur auf Seite 1; Seite 2 hat den Briefkopf.
+      expect(texte[0]).toContain('Erstellt mit Hefta');
+      expect(texte[1]).not.toContain('Erstellt mit');
+      expect(texte[1]).toContain('Bewerbung um die Wohnung Hauptstraße 12');
       const eine = await bewerbungBauen(await auftrag());
       expect(eine.deckSeiten).toBe(1);
-      expect((await textJeSeite(eine.bytes)).join(' ')).not.toContain('Weiter auf Seite');
     });
 
-    it('Kompakt bringt das Deckblatt auf eine Seite, nie unter 0,85; aus bleibt es bei zwei', async () => {
-      const bloecke = await lang();
-      const aus = await bewerbungBauen(await auftrag({ bloecke }));
-      expect(aus.kompaktHilft).toBe(true);
-      expect(aus.deckMassstab).toBe(1);
-      const an = await bewerbungBauen(
-        await auftrag({ bloecke, aussehen: { art: 'personen', kompakt: true } }),
-      );
-      expect(an.deckSeiten).toBe(1);
-      expect(an.deckMassstab).toBeLessThan(1);
-      expect(an.deckMassstab).toBeGreaterThanOrEqual(0.85);
-      expect((await textJeSeite(an.bytes))[0]).not.toContain('Weiter auf Seite');
-    });
-
-    it('Kurze Mappe: Kompakt ändert nichts', async () => {
+    it('Kompakt ändert am Briefbogen nichts mehr (DP30: ein Satz für alle Mappen)', async () => {
       const an = await bewerbungBauen(
         await auftrag({ aussehen: { art: 'personen', kompakt: true } }),
       );
       expect(an.kompaktHilft).toBe(false);
-      expect(an.deckMassstab).toBeGreaterThanOrEqual(1);
+      expect(an.deckMassstab).toBe(1);
     });
 
     it.each([
@@ -517,9 +524,11 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
     const e = await bewerbungBauen(await auftrag({ bloecke: bloeckeLang }));
     const texte = await textJeSeite(e.bytes);
     expect(texte[0]).toContain('Im Mietvertrag');
-    expect(texte[0]).not.toContain('(Fortsetzung)');
+    expect(texte[0]).not.toContain('Fortsetzung');
     expect(texte[0]).toContain('Kontakt');
-    expect(texte[1]).toContain('Was beiliegt (Fortsetzung)');
+    // DP30: Seite 2 hat den Briefkopf und wieder „Was beiliegt“, ohne „Fortsetzung“.
+    expect(texte[1]).toContain('WAS BEILIEGT');
+    expect(texte[1]).not.toContain('Fortsetzung');
     expect(texte[1]).not.toContain('Kontakt');
     // Die Seitenzahlen im Inhalt zählen die zweite Deckblattseite mit.
     expect(e.inhalt[0]!.seite).toBe(3);
@@ -871,7 +880,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       );
     });
 
-    it('P23: Der Maßstab wächst bei kurzen Mappen bis 1,3 und bleibt bei langen bei 1', async () => {
+    it('DP30: Ein Satz für alle Mappen, ohne Maßstab: kurz wie lang bei 1', async () => {
       const q = await quelle(['S']);
       const kurz = await bewerbungBauen(
         await auftrag({
@@ -883,19 +892,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
           mitziehende: [],
         }),
       );
-      expect(kurz.deckMassstab).toBe(1.3);
-      const lang = await bewerbungBauen(
-        await auftrag({
-          bloecke: ['Max', 'Lea', 'Tom', 'Anna', 'Ben'].map((vorname) => ({
-            person: { ...lea, name: `${vorname} Mustermann` },
-            teile: Array.from({ length: 6 }, (_, i) => ({
-              abschnitt: `Unterlage ${i + 1}`,
-              quellen: [{ daten: q }],
-            })),
-          })),
-        }),
-      );
-      expect(lang.deckMassstab).toBe(1);
+      expect(kurz.deckMassstab).toBe(1);
     });
 
     const groessen = async (bytes: Uint8Array) => {
@@ -933,7 +930,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       expect(deckZuerst).toContain('Wirtschaftsinformatikerin');
       expect(Math.min(...(await groessen(zuerst.bytes)))).toBeGreaterThanOrEqual(7);
 
-      // Viele im Vertrag: erst kleiner, dann ohne Beruf. Rechts stehen die Namen weiter.
+      // Viele im Vertrag (DP30): ohne Beruf, die Namen bleiben; „Was beiliegt“ geht auf Seite 2.
       const voll = await bewerbungBauen(await vieleImVertrag(14));
       expect(voll.deckMassstab).toBe(1);
       expect(Math.min(...(await groessen(voll.bytes)))).toBeGreaterThanOrEqual(7);
@@ -941,7 +938,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       const deckVoll = texteVoll[0];
       expect(deckVoll).not.toContain('Wirtschaftsinformatikerin');
       expect(deckVoll).toContain('Kontakt');
-      // Fällt „Bürgschaft“ aus der Leiste, stehen die Bürgen rechts weiter unter dieser Überschrift.
+      // Die Bürgin steht unter „Bürgschaft“ im Verzeichnis.
       expect(texteVoll.slice(0, 2).join(' ')).toContain('Bürgschaft');
       expect(texteVoll.slice(0, 2).join(' ')).toContain('Petra Mustermann');
     });
@@ -1027,6 +1024,141 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
     const texte = await textJeSeite(e.bytes);
     expect(texte[0]).toContain('Bewerbung um eine Wohnung');
     expect(texte[0]).toContain('Max und Lea Mustermann');
-    expect(texte[2]).toContain('Bewerbung · Max und Lea Mustermann');
+    expect(texte[2]).toContain('Bewerbung, Max und Lea Mustermann');
+  });
+
+  describe('DP30: fünf Konstellationen des Briefbogens', () => {
+    /** Prüft die Seiten des Deckblatts: A4, nichts ragt rechts heraus, keine Schrift unter 8 pt. */
+    async function pruefen(e: { bytes: Uint8Array; deckSeiten?: number }) {
+      const pdf = await PDFDocument.load(e.bytes);
+      const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+      const dok = await pdfjs.getDocument({ data: e.bytes.slice(), useSystemFonts: false }).promise;
+      for (let n = 1; n <= (e.deckSeiten ?? 1); n++) {
+        const seite = pdf.getPage(n - 1);
+        expect([Math.round(seite.getWidth()), Math.round(seite.getHeight())]).toEqual([595, 842]);
+        const { items } = await (await dok.getPage(n)).getTextContent();
+        for (const i of items as { str: string; transform: number[]; width: number }[]) {
+          if (!i.str.trim()) continue;
+          const groesse = Math.hypot(i.transform[2]!, i.transform[3]!);
+          expect(groesse, `${i.str} (${groesse} pt)`).toBeGreaterThanOrEqual(7.99);
+          expect(i.transform[4]! + i.width, i.str).toBeLessThanOrEqual(595 - 22 * MM + 0.5);
+          expect(i.transform[5], i.str).toBeGreaterThan(0);
+        }
+      }
+    }
+    const unterlagen = async (anzahl: number) => {
+      const q = await quelle(['S']);
+      return Array.from({ length: anzahl }, (_, i) => ({
+        abschnitt: `Unterlage ${i + 1}`,
+        quellen: [{ daten: q }],
+      }));
+    };
+
+    it('1: eine Person, ohne Kind und ohne Bürgin: eine Seite', async () => {
+      const e = await bewerbungBauen(
+        await auftrag({
+          bloecke: [{ person: max, teile: await unterlagen(3) }],
+          mitziehende: [],
+          hinweis: true,
+        }),
+      );
+      expect(e.deckSeiten).toBe(1);
+      await pruefen(e);
+    });
+
+    it('2: drei im Vertrag, zwei Bürgen, lange Namen und Adresse, ı und ş: zwei Seiten', async () => {
+      const lang = (name: string, rolle: string, buerge = false) => ({
+        name,
+        rolle,
+        farbe: '#b8e07c',
+        ...(buerge ? { buerge: true } : {}),
+      });
+      const e = await bewerbungBauen(
+        await auftrag({
+          adresse: [
+            'Hohenzollern-Sigmaringen-Straße 128a, Hinterhaus, 4. OG rechts',
+            '22767 Hamburg-Altona',
+          ],
+          kontakt: [
+            'Dr. Konstantin Müller-Lüdenscheidt',
+            '0151 98765432',
+            'konstantin.mueller-luedenscheidt@example.com',
+          ],
+          bloecke: [
+            {
+              person: lang('Dr. Konstantin Müller-Lüdenscheidt', 'Hauptmieter'),
+              teile: await unterlagen(5),
+            },
+            { person: lang('Fatma Yıldız-Kaşıkçı', 'Mitmieterin'), teile: await unterlagen(5) },
+            { person: lang('Ole Brandt', 'Mitmieter'), teile: await unterlagen(4) },
+            {
+              person: lang('Prof. Dr. Hildegard Müller-Lüdenscheidt', 'Bürgin', true),
+              teile: await unterlagen(4),
+            },
+            { person: lang('Ayşe Kaşıkçı', 'Bürgin', true), teile: await unterlagen(4) },
+          ],
+          mitziehende: [],
+          hinweis: true,
+        }),
+      );
+      expect(e.deckSeiten).toBe(2);
+      await pruefen(e);
+    });
+
+    it('3: Familie mit zwei Kindern, ohne Satz der Bewerber: eine Seite', async () => {
+      const e = await bewerbungBauen(
+        await auftrag({
+          satz: '',
+          mitziehende: [{ text: 'Zwei Kinder', anzahl: 2, art: 'kind' }],
+          bloecke: [
+            { person: max, teile: await unterlagen(3) },
+            { person: lea, teile: await unterlagen(3) },
+          ],
+          hinweis: true,
+        }),
+      );
+      expect(e.deckSeiten).toBe(1);
+      await pruefen(e);
+    });
+
+    it('4: Mappe zur Besichtigung, nur Deckblatt, mit dem Satz aus DP27', async () => {
+      const e = await bewerbungBauen(
+        await auftrag({
+          schritt: 'besichtigung',
+          bloecke: [{ person: max, teile: [] }],
+          hinweis: true,
+        }),
+      );
+      expect(e.seiten).toBe(1);
+      expect((await textJeSeite(e.bytes))[0]).toContain(
+        'Zur Besichtigung nur dieses Deckblatt. Die Unterlagen folgen auf Wunsch.',
+      );
+      await pruefen(e);
+    });
+
+    it('5: vier im Vertrag, zwei Bürgen, Kind, 31 Seiten: zwei Seiten', async () => {
+      const e = await bewerbungBauen(
+        await auftrag({
+          bloecke: [
+            { person: max, teile: await unterlagen(5) },
+            { person: { ...lea, name: 'Lea Mustermann' }, teile: await unterlagen(5) },
+            {
+              person: { ...lea, name: 'Tom Mustermann', rolle: 'Mitmieter' },
+              teile: await unterlagen(4),
+            },
+            { person: { ...lea, name: 'Anna Mustermann' }, teile: await unterlagen(4) },
+            { person: petra, teile: await unterlagen(4) },
+            {
+              person: { ...petra, name: 'Paul Mustermann', rolle: 'Bürge' },
+              teile: await unterlagen(4),
+            },
+          ],
+          hinweis: true,
+        }),
+      );
+      expect(e.deckSeiten).toBe(2);
+      expect(e.seiten).toBe(28);
+      await pruefen(e);
+    });
   });
 });

@@ -29,25 +29,27 @@ import { ANHANG_NAME, anhangBauen, anhangBytes } from './anhang';
 import type { ExportModus } from '../domain/export';
 import type { Schritt } from '../domain/selbstauskunft';
 import type { Rolle, Tag } from '../domain/modell';
+import { A4, deckFarbe, FARBE, flaechenTon, flaecheVon, type Schriften } from './mappe';
 import {
-  A4,
-  AKZENTE,
-  deckFarbe,
-  druckTon,
-  FARBE,
-  FLAECHE_LINIE,
-  flaechenTon,
-  flaecheVon,
-  type Schriften,
-} from './mappe';
-import {
-  rundesRechteck,
   selbstauskunftZeichnen,
   umbrechen,
   zeichenErsetzer,
   type SelbstauskunftInhalt,
   type AuskunftSchriften,
 } from './selbstauskunft';
+import {
+  BOGEN_OBEN,
+  BOGEN_SEITE,
+  EINZUG,
+  GRAU,
+  LINIE_PUNKTE,
+  VERZEICHNIS_ZEILEN,
+  ZEICHEN,
+  ZITAT,
+  abschnittKopf,
+  briefkopf,
+  personZeichen,
+} from './bogen';
 
 // Die Bewerbungsmappe (design/mappe-pdf.md, seit 3.11. „Schlicht statt Kopfband“): Deckblatt mit Inhalt je
 // Person, dann die Unterlagen. Jede Seite sagt, wem sie gehört und was sie ist. Fremde Seiten bleiben
@@ -181,19 +183,21 @@ export interface BewerbungErgebnis {
 const MM = 72 / 25.4;
 // Maße aus design/mappe-pdf.md, „Unterlagenseite“.
 const RAND_SEITE = 12 * MM;
-const BAND_HOEHE = 14 * MM;
-const QUADRAT = 2.8 * MM;
-const BAND_LINIE = 9 * MM;
-const INHALT_OBEN = 19 * MM;
+/**
+ * Seiten mit Unterlagen (DP31): Ränder 9 mm oben, 18 mm seitlich, 8 mm unten. Die Kopfzeile ist eine Zeile
+ * mit 9,5 pt, 2,5 mm darunter eine Linie, 3 mm darunter die Unterlage über die ganze Satzbreite (174 mm).
+ * Auf üblichen Druckern (nicht druckbarer Rand bis etwa 6 mm) drucken Kopf- und Fußzeile ganz: Die Schrift
+ * oben beginnt bei 9 mm, die Unterlängen unten enden über 8 mm.
+ */
+const UNTERLAGE_SEITE = 18 * MM;
+const KOPF_GRUND = 9 * MM + 9.5 * 0.75;
+const KOPF_LINIE = KOPF_GRUND + 2.5 * MM;
+const INHALT_OBEN = KOPF_LINIE + 3 * MM;
 const INHALT_UNTEN = 16 * MM;
 const FUSS_TEXT = 9 * MM;
 const FUSS_LINIE = 13 * MM;
 /** Rahmen um fremde Seiten und Punktlinien, warm (B14, mappe14.py `.us .fremd`). */
-const RAHMEN = rgb(0xd5 / 255, 0xce / 255, 0xc4 / 255);
-const FUSS_FARBE = rgb(0xe4 / 255, 0xe6 / 255, 0xef / 255);
-/** Nebentext, der auch im harten Schwarzweiß und beim Tonersparen lesbar bleibt (P17). */
-/** Leise Schrift in warmer Tinte (B14, LEISE). */
-const DRUCK = rgb(0x43 / 255, 0x3d / 255, 0x37 / 255);
+const RAHMEN = rgb(0xd6 / 255, 0xce / 255, 0xc4 / 255);
 
 function hex(farbe: string) {
   const n = Number.parseInt(farbe.replace('#', ''), 16);
@@ -238,7 +242,11 @@ function passendeGroesse(
   return g;
 }
 
-/** Kopfzeile (design/mappe-pdf.md): Schrift und eine Linie über den Satzspiegel, Farbe nur als Zusatz. */
+/**
+ * Kopfzeile der Seiten mit Unterlagen (DP31): eine Zeile, links „■ Max Mustermann, Hauptmieter“, rechts der
+ * Name der Unterlage mit Datum, darunter eine Linie in Tinte. Farbe nur am Zeichen. Der Name rechts steht
+ * als eigener Text: Die Vermieterseite liest ihn als „Name aus dem Seitenkopf“.
+ */
 function kopfzeile(
   seite: PDFPage,
   p: MappenPerson,
@@ -247,58 +255,46 @@ function kopfzeile(
   aussehen: MappenAussehen,
 ) {
   const { width: B, height: H } = seite.getSize();
-  const eineFarbe = aussehen.art === 'einefarbe';
+  const x0 = UNTERLAGE_SEITE;
+  const x1 = B - UNTERLAGE_SEITE;
   seite.drawLine({
-    start: { x: RAND_SEITE, y: H - BAND_HOEHE },
-    end: { x: B - RAND_SEITE, y: H - BAND_HOEHE },
-    thickness: eineFarbe ? 1 : 0.6,
-    color: eineFarbe ? hex(AKZENTE[aussehen.akzent ?? 'tanne']) : FARBE.ink,
+    start: { x: x0, y: H - KOPF_LINIE },
+    end: { x: x1, y: H - KOPF_LINIE },
+    thickness: 0.5,
+    color: FARBE.ink,
   });
-  // Farben der Personen: ein Quadrat vor dem Namen, bei Bürgen als Umriss.
-  const vorName = aussehen.art === 'personen' ? QUADRAT + 1.6 * MM : 0;
-  const platz = B - 2 * RAND_SEITE - 14 - vorName;
-  let rolle = p.buerge ? ' · Bürgschaft' : ` · ${p.rolle}`;
-  const passt = (g: number) =>
+  const vorName = ZEICHEN + 5;
+  const rolle = `, ${p.rolle}`;
+  const platz = x1 - x0 - vorName - 6 * MM;
+  const passt = (g: number, mitRolle: boolean) =>
     breiteVon(p.name, s.bold, g, s) +
-      breiteVon(rolle, s.regular, g, s) +
+      (mitRolle ? breiteVon(rolle, s.regular, g, s) : 0) +
       breiteVon(rechts, s.regular, g, s) <=
     platz;
-  // Namen nie kürzen: erst kleiner, bis 7,5 pt, dann ohne Rolle.
+  // Namen nie kürzen: erst ohne Rolle, dann kleiner, nie unter 8 pt.
   let groesse = 9.5;
-  while (groesse > 7.5 && !passt(groesse)) groesse -= 0.5;
-  if (!passt(groesse)) {
-    rolle = '';
-    while (groesse > 6.5 && !passt(groesse)) groesse -= 0.25;
-  }
-  const y = H - BAND_LINIE;
-  if (vorName) {
-    const unten = y + groesse * 0.35 - QUADRAT / 2;
-    const farbe = hex(druckTon(p.farbe));
-    seite.drawRectangle({
-      x: RAND_SEITE,
-      y: unten,
-      width: QUADRAT,
-      height: QUADRAT,
-      ...(p.buerge ? { borderColor: farbe, borderWidth: 0.9 } : { color: farbe }),
-    });
-  }
+  const mitRolle = passt(groesse, true);
+  if (!mitRolle) while (groesse > 8 && !passt(groesse, false)) groesse -= 0.25;
+  const y = H - KOPF_GRUND;
+  const farbe = hex(deckFarbe(aussehen, p.farbe));
+  personZeichen(seite, p.buerge ? 'umriss' : 'flaeche', farbe, x0, y);
   schreiben(seite, p.name, s, {
-    x: RAND_SEITE + vorName,
+    x: x0 + vorName,
     y,
     size: groesse,
     font: s.bold,
     color: FARBE.ink,
   });
-  if (rolle)
+  if (mitRolle)
     schreiben(seite, rolle, s, {
-      x: RAND_SEITE + vorName + breiteVon(p.name, s.bold, groesse, s),
+      x: x0 + vorName + breiteVon(p.name, s.bold, groesse, s),
       y,
       size: groesse,
       font: s.regular,
       color: FARBE.ink,
     });
   schreiben(seite, rechts, s, {
-    x: B - RAND_SEITE - breiteVon(rechts, s.regular, groesse, s),
+    x: x1 - breiteVon(rechts, s.regular, groesse, s),
     y,
     size: groesse,
     font: s.regular,
@@ -306,40 +302,51 @@ function kopfzeile(
   });
 }
 
-function fussleiste(seite: PDFPage, links: string, nummer: number, gesamt: number, s: S) {
+/**
+ * Fußzeile (DP30): links „Bewerbung {Straße}, {Namen}“, rechts „Seite {n} von {N}“, 8 pt grau, darüber eine
+ * feine Linie. Auf dem Briefbogen (Deckblatt, Selbstauskunft) mit dessen Rändern, sonst wie bisher.
+ */
+function fussleiste(
+  seite: PDFPage,
+  links: string,
+  nummer: number,
+  gesamt: number,
+  s: S,
+  rand = RAND_SEITE,
+) {
   const { width: B } = seite.getSize();
   seite.drawLine({
-    start: { x: RAND_SEITE, y: FUSS_LINIE },
-    end: { x: B - RAND_SEITE, y: FUSS_LINIE },
-    thickness: 0.5,
-    color: FUSS_FARBE,
+    start: { x: rand, y: FUSS_LINIE },
+    end: { x: B - rand, y: FUSS_LINIE },
+    thickness: 0.4,
+    color: LINIE_PUNKTE,
   });
   const rechts = `Seite ${nummer} von ${gesamt}`;
   const rechtsBreite = s.regular.widthOfTextAtSize(rechts, 8);
-  // Passt die Zeile nicht in die linke Hälfte, wird sie kleiner bis 6,5 pt, dann bricht sie vor der
-  // Seitenzahl um. Nachnamen werden nie gekürzt.
-  const groesse = passendeGroesse(links, s.regular, 8, 6.5, (B - 2 * RAND_SEITE) / 2, s);
+  // DP30: nie unter 8 pt. Passt die Zeile nicht, bricht sie vor der Seitenzahl um; Nachnamen werden nie
+  // gekürzt.
+  const groesse = 8;
   const zeilen = umbrechen(
     zeichenbar(links, s),
     s.regular,
     groesse,
-    B - 2 * RAND_SEITE - rechtsBreite - 12,
+    B - 2 * rand - rechtsBreite - 12,
   );
   zeilen.forEach((zeile, i) =>
     seite.drawText(zeile, {
-      x: RAND_SEITE,
+      x: rand,
       y: FUSS_TEXT + (zeilen.length - 1) * 3.5 - i * 7.5,
       size: groesse,
       font: s.regular,
-      color: DRUCK,
+      color: GRAU,
     }),
   );
   seite.drawText(rechts, {
-    x: B - RAND_SEITE - rechtsBreite,
+    x: B - rand - rechtsBreite,
     y: FUSS_TEXT,
     size: 8,
     font: s.regular,
-    color: FARBE.ink,
+    color: GRAU,
   });
 }
 
@@ -412,7 +419,13 @@ interface Eintrag {
 const ziffern = (e: Pick<Eintrag, 'von' | 'bis'>) =>
   e.von === e.bis ? String(e.von) : `${e.von}–${e.bis}`;
 
-const beschriftung = (t: MappenTeil) => (t.detail ? `${t.abschnitt}, ${t.detail}` : t.abschnitt);
+/** „Gehaltsnachweise, August bis Oktober“, aber „Bonitätsnachweis vom 28. Oktober 2026“ (PC28: ohne Komma). */
+const beschriftung = (t: MappenTeil) =>
+  !t.detail
+    ? t.abschnitt
+    : t.detail.startsWith('vom ')
+      ? `${t.abschnitt} ${t.detail}`
+      : `${t.abschnitt}, ${t.detail}`;
 
 interface DeckLink {
   seite: number;
@@ -432,47 +445,17 @@ export function leistenTon(
   return flaechenTon(flaecheVon(aussehen), aussehen.akzent, person?.person.farbe);
 }
 
-function rundesFeld(
-  seite: PDFPage,
-  x: number,
-  unten: number,
-  breite: number,
-  hoehe: number,
-  r: number,
-  farbe: { color: Color } | { borderColor: Color; borderWidth: number },
-) {
-  const k = r * 0.5523;
-  const pfad = [
-    `M ${r} 0 L ${breite - r} 0`,
-    `C ${breite - r + k} 0 ${breite} ${r - k} ${breite} ${r}`,
-    `L ${breite} ${hoehe - r}`,
-    `C ${breite} ${hoehe - r + k} ${breite - r + k} ${hoehe} ${breite - r} ${hoehe}`,
-    `L ${r} ${hoehe}`,
-    `C ${r - k} ${hoehe} 0 ${hoehe - r + k} 0 ${hoehe - r}`,
-    `L 0 ${r}`,
-    `C 0 ${r - k} ${r - k} 0 ${r} 0 Z`,
-  ].join(' ');
-  seite.drawSvgPath(pfad, { x, y: unten + hoehe, ...farbe });
+// ---------- Briefbogen (DP30, Richtung B): Deckblatt und Selbstauskunft in einem Satz ----------
+
+/** Wie viele Verzeichniszeilen auf Seite 1 passen (DP30, Abschnitt 3). */
+function verzeichnisPlatz(a: BewerbungAuftrag): number {
+  const oben = a.bloecke.length + a.mitziehende.length;
+  return VERZEICHNIS_ZEILEN - 2 * Math.max(0, oben - 5);
 }
 
-const DECK_MASSSTAEBE = [1.3, 1.25, 1.2, 1.15, 1.1, 1.05];
-const DECK_KOMPAKT = [0.95, 0.9, 0.85];
-/** So tief darf der Inhalt höchstens reichen, bevor der Maßstab nicht weiter wächst. */
-const DECK_LUFT = 40 * MM;
-/** Volle Leiste (mappe-pdf.md): erst bis 85 % kleiner, dann ohne Beruf, zuletzt ohne „Bürgschaft“. Nie unter 7 pt. */
-const LEISTE_STUFEN: { kl: number; ohneBeruf: boolean; ohneBuergen: boolean }[] = [
-  { kl: 1, ohneBeruf: false, ohneBuergen: false },
-  { kl: 0.95, ohneBeruf: false, ohneBuergen: false },
-  { kl: 0.9, ohneBeruf: false, ohneBuergen: false },
-  { kl: 0.85, ohneBeruf: false, ohneBuergen: false },
-  { kl: 0.85, ohneBeruf: true, ohneBuergen: false },
-  { kl: 0.85, ohneBeruf: true, ohneBuergen: true },
-];
-
 /**
- * Deckblatt mit Seitenleiste (design/mappe-pdf.md, „Deckblatt neu“, MP1 bis MP9). Schrift und senkrechte
- * Abstände wachsen gemeinsam, damit auch eine kurze Mappe nicht leer wirkt. Passt der Inhalt schon im
- * kleinsten Maßstab nicht, geht „Was beiliegt“ auf der nächsten Seite weiter. Ohne `seite` wird nur gemessen.
+ * Deckblatt als Briefbogen (DP30, Abschnitt 2 und 3). Ohne `seite` wird nur gemessen. Hat das Verzeichnis
+ * mehr Zeilen, als auf Seite 1 passen, läuft es auf Seite 2 weiter; eine Person wird nie geteilt.
  */
 function deckblatt(
   a: BewerbungAuftrag,
@@ -480,25 +463,7 @@ function deckblatt(
   s: S,
   seite: (n: number) => PDFPage | null,
 ): { seiten: number; links: DeckLink[]; massstab: number; kompaktHilft: boolean } {
-  for (const k of DECK_MASSSTAEBE) {
-    const probe = deckblattSetzen(a, eintraege, s, () => null, k);
-    if (probe.seiten === 1 && probe.tiefste >= DECK_LUFT) {
-      return { ...deckblattSetzen(a, eintraege, s, seite, k), massstab: k, kompaktHilft: false };
-    }
-  }
-  // Kompakt (mappe-feinschliff.md, § 4): Passt es bei 1,0 nicht, in Schritten bis 0,85; sonst bleibt es bei 1,0.
-  let kompaktHilft = false;
-  if (deckblattSetzen(a, eintraege, s, () => null, 1).seiten > 1) {
-    for (const k of DECK_KOMPAKT) {
-      if (deckblattSetzen(a, eintraege, s, () => null, k).seiten !== 1) continue;
-      kompaktHilft = true;
-      if (a.aussehen?.kompakt) {
-        return { ...deckblattSetzen(a, eintraege, s, seite, k), massstab: k, kompaktHilft };
-      }
-      break;
-    }
-  }
-  return { ...deckblattSetzen(a, eintraege, s, seite, 1), massstab: 1, kompaktHilft };
+  return { ...deckblattSetzen(a, eintraege, s, seite), massstab: 1, kompaktHilft: false };
 }
 
 function deckblattSetzen(
@@ -506,13 +471,12 @@ function deckblattSetzen(
   eintraege: Eintrag[],
   s: S,
   seite: (n: number) => PDFPage | null,
-  K: number,
-): { seiten: number; links: DeckLink[]; tiefste: number } {
+): { seiten: number; links: DeckLink[] } {
   const B = A4.breite;
   const H = A4.hoehe;
   const aussehen: MappenAussehen = a.aussehen ?? { art: 'schlicht' };
-  const V = (mm: number) => mm * MM * K;
-  const F = (pt: number) => pt * K;
+  const x0 = BOGEN_SEITE;
+  const breite = B - 2 * BOGEN_SEITE;
   const links: DeckLink[] = [];
   let n = 0;
   let p = seite(n);
@@ -523,395 +487,300 @@ function deckblattSetzen(
     size: number,
     font: PDFFont,
     color: Color = FARBE.ink,
+    schraeg = false,
   ) => {
-    if (p) schreiben(p, t, s, { x, y, size, font, color });
+    if (p)
+      p.drawText(zeichenbar(t, s), {
+        x,
+        y,
+        size,
+        font,
+        color,
+        ...(schraeg ? { ySkew: degrees(11) } : {}),
+      });
   };
+  const { strasse, rest: restRoh } = a.adresse.length
+    ? adresseTeile(a.adresse)
+    : { strasse: '', rest: '' };
+  const rest = restRoh.replaceAll(' · ', ', ');
 
-  // Kopf über die ganze Breite: die Wohnung. Er wächst nicht mit dem Maßstab.
-  const kopfX = 20 * MM;
-  const kopfBreite = B - 40 * MM;
-  let kopfY = H - 22 * MM;
-  if (a.adresse.length) {
-    const { strasse, rest } = adresseTeile(a.adresse);
-    text('Bewerbung um die Wohnung', kopfX, kopfY, 9.5, s.regular, DRUCK);
-    kopfY -= 9.5 * MM;
-    const g = passendeGroesse(strasse, s.titel, 26, 16, kopfBreite, s);
-    const zeilen = umbrechen(zeichenbar(strasse, s), s.titel, g, kopfBreite);
-    zeilen.forEach((zeile, i) => {
-      text(zeile, kopfX, kopfY, g, s.titel);
-      kopfY -= i < zeilen.length - 1 ? g * 1.15 : 7 * MM;
+  // 1. Kopf: „Bewerbung um die Wohnung“, die Straße, darunter Geschoss und Ort.
+  let y = H - BOGEN_OBEN - 12 * MM;
+  if (strasse) {
+    text('Bewerbung um die Wohnung', x0, y - 9, 9, s.regular, GRAU);
+    y -= 9 * 1.35 + 2;
+    const g = passendeGroesse(strasse, s.bold, 22, 15, breite, s);
+    const zeilen = umbrechen(zeichenbar(strasse, s), s.bold, g, breite);
+    zeilen.forEach((zeile) => {
+      y -= g * 1.1;
+      text(zeile, x0, y + g * 0.1, g, s.bold);
     });
-    if (rest) {
-      for (const zeile of umbrechen(zeichenbar(rest, s), s.regular, 12, kopfBreite)) {
-        text(zeile, kopfX, kopfY, 12, s.regular);
-        kopfY -= 5.6 * MM;
+    if (rest)
+      for (const zeile of umbrechen(zeichenbar(rest, s), s.regular, 10.5, breite)) {
+        y -= 10.5 * 1.35;
+        text(zeile, x0, y, 10.5, s.regular);
       }
-    }
   } else {
-    kopfY -= 4 * MM;
-    text('Bewerbung um eine Wohnung', kopfX, kopfY, 21, s.titel);
-    kopfY -= 6 * MM;
+    y -= 22 * 1.1;
+    text('Bewerbung um eine Wohnung', x0, y, 22, s.bold);
   }
-  // E39: Inserat und Einzug, das Erste, was ein Vermieter abgleicht. Fehlt eine, fällt ihre Zeile weg;
-  // lange Portalnamen brechen um, gekürzt wird nie.
+  // E39: Inserat und Einzug, leise unter dem Ort.
   for (const zeile of [a.inserat, a.einzug].filter((z): z is string => !!z?.trim()))
-    for (const teil of umbrechen(zeichenbar(zeile, s), s.regular, 10, kopfBreite)) {
-      text(teil, kopfX, kopfY, 10, s.regular, DRUCK);
-      kopfY -= 4.8 * MM;
+    for (const teil of umbrechen(zeichenbar(zeile, s), s.regular, 9, breite)) {
+      y -= 9 * 1.35;
+      text(teil, x0, y, 9, s.regular, GRAU);
     }
 
-  // Seitenleiste: mit wem man es zu tun hat und wie man sie erreicht.
-  const leisteX = 14 * MM;
-  const leisteBreite = 62 * MM;
-  const leisteUnten = 20 * MM;
-  const leisteOben = kopfY - 3 * MM;
-  const px = leisteX + 6 * MM;
-  const pw = leisteBreite - 12 * MM;
+  // 2. und 3. Leitsatz und Satz der Bewerber.
   const vertrag = a.bloecke.filter((b) => !b.person.buerge);
   const buergen = a.bloecke.filter((b) => b.person.buerge);
-  const kontakt = a.kontakt.filter(Boolean);
-
-  const leiste = (
-    kl: number,
-    zeichnen: boolean,
-    ohneBeruf = false,
-    ohneBuergen = false,
-  ): number => {
-    const v = (mm: number) => mm * MM * kl;
-    const f = (pt: number) => pt * kl;
-    const schrift = (
-      t: string,
-      x: number,
-      yy: number,
-      size: number,
-      font: PDFFont,
-      color: Color = FARBE.ink,
-    ) => {
-      if (zeichnen) text(t, x, yy, size, font, color);
-    };
-    let y = leisteOben - v(9);
-    // Wer ist dabei (E25): oben die Kurzform als Satz, darunter die drei Gruppen. Keine Summe.
-    const kurz = werIstDabeiSatz(vertrag.length, a.mitziehende, buergen.length);
-    for (const zeile of umbrechen(zeichenbar(kurz, s), s.regular, f(9), pw)) {
-      schrift(zeile, px, y, f(9), s.regular, DRUCK);
-      y -= v(4.2);
+  const leit = werIstDabeiSatz(vertrag.length, a.mitziehende, buergen.length);
+  y -= 9 * MM;
+  for (const zeile of umbrechen(zeichenbar(leit, s), s.bold, 12.5, breite)) {
+    y -= 12.5 * 1.1;
+    text(zeile, x0, y, 12.5, s.bold);
+  }
+  if (a.satz.trim()) {
+    y -= 3;
+    for (const zeile of umbrechen(zeichenbar(`„${a.satz.trim()}“`, s), s.regular, 10.5, breite)) {
+      y -= 10.5 * 1.35;
+      text(zeile, x0, y, 10.5, s.regular, ZITAT, true);
     }
-    y -= v(2.4);
-    const gruppe = (titel: string) => {
-      schrift(titel, px, y, f(9.5), s.bold);
-      y -= v(6.2);
-    };
+  }
 
-    const eintrag = (marke: (q: number, yy: number) => void, name: string, unter: string) => {
-      const q = v(2.6);
-      const x2 = px + q + v(2.4);
-      const w2 = pw - q - v(2.4);
-      if (zeichnen && p) marke(q, y);
-      // Namen brechen an Leerzeichen um und werden nie gekürzt; ein einzelnes zu breites Wort wird kleiner.
-      for (const zeile of umbrechen(zeichenbar(name, s), s.bold, f(9.5), w2)) {
-        schrift(zeile, x2, y, passendeGroesse(zeile, s.bold, f(9.5), 7, w2, s), s.bold);
-        y -= v(4.4);
+  // 4. Personen in drei gleichen Spalten.
+  y -= 8 * MM + 4 * MM;
+  const spalte = (breite - 2 * 8 * MM) / 3;
+  const spalteX = (i: number) => x0 + i * (spalte + 8 * MM);
+  const farbeVon = (person: MappenPerson) => hex(deckFarbe(aussehen, person.farbe));
+  const spaltenUnten: number[] = [];
+  const etikett = (t: string, x: number, yy: number) => {
+    text(t, x, yy - 8.5, 8.5, s.regular, GRAU);
+    return yy - 8.5 * 1.35 - 2 * MM;
+  };
+  const person = (
+    x: number,
+    yy: number,
+    name: string,
+    unter: string,
+    art: 'flaeche' | 'umriss' | 'ring',
+    farbe: Color,
+  ) => {
+    const w = spalte - EINZUG;
+    let zy = yy;
+    umbrechen(zeichenbar(name, s), s.bold, 10, w).forEach((zeile, i) => {
+      zy -= 10 * 1.35;
+      if (i === 0) personZeichen(p, art, farbe, x, zy);
+      text(zeile, x + EINZUG, zy, passendeGroesse(zeile, s.bold, 10, 8, w, s), s.bold);
+    });
+    if (unter)
+      for (const zeile of umbrechen(zeichenbar(unter, s), s.regular, 8.5, w)) {
+        zy -= 8.5 * 1.35;
+        text(zeile, x + EINZUG, zy, 8.5, s.regular, GRAU);
       }
-      if (unter) {
-        for (const zeile of umbrechen(zeichenbar(unter, s), s.regular, f(8.3), w2)) {
-          schrift(zeile, x2, y, f(8.3), s.regular, DRUCK);
-          y -= v(3.9);
-        }
-      }
-      y -= v(2.6);
-    };
-    const quadrat = (person: MappenPerson) => (q: number, yy: number) => {
-      const farbe = hex(deckFarbe(aussehen, person.farbe));
-      p!.drawRectangle(
-        person.buerge
-          ? {
-              x: px + 0.5,
-              y: yy - v(0.2) + 0.5,
-              width: q - 1,
-              height: q - 1,
-              borderColor: farbe,
-              borderWidth: 1,
-            }
-          : { x: px, y: yy - v(0.2), width: q, height: q, color: farbe },
-      );
-    };
-    // Wie in der App: Kinder und weitere Personen mit Ring, ohne eigene Farbe.
-    const ring = (q: number, yy: number) => {
-      p!.drawEllipse({
-        x: px + q / 2,
-        y: yy - v(0.2) + q / 2,
-        xScale: q / 2 - 0.5,
-        yScale: q / 2 - 0.5,
-        borderColor: FARBE.ink,
-        borderWidth: 1,
-      });
-    };
-    if (vertrag.length) gruppe(GRUPPE_VERTRAG);
-    for (const b of vertrag) {
-      const rolle = ohneBeruf
-        ? b.person.rolle
-        : [b.person.rolle, b.person.beruf].filter(Boolean).join(', ');
-      eintrag(quadrat(b.person), b.person.name, rolle);
+    return zy - 3 * MM;
+  };
+  // Spalte 1: Im Mietvertrag
+  {
+    let yy = y;
+    if (vertrag.length) {
+      yy = etikett(GRUPPE_VERTRAG, spalteX(0), yy);
+      for (const b of vertrag)
+        yy = person(
+          spalteX(0),
+          yy,
+          b.person.name,
+          // Ab sechs im Mietvertrag ohne Beruf, damit „Was beiliegt“ auf Seite 1 Platz behält.
+          [b.person.rolle, vertrag.length > 5 ? '' : b.person.beruf].filter(Boolean).join(', '),
+          'flaeche',
+          farbeVon(b.person),
+        );
     }
+    spaltenUnten.push(yy);
+  }
+  // Spalte 2: Ziehen mit ein, darunter Bürgt
+  {
+    let yy = y;
     if (a.mitziehende.length) {
-      y -= v(1.5);
-      gruppe(GRUPPE_MIT);
+      yy = etikett(GRUPPE_MIT, spalteX(1), yy);
+      for (const m of a.mitziehende) yy = person(spalteX(1), yy, m.text, '', 'ring', FARBE.ink);
     }
-    for (const m of a.mitziehende) eintrag(ring, m.text, '');
-    if (buergen.length && !ohneBuergen) {
-      y -= v(1.5);
-      gruppe(GRUPPE_BUERGT);
-      for (const b of buergen) eintrag(quadrat(b.person), b.person.name, b.person.rolle);
+    if (buergen.length) {
+      if (a.mitziehende.length) yy -= 1 * MM;
+      yy = etikett(GRUPPE_BUERGT, spalteX(1), yy);
+      for (const b of buergen)
+        yy = person(spalteX(1), yy, b.person.name, b.person.rolle, 'umriss', farbeVon(b.person));
     }
+    spaltenUnten.push(yy);
+  }
+  // Spalte 3: Kontakt
+  {
+    let yy = y;
+    const kontakt = a.kontakt.filter(Boolean);
     if (kontakt.length) {
-      y -= v(5);
-      schrift('Kontakt', px, y, f(9.5), s.bold);
-      y -= v(5);
+      yy = etikett('Kontakt', spalteX(2), yy);
       for (const k of kontakt) {
-        // Erst etwas kleiner, dann umbrechen: Namen an Leerzeichen, Mailadressen vor dem @.
+        // Mailadressen brechen vor dem @ um, Namen an Leerzeichen; gekürzt wird nie.
         const teile =
-          breiteVon(k, s.regular, f(9), s) * 0.78 <= pw
+          breiteVon(k, s.regular, 9.5, s) <= spalte
             ? [k]
             : k.includes('@')
               ? k.replace('@', '\n@').split('\n')
-              : umbrechen(zeichenbar(k, s), s.regular, f(9), pw);
+              : umbrechen(zeichenbar(k, s), s.regular, 9.5, spalte);
         for (const zeile of teile) {
-          schrift(zeile, px, y, passendeGroesse(zeile, s.regular, f(9), 7.5, pw, s), s.regular);
-          y -= v(4.6);
+          yy -= 9.5 * 1.5;
+          text(
+            zeile,
+            spalteX(2),
+            yy,
+            passendeGroesse(zeile, s.regular, 9.5, 8, spalte, s),
+            s.regular,
+          );
         }
       }
     }
-    // Die Grundlinie der letzten Zeile, nicht die Stelle darunter.
-    return y + v(4.6);
-  };
-
-  if (p) {
-    const ton = leistenTon(aussehen, a.bloecke);
-    rundesFeld(
-      p,
-      leisteX,
-      leisteUnten,
-      leisteBreite,
-      leisteOben - leisteUnten,
-      3 * MM,
-      ton ? { color: hex(ton) } : { borderColor: hex(FLAECHE_LINIE), borderWidth: 0.6 },
-    );
+    spaltenUnten.push(yy);
   }
-  // Passt die Leiste im Maßstab 1,0 nicht, greifen die Stufen; nur für die Leiste, Kopf und rechte Spalte
-  // bleiben. Die gilt als voll, wenn sie bis unter 11 mm über ihren unteren Rand reicht (P11, P24).
-  const leisteTief = leiste(K, false);
-  const stufe =
-    K <= 1
-      ? (LEISTE_STUFEN.filter((st) => st.kl <= K).find(
-          (st) =>
-            leiste(st.kl, false, st.ohneBeruf, st.ohneBuergen) >=
-            leisteUnten + (a.fassung ? 15 : 11) * MM,
-        ) ?? LEISTE_STUFEN.at(-1)!)
-      : { kl: K, ohneBeruf: false, ohneBuergen: false };
-  leiste(stufe.kl, true, stufe.ohneBeruf, stufe.ohneBuergen);
-  if (a.hinweis) {
-    // Zwei Zeilen, unter der 11-mm-Grenze der Leiste. Was man liest, ist das, wohin der Link führt; auch
-    // ausgedruckt steht die Adresse da. Mit „für Vermieter“ wäre die Zeile in zwei Schriften zu breit.
-    const lesehilfe = `Lesehilfe: ${VERMIETER_DOMAIN}`;
-    const lesehilfeY = leisteUnten + 4.8 * MM;
-    text(`Erstellt mit ${APP_NAME}`, px, leisteUnten + 8.2 * MM, 7.5, s.regular, DRUCK);
-    if (a.fassung)
-      text(zeichenbar(a.fassung, s), px, leisteUnten + 11.6 * MM, 7.5, s.regular, DRUCK);
-    text(lesehilfe, px, lesehilfeY, 7.5, s.regular, DRUCK);
-    links.push({
-      seite: 0,
-      rect: [px, lesehilfeY - 2, px + breiteVon(lesehilfe, s.regular, 7.5, s), lesehilfeY + 8],
-      uri: VERMIETER_ADRESSE,
-    });
-  }
+  y = Math.min(...spaltenUnten);
 
-  // Rechte Spalte: der eigene Satz und was beiliegt.
-  let rx = leisteX + leisteBreite + 8 * MM;
-  let rw = B - 20 * MM - rx;
-  let y = leisteOben - V(9);
-  if (a.satz.trim()) {
-    for (const zeile of umbrechen(zeichenbar(a.satz.trim(), s), s.regular, F(12), rw)) {
-      text(zeile, rx, y, F(12), s.regular);
-      y -= V(6.4);
-    }
-    y -= V(7);
-  }
-
-  const RECHTS_UNTEN = 24 * MM;
-  const weiter = () => {
-    n += 1;
-    p = seite(n);
-    rx = 20 * MM;
-    rw = B - 40 * MM;
-    y = H - 24 * MM;
-    text('Was beiliegt (Fortsetzung)', rx, y, F(11.5), s.bold);
-    y -= V(9);
-  };
+  // 5. „Was beiliegt“: je Person der Name mit Zeichen, darunter eine Zeile je Unterlage.
+  // Untere Grenze des Verzeichnisses: über „Erstellt mit Hefta“ (Seite 1) oder über der Fußzeile.
+  const grenze = () => FUSS_LINIE + 6 * MM + (n === 0 && a.hinweis ? 4 * 8 * 1.35 + 4 * MM : 0);
+  let blockJetzt: MappenBlock | null = null;
   const zeile = (e: Eintrag) => {
-    const x = rx + V(4);
-    const w = rw - V(4);
-    const nummer = ziffern(e);
-    const beschrieben = beschriftung(e.teil);
-    const nummerGross = s.regular.widthOfTextAtSize(nummer, F(9.5));
-    // Zu lange Bezeichnungen werden kleiner, nie gekürzt; erst ganz zuletzt brechen sie um.
-    const g = passendeGroesse(beschrieben, s.regular, F(9.5), 7.5, w - nummerGross - 14, s);
-    const teile = umbrechen(zeichenbar(beschrieben, s), s.regular, g, w - nummerGross - 14);
-    const yErste = y;
-    teile.forEach((t, i) => {
-      text(t, x, y, g, s.regular);
-      if (i < teile.length - 1) y -= g * 1.2;
-    });
-    const nummerBreite = s.regular.widthOfTextAtSize(nummer, g);
-    text(nummer, x + w - nummerBreite, y, g, s.regular);
-    const ende = x + s.regular.widthOfTextAtSize(teile.at(-1) ?? '', g) + 6;
-    if (ende < x + w - nummerBreite - 6) {
-      p?.drawLine({
-        start: { x: ende, y: y + 1 },
-        end: { x: x + w - nummerBreite - 6, y: y + 1 },
-        thickness: 0.8,
-        color: RAHMEN,
-        dashArray: [0.6, 2.2],
-      });
+    // Nur wenn eine einzelne Person mehr Unterlagen hat, als auf eine Seite passen, wird sie geteilt;
+    // auf der neuen Seite steht ihr Name wieder.
+    if (y - 10 * 1.35 - 3 < grenze()) {
+      zweiteSeite();
+      if (blockJetzt) nameZeile(blockJetzt);
     }
-    links.push({ seite: n, rect: [x, y - 2, x + w, yErste + F(8)], ziel: e.von });
-    y -= V(5.4);
+    const x = x0 + EINZUG;
+    const nummer = ziffern(e);
+    const nummerBreite = Math.max(s.regular.widthOfTextAtSize(nummer, 10), 9 * MM);
+    const w = x0 + breite - x - nummerBreite - 3 * MM;
+    const beschrieben = beschriftung(e.teil);
+    // Zu lange Bezeichnungen werden kleiner, nie gekürzt; erst zuletzt brechen sie um.
+    const g = passendeGroesse(beschrieben, s.regular, 10, 8, w, s);
+    const teile = umbrechen(zeichenbar(beschrieben, s), s.regular, g, w);
+    const yErste = y - 1.5 - g;
+    teile.forEach((t, i) => {
+      y -= (i === 0 ? 1.5 : 0) + g * 1.35;
+      text(t, x, y, g, s.regular);
+    });
+    const zahlBreite = s.regular.widthOfTextAtSize(nummer, g);
+    text(nummer, x0 + breite - zahlBreite, y, g, s.regular);
+    const ende = x + s.regular.widthOfTextAtSize(teile.at(-1) ?? '', g) + 3 * MM;
+    const bis = x0 + breite - nummerBreite - 3 * MM;
+    if (p && ende < bis)
+      p.drawLine({
+        start: { x: ende, y: y + 1 },
+        end: { x: bis, y: y + 1 },
+        thickness: 0.5,
+        color: LINIE_PUNKTE,
+        dashArray: [0.5, 1.5],
+      });
+    links.push({ seite: n, rect: [x, y - 3, x0 + breite, yErste + g + 2], ziel: e.von });
+    y -= 1.5;
+  };
+  const nameZeile = (b: MappenBlock) => {
+    y -= 4 * MM;
+    const w = breite - EINZUG;
+    umbrechen(zeichenbar(b.person.name, s), s.bold, 10, w).forEach((t, i) => {
+      y -= 10 * 1.35;
+      if (i === 0)
+        personZeichen(p, b.person.buerge ? 'umriss' : 'flaeche', farbeVon(b.person), x0, y);
+      text(t, x0 + EINZUG, y, 10, s.bold);
+    });
+    y -= 2;
   };
   const block = (b: MappenBlock) => {
     const zeilen = eintraege.filter((e) => e.block === b);
     if (!zeilen.length) return;
-    const noetig = V(11) + zeilen.length * V(5.4);
-    // Ein Block bleibt zusammen, außer er ist länger als eine ganze Seite.
-    if (y - noetig < RECHTS_UNTEN && noetig <= H - 2 * RECHTS_UNTEN) weiter();
-    // B14: Jede Person beginnt mit einem Reiter (Quadrat, Name), der auf einer Linie über die ganze Breite sitzt,
-    // wie im Tab „Mappe“ und auf der Vermieterseite. Bürgen haben den Umriss (mappe14.py, `.db .pers`).
-    const em = F(9.5);
-    const padL = 0.9 * em;
-    const padR = 1.1 * em;
-    const q = V(2.6);
-    const luecke = V(2.6);
-    const nameBreite = rw - padL - q - luecke - padR;
-    const g = passendeGroesse(b.person.name, s.bold, F(11), 8.5, nameBreite, s);
-    const namen = umbrechen(zeichenbar(b.person.name, s), s.bold, g, nameBreite);
-    const zeilenHoehe = g * 1.25;
-    const reiterHoehe = 0.48 * em + namen.length * zeilenHoehe + 0.4 * em;
-    const reiterBreite =
-      padL + q + luecke + Math.max(...namen.map((t) => breiteVon(t, s.bold, g, s))) + padR;
-    const reiterOben = y + g;
-    const reiterUnten = reiterOben - reiterHoehe;
-    if (p) {
-      const farbe = hex(deckFarbe(aussehen, b.person.farbe));
-      p.drawLine({
-        start: { x: rx, y: reiterUnten },
-        end: { x: rx + rw, y: reiterUnten },
-        thickness: 0.6,
-        color: FARBE.ink,
-      });
-      rundesRechteck(
-        p,
-        rx,
-        reiterOben,
-        reiterBreite,
-        reiterHoehe,
-        [V(2.2), V(2.2), 0, 0],
-        { color: FARBE.weiss, borderColor: FARBE.ink, borderWidth: 0.6 },
-        true,
-      );
-      p.drawRectangle({
-        x: rx + 0.3,
-        y: reiterUnten - 0.6,
-        width: reiterBreite - 0.6,
-        height: 1.2,
-        color: FARBE.weiss,
-      });
-      const qOben = reiterOben - 0.48 * em - 0.42 * em;
-      p.drawRectangle(
-        b.person.buerge
-          ? {
-              x: rx + padL + 0.7,
-              y: qOben - q + 0.7,
-              width: q - 1.4,
-              height: q - 1.4,
-              borderColor: farbe,
-              borderWidth: 1.4,
-            }
-          : { x: rx + padL, y: qOben - q, width: q, height: q, color: farbe },
-      );
-    }
-    namen.forEach((name, i) => {
-      text(
-        name,
-        rx + padL + q + luecke,
-        reiterOben - 0.48 * em - (i + 0.8) * zeilenHoehe,
-        g,
-        s.bold,
-      );
-    });
-    y = reiterUnten - V(5);
-    for (const e of zeilen) {
-      if (y - V(5.4) < RECHTS_UNTEN) weiter();
-      zeile(e);
-    }
-    y -= V(4);
+    blockJetzt = b;
+    nameZeile(b);
+    for (const e of zeilen) zeile(e);
+    blockJetzt = null;
   };
+  // Seite 2: Briefkopf wie in der Selbstauskunft, dann wieder „Was beiliegt“ im selben Satz.
+  const zweiteSeite = () => {
+    n += 1;
+    p = seite(n);
+    const linie = p
+      ? briefkopf(p, { strasse, rest, namen: a.fussName }, s)
+      : H - BOGEN_OBEN - 8.5 - 4 * MM;
+    y = linie - 10 * MM;
+    abschnittKopf(p, 'Was beiliegt', x0, breite, y - 8, s.bold);
+    y -= 8 + 5;
+  };
+
   const leer = !eintraege.length;
+  if (a.inhaltsverzeichnis && (!leer || a.schritt === 'besichtigung')) {
+    y -= 8 * MM;
+    abschnittKopf(p, 'Was beiliegt', x0, breite, y - 8, s.bold);
+    y -= 8 + 5;
+  }
   if (a.inhaltsverzeichnis && leer && a.schritt === 'besichtigung') {
-    // PC19 B9 (DP27): Sparsam zur Besichtigung liegt nichts bei; statt einer leeren Überschrift ein Satz.
-    text('Was beiliegt', rx, y, F(11.5), s.bold);
-    y -= V(9);
-    for (const zeile of umbrechen(
+    // DP27, PC19 B9: Sparsam zur Besichtigung liegt nichts bei; statt einer leeren Liste ein Satz.
+    y -= 4 * MM;
+    for (const z of umbrechen(
       'Zur Besichtigung nur dieses Deckblatt. Die Unterlagen folgen auf Wunsch.',
       s.regular,
-      F(10.5),
-      rw,
+      10.5,
+      breite,
     )) {
-      text(zeile, rx, y, F(10.5), s.regular);
-      y -= V(5.4);
+      y -= 10.5 * 1.35;
+      text(z, x0, y, 10.5, s.regular);
     }
   } else if (a.inhaltsverzeichnis && !leer) {
-    text('Was beiliegt', rx, y, F(11.5), s.bold);
-    y -= V(9);
-    vertrag.forEach(block);
-    if (buergen.some((b) => eintraege.some((e) => e.block === b))) {
-      y -= V(2);
-      if (y - V(20) < RECHTS_UNTEN) weiter();
-      text('Bürgschaft', rx, y, F(11.5), s.bold);
-      y -= V(9);
-      buergen.forEach(block);
+    // Zeilen je Person (Name plus Unterlagen); eine Person wird nie geteilt (DP30, Abschnitt 3).
+    const reihe = [...vertrag, ...buergen].filter((b) => eintraege.some((e) => e.block === b));
+    const zeilenVon = (b: MappenBlock) => 1 + eintraege.filter((e) => e.block === b).length;
+    let platz = verzeichnisPlatz(a);
+    let belegt = 0;
+    for (const b of reihe) {
+      const erste = b === buergen.find((x) => reihe.includes(x));
+      // Ist oben kein Platz (sehr viele Personen), beginnt das Verzeichnis gleich auf Seite 2.
+      if ((belegt > 0 || platz <= 0) && belegt + zeilenVon(b) > platz) {
+        zweiteSeite();
+        // Jede weitere Seite hat oben nur den Briefkopf (Fall sehr vieler Unterlagen).
+        platz = 2 * VERZEICHNIS_ZEILEN + 2;
+        belegt = 0;
+      }
+      if (erste) {
+        y -= 5 * MM;
+        text('Bürgschaft', x0, y - 8.5, 8.5, s.regular, GRAU);
+        y -= 8.5 * 1.35;
+      }
+      block(b);
+      belegt += zeilenVon(b);
     }
   }
-  // Die Bitte der Bewerber: unter der letzten Unterlage, ohne Überschrift, im Druckton (bitte-zum-loeschen.md).
+  // Die Bitte der Bewerber: unter der letzten Unterlage, ohne Überschrift, grau (bitte-zum-loeschen.md).
   const bitte = a.bitte?.trim();
   if (bitte) {
-    const setzen = () => umbrechen(zeichenbar(bitte, s), s.regular, F(9.5), rw - V(4));
-    let zeilen = setzen();
-    if (y - (V(3) + zeilen.length * V(4.8)) < RECHTS_UNTEN) {
-      // Passt sie nicht mehr darunter, rutscht sie allein auf die Folgeseite.
-      n += 1;
-      p = seite(n);
-      rx = 20 * MM;
-      rw = B - 40 * MM;
-      y = H - 24 * MM;
-      zeilen = setzen();
-    }
-    y -= V(3);
-    for (const zeile of zeilen) {
-      text(zeile, rx + V(4), y, F(9.5), s.regular, DRUCK);
-      y -= V(4.8);
+    y -= 5 * MM;
+    for (const z of umbrechen(zeichenbar(bitte, s), s.regular, 9.5, breite)) {
+      y -= 9.5 * 1.35;
+      text(z, x0, y, 9.5, s.regular, GRAU);
     }
   }
-  // P28: Geht es auf der nächsten Seite weiter, steht das unten auf dem Deckblatt, subtil, aber da.
+  // 7. Unten links, nur auf Seite 1: Fassung, „Erstellt mit Hefta“ und die Lesehilfe als Text.
   const erste = seite(0);
-  if (n > 0 && erste) {
-    const weiterText = 'Weiter auf Seite 2';
-    schreiben(erste, weiterText, s, {
-      x: B - 20 * MM - breiteVon(weiterText, s.regular, 8, s),
-      y: 18 * MM,
-      size: 8,
-      font: s.regular,
-      color: DRUCK,
+  if (a.hinweis && erste) {
+    const unten = FUSS_LINIE + 6 * MM;
+    const lesehilfe = `Lesehilfe: ${VERMIETER_DOMAIN}`;
+    const zeilen = [...(a.fassung ? [a.fassung] : []), `Erstellt mit ${APP_NAME}`, lesehilfe];
+    zeilen.forEach((t, i) => {
+      const yy = unten + (zeilen.length - 1 - i) * 8 * 1.35;
+      schreiben(erste, t, s, { x: x0, y: yy, size: 8, font: s.regular, color: GRAU });
+    });
+    links.push({
+      seite: 0,
+      rect: [x0, unten - 2, x0 + breiteVon(lesehilfe, s.regular, 8, s), unten + 8],
+      uri: VERMIETER_ADRESSE,
     });
   }
-  return { seiten: n + 1, links, tiefste: Math.min(leisteTief, y) };
+  return { seiten: n + 1, links };
 }
 
 interface Punkt {
@@ -982,6 +851,14 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
   const baender: { seite: PDFPage; person: MappenPerson; rechts: string }[] = [];
   const aussehen: MappenAussehen = a.aussehen ?? { art: 'schlicht' };
   const auskunftSchriften: AuskunftSchriften = { regular, bold, titel, ersetzen: s.ersetzen };
+  // Seiten im Briefbogen (Deckblatt, Selbstauskunft): Fußzeile mit dessen Rändern (DP30).
+  const bogen = new Set<PDFPage>(deckblaetter);
+  const kopfTeile = a.adresse.length ? adresseTeile(a.adresse) : { strasse: '', rest: '' };
+  const bogenKopf = {
+    strasse: kopfTeile.strasse,
+    rest: kopfTeile.rest.replaceAll(' · ', ', '),
+    namen: a.fussName,
+  };
 
   const schritte = a.bloecke.reduce(
     (n, b) => n + b.teile.reduce((m, teil) => m + teil.quellen.length, 0),
@@ -1011,20 +888,15 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
       };
       const standard = teil.kopf ?? teil.abschnitt;
       if (teil.auskunft) {
+        // DP30: Die Selbstauskunft trägt den Briefkopf der Mappe statt der Kopfzeile mit dem Namen.
         const seiten = selbstauskunftZeichnen(pdf, auskunftSchriften, {
           ...teil.auskunft,
           farbe: teil.auskunft.farbe && deckFarbe(aussehen, teil.auskunft.farbe),
           buerge: block.person.buerge,
           mitHinweis: a.hinweis,
+          briefkopf: bogenKopf,
         });
-        seiten.forEach((seite, k) =>
-          baender.push({
-            seite,
-            person: block.person,
-            rechts:
-              seiten.length > 1 ? `${standard} · Seite ${k + 1} von ${seiten.length}` : standard,
-          }),
-        );
+        for (const seite of seiten) bogen.add(seite);
       }
       for (const q of teil.quellen) {
         const kopf = q.kopf ?? standard;
@@ -1046,8 +918,8 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
           const B = A4.breite;
           const H = A4.hoehe;
           const seite = pdf.addPage([B, H]);
-          const x0 = RAND_SEITE;
-          const x1 = B - RAND_SEITE;
+          const x0 = a.fusszeile ? UNTERLAGE_SEITE : RAND_SEITE;
+          const x1 = B - x0;
           const y0 = a.fusszeile ? INHALT_UNTEN : RAND_SEITE;
           const y1 = H - (a.fusszeile ? INHALT_OBEN : RAND_SEITE);
           // Eingepasst, nie vergrößert, nie verzerrt; oben angelegt, waagerecht mittig.
@@ -1071,7 +943,7 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
             width: w,
             height: h,
             borderColor: RAHMEN,
-            borderWidth: 0.5,
+            borderWidth: 0.4,
           });
           fremde.push({
             seite: pdf.getPageCount(),
@@ -1082,7 +954,7 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
             seite,
             person: block.person,
             rechts:
-              eingebettet.length > 1 ? `${kopf} · Seite ${k + 1} von ${eingebettet.length}` : kopf,
+              eingebettet.length > 1 ? `${kopf}, Seite ${k + 1} von ${eingebettet.length}` : kopf,
           });
         }
       }
@@ -1126,8 +998,10 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
   }
   if (a.fusszeile) {
     for (const b of baender) kopfzeile(b.seite, b.person, b.rechts, s, aussehen);
-    const links = a.kurz ? `Bewerbung ${a.kurz} · ${a.fussName}` : `Bewerbung · ${a.fussName}`;
-    seiten.forEach((seite, i) => fussleiste(seite, links, i + 1, gesamt, s));
+    const links = a.kurz ? `Bewerbung ${a.kurz}, ${a.fussName}` : `Bewerbung, ${a.fussName}`;
+    seiten.forEach((seite, i) =>
+      fussleiste(seite, links, i + 1, gesamt, s, bogen.has(seite) ? BOGEN_SEITE : UNTERLAGE_SEITE),
+    );
   }
 
   // Lesezeichen: Person, darunter ihre Unterlagen, bei Serien die Monate; Bürgen unter „Bürgschaft“.

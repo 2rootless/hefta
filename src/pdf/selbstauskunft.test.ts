@@ -29,7 +29,7 @@ const HH = haushaltsAngaben({ haustiere: 'ja', haustiereText: 'eine Katze', ort:
 const WER = einziehend(2, { kinder: 1, weitereErwachsene: 0 });
 const ETIKETTEN = [
   'Selbstauskunft',
-  'nach dem Musterbogen der Datenschutzkonferenz, Stand Januar 2026',
+  'Nach dem Musterbogen der Datenschutzkonferenz, Stand Januar 2026',
   'Zur Person',
   'Name',
   'Rolle im Mietvertrag',
@@ -74,10 +74,11 @@ describe('Selbstauskunft als festes Formular', () => {
     expect(e.seiten).toBe(1);
     const t = await text(e);
     for (const etikett of [...ETIKETTEN, 'Haushalt', 'Personen, die einziehen', 'Haustiere'])
-      expect(t, etikett).toContain(etikett);
+      expect(t.toLowerCase(), etikett).toContain(etikett.toLowerCase());
     expect(t).toContain('Max Mustermann');
-    expect(t).toContain('Hauptmieter · im Mietvertrag');
-    expect(t).toContain('0151 23456789 · max.mustermann@example.com');
+    expect(t).toContain('Hauptmieter, im Mietvertrag.');
+    // DP30: Komma statt Mittelpunkt.
+    expect(t).toContain('0151 23456789, max.mustermann@example.com');
     expect(t).toContain('3 (2 Erwachsene, 1 Kind)');
     expect(t).toContain('Eine Katze');
     expect(t).toContain('2.643 €');
@@ -94,15 +95,17 @@ describe('Selbstauskunft als festes Formular', () => {
       selbstauskunft: { ...MAX.selbstauskunft, insolvenz: null, raeumungstitel: null },
     } as Person;
     const t = await text(await bauen(leer));
-    for (const etikett of ETIKETTEN) expect(t, etikett).toContain(etikett);
+    for (const etikett of ETIKETTEN)
+      expect(t.toLowerCase(), etikett).toContain(etikett.toLowerCase());
     expect(t.match(/keine Angabe/g)?.length).toBeGreaterThanOrEqual(5);
   });
 
   it('P19: Bürgen haben statt des Haushalts die Bürgschaft', async () => {
     const t = await text(await bauen(MAX, 'buerge', 'Bürgin'));
-    for (const etikett of ETIKETTEN) expect(t, etikett).toContain(etikett);
+    for (const etikett of ETIKETTEN)
+      expect(t.toLowerCase(), etikett).toContain(etikett.toLowerCase());
     expect(t).toContain('Bürgschaft');
-    expect(t).toContain('Bürgin · bürgt, zieht nicht ein');
+    expect(t).toContain('Bürgin, zieht nicht ein.');
     expect(t).toContain('Bürgin (zieht nicht ein)');
     expect(t).toContain('Bürgschaftserklärung folgt');
     expect(t).not.toContain('Haustiere');
@@ -134,12 +137,12 @@ describe('Selbstauskunft als festes Formular', () => {
       },
     } as Person;
     const e = await bauen(lang);
-    // B14: Ein Abschnitt wird nie geteilt. Füllt eine sehr lange Erläuterung die zweite Seite, steht
-    // „Ort, Datum“ auf einer dritten, wie im Skript des Designs (mappe14.py, SA_JS).
-    expect(e.seiten).toBe(3);
+    // Ein Abschnitt wird nie geteilt: Die Fragen mit der langen Erläuterung gehen auf Seite 2. „Ort, Datum“
+    // steht dort an festem Platz darunter (DP30); reichte der Platz nicht, käme er auf eine eigene Seite.
+    expect(e.seiten).toBe(2);
     const seiten = await textJeSeite(e.bytes);
     expect(seiten[1]).toContain('inzwischen vollständig beglichen');
-    expect(seiten[2]).toContain('Ort, Datum');
+    expect(seiten[1]).toContain('Ort, Datum');
   });
 
   it('neutrale Metadaten', async () => {

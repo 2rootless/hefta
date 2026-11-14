@@ -99,7 +99,7 @@
   // Bewegung beim Wechsel (Design 12.11.): Hefta 2 nach Vorgabe, alles andere blendet über wie bisher.
   const wechselKlasse = $derived.by(() => {
     const w = wechselArt(route.von, route.pfad, route.richtung);
-    return w === 'einblenden' ? 'einblenden' : `wechsel-${w}`;
+    return w === 'keine' ? '' : w === 'einblenden' ? 'einblenden' : `wechsel-${w}`;
   });
   const heftId = $derived(route.pfad.match(/^\/heft\/([\w-]+)$/)?.[1]);
   const merkmalId = $derived(route.pfad.match(/^\/heft\/([\w-]+)\/merkmal$/)?.[1]);
@@ -170,8 +170,9 @@
     });
     // Zurück an die Stelle, an der man war. Die Seite baut sich erst auf: so lange nachsetzen.
     const ziel = untrack(() => route.scrollZiel);
-    window.scrollTo(0, 0);
-    if (ziel) {
+    // PC29 (A2): gleich an die alte Stelle, nicht erst nach oben und ein Bild später zurück.
+    window.scrollTo(0, ziel);
+    if (ziel && Math.abs(window.scrollY - ziel) > 1) {
       let runden = 0;
       const nachsetzen = () => {
         window.scrollTo(0, ziel);

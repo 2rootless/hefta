@@ -496,3 +496,38 @@ test('PC23 A1: Termin in der Vergangenheit ändern und entfernen; aus „Besicht
   await stand.getByRole('button', { name: '‹ Termin entfernen' }).click();
   await expect(stand.getByRole('heading', { level: 2, name: /beworben/i })).toBeVisible();
 });
+
+test('PC25 B7: „Was hinausging“ korrigieren und löschen; der Stand bleibt', async ({ page }) => {
+  await page.goto('/#/wohnungen');
+  const h = heft('spur', 'Zwei Zimmer am Park', {
+    beworben: { am: tag(-3), weg: 'mail', sicher: true },
+  });
+  await hefteAnlegen(page, [
+    {
+      ...h,
+      spur: [{ am: tag(-3, 10), art: 'mappe', weg: 'mail', an: 'kraus@example.com', fassung: 1 }],
+    },
+  ]);
+  await heftOeffnen(page, 'spur');
+  const spur = page
+    .locator('section.block')
+    .filter({ has: page.getByRole('heading', { name: 'Was hinausging' }) });
+  await expect(spur).toContainText('Mail an kraus@example.com');
+
+  // Korrigieren: Weg und Empfänger
+  await spur.getByRole('button', { name: /Mail an kraus@example.com\. Ändern/ }).click();
+  await spur.getByRole('radio', { name: 'Portal' }).click();
+  await spur.getByRole('textbox', { name: 'An wen' }).fill('ImmoScout24');
+  await spur.getByRole('button', { name: 'Übernehmen' }).click();
+  await expect(spur).toContainText('Über ImmoScout24');
+
+  // Löschen mit Rückgängig; der Stand bleibt „beworben“.
+  const stand = page.getByRole('region', { name: /^Stand: / });
+  const titel = await stand.getByRole('heading', { level: 2 }).first().textContent();
+  await spur.getByRole('button', { name: /Über ImmoScout24\. Ändern/ }).click();
+  await spur.getByRole('button', { name: 'Eintrag löschen' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Eintrag gelöscht' })).toBeVisible();
+  await expect(stand.getByRole('heading', { level: 2 }).first()).toHaveText(titel!);
+  await page.getByRole('button', { name: 'Rückgängig' }).click();
+  await expect(spur).toContainText('Über ImmoScout24');
+});

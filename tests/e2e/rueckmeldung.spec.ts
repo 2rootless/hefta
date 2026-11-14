@@ -193,7 +193,11 @@ test('Mappe erstellen: Das Deckblatt öffnet die ganze Mappe; Einzeldateien übe
 
   // Das große Deckblatt führt zurück zu „Mappe erstellen“.
   await page.getByRole('link', { name: 'Mappe teilen' }).click();
-  await page.evaluate(() => (location.hash = '#/mappe/anpassen'));
+  // WebKit verliert den Wechsel per Hash manchmal, solange die vorige Navigation noch läuft: wiederholen.
+  await expect(async () => {
+    await page.evaluate(() => (location.hash = '#/mappe/anpassen'));
+    await expect(page.getByRole('radio', { name: 'Einzeldateien' })).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 20000 });
   await page.getByRole('radio', { name: 'Einzeldateien' }).click();
   await page
     .getByRole('link', { name: /Mappe teilen|Zurück/ })

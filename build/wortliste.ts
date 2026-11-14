@@ -44,7 +44,11 @@ const code = (t: string) => `\`${t}\``;
 /** Feste Wörter, die der Bau der Mappe selbst zeichnet: aus dem Quelltext gelesen, nicht abgeschrieben. */
 export function festeWoerter(quelle: string): string[] {
   const woerter = new Set<string>();
-  for (const [, wort] of quelle.matchAll(/\b(?:text|schrift)\(\s*'([^']+)'/g)) woerter.add(wort!);
+  for (const [, wort] of quelle.matchAll(/\b(?:text|schrift|etikett)\(\s*'([^']+)'/g))
+    woerter.add(wort!);
+  // DP30: Abschnitte im Briefbogen, etwa „Was beiliegt“.
+  for (const [, wort] of quelle.matchAll(/\babschnittKopf\([^,]+,\s*'([^']+)'/g))
+    woerter.add(wort!);
   for (const [, wort] of quelle.matchAll(/\btitel: '([^']+)'/g)) woerter.add(wort!);
   for (const [, wort] of quelle.matchAll(/' · ([A-ZÄÖÜ][^']+)'/g)) woerter.add(wort!);
   // Die Zeile unter einem Eintrag auf dem Deckblatt, etwa „ohne Mietvertrag“.
@@ -211,7 +215,7 @@ export function wortliste(): string {
   z.push(
     'Unten auf jeder Seite (F), links Wohnung und Namen der Vertragsparteien, rechts die Seitenzahl:',
     '',
-    '- „Bewerbung Hauptstraße 12 · Max und Lea Mustermann“: Straße und Nummer aus der ersten Zeile der Adresse bis zum ersten Komma; ohne Adresse „Bewerbung · Max und Lea Mustermann“',
+    '- „Bewerbung Hauptstraße 12, Max und Lea Mustermann“: Straße und Nummer aus der ersten Zeile der Adresse bis zum ersten Komma; ohne Adresse „Bewerbung, Max und Lea Mustermann“',
     '- „Seite 3 von 16“',
     '',
   );

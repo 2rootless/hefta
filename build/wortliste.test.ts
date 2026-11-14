@@ -34,7 +34,7 @@ describe('Wortliste der Mappe', () => {
     expect(festeWoerter("text('Probe', x)")).toEqual(['Probe']);
     // Die Muster der Fußzeile, die die Liste beschreibt, stehen so im Bau der Mappe.
     const bau = readFileSync('src/pdf/bewerbung.ts', 'utf8');
-    expect(bau).toContain('`Bewerbung ${a.kurz} · ${a.fussName}`');
+    expect(bau).toContain('`Bewerbung ${a.kurz}, ${a.fussName}`');
     expect(bau).toContain('`Seite ${nummer} von ${gesamt}`');
   });
 });

@@ -17,7 +17,9 @@ describe('Bewegung beim Wechsel (Design 12.11.)', () => {
 
   it('Bildschirme von Version 1 und der erste Bildschirm blenden wie bisher', () => {
     expect(wechselArt('/', '/person/x', 'vor')).toBe('einblenden');
-    expect(wechselArt('/person/x', '/', 'zurueck')).toBe('einblenden');
+    // PC29 (A2): zurück auf „Mappe“ ohne Einblenden des ganzen Bildschirms.
+    expect(wechselArt('/person/x', '/', 'zurueck')).toBe('keine');
+    expect(wechselArt('/selbstauskunft/x', '/', 'zurueck')).toBe('keine');
     expect(wechselArt(null, '/wohnungen', null)).toBe('einblenden');
   });
 });

@@ -14,7 +14,12 @@ export type Wechsel =
   /** Zurück, „Abbrechen“, „Anderer Link“: `bw-zurueck`, `mittel`, `ziel` (wie `zu` aus B18). */
   | 'zurueck'
   /** alles andere: kurz überblenden wie bisher */
-  | 'einblenden';
+  | 'einblenden'
+  /**
+   * PC29 (A2): Zurück auf den Reiter „Mappe“: Der letzte Stand steht sofort da, ohne den ganzen Bildschirm
+   * einzublenden. Was sich wirklich geändert hat, ändert sich an Ort und Stelle.
+   */
+  | 'keine';
 
 const HEFTA_2 = /^\/(wohnungen|wohnung-neu|heft|wuensche)(\/|$)/;
 
@@ -23,6 +28,7 @@ export function wechselArt(
   nach: string,
   richtung: 'vor' | 'zurueck' | 'ersetzt' | null,
 ): Wechsel {
+  if (von && richtung === 'zurueck' && (nach === '/' || nach === '/mappe-start')) return 'keine';
   if (!von || !(HEFTA_2.test(nach) || HEFTA_2.test(von))) return 'einblenden';
   if (richtung === 'zurueck') return 'zurueck';
   if (/^\/heft\/[\w-]+$/.test(nach)) return 'heft';

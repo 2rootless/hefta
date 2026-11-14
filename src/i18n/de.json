@@ -1914,6 +1914,18 @@
     "spurNachfrage": "Nachfrage an {an}",
     "spurNachfrageOhne": "Nachfrage",
     "spurGeloescht": "Ob gelöscht wurde, kann {app} nicht wissen.",
+    "spurAendern": "Ändern",
+    "spurWeg": "Weg",
+    "spurWegName": {
+      "mail": "Mail",
+      "portal": "Portal",
+      "website": "Website",
+      "sonst": "Anders"
+    },
+    "spurTag": "Tag",
+    "spurAn": "An wen",
+    "spurLoeschen": "Eintrag löschen",
+    "spurGeloeschtMeldung": "Eintrag gelöscht",
     "unterlagenNochIhr": "Der Vermieter hat noch eure Unterlagen.",
     "unterlagenNochDu": "Der Vermieter hat noch deine Unterlagen.",
     "nachfassen": "Kurz nachfragen",

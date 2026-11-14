@@ -496,15 +496,28 @@ interface Seite {
 }
 
 /** Rendert bei 200 dpi und misst P17 wie design/mappe-pdf/druck_sw.py: Schwelle 140 von 255. */
+/** Seiten der Selbstauskünfte (DP30: Briefbogen ohne Kopfzeile). */
+function auskunftSeiten(e: {
+  inhalt: { teile: { abschnitt: string; seite: number; bis: number }[] }[];
+}) {
+  return e.inhalt.flatMap((p) =>
+    p.teile
+      .filter((x) => x.abschnitt === 'Selbstauskunft')
+      .flatMap((x) => Array.from({ length: x.bis - x.seite + 1 }, (_, k) => x.seite + k)),
+  );
+}
+
 function rendern(
   page: Page,
   bytes: Uint8Array,
   mitKopf: boolean,
   deckblaetter: number,
   druck: number[] = [],
+  /** DP30: Seiten der Selbstauskunft tragen den Briefkopf statt der Kopfzeile. */
+  briefbogen: number[] = [],
 ) {
   return page.evaluate(
-    async ({ b64, mitKopf, deckblaetter, druck }) => {
+    async ({ b64, mitKopf, deckblaetter, druck, briefbogen }) => {
       const pdfjs = await import(/* @vite-ignore */ '/pdf.min.mjs' as string);
       pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
       const data = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
@@ -536,7 +549,7 @@ function rendern(
           return z;
         };
         const fehler: string[] = [];
-        if (mitKopf && n > deckblaetter) {
+        if (mitKopf && n > deckblaetter && !briefbogen.includes(n)) {
           if (zaehlen(12 * MM, 5 * MM, W / 2, 12 * MM) < 20)
             fehler.push(`Seite ${n}: Kopfzeile links ohne lesbare Schrift`);
           if (zaehlen(W / 2, 5 * MM, W - 12 * MM, 12 * MM) < 20)
@@ -631,7 +644,7 @@ function rendern(
       }
       return seiten;
     },
-    { b64: Buffer.from(bytes).toString('base64'), mitKopf, deckblaetter, druck },
+    { b64: Buffer.from(bytes).toString('base64'), mitKopf, deckblaetter, druck, briefbogen },
   );
 }
 
@@ -717,6 +730,7 @@ test.describe('PDF-Mappe als Bild', () => {
         a.fusszeile,
         deckblaetter,
         standard ? [1, 9, 16] : [],
+        auskunftSeiten(e),
       );
       expect(seiten).toHaveLength(e.seiten);
       await bogen(
@@ -755,14 +769,14 @@ test.describe('PDF-Mappe als Bild', () => {
       const e = await bewerbungBauen(a);
       await pdfjsLaden(page);
       const deckblaetter = e.inhalt[0]!.seite - 1;
-      const seiten = await rendern(page, e.bytes, a.fusszeile, deckblaetter);
+      const seiten = await rendern(page, e.bytes, a.fusszeile, deckblaetter, [], auskunftSeiten(e));
       expect(seiten.flatMap((s) => s.fehler)).toEqual([]);
       await bogen(
         page,
         seiten.map((s) => s.bild),
         `docs/screenshots/bogen-MP1-aussehen-${aussehen.art}.png`,
       );
-      // Bunte Punkte auf Deckblatt und in der Kopfzeile einer eigenen Seite.
+      // Bunte Punkte auf Deckblatt und in der Kopfzeile einer Unterlage.
       const bunt = await page.evaluate(
         async ({ b64, seite }) => {
           const pdfjs = await import(/* @vite-ignore */ '/pdf.min.mjs' as string);
@@ -790,7 +804,11 @@ test.describe('PDF-Mappe als Bild', () => {
           };
           return { deck: await zaehlen(1, 1), kopf: await zaehlen(seite, 0.06) };
         },
-        { b64: Buffer.from(e.bytes).toString('base64'), seite: e.inhalt[0]!.seite },
+        {
+          b64: Buffer.from(e.bytes).toString('base64'),
+          // DP30: die erste fremde Seite; die Selbstauskunft hat den Briefkopf ohne Farbe.
+          seite: e.inhalt[0]!.teile.find((x) => x.abschnitt !== 'Selbstauskunft')!.seite,
+        },
       );
       if (aussehen.art === 'schlicht') expect(bunt).toEqual({ deck: 0, kopf: 0 });
       else {
@@ -810,7 +828,8 @@ test.describe('PDF-Mappe als Bild', () => {
     expect(petra).toContain('1.850 €');
     expect(petra).not.toContain('Personen, die einziehen');
     expect(petra).not.toContain('Haustiere');
-    expect(petra).not.toContain('Hamburg');
+    // DP30: „Hamburg“ steht im Briefkopf (Ort der Wohnung), nicht als Ort ihrer Angaben.
+    expect(petra).not.toContain('Hamburg, 2. November 2026');
     const max = auskunftVon('Max Mustermann');
     expect(max).toContain('Personen, die einziehen');
     expect(max).toContain('Hamburg, 2. November 2026');
@@ -830,7 +849,9 @@ test.describe('PDF-Mappe als Bild', () => {
     const texte = await textJeSeite(e.bytes);
     expect(e.inhalt[0]!.seite).toBe(3);
     expect(texte[0]).toContain('Kontakt');
-    expect(texte[1]).toContain('(Fortsetzung)');
+    // DP30: Seite 2 des Deckblatts mit Briefkopf und „Was beiliegt“, ohne „Fortsetzung“.
+    expect(texte[1]).toContain('WAS BEILIEGT');
+    expect(texte[1]).not.toContain('Fortsetzung');
     expect(texte[1]).not.toContain('Kontakt');
   });
 

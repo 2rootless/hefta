@@ -39,7 +39,13 @@ export interface HeftaNativPlugin {
     status: 'gesendet' | 'gespeichert' | 'fehlgeschlagen' | 'abgebrochen' | 'keinKonto';
   }>;
   /** Nur iOS: Teilen-Blatt, das Mail-Apps den Betreff mitgibt (ohne Konto in Apple Mail). */
-  teilen(o: { dateien: string[]; text?: string; betreff: string }): Promise<{ geteilt: boolean }>;
+  teilen(o: {
+    dateien: string[];
+    text?: string;
+    betreff: string;
+  }): Promise<{ geteilt: boolean; app?: string }>;
+  /** Nur iOS: Läuft ein Testbau (TestFlight)? Im App Store nie (PC25 B6). */
+  testbau(): Promise<{ ja: boolean }>;
   /** iOS und Android: Erinnerungen neu planen (Zeile 9). `erlaubt`: Mitteilungen sind erlaubt. */
   erinnerungenSetzen(o: {
     liste: { nummer: number; am: number; titel: string; text: string; ziel: string }[];

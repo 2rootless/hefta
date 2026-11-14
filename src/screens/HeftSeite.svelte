@@ -5,6 +5,8 @@
   // Abschnitte. Den Stand ändert nur noch die Frage im Stand.
   import { onMount, tick, untrack } from 'svelte';
   import { route } from '../app/router.svelte';
+  import { rueckgaengigAnbieten } from '../app/rueckgaengig.svelte';
+  import Symbol from '../ui/Symbol.svelte';
   import { haushaltsNetto } from '../domain/netto';
   import { daten, db, stillLaden } from '../app/daten.svelte';
   import { istAndroidApp, istApp } from '../app/plattform';
@@ -294,6 +296,59 @@
   });
 
   /** „Mail an Herrn Kraus“, „Über ImmoScout24“, „Löschbitte an …“: die erste Zeile eines Eintrags. */
+  // ---------- PC25 B7: Einträge der Spur korrigieren und löschen (der Stand bleibt) ----------
+
+  const SPUR_WEGE = ['mail', 'portal', 'website', 'sonst'] as const;
+  let spurOffen = $state<number | null>(null);
+  let spurWeg = $state<SpurEintrag['weg']>('mail');
+  let spurTag = $state('');
+  let spurEmpfaenger = $state('');
+
+  function spurOeffnen(i: number) {
+    const e = heft?.spur?.[i];
+    if (!e) return;
+    spurOffen = i;
+    spurWeg = e.weg;
+    const d = new Date(e.am);
+    spurTag = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    spurEmpfaenger = e.an;
+  }
+
+  async function spurSichern(i: number) {
+    if (!heft?.spur?.[i]) return;
+    const alt = heft.spur[i];
+    const [j, m, tg] = spurTag.split('-').map(Number);
+    // Die Uhrzeit bleibt, nur der Tag ändert sich.
+    const vorher = new Date(alt.am);
+    const am =
+      j && m && tg ? new Date(j, m - 1, tg, vorher.getHours(), vorher.getMinutes()) : vorher;
+    const neu = $state
+      .snapshot(heft.spur)
+      .map((e, k) =>
+        k === i ? { ...e, weg: spurWeg, am: am.toISOString(), an: spurEmpfaenger.trim() } : e,
+      );
+    await heftAendern(await db(), heft.id, { spur: neu });
+    spurOffen = null;
+    await stillLaden();
+  }
+
+  async function spurLoeschen(i: number) {
+    if (!heft?.spur) return;
+    const vorher = $state.snapshot(heft.spur);
+    const id = heft.id;
+    await heftAendern(await db(), id, { spur: vorher.filter((_, k) => k !== i) });
+    spurOffen = null;
+    await stillLaden();
+    rueckgaengigAnbieten({
+      text: t('heft.spurGeloeschtMeldung'),
+      seite: route.pfad,
+      ausfuehren: async () => {
+        await heftAendern(await db(), id, { spur: vorher });
+        await stillLaden();
+      },
+    });
+  }
+
   function spurKopf(e: SpurEintrag): string {
     if (e.art === 'loeschbitte')
       return e.an ? t('heft.spurLoeschbitte', { an: e.an }) : t('heft.spurLoeschbitteOhne');
@@ -395,7 +450,7 @@
         <div class="namezeile">
           <h1 use:passend={TITEL_STUFEN} bind:this={nameEl}>{titel.text}</h1>
           <a class="stift" href={`#/heft/${heft.id}/merkmal`} aria-label={t('heft.nameAendern')}
-            ><!-- Stift im Strich der Symbole (B11); ein eigenes Zeichen fehlt im Satz noch. -->
+            ><!-- Stift aus DP31 (svg/bedienung/hefta-stift-20.svg), Satz B11. -->
             <svg
               width="20"
               height="20"
@@ -406,7 +461,9 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               aria-hidden="true"
-              ><path d="M20.5 7.5l4 4L11 25H7v-4z" /><path d="M17.5 10.5l4 4" /></svg
+              ><path
+                d="M7.23 24.77L8.93 17.13L20.10 5.96A2.4 2.4 0 0 1 23.50 5.96L26.04 8.50A2.4 2.4 0 0 1 26.04 11.90L14.87 23.07Z"
+              /><path d="M18.12 7.94L24.06 13.88" /><path d="M8.93 17.13L14.87 23.07" /></svg
             ></a
           >
         </div>
@@ -471,29 +528,75 @@
     <!-- Was hinausging (Datenspur, B21): erst ab „Beworben“; erscheint und geht mit dem Stand. -->
     <section class="block" bind:this={spurEl} hidden={!(l.ort >= 1 && heft.spur?.length)}>
       <h2>{t('heft.spurTitel')}</h2>
-      {#each [...(heft.spur ?? [])].reverse() as e (e.am + e.art)}
-        <div class="zeile">
-          <span class="wo">
-            <b>{tagKurz(e.am)} · {spurKopf(e)}</b>
-            {#if e.art === 'mappe'}
-              <small
-                >{[
-                  t('heft.spurMappe', { fassung: e.fassung ?? 1 }),
-                  e.unterlagen ? t('heft.spurUnterlagen', { anzahl: e.unterlagen }) : '',
-                  e.seiten ? t('heft.spurSeiten', { anzahl: e.seiten }) : '',
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}</small
+      {#each [...(heft.spur ?? [])]
+        .map((e, i) => ({ e, i }))
+        .reverse() as { e, i } (e.am + e.art + i)}
+        {#if spurOffen === i}
+          <!-- PC25 B7: Weg, Tag und Empfänger korrigieren oder den Eintrag löschen. Der Stand bleibt. -->
+          <form
+            class="spur-form"
+            onsubmit={(ev) => {
+              ev.preventDefault();
+              void spurSichern(i);
+            }}
+          >
+            <p class="spur-l" id="spur-weg-l">{t('heft.spurWeg')}</p>
+            <div class="spur-wege" role="radiogroup" aria-labelledby="spur-weg-l">
+              {#each SPUR_WEGE as w (w)}
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={spurWeg === w}
+                  class="spur-chip"
+                  class:an={spurWeg === w}
+                  onclick={() => (spurWeg = w)}>{t(`heft.spurWegName.${w}`)}</button
+                >
+              {/each}
+            </div>
+            <label class="spur-l" for="spur-tag">{t('heft.spurTag')}</label>
+            <input id="spur-tag" type="date" bind:value={spurTag} required />
+            <label class="spur-l" for="spur-an">{t('heft.spurAn')}</label>
+            <input id="spur-an" autocomplete="off" maxlength="120" bind:value={spurEmpfaenger} />
+            <div class="spur-knoepfe">
+              <button class="knopf haupt" type="submit">{t('merkmal.uebernehmen')}</button>
+              <button class="knopf" type="button" onclick={() => (spurOffen = null)}
+                >{t('allgemein.abbrechen')}</button
               >
-              {#if e.ueber}<small>{t('heft.spurUeber', { ziel: e.ueber })}</small>{/if}
-              {#if e.personen?.length}
-                <small>{t('heft.spurPersonen', { namen: namenListe(e.personen) })}</small>
+            </div>
+            <button class="spur-weg" type="button" onclick={() => void spurLoeschen(i)}
+              >{t('heft.spurLoeschen')}</button
+            >
+          </form>
+        {:else}
+          <button
+            class="zeile spur-zeile"
+            type="button"
+            aria-label={`${tagKurz(e.am)} · ${spurKopf(e)}. ${t('heft.spurAendern')}`}
+            onclick={() => spurOeffnen(i)}
+          >
+            <span class="wo">
+              <b>{tagKurz(e.am)} · {spurKopf(e)}</b>
+              {#if e.art === 'mappe'}
+                <small
+                  >{[
+                    t('heft.spurMappe', { fassung: e.fassung ?? 1 }),
+                    e.unterlagen ? t('heft.spurUnterlagen', { anzahl: e.unterlagen }) : '',
+                    e.seiten ? t('heft.spurSeiten', { anzahl: e.seiten }) : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}</small
+                >
+                {#if e.ueber}<small>{t('heft.spurUeber', { ziel: e.ueber })}</small>{/if}
+                {#if e.personen?.length}
+                  <small>{t('heft.spurPersonen', { namen: namenListe(e.personen) })}</small>
+                {/if}
+              {:else if e.art === 'loeschbitte'}
+                <small>{t('heft.spurGeloescht')}</small>
               {/if}
-            {:else if e.art === 'loeschbitte'}
-              <small>{t('heft.spurGeloescht')}</small>
-            {/if}
-          </span>
-        </div>
+            </span>
+            <span class="p" aria-hidden="true"><Symbol name="weiter" groesse={16} /></span>
+          </button>
+        {/if}
       {/each}
     </section>
 
@@ -660,7 +763,7 @@
     width: 44px;
     height: 44px;
     margin: -8px -8px 0 0;
-    color: var(--accent-text);
+    color: var(--ink-muted);
   }
 
   .angaben {
@@ -814,5 +917,89 @@
   /* Öffnen ohne Flug: Der Kopf steht, der Rest kommt im Takt. */
   .auf > :not(.bar, .kopfteil) {
     animation: bw-folgen var(--bw-mittel) var(--bw-ziel) var(--bw-takt) backwards;
+  }
+
+  /* PC25 B7: Einträge der Spur zum Bearbeiten, wie die übrigen Zeilen. */
+  .spur-zeile {
+    width: 100%;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .spur-zeile .p {
+    align-self: center;
+    color: var(--ink-quiet);
+  }
+
+  .spur-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 0;
+  }
+
+  .spur-l {
+    margin: 6px 0 0;
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
+    font-weight: 600;
+  }
+
+  .spur-wege {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .spur-chip {
+    min-height: 44px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--ground);
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .spur-chip.an {
+    background: var(--action);
+    color: var(--on-action);
+  }
+
+  .spur-form input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    background: var(--ground);
+    color: var(--ink);
+    font: inherit;
+  }
+
+  .spur-knoepfe {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .spur-weg {
+    align-self: flex-start;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink-muted);
+    font: inherit;
+    font-size: calc(14 * var(--px));
+    text-decoration: underline;
+    cursor: pointer;
   }
 </style>

@@ -3,9 +3,10 @@ import { PDFDocument, rgb, type Color, type PDFFont, type PDFPage } from '@canto
 import type { FormBlock, FormZeile } from '../domain/selbstauskunft';
 import { APP_NAME } from '../app/name';
 import { A4, fusszeile, titelAusDateiname, type Schriften } from './mappe';
+import { BOGEN_OBEN, BOGEN_SEITE, EINZUG, GRAU, ZEICHEN, abschnittKopf, briefkopf } from './bogen';
 
-// Selbstauskunft als festes Formular nach dem Musterbogen (design/mappe-feinschliff.md, § 1; Gestalt nach B14):
-// Blatt mit Reiter, dann immer dieselben Blöcke und Zeilen. Fehlt eine Angabe, steht „keine Angabe“ an ihrer
+// Selbstauskunft als festes Formular nach dem Musterbogen (design/mappe-feinschliff.md, § 1; Gestalt nach DP30,
+// Briefbogen): Briefkopf, Titel, dann immer dieselben Blöcke und Zeilen. Fehlt eine Angabe, steht „keine Angabe“ an ihrer
 // Stelle, nichts rückt auf. Unterschriftszeile nur, wenn sie in „Mappe anpassen“ an ist (X8b). Läuft ohne
 // Browser-APIs.
 
@@ -27,6 +28,8 @@ export interface SelbstauskunftInhalt {
   unterschrift?: boolean;
   /** Nennt die Fußnote den Dienst? Mit dem Schalter „Hinweis und Lesehilfe“ aus steht er nirgends. */
   mitHinweis?: boolean;
+  /** DP30: Briefkopf der Mappe (Straße, Ort, Namen); fehlt er (eigene Datei), beginnt die Seite mit dem Titel. */
+  briefkopf?: { strasse: string; rest: string; namen: string };
 }
 
 export interface SelbstauskunftAuftrag extends SelbstauskunftInhalt {
@@ -93,15 +96,11 @@ export function umbrechen(
 }
 
 const MM = 72 / 25.4;
-// B14 (mappe14.py): warme Tinte, leise Schrift, Rand des Blatts, Grund und Linien des Fragenbereichs.
+// DP30 (Liste für Code): Tinte, Linie zwischen den Fragen, die nicht gegebene Antwort.
 const INK = hex('#26221e');
-const LEISE = hex('#433d37');
-const RAND_BLATT = hex('#6b625a');
-const FRAGEN_GRUND = hex('#f6f1e9');
-const FRAGEN_LINIE = hex('#ddd3c5');
-const WEISS = rgb(1, 1, 1);
+const FRAGEN_LINIE = hex('#d6cec4');
+const AUS = hex('#9a9086');
 const OHNE = 'keine Angabe';
-const QUELLE = 'nach dem Musterbogen der Datenschutzkonferenz, Stand Januar 2026';
 const FUSSNOTE =
   'Angaben der Person selbst. Fragen und Reihenfolge folgen dem Musterbogen der Datenschutzkonferenz';
 /** Felder, die immer die ganze Breite nehmen (B14: Kontakt, die Sätze zur Bürgschaft). */
@@ -124,90 +123,45 @@ function inSpalte(text: string, schrift: PDFFont, groesse: number, breite: numbe
   });
 }
 
-/** Rechteck mit runden Ecken (oben links, oben rechts, unten rechts, unten links), als SVG-Pfad. */
-export function rundesRechteck(
-  seite: PDFPage,
-  x: number,
-  oben: number,
-  breite: number,
-  hoehe: number,
-  [ol, or, ur, ul]: [number, number, number, number],
-  stil: { color?: Color; borderColor?: Color; borderWidth?: number },
-  ohneUnten = false,
-) {
-  const k = 0.5523;
-  const p = [
-    `M ${ol} 0 L ${breite - or} 0`,
-    or ? `C ${breite - or + or * k} 0 ${breite} ${or - or * k} ${breite} ${or}` : '',
-    `L ${breite} ${hoehe - ur}`,
-    ur
-      ? `C ${breite} ${hoehe - ur + ur * k} ${breite - ur + ur * k} ${hoehe} ${breite - ur} ${hoehe}`
-      : '',
-    ohneUnten ? `M ${ul} ${hoehe}` : `L ${ul} ${hoehe}`,
-    ul ? `C ${ul - ul * k} ${hoehe} 0 ${hoehe - ul + ul * k} 0 ${hoehe - ul}` : '',
-    `L 0 ${ol}`,
-    ol ? `C 0 ${ol - ol * k} ${ol - ol * k} 0 ${ol} 0` : '',
-    ohneUnten ? '' : 'Z',
-  ]
-    .filter(Boolean)
-    .join(' ');
-  seite.drawSvgPath(p, { x, y: oben, ...stil });
-}
-
-/** Ein gemessener Abschnitt: Höhe ohne und mit Abstand oben, und wie er gezeichnet wird. */
-interface Teil {
-  fragen: boolean;
-  hoehe: (erster: boolean) => number;
-  zeichnen: (seite: PDFPage, oben: number, erster: boolean) => void;
-}
-
 /**
- * Hängt die Seiten des Bogens an das Dokument an, ohne Kopf- und Fußzeile. B14, Fassung 2 und 3
- * (`mappe14.py`, `.sa2`): ein Blatt mit Reiter, Werte auf feinen Linien mit dem Etikett darüber, die Fragen
- * in einem eigenen Bereich mit gefüllten Kästchen. Umbruch nur zwischen Abschnitten; das Blatt schließt
- * unten und öffnet auf der nächsten Seite neu; „Ort, Datum“ steht nie allein.
+ * Hängt die Seiten des Bogens an das Dokument an (DP30, Abschnitt 4: Briefbogen). Oben der Briefkopf der
+ * Mappe, dann „Selbstauskunft von ■ {Name}“, Abschnitte mit Versalien-Etikett und feiner Linie, Felder
+ * zweispaltig, die Fragen nach dem Musterbogen mit „Ja“ und „Nein“ als Wort. „Ort, Datum“ steht an festem
+ * Platz über der Fußzeile. Umbruch nur zwischen Abschnitten; „Ort, Datum“ steht nie allein.
  */
 export function selbstauskunftZeichnen(
   pdf: PDFDocument,
   s: AuskunftSchriften,
   a: SelbstauskunftInhalt,
 ): PDFPage[] {
-  const x0 = 20 * MM;
-  const x1 = A4.breite - 20 * MM;
-  const inhaltOben = 30 * MM; // Abstand vom oberen Rand
-  const inhaltUnten = A4.hoehe - 30 * MM;
-  const reserve = 11 * MM; // Platz für die Fußnote
-  const grenze = inhaltUnten - reserve;
-  const bx0 = x0 + 6 * MM; // Innenkante des Blatts
-  const bx1 = x1 - 6 * MM;
-  const b = bx1 - bx0;
-  const spalte = (b - 8 * MM) / 2;
-  const y = (vonOben: number) => A4.hoehe - vonOben;
+  const B = A4.breite;
+  const H = A4.hoehe;
+  const x0 = BOGEN_SEITE;
+  const x1 = B - BOGEN_SEITE;
+  const breite = x1 - x0;
+  const spalte = (breite - 10 * MM) / 2;
   const farbe = a.farbe ? hex(a.farbe) : INK;
+  // Unten: Fußzeile der Mappe (Linie bei 13 mm), darüber „Ort, Datum“ mit der Fußnote.
+  const fussOben = 13 * MM + 8 * MM;
 
-  const text = (
+  const zeichnen = (
     seite: PDFPage,
     t: string,
     x: number,
-    oben: number,
-    groesse: number,
-    zeilenhoehe: number,
+    y: number,
+    size: number,
     font: PDFFont,
     color: Color = INK,
-  ) =>
-    seite.drawText(t, {
-      x,
-      y: y(oben + zeilenhoehe / 2 + groesse * 0.34),
-      size: groesse,
-      font,
-      color,
-    });
+  ) => seite.drawText(t, { x, y, size, font, color });
 
-  // ---------- Abschnitte messen ----------
-  const h2Hoehe = 9.5 * 1.25;
-  const teile: Teil[] = a.bloecke.map((block): Teil => {
-    if (block.id === 'fragen') return fragenTeil(block.zeilen, block.titel);
-    // Felder in zwei Spalten; was nicht in eine halbe Spalte passt oder immer breit ist, nimmt die ganze Breite.
+  // ---------- Abschnitte messen (Höhen in pt, von oben nach unten) ----------
+  interface Abschnitt {
+    hoehe: number;
+    zeichnen: (seite: PDFPage, oben: number) => void;
+  }
+  const KOPF = 8 * MM + 8 + 5; // Abstand oben, Etikett, Linie
+  const abschnitte: Abschnitt[] = a.bloecke.map((block): Abschnitt => {
+    if (block.id === 'fragen') return fragenAbschnitt(block.zeilen, block.titel);
     interface Feld {
       etikett: string;
       werte: string[];
@@ -217,385 +171,242 @@ export function selbstauskunftZeichnen(
     const felder: Feld[] = block.zeilen.map((z) => {
       const roh = z.art === 'janein' ? '' : z.wert;
       const leer = !roh.trim();
-      const wert = s.ersetzen(leer ? OHNE : roh);
+      // DP30: Komma statt Mittelpunkt, etwa bei „Telefon oder E-Mail“.
+      const wert = s.ersetzen(leer ? OHNE : roh.replaceAll(' · ', ', '));
       const halb = inSpalte(wert, s.regular, 10.5, spalte);
       const breit = WEIT.has(z.id) || halb.length > 1;
       return {
         etikett: s.ersetzen(z.etikett),
-        werte: breit ? inSpalte(wert, s.regular, 10.5, b) : halb,
+        werte: breit ? inSpalte(wert, s.regular, 10.5, breite) : halb,
         leise: leer || z.art === 'hinweis',
         breit,
       };
     });
-    const zeilen: Feld[][] = [];
+    const reihen: Feld[][] = [];
     for (const f of felder) {
-      const letzte = zeilen[zeilen.length - 1];
+      const letzte = reihen[reihen.length - 1];
       if (!f.breit && letzte && letzte.length === 1 && !letzte[0]!.breit) letzte.push(f);
-      else zeilen.push([f]);
+      else reihen.push([f]);
     }
-    const feldHoehe = (f: Feld) =>
-      2 * MM + 8 * 1.25 + 0.5 * MM + f.werte.length * 10.5 * 1.3 + 1.1 * MM;
-    const zeilenHoehe = zeilen.map((z) => Math.max(...z.map(feldHoehe)));
-    const summe = zeilenHoehe.reduce((x, h) => x + h, 0);
-    const abstand = (erster: boolean) => (erster ? 0 : 5.2 * MM);
+    const feldHoehe = (f: Feld) => 8 * 1.3 + f.werte.length * 10.5 * 1.3;
+    const reihenHoehe = reihen.map((r) => Math.max(...r.map(feldHoehe)));
+    const summe = reihenHoehe.reduce((x, h) => x + h, 0) + reihen.length * 5 * MM - 5 * MM;
     return {
-      fragen: false,
-      hoehe: (erster) => abstand(erster) + h2Hoehe + 0.4 * MM + summe,
-      zeichnen: (seite, oben, erster) => {
-        let o = oben + abstand(erster);
-        text(seite, s.ersetzen(block.titel), bx0, o, 9.5, h2Hoehe, s.bold);
-        o += h2Hoehe + 0.4 * MM;
-        zeilen.forEach((reihe, i) => {
-          const h = zeilenHoehe[i]!;
+      hoehe: KOPF + 4 * MM + summe,
+      zeichnen: (seite, oben) => {
+        const linie = abschnittKopf(
+          seite,
+          s.ersetzen(block.titel),
+          x0,
+          breite,
+          oben - 8 * MM - 8,
+          s.bold,
+        );
+        let o = linie - 4 * MM;
+        reihen.forEach((reihe, i) => {
           reihe.forEach((f, k) => {
-            const x = f.breit ? bx0 : bx0 + k * (spalte + 8 * MM);
-            const w = f.breit ? b : spalte;
-            text(seite, f.etikett, x, o + 2 * MM, 8, 8 * 1.25, s.regular, LEISE);
+            const x = f.breit ? x0 : x0 + k * (spalte + 10 * MM);
+            zeichnen(seite, f.etikett, x, o - 8, 8, s.regular, GRAU);
             f.werte.forEach((t, j) =>
-              text(
+              zeichnen(
                 seite,
                 t,
                 x,
-                o + 2 * MM + 8 * 1.25 + 0.5 * MM + j * 10.5 * 1.3,
+                o - 8 * 1.3 - 10.5 - j * 10.5 * 1.3,
                 10.5,
-                10.5 * 1.3,
                 s.regular,
-                f.leise ? LEISE : INK,
+                f.leise ? GRAU : INK,
               ),
             );
-            seite.drawLine({
-              start: { x, y: y(o + h) },
-              end: { x: x + w, y: y(o + h) },
-              thickness: 0.4,
-              color: RAND_BLATT,
-            });
           });
-          o += h;
+          o -= reihenHoehe[i]! + 5 * MM;
         });
       },
     };
   });
 
-  function fragenTeil(zeilen: FormZeile[], titel: string): Teil {
-    const pad = 4 * MM;
-    const w = b; // der Bereich liegt im Blatt
-    const nr = 5 * MM;
-    const lueck = 3 * MM;
-    const ant = 36 * MM;
-    const textBreite = w - 2 * pad - nr - 2 * lueck - ant;
-    const erklBreite = w - 2 * pad - nr - lueck - 6 * MM - 2;
-    const reihen = zeilen.map((z) => {
-      const frage = inSpalte(s.ersetzen(z.etikett), s.regular, 9.5, textBreite);
-      const spaeter = z.art === 'hinweis' ? inSpalte(s.ersetzen(z.wert), s.regular, 8.5, ant) : [];
-      const antwort = z.art === 'janein' ? z.antwort : null;
-      const ohne = z.art === 'janein' && antwort === null;
+  function fragenAbschnitt(zeilen: FormZeile[], titel: string): Abschnitt {
+    const antBreite = 20 * MM;
+    const textBreite = breite - antBreite - 8 * MM;
+    const reihen = zeilen.map((z, i) => {
+      const frage = inSpalte(s.ersetzen(`${i + 1}. ${z.etikett}`), s.regular, 10.5, textBreite);
+      const spaeter =
+        z.art === 'hinweis' ? inSpalte(s.ersetzen(z.wert), s.regular, 8.5, antBreite) : [];
       const erkl =
         z.art === 'janein' && z.erklaerung.trim()
-          ? inSpalte(s.ersetzen(z.erklaerung.trim()), s.regular, 9.5, erklBreite)
+          ? inSpalte(s.ersetzen(z.erklaerung.trim()), s.regular, 9.5, textBreite)
           : [];
-      const antH =
-        z.art === 'hinweis'
-          ? spaeter.length * 8.5 * 1.3
-          : 4 * MM + (ohne ? 0.6 * MM + 8 * 1.25 : 0);
-      const kern = Math.max(frage.length * 9.5 * 1.32, antH);
-      const erklH = erkl.length
-        ? 1.8 * MM + 2 * MM + 8 * 1.25 + 0.4 * MM + erkl.length * 9.5 * 1.38 + 2 * MM
-        : 0;
-      return {
-        z,
-        frage,
-        spaeter,
-        antwort,
-        ohne,
-        erkl,
-        kern,
-        hoehe: 2.3 * MM + kern + erklH + 2.3 * MM,
-      };
+      const kern = Math.max(frage.length * 10.5 * 1.3, spaeter.length * 8.5 * 1.3);
+      const erklH = erkl.length ? 2 * MM + 8 * 1.3 + erkl.length * 9.5 * 1.35 : 0;
+      return { z, frage, spaeter, erkl, kern, hoehe: 4 + kern + erklH + 4 };
     });
-    const innen =
-      3.2 * MM + h2Hoehe + 0.8 * MM + reihen.reduce((x, r) => x + r.hoehe, 0) + 2.6 * MM;
-    const abstand = (erster: boolean) => (erster ? 0 : 6 * MM);
     return {
-      fragen: true,
-      hoehe: (erster) => abstand(erster) + innen,
-      zeichnen: (seite, oben, erster) => {
-        const top = oben + abstand(erster);
-        rundesRechteck(seite, bx0, y(top), w, innen, [2.4 * MM, 2.4 * MM, 2.4 * MM, 2.4 * MM], {
-          color: FRAGEN_GRUND,
-        });
-        let o = top + 3.2 * MM;
-        text(seite, s.ersetzen(titel), bx0 + pad, o, 9.5, h2Hoehe, s.bold);
-        o += h2Hoehe + 0.8 * MM;
+      hoehe: KOPF + 1 * MM + reihen.reduce((x, r) => x + r.hoehe, 0),
+      zeichnen: (seite, oben) => {
+        let o =
+          abschnittKopf(seite, s.ersetzen(titel), x0, breite, oben - 8 * MM - 8, s.bold) - 1 * MM;
         reihen.forEach((r, i) => {
           if (i > 0)
             seite.drawLine({
-              start: { x: bx0 + pad, y: y(o) },
-              end: { x: bx0 + w - pad, y: y(o) },
+              start: { x: x0, y: o },
+              end: { x: x1, y: o },
               thickness: 0.4,
               color: FRAGEN_LINIE,
             });
-          const zo = o + 2.3 * MM;
-          text(seite, `${i + 1}.`, bx0 + pad, zo, 10, 9.5 * 1.32, s.bold);
+          const grund = o - 4 - 10.5;
           r.frage.forEach((t, j) =>
-            text(seite, t, bx0 + pad + nr + lueck, zo + j * 9.5 * 1.32, 9.5, 9.5 * 1.32, s.regular),
+            zeichnen(seite, t, x0, grund - j * 10.5 * 1.3, 10.5, s.regular),
           );
-          const rechts = bx0 + w - pad;
           if (r.z.art === 'hinweis') {
             r.spaeter.forEach((t, j) =>
-              text(
+              zeichnen(
                 seite,
                 t,
-                rechts - s.regular.widthOfTextAtSize(t, 8.5),
-                zo + j * 8.5 * 1.3,
+                x1 - s.regular.widthOfTextAtSize(t, 8.5),
+                grund - j * 8.5 * 1.3,
                 8.5,
-                8.5 * 1.3,
                 s.regular,
-                LEISE,
+                GRAU,
               ),
             );
-          } else {
-            // „Ja“ und „Nein“ rechtsbündig; das gewählte Kästchen in Tinte gefüllt, das Wort fett (B14, Option 3).
-            const kb = 4 * MM;
-            const wort = (t: string, an: boolean) =>
-              (an ? s.bold : s.regular).widthOfTextAtSize(t, 10.5);
-            const nein = r.antwort === 'nein';
-            const ja = r.antwort === 'ja';
-            const neinX = rechts - wort('Nein', nein) - 1.8 * MM - kb;
-            const jaX = neinX - 6 * MM - wort('Ja', ja) - 1.8 * MM - kb;
-            for (const [x, t, an] of [
-              [jaX, 'Ja', ja],
-              [neinX, 'Nein', nein],
-            ] as const) {
-              rundesRechteck(seite, x, y(zo), kb, kb, [0.9 * MM, 0.9 * MM, 0.9 * MM, 0.9 * MM], {
-                ...(an ? { color: INK } : { color: WEISS }),
-                borderColor: INK,
-                borderWidth: 0.8,
-              });
-              text(seite, t, x + kb + 1.8 * MM, zo, 10.5, kb, an ? s.bold : s.regular);
-            }
-            if (r.ohne)
-              text(
+          } else if (r.z.art === 'janein') {
+            // DP30: Die gegebene Antwort fett in Tinte, die andere grau; keine Kästchen.
+            const ja = r.z.antwort === 'ja';
+            const nein = r.z.antwort === 'nein';
+            const neinB = (nein ? s.bold : s.regular).widthOfTextAtSize('Nein', 10.5);
+            const jaB = (ja ? s.bold : s.regular).widthOfTextAtSize('Ja', 10.5);
+            const neinX = x1 - neinB;
+            const jaX = neinX - 10 - jaB;
+            zeichnen(seite, 'Ja', jaX, grund, 10.5, ja ? s.bold : s.regular, ja ? INK : AUS);
+            zeichnen(
+              seite,
+              'Nein',
+              neinX,
+              grund,
+              10.5,
+              nein ? s.bold : s.regular,
+              nein ? INK : AUS,
+            );
+            if (!ja && !nein)
+              zeichnen(
                 seite,
                 OHNE,
-                rechts - s.regular.widthOfTextAtSize(OHNE, 8),
-                zo + kb + 0.6 * MM,
+                x1 - s.regular.widthOfTextAtSize(OHNE, 8),
+                grund - 10.5 * 1.3,
                 8,
-                8 * 1.25,
                 s.regular,
-                LEISE,
+                GRAU,
               );
           }
           if (r.erkl.length) {
-            // Erläuterung zu einem Ja: weißes Feld mit Strich links, „Erläuterung“ klein darüber (B14, Fassung 3).
-            const ex = bx0 + pad + nr + lueck;
-            const eo = zo + r.kern + 1.8 * MM;
-            const eh = 2 * MM + 8 * 1.25 + 0.4 * MM + r.erkl.length * 9.5 * 1.38 + 2 * MM;
-            const ew = rechts - ex;
-            rundesRechteck(seite, ex, y(eo), ew, eh, [1.6 * MM, 1.6 * MM, 1.6 * MM, 1.6 * MM], {
-              color: WEISS,
-            });
-            seite.drawRectangle({ x: ex, y: y(eo + eh), width: 2, height: eh, color: INK });
-            text(seite, 'Erläuterung', ex + 2 + 3 * MM, eo + 2 * MM, 8, 8 * 1.25, s.regular, LEISE);
+            const eo = grund - (r.frage.length - 1) * 10.5 * 1.3 - 2 * MM - 8;
+            zeichnen(seite, 'Erläuterung', x0 + EINZUG, eo, 8, s.regular, GRAU);
             r.erkl.forEach((t, j) =>
-              text(
-                seite,
-                t,
-                ex + 2 + 3 * MM,
-                eo + 2 * MM + 8 * 1.25 + 0.4 * MM + j * 9.5 * 1.38,
-                9.5,
-                9.5 * 1.38,
-                s.regular,
-              ),
+              zeichnen(seite, t, x0 + EINZUG, eo - 8 * 0.3 - 9.5 - j * 9.5 * 1.35, 9.5, s.regular),
             );
           }
-          o += r.hoehe;
+          o -= r.hoehe;
         });
       },
     };
   }
 
-  // ---------- Ort, Datum ----------
-  const untHoehe = 8 * MM + 6 * MM + 1.1 * MM + 8 * 1.25;
-  const untZeichnen = (seite: PDFPage, oben: number) => {
-    const linie = oben + 8 * MM + 6 * MM;
-    const feld = (x: number, wert: string, etikett: string) => {
-      if (wert)
-        text(
-          seite,
-          s.ersetzen(wert),
-          x,
-          linie - 1.2 * MM - 10.5 * 1.3,
-          10.5,
-          10.5 * 1.3,
-          s.regular,
-        );
-      seite.drawLine({
-        start: { x, y: y(linie) },
-        end: { x: x + 76 * MM, y: y(linie) },
-        thickness: 0.6,
-        color: INK,
-      });
-      text(seite, etikett, x, linie + 1.1 * MM, 8, 8 * 1.25, s.regular, LEISE);
-    };
-    feld(x0, a.ortDatum, a.ortLabel ?? 'Ort, Datum');
-    if (a.unterschrift) feld(x0 + 76 * MM + 12 * MM, '', 'Unterschrift');
-  };
-
-  // ---------- Reiter ----------
+  // ---------- Titel ----------
+  const titelGroesse = 15;
+  const name = s.ersetzen(a.name);
+  const vorTitel = 'Selbstauskunft von';
   const rolle = a.buerge
-    ? a.rolle === 'bürgt'
-      ? 'bürgt, zieht nicht ein'
-      : `${a.rolle} · bürgt, zieht nicht ein`
-    : `${a.rolle} · im Mietvertrag`;
-  const reiterMax = x1 - x0;
-  const nameZeilen = inSpalte(
-    s.ersetzen(a.name),
-    s.bold,
-    12.5,
-    reiterMax - 3.8 * MM - 2.8 * MM - 2.4 * MM - 4.6 * MM,
+    ? `${a.rolle === 'bürgt' ? 'Bürge' : a.rolle}, zieht nicht ein.`
+    : `${a.rolle}, im Mietvertrag.`;
+  const unter = s.ersetzen(
+    `${rolle} Nach dem Musterbogen der Datenschutzkonferenz, Stand Januar 2026.`,
   );
-  const rz = s.ersetzen(rolle);
-  const rzBreite = s.regular.widthOfTextAtSize(rz, 9);
-  const letzteBreite = s.bold.widthOfTextAtSize(nameZeilen[nameZeilen.length - 1] ?? '', 12.5);
-  const textX = 3.8 * MM + 2.8 * MM + 2.4 * MM;
-  const rzNeben = textX + letzteBreite + 2.2 * MM + rzBreite + 4.6 * MM <= reiterMax;
-  const reiterZeilen = nameZeilen.length + (rzNeben ? 0 : 1);
-  const reiterH = Math.max(8.8 * MM, 1.6 * MM + reiterZeilen * 12.5 * 1.25 + 1.4 * MM);
-  const reiterB = Math.min(
-    reiterMax,
-    textX +
-      Math.max(
-        ...nameZeilen.map((z) => s.bold.widthOfTextAtSize(z, 12.5)),
-        rzNeben ? letzteBreite + 2.2 * MM + rzBreite : rzBreite,
-      ) +
-      4.6 * MM,
-  );
-  const reiterZeichnen = (seite: PDFPage, blattOben: number) => {
-    const oben = blattOben - reiterH;
-    rundesRechteck(
-      seite,
-      x0,
-      y(oben),
-      reiterB,
-      reiterH,
-      [2.6 * MM, 2.6 * MM, 0, 0],
-      {
-        color: WEISS,
-        borderColor: RAND_BLATT,
-        borderWidth: 0.6,
-      },
-      true,
-    );
-    // Der Reiter geht ins Blatt über: die Kante darunter wird weiß.
-    seite.drawRectangle({
-      x: x0 + 0.3,
-      y: y(blattOben) - 0.7,
-      width: reiterB - 0.6,
-      height: 1.4,
-      color: WEISS,
-    });
-    const q = 2.8 * MM;
-    const qOben = oben + 1.6 * MM + 1.5 * MM;
+  const titelZeichnen = (seite: PDFPage, oben: number): number => {
+    let y = oben - 10 * MM - titelGroesse;
+    const vorB = s.bold.widthOfTextAtSize(`${vorTitel} `, titelGroesse);
+    const nameX = x0 + vorB + ZEICHEN + 5;
+    const nameZeilen = inSpalte(name, s.bold, titelGroesse, x1 - nameX);
+    zeichnen(seite, vorTitel, x0, y, titelGroesse, s.bold);
     seite.drawRectangle(
       a.buerge
         ? {
-            x: x0 + 3.8 * MM + 0.7,
-            y: y(qOben + q) + 0.7,
-            width: q - 1.4,
-            height: q - 1.4,
+            x: x0 + vorB + 0.375,
+            y: y + 0.375,
+            width: ZEICHEN - 0.75,
+            height: ZEICHEN - 0.75,
             borderColor: farbe,
-            borderWidth: 1.4,
+            borderWidth: 0.75,
           }
-        : { x: x0 + 3.8 * MM, y: y(qOben + q), width: q, height: q, color: farbe },
+        : { x: x0 + vorB, y, width: ZEICHEN, height: ZEICHEN, color: farbe },
     );
-    nameZeilen.forEach((t, j) =>
-      text(seite, t, x0 + textX, oben + 1.6 * MM + j * 12.5 * 1.25, 12.5, 12.5 * 1.25, s.bold),
-    );
-    const rzOben =
-      oben + 1.6 * MM + (rzNeben ? nameZeilen.length - 1 : nameZeilen.length) * 12.5 * 1.25;
-    const rzX = rzNeben ? x0 + textX + letzteBreite + 2.2 * MM : x0 + textX;
-    text(seite, rz, rzX, rzOben, 9, 12.5 * 1.25, s.regular, LEISE);
+    nameZeilen.forEach((t, j) => {
+      zeichnen(seite, t, nameX, y, titelGroesse, s.bold);
+      if (j < nameZeilen.length - 1) y -= titelGroesse * 1.15;
+    });
+    for (const t of inSpalte(unter, s.regular, 9, breite)) {
+      y -= 9 * 1.35 + 1;
+      zeichnen(seite, t, x0, y, 9, s.regular, GRAU);
+    }
+    return y - 2;
   };
 
-  // ---------- Verteilen auf Seiten ----------
-  interface SeitenPlan {
-    weiter: boolean;
-    blattOben: number;
-    teile: Teil[];
-  }
-  const kopfHoehe = 22 * 1.05 + 1.4 * MM + 8.5 * 1.3; // Titel und Zeile zum Musterbogen
-  const blattObenErste = inhaltOben + kopfHoehe + 15 * MM;
-  const blattObenWeiter = inhaltOben + 9 * 1.3 + 4 * MM;
-  const unterkante = (p: SeitenPlan) =>
-    p.blattOben + 4.6 * MM + p.teile.reduce((h, t, i) => h + t.hoehe(i === 0), 0) + 5 * MM;
-  const plaene: SeitenPlan[] = [{ weiter: false, blattOben: blattObenErste, teile: [] }];
-  for (const t of teile) {
-    const p = plaene[plaene.length - 1]!;
-    p.teile.push(t);
-    if (unterkante(p) > grenze && p.teile.length > 1) {
-      p.teile.pop();
-      plaene.push({ weiter: true, blattOben: blattObenWeiter, teile: [t] });
-    }
-  }
-  // „Ort, Datum“ steht nie allein: Passt die Zeile nicht mehr, geht der letzte Abschnitt mit.
-  let letzte = plaene[plaene.length - 1]!;
-  if (unterkante(letzte) + untHoehe > grenze) {
-    const neu: SeitenPlan = { weiter: true, blattOben: blattObenWeiter, teile: [] };
-    if (letzte.teile.length > 1) neu.teile.push(letzte.teile.pop()!);
-    plaene.push(neu);
-    letzte = neu;
-  }
-
-  // ---------- Zeichnen ----------
+  // ---------- Ort, Datum (fester Platz unten) ----------
   const fussnote = a.mitHinweis
     ? `${FUSSNOTE}; was dort nicht steht, fragt ${APP_NAME} nicht.`
     : `${FUSSNOTE}.`;
-  const fussZeilen = inSpalte(s.ersetzen(fussnote), s.regular, 8, x1 - x0);
-  const seiten: PDFPage[] = [];
-  for (const p of plaene) {
-    const seite = pdf.addPage([A4.breite, A4.hoehe]);
-    seiten.push(seite);
-    if (!p.weiter) {
-      text(seite, 'Selbstauskunft', x0, inhaltOben, 22, 22 * 1.05, s.titel);
-      text(seite, QUELLE, x0, inhaltOben + 22 * 1.05 + 1.4 * MM, 8.5, 8.5 * 1.3, s.regular, LEISE);
-    } else
-      text(seite, 'Selbstauskunft (Fortsetzung)', x0, inhaltOben, 9, 9 * 1.3, s.regular, LEISE);
-    if (p.teile.length) {
-      const unten = unterkante(p);
-      rundesRechteck(
-        seite,
-        x0,
-        y(p.blattOben),
-        x1 - x0,
-        unten - p.blattOben,
-        [p.weiter ? 3 * MM : 0, 3 * MM, 3 * MM, 3 * MM],
-        { borderColor: RAND_BLATT, borderWidth: 0.6 },
-      );
-      if (!p.weiter) reiterZeichnen(seite, p.blattOben);
-      let o = p.blattOben + 4.6 * MM;
-      p.teile.forEach((t, i) => {
-        t.zeichnen(seite, o, i === 0);
-        o += t.hoehe(i === 0);
+  const fussZeilen = inSpalte(s.ersetzen(fussnote), s.regular, 8, Math.min(breite, 150 * MM));
+  const untHoehe = 10.5 * 1.35 + 2 + 2 + 8 * 1.3 + 8 + fussZeilen.length * 8 * 1.35;
+  const untZeichnen = (seite: PDFPage) => {
+    let y = fussOben + untHoehe;
+    const feld = (x: number, wert: string, etikett: string) => {
+      const wertY = y - 10.5;
+      if (wert) zeichnen(seite, s.ersetzen(wert), x, wertY, 10.5, s.regular);
+      const linie = wertY - 2 - 2;
+      seite.drawLine({
+        start: { x, y: linie },
+        end: { x: x + 70 * MM, y: linie },
+        thickness: 0.5,
+        color: INK,
       });
+      zeichnen(seite, etikett, x, linie - 2 - 8, 8, s.regular, GRAU);
+      return linie - 2 - 8 * 1.3;
+    };
+    const nachFeld = feld(x0, a.ortDatum, a.ortLabel ?? 'Ort, Datum');
+    if (a.unterschrift) feld(x0 + 70 * MM + 12 * MM, '', 'Unterschrift');
+    y = nachFeld - 8;
+    for (const t of fussZeilen) {
+      y -= 8;
+      zeichnen(seite, t, x0, y, 8, s.regular, GRAU);
+      y -= 8 * 0.35;
     }
-    fussZeilen.forEach((t, j) =>
-      text(
-        seite,
-        t,
-        x0,
-        inhaltUnten - (fussZeilen.length - j) * 8 * 1.4,
-        8,
-        8 * 1.4,
-        s.regular,
-        LEISE,
-      ),
-    );
-  }
-  // Ort, Datum: Passt alles auf die Seite, steht die Zeile unten fest, sonst direkt nach dem Blatt.
-  const seite = seiten[seiten.length - 1]!;
-  const nachBlatt = letzte.teile.length ? unterkante(letzte) : letzte.blattOben;
-  const frei = grenze - nachBlatt;
-  untZeichnen(seite, frei > untHoehe + 3.2 * MM ? inhaltUnten - 12 * MM - untHoehe : nachBlatt);
+  };
+
+  // ---------- Seiten ----------
+  const seiten: PDFPage[] = [];
+  const neueSeite = (weiter: boolean): number => {
+    const seite = pdf.addPage([B, H]);
+    seiten.push(seite);
+    const linie = a.briefkopf ? briefkopf(seite, a.briefkopf, s) : H - BOGEN_OBEN + 10 * MM;
+    if (!weiter) return titelZeichnen(seite, linie);
+    // Folgeseite: der Name klein, kein „Fortsetzung“.
+    const y = linie - 8 * MM - 9;
+    zeichnen(seite, s.ersetzen(`Selbstauskunft von ${a.name}`), x0, y, 9, s.regular, GRAU);
+    return y - 2;
+  };
+  let oben = neueSeite(false);
+  let frisch = true;
+  abschnitte.forEach((ab, i) => {
+    // Der letzte Abschnitt braucht Platz über „Ort, Datum“, die anderen nur über der Fußzeile.
+    const grenze = fussOben + 4 * MM + (i === abschnitte.length - 1 ? untHoehe : 0);
+    if (!frisch && oben - ab.hoehe < grenze) oben = neueSeite(true);
+    ab.zeichnen(seiten.at(-1)!, oben);
+    oben -= ab.hoehe;
+    frisch = false;
+  });
+  // „Ort, Datum“ steht an festem Platz unten. Reicht der Platz unter dem letzten Abschnitt nicht (sehr
+  // lange Erläuterung), kommt er auf eine eigene Seite, mit Briefkopf und Namen.
+  if (oben < fussOben + untHoehe + 4 * MM) neueSeite(true);
+  untZeichnen(seiten.at(-1)!);
   return seiten;
 }
 

@@ -1,6 +1,7 @@
 // Was beim Bewerben hinausgeht (Zeile 8): Hefta verschickt nichts selbst. Es öffnet die Mail mit Mappe,
 // kopiert Text, teilt die Mappe oder öffnet die Website, und sagt danach, ob es sicher weiß, dass etwas
 // hinausging. Sicher nur, wenn das System „gesendet“ meldet (Mailfenster unter iOS, 09b).
+import { teilenMelden } from '../app/testbauAnzeige';
 import {
   ablageLeeren,
   ablegen,
@@ -40,11 +41,12 @@ export async function mailMitMappe(o: {
     // Als Entwurf gesichert oder fehlgeschlagen: geöffnet, aber nicht sicher hinaus.
     if (status !== 'keinKonto') return 'geoeffnet';
     // Keine Apple-Mail: das Teilen-Blatt mit Betreff, sonst nimmt die Mail-App den Dateinamen.
-    const { geteilt } = await HeftaNativ.teilen({
+    const { geteilt, app } = await HeftaNativ.teilen({
       dateien: anhaenge.map((a) => a.uri),
       text: o.text,
       betreff: o.betreff,
     });
+    await teilenMelden(app, geteilt);
     return geteilt ? 'geoeffnet' : 'abgebrochen';
   }
   // Ohne Mailkonto, in einer anderen Mail-App, auf Android: das Teilen-Blatt, der Stand bleibt unsicher.
