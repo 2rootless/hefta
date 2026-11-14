@@ -448,9 +448,10 @@
     align-items: center;
     min-height: 44px;
     padding: 0 16px;
-    border: 1.5px solid var(--line-strong);
+    /* B28b (DP21 Abschnitt 4): Flächen ohne Rahmen, gewählt in Tinte. */
+    border: 0;
     border-radius: var(--radius-full);
-    background: none;
+    background: var(--surface);
     color: var(--ink);
     font: inherit;
     font-size: calc(15 * var(--px));
@@ -459,8 +460,8 @@
   }
 
   .chip.on {
-    border-color: var(--ink);
-    background: var(--surface);
+    background: var(--action);
+    color: var(--on-action);
   }
 
   .klein,
@@ -513,10 +514,10 @@
     cursor: pointer;
   }
 
+  /* Die vier Schritte als weiche Flächen ohne Linie (DP21). */
   .blatt {
-    padding: 4px 14px;
-    border: 1px solid var(--line);
-    border-radius: 14px;
+    padding: 4px 16px;
+    border-radius: 20px;
     background: var(--surface);
   }
 
@@ -643,9 +644,9 @@
     cursor: pointer;
   }
 
+  /* „Mappe teilen“ als weiche Fläche statt Rahmen (DP21). */
   .btn.zweit {
-    border: 1.5px solid var(--ink);
-    background: transparent;
+    background: var(--surface);
     color: var(--ink);
   }
 

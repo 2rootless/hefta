@@ -16,6 +16,7 @@
   import { pdfFenster } from './pdfFenster.svelte';
   import { fehlerBeobachten, hinweise } from './hinweise.svelte';
   import { route } from './router.svelte';
+  import { anrede, anredeFuer } from '../i18n/anrede.svelte';
   import { linkWegDa } from './plattform';
   import { wechselArt, wechselEnde } from '../ui/wechsel';
 
@@ -39,8 +40,6 @@
     heft: () => import('../screens/HeftSeite.svelte'),
     merkmal: () => import('../screens/MerkmalSeite.svelte'),
     termin: () => import('../screens/TerminSeite.svelte'),
-    standSetzen: () => import('../screens/StandSeite.svelte'),
-    ergebnis: () => import('../screens/ErgebnisSeite.svelte'),
     bewerben: () => import('../screens/BewerbenSeite.svelte'),
     heftMail: () => import('../screens/HeftMailSeite.svelte'),
     wuensche: () => import('../screens/WuenscheSeite.svelte'),
@@ -85,6 +84,17 @@
     };
   });
 
+  // Ansprache der App an einer Stelle (E74, E83, B28b): Texte mit Paar „ihr“/„du“ folgen ihr.
+  $effect.pre(() => {
+    const m = daten.ansicht?.mitglieder;
+    anrede.wert = anredeFuer(
+      m
+        ? m.filter((x) => x.zugehoerigkeit.rolle !== 'buerge' && !x.zugehoerigkeit.herausgenommenAm)
+            .length
+        : null,
+    );
+  });
+
   const personId = $derived(route.pfad.match(/^\/person\/([\w-]+)$/)?.[1]);
   // Bewegung beim Wechsel (Design 12.11.): Hefta 2 nach Vorgabe, alles andere blendet über wie bisher.
   const wechselKlasse = $derived.by(() => {
@@ -95,7 +105,7 @@
   const merkmalId = $derived(route.pfad.match(/^\/heft\/([\w-]+)\/merkmal$/)?.[1]);
   // Zeile 9: Termin, Stand selbst setzen, Ergebnis.
   const heftUnter = $derived(
-    route.pfad.match(/^\/heft\/([\w-]+)\/(termin|stand|ergebnis|bewerben|loeschbitte|nachfassen)$/),
+    route.pfad.match(/^\/heft\/([\w-]+)\/(termin|bewerben|loeschbitte|nachfassen)$/),
   );
   const unterlage = $derived(
     route.pfad.match(/^\/unterlage\/([\w-]+)\/(\w+)(\/datum(?:\/([\w-]+))?)?$/),
@@ -265,14 +275,6 @@
       {/await}
     {:else if heftUnter?.[2] === 'termin'}
       {#await seiten.termin() then m}
-        <m.default id={heftUnter[1]!} />
-      {/await}
-    {:else if heftUnter?.[2] === 'stand'}
-      {#await seiten.standSetzen() then m}
-        <m.default id={heftUnter[1]!} />
-      {/await}
-    {:else if heftUnter?.[2] === 'ergebnis'}
-      {#await seiten.ergebnis() then m}
         <m.default id={heftUnter[1]!} />
       {/await}
     {:else if heftUnter?.[2] === 'bewerben'}

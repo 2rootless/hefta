@@ -23,7 +23,8 @@ describe('Der Name steht an einer Stelle', () => {
       .filter((zeile) => alt.test(zeile))
       // Hefta 2: „Mappe“ ist der Name des Tabs (B12), nicht des Dienstes.
       // Ebenso der Schritt „Mappe“ beim Bewerben (B23).
-      .filter((zeile) => !/^"mappe": "Mappe",?$/.test(zeile.trim()));
+      // B28b: Zurück-Links nennen die vorige Seite, also den Reiter „Mappe“.
+      .filter((zeile) => !/^"(mappe|zurueck)": "Mappe",?$/.test(zeile.trim()));
     expect(treffer).toEqual([]);
   });
 

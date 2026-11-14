@@ -59,7 +59,7 @@ export async function personHinzufuegen(page: Page, feld: RegExp, p: NeuePerson)
     /Wer zieht mit ein\?|Wer bürgt\?/,
   );
   // T8: Anrede passt zur Person, um die es geht (nicht „deinen“).
-  await expect(page.getByText('Trag den Vornamen ein.')).toBeVisible();
+  await expect(page.getByText(/^Tragt? den Vornamen ein\.$/)).toBeVisible();
   await personAusfuellen(page, p);
   await page.getByRole('button', { name: 'Hinzufügen', exact: true }).click();
   await expect(

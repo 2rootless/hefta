@@ -7,11 +7,14 @@
     href,
     text,
     onclick,
+    davor,
   }: {
     href: string;
     text: string;
     /** Statt einfach zu folgen, z. B. erst etwas speichern. */
     onclick?: () => void;
+    /** Läuft vor dem üblichen Weg zurück, etwa um den Flug „Heft zuschlagen“ vorzubereiten (B28b). */
+    davor?: () => void;
   } = $props();
 
   const oben = $derived(href.replace(/^#/, '') || '/');
@@ -25,6 +28,7 @@
   {href}
   onclick={(e) => {
     e.preventDefault();
+    davor?.();
     if (onclick) onclick();
     else if (ueblich) zurueckGehen(oben);
     else abschliessen(oben);

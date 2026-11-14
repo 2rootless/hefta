@@ -63,7 +63,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   // Akkordeon (A1): Teil 1 ist offen, die anderen tippt man an.
   await page.getByLabel('E-Mail').fill('max@example.org');
   await page.getByRole('button', { name: /^Einkommen Pflicht/ }).click();
-  await page.getByLabel('Netto im Monat').fill('2800');
+  await page.getByRole('textbox', { name: 'Netto im Monat' }).fill('2800');
   await page.getByRole('radio', { name: 'Mindestens' }).click();
   await page.getByRole('button', { name: /^Fragen, die Vermieter stellen dürfen Zweimal/ }).click();
   for (const frage of ['Insolvenzverfahren', 'Räumungstitel']) {
@@ -368,7 +368,7 @@ test('Backup mit Passwort: sichern, alles löschen, einspielen ergibt denselben 
   if (browserName === 'chromium') await barrierefrei(page, 'Alles löschen');
   await page.getByRole('button', { name: 'Alles endgültig löschen' }).click();
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
+    page.getByRole('heading', { level: 2, name: 'Fangt an, wo ihr gerade seid' }),
   ).toBeVisible();
 
   // Einspielen (S6–S8): falsches Passwort, dann richtiges.
@@ -383,7 +383,7 @@ test('Backup mit Passwort: sichern, alles löschen, einspielen ergibt denselben 
   await expect(page.getByText(/ersetzt alles/)).toHaveCount(0);
   await page.getByLabel('Passwort des Backups').fill('falsch');
   await page.getByRole('button', { name: 'Einspielen' }).click();
-  await expect(page.getByText(/Das Passwort passt nicht\. Achte auf/)).toBeVisible();
+  await expect(page.getByText(/Das Passwort passt nicht\. Achte(t)? auf/)).toBeVisible();
   await expect(page.getByLabel('Passwort des Backups')).toBeFocused();
   await expect(page.getByLabel('Passwort des Backups')).toHaveValue('falsch');
   // E25: vor dem Passwort nur Datum und „mit Passwort“, keine Zählung

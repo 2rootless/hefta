@@ -9,7 +9,7 @@
   import { VERMIETER_ADRESSE, VERMIETER_DOMAIN } from '../app/name';
   import { t } from '../i18n';
   import { haushaltAendern, haushaltVonVorn } from '../storage/speicher';
-  import { dauer, kurve } from '../ui/bewegung';
+  import { aufgehen, lauf } from '../ui/bewegung';
   import DeckblattBild from '../ui/DeckblattBild.svelte';
   import { homescreenFragen } from '../ui/homescreen';
   import Sheet from '../ui/Sheet.svelte';
@@ -65,25 +65,18 @@
       : `${n.slice(0, -1).join(', ')} ${t('mappeStart.und')} ${n.at(-1)}`;
   });
 
-  // Weg in den Ablauf: Das Deckblatt wächst und blendet aus (Dauer `aufschlagen`, Kurve `ziel`), dann folgt
-  // der Schritt. Mit „Bewegung reduzieren“ sind die Dauern 0 ms; es bleibt der Wechsel der Seite.
+  // Weg in den Ablauf: Das Deckblatt geht auf (Handbuch 3.20 „Aufgehen“), dann folgt der Schritt.
   let bild: HTMLElement | undefined = $state();
   async function los(pfad: string) {
-    const d = dauer('aufschlagen');
-    if (bild && d > 0) {
-      await bild
-        .animate(
-          [{ transform: 'none' }, { transform: 'scale(1.35) translateY(-8%)', opacity: 0 }],
-          {
-            duration: d,
-            easing: kurve('ziel'),
-            fill: 'backwards',
-          },
-        )
-        .finished.catch(() => {});
+    if (bild) {
+      const l = lauf();
+      aufgehen(l, bild);
       // Bis die nächste Seite steht, bleibt das Deckblatt weg; sonst springt es kurz zurück
       // (TestFlight 12.11.). Beim Zurückkommen ist die Seite neu, ohne diesen Stil.
-      bild.style.opacity = '0';
+      const b = bild;
+      l.danach(() => (b.style.opacity = '0'));
+      l.start();
+      await l.fertig;
     }
     gehe(pfad);
   }

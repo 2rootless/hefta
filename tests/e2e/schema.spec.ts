@@ -55,7 +55,7 @@ test('Schema 1 → 2: Die Bewerbung mit Adresse wird ein Heft, nichts geht verlo
 
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
+    page.getByRole('heading', { level: 2, name: 'Fangt an, wo ihr gerade seid' }),
   ).toBeVisible();
   const stand = await page.evaluate(
     () =>

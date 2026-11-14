@@ -52,13 +52,16 @@ describe('Bewegung aus Tokens (E58)', () => {
     expect(tokens).toMatch(/--bw-blende: 120ms/);
   });
 
-  it('Dauern bleiben unter 300 ms (B18 Abschnitt 5)', () => {
+  it('Dauern bleiben unter 300 ms (B18 Abschnitt 5), außer verwandeln und verweilen (Handbuch)', () => {
     const tokens = readFileSync('design/tokens.css', 'utf8');
-    for (const m of tokens.matchAll(/--bw-[a-z]+: (\d+)ms/g))
-      expect(Number(m[1])).toBeLessThanOrEqual(300);
+    // `verwandeln` ist die bewusste Ausnahme des Auftraggebers (DP21), `verweilen` keine Bewegung.
+    for (const m of tokens.matchAll(/--bw-([a-z]+): (\d+)ms/g))
+      if (m[1] !== 'verwandeln' && m[1] !== 'verweilen')
+        expect(Number(m[2])).toBeLessThanOrEqual(300);
+    expect(tokens).toMatch(/--bw-verwandeln: 700ms/);
   });
 
-  it('derselbe Satz wie im Design (B21 bewegung-tokens.md, Nachricht 11.11. a)', () => {
+  it('derselbe Satz wie im Handbuch (design/bewegung.md, Abschnitt 2; B21, DP21)', () => {
     const tokens = readFileSync('design/tokens.css', 'utf8');
     const kopf = tokens.slice(0, tokens.indexOf('prefers-reduced-motion'));
     const satz = Object.fromEntries(
@@ -72,6 +75,9 @@ describe('Bewegung aus Tokens (E58)', () => {
       aufschlagen: '280ms',
       takt: '40ms',
       blende: 'var(--bw-knapp)',
+      verwandeln: '700ms',
+      verweilen: '2000ms',
+      gleiten: 'cubic-bezier(0.45, 0.05, 0.2, 1)',
       'nur-reduziert': '0ms',
       ziel: 'cubic-bezier(0.2, 0.7, 0.2, 1)',
       weich: 'ease-out',

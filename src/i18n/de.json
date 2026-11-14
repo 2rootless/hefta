@@ -3,7 +3,10 @@
     "alt": "{app}"
   },
   "allgemein": {
-    "rueckgaengigFehler": "Das hat nicht geklappt. Versuch es noch einmal.",
+    "rueckgaengigFehler": {
+      "ihr": "Das hat nicht geklappt. Versucht es noch einmal.",
+      "du": "Das hat nicht geklappt. Versuch es noch einmal."
+    },
     "zurueck": "Zurück",
     "schliessen": "Schließen",
     "abbrechen": "Abbrechen",
@@ -22,14 +25,29 @@
   "rueckmeldung": {
     "titel": "Über {app}",
     "nichtMehrFragen": "Nicht mehr fragen",
-    "mailZeile": "Was fehlt dir? Schreib uns an {adresse}.",
+    "mailZeile": {
+      "ihr": "Was fehlt euch? Schreibt uns an {adresse}.",
+      "du": "Was fehlt dir? Schreib uns an {adresse}."
+    },
     "mailKnopf": "Mail schreiben",
-    "mailHinweis": "Das ist eine normale Mail aus deinem Mail-Programm, mit deiner Adresse als Absender. Sie ist nicht anonym.",
+    "mailHinweis": {
+      "ihr": "Das ist eine normale Mail aus eurem Mailprogramm, mit eurer Adresse als Absender. Sie ist nicht anonym.",
+      "du": "Das ist eine normale Mail aus deinem Mailprogramm, mit deiner Adresse als Absender. Sie ist nicht anonym."
+    },
     "fragen": {
-      "geholfen": "Hat dir {app} bei der Bewerbung geholfen?",
+      "geholfen": {
+        "ihr": "Hat euch {app} bei der Bewerbung geholfen?",
+        "du": "Hat dir {app} bei der Bewerbung geholfen?"
+      },
       "naechstes": "Was soll {app} als Nächstes können?",
-      "fehlt": "Was fehlt dir sonst?",
-      "woher": "Wie hast du von {app} erfahren?"
+      "fehlt": {
+        "ihr": "Was fehlt euch sonst?",
+        "du": "Was fehlt dir sonst?"
+      },
+      "woher": {
+        "ihr": "Wie habt ihr von {app} erfahren?",
+        "du": "Wie hast du von {app} erfahren?"
+      }
     },
     "antworten": {
       "geholfen": {
@@ -66,20 +84,38 @@
     "abschicken": "Abschicken",
     "abbrechen": "Abbrechen",
     "danke": "Danke. Angekommen.",
-    "deine": "Deine Antwort:",
+    "deine": {
+      "ihr": "Eure Antwort:",
+      "du": "Deine Antwort:"
+    },
     "eure": "Eure Antwort:",
     "aendern": "Ändern",
-    "aus": "Gerade nicht verbunden. Versuch es später noch einmal.",
-    "mehr": "Mehr zu sagen? Schreib uns.",
+    "aus": {
+      "ihr": "Gerade keine Verbindung. Versucht es später noch einmal.",
+      "du": "Gerade keine Verbindung. Versuch es später noch einmal."
+    },
+    "mehr": {
+      "ihr": "Mehr zu sagen? Schreibt uns.",
+      "du": "Mehr zu sagen? Schreib uns."
+    },
     "nichtMehr": "Nicht mehr fragen",
     "seite": {
       "titel": "Rückmeldung",
       "vier": "Vier kurze Fragen",
-      "satz": "Mit „Abschicken“ geht nur deine Antwort an uns, ohne Namen, ohne Kennung und ohne Daten aus {app}.",
-      "anderes": "Etwas anderes? Schreib uns.",
+      "satz": {
+        "ihr": "Mit „Abschicken“ geht nur eure Antwort an uns, ohne Namen, ohne Kennung und ohne Daten aus {app}.",
+        "du": "Mit „Abschicken“ geht nur deine Antwort an uns, ohne Namen, ohne Kennung und ohne Daten aus {app}."
+      },
+      "anderes": {
+        "ihr": "Etwas anderes? Schreibt uns.",
+        "du": "Etwas anderes? Schreib uns."
+      },
       "zurueck": "Zurück zu {app}",
       "recht": "Impressum und Datenschutz",
-      "deineMehr": "Deine Antworten:"
+      "deineMehr": {
+        "ihr": "Eure Antworten:",
+        "du": "Deine Antworten:"
+      }
     }
   },
   "mappeTab": {
@@ -197,8 +233,12 @@
     },
     "haushalt": {
       "titel": "Wer gehört noch dazu?",
-      "lead": "Tipp an, was auf euch zutrifft. Den Rest lässt du einfach leer.",
-      "titelBearbeiten": "Euer Haushalt",
+      "leadIhr": "Tippt an, was auf euch zutrifft. Den Rest lasst ihr einfach leer.",
+      "leadDu": "Tipp an, was auf dich zutrifft. Den Rest lässt du einfach leer.",
+      "titelBearbeiten": {
+        "ihr": "Euer Haushalt",
+        "du": "Dein Haushalt"
+      },
       "leadBearbeiten": "Änderungen gelten sofort.",
       "mitmieter": "Mitmieter hinzufügen",
       "mitmieterHinweis": "Wer mit im Mietvertrag steht",
@@ -206,7 +246,7 @@
       "weiterePersonHinweis": "Falls noch jemand unterschreibt",
       "buerge": "Bürge hinzufügen",
       "buergeWeiterer": "Weiteren Bürgen hinzufügen",
-      "buergeHinweis": "Optional, wenn das Einkommen knapp ist",
+      "buergeHinweis": "Nur nötig, wenn das Einkommen knapp ist",
       "anlegen": "Haushalt anlegen",
       "fertig": "Fertig",
       "herausgenommen": "Herausgenommen",
@@ -238,7 +278,10 @@
     "standFreiwillig": "Freiwillig",
     "hinzufuegen": "Hinzufügen",
     "ausfuellen": "Ausfüllen",
-    "keineLage": "Wähl unter „Angaben ändern“ aus, was zutrifft. Dann zeigen wir den passenden Einkommensnachweis.",
+    "keineLage": {
+      "ihr": "Wählt unter „Angaben ändern“ aus, was zutrifft. Dann zeigt {app} den passenden Einkommensnachweis.",
+      "du": "Wähl unter „Angaben ändern“ aus, was zutrifft. Dann zeigt {app} den passenden Einkommensnachweis."
+    },
     "nichtGefunden": "Diese Person gibt es nicht mehr.",
     "standVom": "Vom {datum}",
     "standVomAlt": "Vom {datum}, eher alt",
@@ -255,7 +298,7 @@
       "mitte": "Mitte",
       "ende": "Ende"
     },
-    "zurueck": "Übersicht",
+    "zurueck": "Mappe",
     "standAusgefuellt": "Ausgefüllt",
     "standFertigSeite": "Fertig, 1 Seite",
     "unterlagen": "Unterlagen",
@@ -287,11 +330,14 @@
     "speicher": "Speicher",
     "belegt": "{groesse} belegt",
     "frei": "Ungefähr {groesse} frei für die App.",
-    "dauerhaftJa": "Dauerhaft gespeichert: ja.",
-    "dauerhaftNein": "Dauerhaft gespeichert: nein.",
-    "anfragen": "Dauerhaft speichern anfragen",
-    "homescreen": "Auf dem Homescreen",
-    "homescreenHinweis": "Schützt deine Daten vor dem Löschen durch Safari",
+    "dauerhaftJa": "Vor dem Aufräumen geschützt: ja.",
+    "dauerhaftNein": "Vor dem Aufräumen geschützt: nein. Wird der Speicher knapp, darf der Browser Daten löschen.",
+    "anfragen": "Vor dem Aufräumen schützen",
+    "homescreen": "Auf dem Home-Bildschirm",
+    "homescreenHinweis": {
+      "ihr": "Schützt eure Daten davor, dass Safari sie löscht",
+      "du": "Schützt deine Daten davor, dass Safari sie löscht"
+    },
     "ja": "Ja",
     "nein": "Nein",
     "app": "App",
@@ -300,13 +346,19 @@
     "technik": "Technik-Test",
     "technikHinweis": "Prüft Teilen, Speicher und PDF auf diesem Gerät",
     "version": "Version",
-    "versionWert": "{version}, Regelkatalog Stand {stand}",
+    "versionWert": "{version}, Regeln für Unterlagen vom {stand}",
     "lizenz": "Freie Software",
     "lizenzWert": "{app} steht unter der AGPL-3.0, die Schrift Archivo unter der OFL-1.1. Die Postleitzahlen für die Luftlinie stammen von GeoNames (geonames.org) unter CC BY 4.0. Alle Lizenztexte liegen der App als lizenzen.txt bei. Der Quellcode steht offen auf GitHub.",
     "quellcode": "Quellcode ansehen",
-    "rueckmeldung": "Was fehlt dir? Schreib uns.",
+    "rueckmeldung": {
+      "ihr": "Was fehlt euch? Schreibt uns.",
+      "du": "Was fehlt dir? Schreib uns."
+    },
     "rueckmeldungBetreff": "Rückmeldung zu {app}",
-    "mehrereGeraete": "Auf mehreren Geräten nutzen? Sag uns, ob du das brauchst",
+    "mehrereGeraete": {
+      "ihr": "Auf mehreren Geräten nutzen? Sagt uns, ob ihr das braucht",
+      "du": "Auf mehreren Geräten nutzen? Sag uns, ob du das brauchst"
+    },
     "mehrereGeraeteBetreff": "Mehrere Geräte",
     "kopieren": "Kopieren",
     "kopiert": "Kopiert",
@@ -325,15 +377,24 @@
     "aussehenDunkel": "Dunkel"
   },
   "datenschutz": {
-    "kurz": "Bleibt auf deinem Gerät. Nichts wird hochgeladen."
+    "kurz": {
+      "ihr": "Bleibt auf eurem Gerät. Nichts wird hochgeladen.",
+      "du": "Bleibt auf deinem Gerät. Nichts wird hochgeladen."
+    }
   },
   "uebertragen": {
     "titel": "Zum Übertragen",
-    "lead": "Deine Angaben zum Kopieren, falls ein Portal ein eigenes Formular will. {app} schickt nichts von selbst.",
+    "lead": {
+      "ihr": "Eure Angaben zum Kopieren, falls ein Portal ein eigenes Formular will. {app} schickt nichts von selbst.",
+      "du": "Deine Angaben zum Kopieren, falls ein Portal ein eigenes Formular will. {app} schickt nichts von selbst."
+    },
     "kopieren": "Kopieren",
     "zeileLabel": "{was} kopieren",
     "kopiert": "{was} kopiert.",
-    "nichtKopiert": "Das ließ sich nicht kopieren. Halte den Text gedrückt und kopiere ihn von Hand.",
+    "nichtKopiert": {
+      "ihr": "Das ließ sich nicht kopieren. Haltet den Text gedrückt und kopiert ihn von Hand.",
+      "du": "Das ließ sich nicht kopieren. Halt den Text gedrückt und kopier ihn von Hand."
+    },
     "alles": "Alles kopieren",
     "allesWas": "Alles",
     "fertig": "Fertig",
@@ -358,7 +419,7 @@
     "storeTitel": "App und Store",
     "storeText": "Die App lädt nichts aus dem Internet; alles, was sie braucht, kommt mit ihr. Sie sendet nur eine Rückmeldung, wenn du sie abschickst (siehe „Rückmeldung“). Updates bekommst du über den App Store oder Google Play. Dabei verarbeiten Apple oder Google Daten nach ihren eigenen Datenschutzbestimmungen. Hast du auf deinem Gerät erlaubt, Analysedaten mit App-Entwicklern zu teilen, zeigen uns Apple oder Google Absturzberichte und zusammengefasste Zahlen, etwa wie oft die App geladen wurde. Deine Angaben und Unterlagen sind nie dabei.",
     "cookiesTitel": "Keine Cookies, keine Analyse",
-    "cookiesText": "{app} setzt keine Cookies und bindet keine Dienste Dritter ein. {app} zählt nicht, was du in der App tust. Was wir wissen, sind die Summen des Hostings: wie oft die App am Tag geladen wurde, ohne Kennung und ohne Verlauf.",
+    "cookiesText": "{app} setzt keine Cookies und bindet keine Dienste Dritter ein. {app} zählt nicht, was du in der App tust. Wir wissen nur, wie oft die App am Tag geladen wurde, ohne Kennung und ohne Verlauf.",
     "cookiesTextApp": "{app} setzt keine Cookies und bindet keine Dienste Dritter ein. {app} zählt nicht, was du in der App tust.",
     "rueckmeldungTitel": "Rückmeldung",
     "rueckmeldungText": "In {app} kannst du vier feste Fragen zu {app} beantworten. Erst wenn du eine Antwort wählst und in der Rückfrage auf „Abschicken“ tippst, geht diese Antwort an uns, zum Beispiel „Frage: geholfen, Antwort: teils“. Freien Text nimmt die Rückmeldung nicht an. Wir speichern davon nur eine Zählung je Tag: wie oft an diesem Tag welche Antwort auf welche Frage gewählt wurde. Name, Kennung, Gerät, Plattform, Uhrzeit oder deine IP-Adresse speichern wir nicht. Daten aus {app}, etwa Angaben oder Unterlagen, gehen dabei nicht mit. Änderst du eine Antwort, wird die neue zusätzlich gezählt. Die frühere bleibt in der Zählung, weil wir sie niemandem zuordnen können. Damit {app} deine Antwort anzeigen kann, merkt es sich auf deinem Gerät, was du abgeschickt hast. Zweck: Wir möchten wissen, ob {app} bei der Bewerbung hilft, was als Nächstes kommen soll, was fehlt und wie Menschen von {app} erfahren. Rechtsgrundlage ist deine Einwilligung mit dem Tipp auf „Abschicken“ (Art. 6 Abs. 1 lit. a DSGVO). Sie ist freiwillig; ohne Rückmeldung funktioniert {app} genauso. Die Zählungen bewahren wir höchstens zwei Jahre auf. Der Empfang läuft bei Cloudflare. Die Zählungen speichern wir in einer Datenbank von Cloudflare, die nur in der Europäischen Union liegt. Beim Absenden verarbeitet Cloudflare deine IP-Adresse und technische Angaben der Verbindung, um die Antwort entgegenzunehmen und vor Angriffen zu schützen. Protokolle der Anfragen haben wir nicht eingeschaltet. Was Cloudflare dabei selbst und wie lange verarbeitet, regeln die Datenschutzbestimmungen von Cloudflare.",
@@ -367,7 +428,10 @@
   },
   "update": {
     "titel": "Neue Version da.",
-    "text": "{app} wechselt von selbst, deine Angaben bleiben.",
+    "text": {
+      "ihr": "{app} wechselt von selbst, eure Angaben bleiben.",
+      "du": "{app} wechselt von selbst, deine Angaben bleiben."
+    },
     "knopf": "Jetzt neu starten"
   },
   "fuss": {
@@ -383,7 +447,10 @@
     "fuer": "Für {name}",
     "menue": {
       "waehlen": "PDF auswählen",
-      "hinweis": "In der Dateien-App findest du unter „Durchsuchen“ auch iCloud, „Auf meinem iPhone“ und andere Orte.",
+      "hinweis": {
+        "ihr": "In der Dateien-App findet ihr unter „Durchsuchen“ auch iCloud, „Auf meinem iPhone“ und andere Orte.",
+        "du": "In der Dateien-App findest du unter „Durchsuchen“ auch iCloud, „Auf meinem iPhone“ und andere Orte."
+      },
       "nochNicht": "Noch nicht",
       "papier": "Nur Papier da? In der Dateien-App unter „Dokumente scannen“ wird ein PDF daraus."
     },
@@ -397,31 +464,55 @@
       "one": "{anzahl} Seite aus {dateien} Dateien",
       "other": "{anzahl} Seiten aus {dateien} Dateien"
     },
-    "seitenHinweis": "Tipp auf eine Seite, um sie groß zu sehen. Der Kreis nimmt sie aus der Mappe.",
+    "seitenHinweis": {
+      "ihr": "Tippt auf eine Seite, um sie groß zu sehen. Der Kreis nimmt sie aus der Mappe.",
+      "du": "Tipp auf eine Seite, um sie groß zu sehen. Der Kreis nimmt sie aus der Mappe."
+    },
     "monat": "Für welchen Monat?",
     "andererMonat": "Anderer Monat",
     "datum": "Wann wurde sie ausgestellt? (freiwillig)",
     "variante": "Was ist es?",
     "freierName": "Wie heißt der Nachweis?",
     "speichern": "Speichern",
-    "grundMonat": "Wähl den Monat der Abrechnung.",
-    "grundPasswort": "Gib zuerst das Passwort ein.",
+    "grundMonat": {
+      "ihr": "Wählt den Monat der Abrechnung.",
+      "du": "Wähl den Monat der Abrechnung."
+    },
+    "grundPasswort": {
+      "ihr": "Gebt zuerst das Passwort ein.",
+      "du": "Gib zuerst das Passwort ein."
+    },
     "passwort": {
-      "text": "Entsperre sie einmal, dann klappt es. Das Passwort steht meist in der Mail oder im Portal, aus dem die Datei kommt.",
+      "text": {
+        "ihr": "Entsperrt sie einmal, dann klappt es. Das Passwort steht meist in der Mail oder im Portal, aus dem die Datei kommt.",
+        "du": "Entsperr sie einmal, dann klappt es. Das Passwort steht meist in der Mail oder im Portal, aus dem die Datei kommt."
+      },
       "feld": "Passwort für {name}",
       "knopf": "Entsperren",
-      "falsch": "Das Passwort passt nicht. Achte auf Groß- und Kleinschreibung.",
-      "gerastert": "Entsperrt. Diese Datei lässt sich nur als Bilder übernehmen: {groesse}.",
+      "falsch": {
+        "ihr": "Das Passwort passt nicht. Achtet auf Groß- und Kleinschreibung.",
+        "du": "Das Passwort passt nicht. Achte auf Groß- und Kleinschreibung."
+      },
+      "gerastert": "Entsperrt. {app} speichert die Seiten als Bilder: {groesse}.",
       "entsperrt": "Entsperrt. Gespeichert wird die Datei ohne Passwort: {groesse}.",
       "nichtGespeichert": "{app} speichert das Passwort nicht, nur die entsperrte Datei.",
       "titel": "Die Datei ist mit einem Passwort geschützt.",
       "feldEine": "Passwort der Datei"
     },
     "fehler": {
-      "keinPdf": "Diese Datei kann {app} nicht öffnen. Im Moment geht es mit PDFs. Papier oder ein Foto machst du in der Dateien-App über „Dokumente scannen“ zum PDF.",
-      "nichtLesbar": "Diese Datei ließ sich nicht lesen. Liegt sie in iCloud, öffne sie einmal in der Dateien-App und versuch es noch einmal.",
+      "keinPdf": {
+        "ihr": "Diese Datei kann {app} nicht öffnen. Im Moment geht es mit PDFs. Papier oder ein Foto macht ihr in der Dateien-App über „Dokumente scannen“ zum PDF.",
+        "du": "Diese Datei kann {app} nicht öffnen. Im Moment geht es mit PDFs. Papier oder ein Foto machst du in der Dateien-App über „Dokumente scannen“ zum PDF."
+      },
+      "nichtLesbar": {
+        "ihr": "Diese Datei ließ sich nicht lesen. Liegt sie in iCloud, öffnet sie einmal in der Dateien-App und versucht es noch einmal.",
+        "du": "Diese Datei ließ sich nicht lesen. Liegt sie in iCloud, öffne sie einmal in der Dateien-App und versuch es noch einmal."
+      },
       "platz": "Auf dem Gerät ist kaum noch Platz. Die Unterlage ist noch nicht gespeichert.",
-      "unbekannt": "Das Speichern hat nicht geklappt. Versuch es noch einmal.",
+      "unbekannt": {
+        "ihr": "Das Speichern hat nicht geklappt. Versucht es noch einmal.",
+        "du": "Das Speichern hat nicht geklappt. Versuch es noch einmal."
+      },
       "keinPdfAndroid": "Diese Datei kann {app} nicht öffnen. Im Moment geht es mit PDFs."
     },
     "laedt": "Einen Moment …",
@@ -433,7 +524,10 @@
     },
     "andereDatei": "Andere Datei wählen",
     "speicherAnsehen": "Speicher ansehen",
-    "vieleSeiten": "{Wort} Seiten machen die Mappe dick. Wähl die Seiten aus, die der Vermieter sehen soll; der Rest bleibt hier gespeichert.",
+    "vieleSeiten": {
+      "ihr": "{Wort} Seiten machen die Mappe dick. Wählt die Seiten aus, die der Vermieter sehen soll; der Rest bleibt hier gespeichert.",
+      "du": "{Wort} Seiten machen die Mappe dick. Wähl die Seiten aus, die der Vermieter sehen soll; der Rest bleibt hier gespeichert."
+    },
     "seitenAuswaehlen": "Seiten auswählen",
     "alleBehalten": "Alle {wort} Seiten behalten",
     "vonSeiten": "{anzahl} von {gesamt} Seiten kommen in die Mappe",
@@ -443,24 +537,48 @@
     "datumHinweis": "Ohne Datum kann {app} nicht erinnern, wenn die Unterlage zu alt wird.",
     "seiteAnsehen": "Seite {nummer} ansehen",
     "seiteAnsehenWeg": "Seite {nummer} ansehen, weggelassen",
-    "schonDa": "Diese Datei ist schon da: {wo}. Speichern kannst du sie trotzdem.",
-    "zweimalGewaehlt": "Diese Datei hast du zweimal gewählt.",
+    "schonDa": {
+      "ihr": "Diese Datei ist schon da: {wo}. Speichern könnt ihr sie trotzdem.",
+      "du": "Diese Datei ist schon da: {wo}. Speichern kannst du sie trotzdem."
+    },
+    "zweimalGewaehlt": {
+      "ihr": "Diese Datei habt ihr zweimal gewählt.",
+      "du": "Diese Datei hast du zweimal gewählt."
+    },
     "jeDatei": "Welcher Monat ist welche Datei?",
     "seitenEinerDatei": "Mehrere Seiten: Jede kann zu einem anderen Monat gehören.",
     "monatDerSeite": "Monat dieser Seite",
-    "varianteErkannt": "Aus dem Dokument erkannt. Du kannst es ändern.",
-    "varianteBeides": "Bekommst du beides? Steht es in einer Datei, nimm „BAföG und Unterhalt“. Sonst lade beide einzeln hoch, dann kommen beide in die Mappe.",
-    "jeDateiHinweis": "Erkannt aus dem Dateinamen, sonst der Reihe nach. Tipp auf eine Seite, um sie groß zu sehen. Der Kreis nimmt sie aus der Mappe.",
+    "varianteErkannt": {
+      "ihr": "Aus dem Dokument erkannt. Ihr könnt es ändern.",
+      "du": "Aus dem Dokument erkannt. Du kannst es ändern."
+    },
+    "varianteBeides": {
+      "ihr": "Kommt beides? Steht es in einer Datei, nehmt „BAföG und Unterhalt“. Sonst ladet beide einzeln hoch, dann kommen beide in die Mappe.",
+      "du": "Bekommst du beides? Steht es in einer Datei, nimm „BAföG und Unterhalt“. Sonst lade beide einzeln hoch, dann kommen beide in die Mappe."
+    },
+    "jeDateiHinweis": {
+      "ihr": "Erkannt aus dem Dateinamen, sonst der Reihe nach. Tippt auf eine Seite, um sie groß zu sehen. Der Kreis nimmt sie aus der Mappe.",
+      "du": "Erkannt aus dem Dateinamen, sonst der Reihe nach. Tipp auf eine Seite, um sie groß zu sehen. Der Kreis nimmt sie aus der Mappe."
+    },
     "grundDoppelt": "Jeder Monat nur einmal.",
     "grundKeineSeite": "Noch keine Seite gewählt.",
     "alleSeitenAnsehen": "Alle {anzahl} Seiten ansehen",
-    "datumErkannt": "Im Dokument gefunden: {datum} (Seite {seite}). Stimmt es nicht, ändere es einfach.",
-    "monatErkannt": "Aus dem Dokument erkannt: {monat}. Passt es nicht, tipp einen anderen Monat an.",
+    "datumErkannt": {
+      "ihr": "Im Dokument gefunden: {datum} (Seite {seite}). Stimmt es nicht, ändert es einfach.",
+      "du": "Im Dokument gefunden: {datum} (Seite {seite}). Stimmt es nicht, ändere es einfach."
+    },
+    "monatErkannt": {
+      "ihr": "Aus dem Dokument erkannt: {monat}. Passt es nicht, tippt einen anderen Monat an.",
+      "du": "Aus dem Dokument erkannt: {monat}. Passt es nicht, tipp einen anderen Monat an."
+    },
     "imDokument": "Im Dokument auswählen",
     "seitenGruppe": "Seiten der Datei",
     "seiteDrin": "Seite {nummer} kommt in die Mappe",
     "wenigerZeigen": "Weniger zeigen",
-    "seitenLeer": "Tipp die Seiten an, die der Vermieter sehen soll.",
+    "seitenLeer": {
+      "ihr": "Tippt die Seiten an, die der Vermieter sehen soll.",
+      "du": "Tipp die Seiten an, die der Vermieter sehen soll."
+    },
     "aufSeite": "Auf der Seite nachsehen",
     "entfernen": "Entfernen"
   },
@@ -508,19 +626,19 @@
     "subDu": "Hier sammelst du deine Wohnungen, jede in einem eigenen Heft.",
     "subOhne": "Hier sammelt ihr Wohnungen und eure Unterlagen für die Bewerbung.",
     "leerTitel": "Noch keine Wohnung",
-    "leerAppIhr": "Findet ihr eine Anzeige, teilt sie aus Safari an {app}. Daraus wird ein Heft, und {app} liest die Eckdaten für euch.",
-    "leerAppDu": "Findest du eine Anzeige, teile sie aus Safari an {app}. Daraus wird ein Heft, und {app} liest die Eckdaten für dich.",
-    "leerWebIhr": "Findet ihr eine Anzeige, kopiert ihren Text und fügt ihn hier ein. Daraus wird ein Heft, und {app} liest die Eckdaten für euch.",
-    "leerWebDu": "Findest du eine Anzeige, kopier ihren Text und füg ihn hier ein. Daraus wird ein Heft, und {app} liest die Eckdaten für dich.",
+    "leerAppIhr": "Findet ihr ein Inserat, teilt es aus Safari an {app}. Daraus wird ein Heft, und {app} liest die Eckdaten für euch.",
+    "leerAppDu": "Findest du ein Inserat, teil es aus Safari an {app}. Daraus wird ein Heft, und {app} liest die Eckdaten für dich.",
+    "leerWebIhr": "Findet ihr ein Inserat, kopiert seinen Text und fügt ihn hier ein. Daraus wird ein Heft, und {app} liest die Eckdaten für euch.",
+    "leerWebDu": "Findest du ein Inserat, kopier seinen Text und füg ihn hier ein. Daraus wird ein Heft, und {app} liest die Eckdaten für dich.",
     "knopfApp": "Wohnung hinzufügen",
-    "knopfWeb": "Anzeigentext einfügen",
+    "knopfWeb": "Text des Inserats einfügen",
     "mappeBereit": "Die Mappe ist schon bereit, auch ohne Wohnung",
-    "ohneTitel": "Fang an, wo du gerade bist",
+    "ohneTitel": "Fangt an, wo ihr gerade seid",
     "wegWohnung": "Eine Wohnung gefunden?",
-    "wegWohnungApp": "Teil die Anzeige aus Safari an {app}. Dafür brauchst du noch keinen Haushalt.",
-    "wegWohnungWeb": "Kopier den Text der Anzeige und füg ihn hier ein. Dafür brauchst du noch keinen Haushalt.",
+    "wegWohnungApp": "Teilt das Inserat aus Safari an {app}. Dafür braucht ihr noch keinen Haushalt.",
+    "wegWohnungWeb": "Kopiert den Text des Inserats und fügt ihn hier ein. Dafür braucht ihr noch keinen Haushalt.",
     "wegHaushalt": "Wer zieht ein?",
-    "wegHaushaltText": "Leg deinen Haushalt an. Daraus baut {app} deine Bewerbungsmappe.",
+    "wegHaushaltText": "Legt euren Haushalt an. Daraus baut {app} eure Bewerbungsmappe.",
     "kastenIhr": "Hier stehen bald eure Wohnungen, jede in einem eigenen Heft.",
     "kastenDu": "Hier stehen bald deine Wohnungen, jede in einem eigenen Heft.",
     "anleitung": "Anleitung"
@@ -563,7 +681,10 @@
       "one": "{anzahl} Seite",
       "other": "{anzahl} Seiten"
     },
-    "seitenGross": "Tipp auf eine Seite, um sie groß zu sehen.",
+    "seitenGross": {
+      "ihr": "Tippt auf eine Seite, um sie groß zu sehen.",
+      "du": "Tipp auf eine Seite, um sie groß zu sehen."
+    },
     "seiteGross": "Seite {nummer} groß ansehen",
     "seitenMehr": {
       "one": "{wort} weitere Seite ansehen",
@@ -581,20 +702,38 @@
     "aeltereMonate": "Ältere Monate",
     "nichtInMappe": "Nicht in der Mappe.",
     "immerNeueste": "In die Mappe kommt immer die neueste.",
-    "serieRueckt": "Kommt ein neuer Monat dazu, rückt der älteste hierher. Er bleibt gespeichert, bis du ihn löschst.",
-    "notiz": "Notiz",
-    "notizSatz": "Nur für dich, kommt nicht in die Mappe",
-    "datumSatz": {
-      "one": "Mit Datum erinnert {app} dich, bevor {er} zu alt ist.",
-      "other": "Mit Datum erinnert {app} dich, bevor sie zu alt sind."
+    "serieRueckt": {
+      "ihr": "Kommt ein neuer Monat dazu, rückt der älteste hierher. Er bleibt gespeichert, bis ihr ihn löscht.",
+      "du": "Kommt ein neuer Monat dazu, rückt der älteste hierher. Er bleibt gespeichert, bis du ihn löschst."
     },
-    "brauchstDu": "Brauchst du sie doch: In „Mappe erstellen“ unter „Eigene Auswahl“ kannst du sie dazunehmen.",
+    "notiz": "Notiz",
+    "notizSatz": {
+      "ihr": "Nur für euch, kommt nicht in die Mappe",
+      "du": "Nur für dich, kommt nicht in die Mappe"
+    },
+    "datumSatz": {
+      "one": {
+        "ihr": "Mit Datum erinnert {app} euch, bevor {er} zu alt ist.",
+        "du": "Mit Datum erinnert {app} dich, bevor {er} zu alt ist."
+      },
+      "other": {
+        "ihr": "Mit Datum erinnert {app} euch, bevor sie zu alt sind.",
+        "du": "Mit Datum erinnert {app} dich, bevor sie zu alt sind."
+      }
+    },
+    "brauchstDu": {
+      "ihr": "Braucht ihr sie doch: In „Mappe erstellen“ unter „Eigene Auswahl“ könnt ihr sie dazunehmen.",
+      "du": "Brauchst du sie doch: In „Mappe erstellen“ unter „Eigene Auswahl“ kannst du sie dazunehmen."
+    },
     "versionVom": "Version vom {datum}",
     "versionOhneDatum": "Version ohne Datum",
     "versionMappe": "Kommt in die Mappe.",
     "versionNichtMappe": "Nicht in der Mappe. In die Mappe kommt immer die neueste.",
     "originalSichern": "Original sichern",
-    "originalSatz": "Die Datei, wie du sie hochgeladen hast",
+    "originalSatz": {
+      "ihr": "Die Datei, wie ihr sie hochgeladen habt",
+      "du": "Die Datei, wie du sie hochgeladen hast"
+    },
     "versionLoeschenLink": "Diese Version löschen",
     "datumFrage": {
       "one": "Wann wurde {er} aus­gestellt?",
@@ -633,11 +772,17 @@
       "vertragKarte": "{Ihre} Karte steht unter „Im Mietvertrag“, nach {nach}.",
       "vertragErklaerungDa": "Die Bürgschafts­erklärung braucht es nicht mehr. Sie bleibt gespeichert und kommt nicht in die Mappe.",
       "vertragErklaerung": "Die Bürgschafts­erklärung braucht es nicht mehr.",
-      "vertragAngaben": "In {ihre} Selbstauskunft kommen die Angaben für euren Haushalt.",
+      "vertragAngaben": {
+        "ihr": "In {ihre} Selbstauskunft kommen die Angaben für euren Haushalt.",
+        "du": "In {ihre} Selbstauskunft kommen die Angaben für deinen Haushalt."
+      },
       "buergeTitel": "Wenn {name} bürgt:",
       "buergeKarte": "{Ihre} Karte steht unter „Bürgschaft“.",
       "buergeErklaerung": "Die Bürgschafts­erklärung kommt als „Fehlt noch“ dazu.",
-      "buergeAngaben": "Die Angaben für euren Haushalt fallen aus {ihrer} Selbstauskunft.",
+      "buergeAngaben": {
+        "ihr": "Die Angaben für euren Haushalt fallen aus {ihrer} Selbstauskunft.",
+        "du": "Die Angaben für deinen Haushalt fallen aus {ihrer} Selbstauskunft."
+      },
       "neueErste": "{name} steht dann als {rolle} an erster Stelle.",
       "allein": "Im Mietvertrag muss mindestens eine Person stehen."
     },
@@ -653,12 +798,15 @@
     "titelMitmieter": "Wer zieht mit ein?",
     "leadMitmieter": "Diese Person steht mit im Mietvertrag.",
     "titelBuerge": "Wer bürgt?",
-    "leadBuerge": "Bürgt für euch, zieht aber nicht ein.",
+    "leadBuerge": {
+      "ihr": "Bürgt für euch, zieht aber nicht ein.",
+      "du": "Bürgt für dich, zieht aber nicht ein."
+    },
     "titelAendern": "{name} ändern",
     "vorname": "Vorname",
     "nachname": "Nachname",
-    "rufnameSatz": "Wir nennen dich {name}.",
-    "rufnameSatzAndere": "Wir nennen sie {name}.",
+    "rufnameSatz": "{app} nennt dich {name}.",
+    "rufnameSatzAndere": "{app} nennt sie {name}.",
     "rufnameAendern": "Ändern",
     "rufname": "Rufname",
     "bezeichnung": "So steht es auf der Karte",
@@ -683,13 +831,19 @@
     "farbeHat": "{farbe}, hat {name}",
     "farbeTausch": "{name} bekommt dafür {farbe}.",
     "farbeHinweis": "Gilt überall, auch in der Mappe.",
-    "farbeHinweisBuchstabe": "Gilt überall, auch in der Mappe. Mit Buchstabe: hat schon jemand bei euch, dann tauscht ihr.",
+    "farbeHinweisBuchstabe": {
+      "ihr": "Gilt überall, auch in der Mappe. Eine Farbe mit Buchstabe hat schon jemand. Wählt ihr sie, tauscht ihr.",
+      "du": "Gilt überall, auch in der Mappe. Eine Farbe mit Buchstabe hat schon jemand. Wählst du sie, tauschst du."
+    },
     "hinzufuegen": "Hinzufügen",
     "speichern": "Speichern",
     "abbrechen": "Abbrechen",
     "nichtGefunden": "Diese Person gibt es nicht mehr.",
     "neutral": "Neutral",
-    "grundName": "Trag den Vornamen ein.",
+    "grundName": {
+      "ihr": "Tragt den Vornamen ein.",
+      "du": "Trag den Vornamen ein."
+    },
     "schonInMappe": "Schon in {app}",
     "herausgenommenAm": "Herausgenommen am {datum}",
     "unterlagenZahl": {
@@ -713,7 +867,10 @@
       "one": "Eine Unterlage ist bald zu alt oder fehlt noch. Das zeigt die Übersicht gleich an.",
       "other": "{Wort} Unterlagen sind bald zu alt oder fehlen noch. Das zeigt die Übersicht gleich an."
     },
-    "inEuremHaushalt": "In eurem Haushalt",
+    "inEuremHaushalt": {
+      "ihr": "In eurem Haushalt",
+      "du": "In deinem Haushalt"
+    },
     "giltNurHier": "gilt nur hier",
     "ueber": "Über {name}",
     "giltUeberall": "gilt überall",
@@ -721,7 +878,10 @@
     "rolleSatz": {
       "hauptmieter": "Erste Person im Mietvertrag.",
       "mitmieter": "Steht mit im Mietvertrag.",
-      "buerge": "Bürgt für euch, zieht nicht ein."
+      "buerge": {
+        "ihr": "Bürgt für euch, zieht nicht ein.",
+        "du": "Bürgt für dich, zieht nicht ein."
+      }
     },
     "ausHaushaltNehmen": "Aus diesem Haushalt nehmen",
     "ganzLoeschenLink": "{name} ganz löschen",
@@ -732,22 +892,37 @@
     "zuPerson": "Zu {name} springen",
     "startTitel": "Jetzt die Unterlagen.",
     "startLead": {
-      "one": "Eine Unterlage, dann bist du durch. Was du gerade nicht hast, überspringst du.",
-      "other": "{Wort} Stück, eine nach der anderen, Person für Person. Was du gerade nicht hast, überspringst du."
+      "one": {
+        "ihr": "Eine Unterlage, dann seid ihr durch. Was ihr gerade nicht habt, überspringt ihr.",
+        "du": "Eine Unterlage, dann bist du durch. Was du gerade nicht hast, überspringst du."
+      },
+      "other": {
+        "ihr": "{Wort} Stück, eine nach der anderen, Person für Person. Was ihr gerade nicht habt, überspringt ihr.",
+        "du": "{Wort} Stück, eine nach der anderen, Person für Person. Was du gerade nicht hast, überspringst du."
+      }
     },
     "personZahl": "{name} {anzahl}",
-    "tipp": "Tipp: Leg dir die PDFs vorher in einen Ordner.",
+    "tipp": {
+      "ihr": "Tipp: Legt euch die PDFs vorher in einen Ordner.",
+      "du": "Tipp: Leg dir die PDFs vorher in einen Ordner."
+    },
     "los": "Los geht’s",
     "spaeter": "Später",
     "pause": "Pause",
     "schritt": "{schritt} von {gesamt}",
     "fuer": "Für {name}",
     "dateiWaehlen": "PDF wählen",
-    "bleibt": "Bleibt auf deinem Gerät.",
+    "bleibt": {
+      "ihr": "Bleibt auf eurem Gerät.",
+      "du": "Bleibt auf deinem Gerät."
+    },
     "ueberspringen": "Überspringen",
     "ueberspringenHinweis": "Bleibt auf der Übersicht offen.",
     "nochNichtDa": "Noch nicht da",
-    "nochNichtDaHinweis": "Erinnert dich in einer Woche wieder.",
+    "nochNichtDaHinweis": {
+      "ihr": "Erinnert euch in einer Woche wieder.",
+      "du": "Erinnert dich in einer Woche wieder."
+    },
     "speichernWeiter": "Speichern und weiter",
     "endeTitel": "Gut gemacht.",
     "endeDrin": {
@@ -755,16 +930,28 @@
       "other": "{Wort} Unterlagen sind drin."
     },
     "endeUebersprungen": {
-      "one": "Eine hast du übersprungen, sie bleibt auf der Übersicht offen.",
-      "other": "{Wort} hast du übersprungen, sie bleiben auf der Übersicht offen."
+      "one": {
+        "ihr": "Eine habt ihr übersprungen, sie bleibt auf der Übersicht offen.",
+        "du": "Eine hast du übersprungen, sie bleibt auf der Übersicht offen."
+      },
+      "other": {
+        "ihr": "{Wort} habt ihr übersprungen, sie bleiben auf der Übersicht offen.",
+        "du": "{Wort} hast du übersprungen, sie bleiben auf der Übersicht offen."
+      }
     },
     "endeFuer": "für {name}",
     "zurUebersicht": "Zur Übersicht",
     "nichtsOffen": "Gerade ist nichts offen.",
     "endeTitelSpaeter": "Dann eben später.",
     "endeAlleUebersprungen": {
-      "one": "Du hast sie übersprungen. Sie bleibt auf der Übersicht offen, und du machst weiter, wenn du sie hast.",
-      "other": "Du hast alle {wort} übersprungen. Sie bleiben auf der Übersicht offen, und du machst weiter, wenn du sie hast."
+      "one": {
+        "ihr": "Ihr habt sie übersprungen. Sie bleibt auf der Übersicht offen, und ihr macht weiter, wenn ihr sie habt.",
+        "du": "Du hast sie übersprungen. Sie bleibt auf der Übersicht offen, und du machst weiter, wenn du sie hast."
+      },
+      "other": {
+        "ihr": "Ihr habt alle {wort} übersprungen. Sie bleiben auf der Übersicht offen, und ihr macht weiter, wenn ihr sie habt.",
+        "du": "Du hast alle {wort} übersprungen. Sie bleiben auf der Übersicht offen, und du machst weiter, wenn du sie hast."
+      }
     },
     "uebersprungenTitel": "Übersprungen",
     "serieNoch": {
@@ -772,7 +959,10 @@
       "other": "{monat} ist drin. Noch {zahl} Monate, der neueste zuerst."
     },
     "serieWaehlen": "{monat} wählen",
-    "serieMehrere": "Mehrere Monate in einer Datei? Wähl sie einfach, du kannst danach alle Monate antippen.",
+    "serieMehrere": {
+      "ihr": "Mehrere Monate in einer Datei? Wählt sie einfach, danach könnt ihr alle Monate antippen.",
+      "du": "Mehrere Monate in einer Datei? Wähl sie einfach, danach kannst du alle Monate antippen."
+    },
     "serieWeiterLink": "Weiter zur nächsten Unterlage",
     "serieOffen": {
       "one": "{monate} bleibt auf der Übersicht offen.",
@@ -780,15 +970,24 @@
     },
     "und": "und",
     "zuAlt": "Gespeichert ist eine Fassung vom {datum}. Viele Vermieter wollen sie nicht älter als {grenze}. Die alte bleibt in den Versionen.",
-    "nochNichtZweitesMal": "Du hast diesen Monat schon einmal gewartet. Danach fragt {app} erst im nächsten Monat wieder.",
+    "nochNichtZweitesMal": {
+      "ihr": "Ihr habt diesen Monat schon einmal gewartet. Danach fragt {app} erst im nächsten Monat wieder.",
+      "du": "Du hast diesen Monat schon einmal gewartet. Danach fragt {app} erst im nächsten Monat wieder."
+    },
     "neuDazuTitel": "Seit dem Start neu dazugekommen",
     "gleichMitmachen": "Gleich mitmachen",
-    "serieAufEinmal": "Mehrere Monate? Wähl alle Dateien auf einmal.",
+    "serieAufEinmal": {
+      "ihr": "Mehrere Monate? Wählt alle Dateien auf einmal.",
+      "du": "Mehrere Monate? Wähl alle Dateien auf einmal."
+    },
     "zurueck": "Zurück",
     "weiter": "Weiter",
     "navi": "Zwischen den Schritten wechseln",
     "stelle": "Schritt {schritt} von {gesamt}: {unterlage}, {name}",
-    "schonDa": "Ist schon da. Du kannst eine neuere Datei wählen oder einfach weitergehen.",
+    "schonDa": {
+      "ihr": "Ist schon da. Ihr könnt eine neuere Datei wählen oder einfach weitergehen.",
+      "du": "Ist schon da. Du kannst eine neuere Datei wählen oder einfach weitergehen."
+    },
     "neuereDatei": "Neuere Datei wählen",
     "papier": "Nur Papier da? In der Dateien-App unter „Dokumente scannen“ wird ein PDF daraus.",
     "endeAlleDrin": {
@@ -812,7 +1011,7 @@
     "email": "E-Mail",
     "nettoBetrag": "Genauer Betrag",
     "nettoMindestens": "Mindestens",
-    "nettoHinweis": "Mit „Mindestens“ nennst du einen Betrag, den du sicher erreichst.",
+    "nettoHinweis": "Mit „Mindestens“ steht im Bogen ein Betrag, der sicher erreicht wird.",
     "nettoEntfaellt": "Das Nettoeinkommen entfällt, weil eine öffentliche Stelle die Miete zahlt.",
     "ja": "Ja",
     "nein": "Nein",
@@ -820,11 +1019,11 @@
     "insolvenz": "Läuft bei {name} gerade ein Insolvenzverfahren?",
     "raeumungstitelDu": "Gab es gegen dich in den letzten fünf Jahren einen Räumungstitel?",
     "raeumungstitel": "Gab es gegen {name} in den letzten fünf Jahren einen Räumungstitel?",
-    "mietrueckstaendeDu": "Gab es erhebliche Mietrückstände oder eine Kündigung wegen Pflichtverletzung?",
+    "mietrueckstaendeDu": "Gab es bei dir erhebliche Mietrückstände oder eine Kündigung wegen Pflichtverletzung?",
     "mietrueckstaende": "Gab es bei {name} erhebliche Mietrückstände oder eine Kündigung wegen Pflichtverletzung?",
     "zusageHinweisDu": "Erst beantworten, wenn der Vermieter sich für dich entschieden hat; vorher steht in der Mappe nur, dass die Frage später kommt.",
     "zusageHinweisIhr": "Erst beantworten, wenn der Vermieter sich für euch entschieden hat; vorher steht in der Mappe nur, dass die Frage später kommt.",
-    "zusageBeantwortet": "Die Antwort steht ab jetzt in der Mappe, außer eine Mappe hält sie bis zur Zusage zurück.",
+    "zusageBeantwortet": "Die Antwort steht ab jetzt in der Mappe. Nur eine Mappe für die Zeit vor der Zusage lässt sie weg.",
     "zusageOffen": "Eine Frage folgt nach der Zusage",
     "antwortEntfernen": "Antwort entfernen",
     "speichern": "Speichern",
@@ -849,7 +1048,10 @@
       "einkommenOffen": "Pflicht",
       "fragen": "Fragen, die Vermieter stellen dürfen",
       "fragenOffen": "Zweimal Ja oder Nein",
-      "haushalt": "Für euren ganzen Haushalt",
+      "haushalt": {
+        "ihr": "Für euren ganzen Haushalt",
+        "du": "Für deinen ganzen Haushalt"
+      },
       "haushaltOffen": "Haustiere und Ort, einmal für alle"
     },
     "offen": {
@@ -863,12 +1065,15 @@
     "amtSatz": "Die Miete übernimmt das Amt; ein Nettoeinkommen steht deshalb nicht im Bogen.",
     "einkommenSumme": "{betrag} netto",
     "einkommenBei": "{beruf} bei {arbeitgeber}",
-    "erklaeren": "Möchtest du es kurz erklären? (freiwillig)",
+    "erklaeren": "Kurz erklären? (freiwillig)",
     "fragenNein": "Dreimal Nein",
     "fragenNeinZwei": "Zweimal Nein",
     "fragenMal": "{ja}× Ja, {nein}× Nein",
     "haushaltHinweis": "Gilt für alle Bögen. Die anderen müssen das nicht noch einmal eintragen.",
-    "ziehenEin": "Ziehen ein: {text}, aus eurem Haushalt",
+    "ziehenEin": {
+      "ihr": "Ziehen ein: {text}, aus eurem Haushalt",
+      "du": "Ziehen ein: {text}, aus deinem Haushalt"
+    },
     "haustiereIhr": "Habt ihr Haustiere?",
     "haustiereDu": "Hast du Haustiere?",
     "haustiereHinweis": "Kleintiere in Käfigen zählen nicht.",
@@ -895,16 +1100,22 @@
     "zeichen": "{n} von {max}",
     "weiterZu": "Weiter: {teil}",
     "teilZu": "Fertig",
-    "telefonHinweis": "Das sieht nicht nach einer Telefonnummer aus. Du kannst es trotzdem so lassen.",
-    "emailHinweis": "Das sieht nicht nach einer E-Mail-Adresse aus. Du kannst es trotzdem so lassen.",
-    "vonWem": "Von {name} ausgefüllt. Schau kurz drüber, wenn du unsicher bist.",
+    "telefonHinweis": "Die Telefonnummer sieht ungewöhnlich aus. Stimmt sie?",
+    "emailHinweis": "Die Mailadresse sieht ungewöhnlich aus. Stimmt sie?",
+    "vonWem": {
+      "ihr": "Von {name} ausgefüllt. Schaut kurz drüber, wenn ihr unsicher seid.",
+      "du": "Von {name} ausgefüllt. Schau kurz drüber, wenn du unsicher bist."
+    },
     "angabenLoeschen": "Angaben löschen",
     "angabenFrage": "Angaben in diesem Teil löschen? Der Teil ist danach wieder offen.",
     "angabenFrageHaushalt": "Angaben für den ganzen Haushalt löschen? Der Teil ist danach wieder offen.",
     "loeschen": "Löschen",
     "pruefenEmail": "E-Mail bitte prüfen",
     "pruefenTelefon": "Telefonnummer bitte prüfen",
-    "pruefenBeide": "E-Mail und Telefonnummer bitte prüfen"
+    "pruefenBeide": "E-Mail und Telefonnummer bitte prüfen",
+    "nettoMonat": "im Monat",
+    "nettoJahr": "im Jahr",
+    "nettoJahrSatz": "Das sind ca. {betrag} im Monat. In der Mappe steht immer der Monat."
   },
   "personLoeschen": {
     "titel": "{name} ganz löschen?",
@@ -929,9 +1140,15 @@
   "selbstauskuenfte": {
     "titel": "Selbst­auskünfte",
     "lead": "Eine je Person im Vertrag und je Bürge. {fertig} von {gesamt} fertig.",
-    "haushalt": "Für euren ganzen Haushalt",
+    "haushalt": {
+      "ihr": "Für euren ganzen Haushalt",
+      "du": "Für deinen ganzen Haushalt"
+    },
     "ziehenEin": "Ziehen ein",
-    "ziehenEinWert": "{text}, aus eurem Haushalt",
+    "ziehenEinWert": {
+      "ihr": "{text}, aus eurem Haushalt",
+      "du": "{text}, aus deinem Haushalt"
+    },
     "haustiere": "Haustiere",
     "ort": "Ort für die Unterschrift",
     "nochOffen": "Noch offen",
@@ -951,8 +1168,8 @@
   },
   "mappe": {
     "titel": "Mappe teilen",
-    "leadIhr": "Eine PDF mit Deckblatt und Lesehilfe. Ihr schickt sie, wohin ihr wollt.",
-    "leadDu": "Eine PDF mit Deckblatt und Lesehilfe. Du schickst sie, wohin du willst.",
+    "leadIhr": "Ein PDF mit Deckblatt und Lesehilfe. Ihr schickt es, wohin ihr wollt.",
+    "leadDu": "Ein PDF mit Deckblatt und Lesehilfe. Du schickst es, wohin du willst.",
     "alsPdfTeilen": "Als PDF teilen",
     "deckblattAendern": "Deckblatt ändern",
     "fuerBeide": "für beide",
@@ -974,7 +1191,10 @@
       "one": "Eine Datei fehlt in der Mappe",
       "other": "{Wort} Dateien fehlen in der Mappe"
     },
-    "dateiFehltUnter": "Lad sie noch einmal hoch. Teilen geht trotzdem.",
+    "dateiFehltUnter": {
+      "ihr": "Ladet sie noch einmal hoch. Teilen geht trotzdem.",
+      "du": "Lad sie noch einmal hoch. Teilen geht trotzdem."
+    },
     "vorherLatein": "Teilen geht erst, wenn der Name eingetragen ist.",
     "auswahlStand": "{rolle} · {dabei} von {von} dabei",
     "satzEuer": "Euer Satz",
@@ -991,10 +1211,16 @@
     "adresseTitel": "Für welche Wohnung?",
     "adresseLabel": "Adresse der Wohnung (freiwillig)",
     "adresseBeispiel": "Hauptstraße 12, 3. OG links\n22767 Hamburg",
-    "adresseHinweis": "Das liest der Vermieter: Die Adresse steht groß auf dem Deckblatt, unten auf jeder Seite und im Dateinamen. Schreib sie so wie in der Anzeige, in der zweiten Zeile Postleitzahl und Ort.",
+    "adresseHinweis": {
+      "ihr": "Das liest der Vermieter: Die Adresse steht groß auf dem Deckblatt, unten auf jeder Seite und im Dateinamen. Schreibt sie so wie im Inserat, in der zweiten Zeile Postleitzahl und Ort.",
+      "du": "Das liest der Vermieter: Die Adresse steht groß auf dem Deckblatt, unten auf jeder Seite und im Dateinamen. Schreib sie so wie im Inserat, in der zweiten Zeile Postleitzahl und Ort."
+    },
     "uebernehmen": "Übernehmen",
     "werDabei": "Wer ist dabei?",
-    "buergenWeglassen": "Bürgen kannst du für diese Bewerbung weglassen, zum Beispiel für die Besichtigung.",
+    "buergenWeglassen": {
+      "ihr": "Bürgen könnt ihr für diese Bewerbung weglassen, zum Beispiel für die Besichtigung.",
+      "du": "Bürgen kannst du für diese Bewerbung weglassen, zum Beispiel für die Besichtigung."
+    },
     "nichtInMappe": "Nicht in dieser Mappe",
     "wasRein": "Was in der Mappe liegt",
     "empfohlen": "Empfohlen",
@@ -1013,12 +1239,18 @@
       },
       "eigene_auswahl": {
         "titel": "Eigene Auswahl",
-        "text": "Du entscheidest Unterlage für Unterlage."
+        "text": {
+          "ihr": "Ihr entscheidet Unterlage für Unterlage.",
+          "du": "Du entscheidest Unterlage für Unterlage."
+        }
       }
     },
     "schritt": {
       "besichtigung": "Zur Besichtigung",
-      "will_wohnung": "Ich will die Wohnung",
+      "will_wohnung": {
+        "ihr": "Wir wollen die Wohnung",
+        "du": "Ich will die Wohnung"
+      },
       "zusage": "Nach der Zusage"
     },
     "allesDu": "Alles, was du gesammelt hast.",
@@ -1031,10 +1263,16 @@
     "eigeneZeile": "Eigene Auswahl",
     "eigeneZeileUnter": "Unterlage für Unterlage, auch Ausweiskopie",
     "eigeneGewaehlt": "Eigene Auswahl, gewählt",
-    "eigeneGewaehltUnter": "Du entscheidest Unterlage für Unterlage",
+    "eigeneGewaehltUnter": {
+      "ihr": "Ihr entscheidet Unterlage für Unterlage",
+      "du": "Du entscheidest Unterlage für Unterlage"
+    },
     "deckGross": {
       "titel": "Deckblatt",
-      "lead": "So sieht die erste Seite aus. Was du änderst, steht sofort hier.",
+      "lead": {
+        "ihr": "So sieht die erste Seite aus. Was ihr ändert, steht sofort hier.",
+        "du": "So sieht die erste Seite aus. Was du änderst, steht sofort hier."
+      },
       "groesser": "Deckblatt groß ansehen",
       "satzAendern": "Satz ändern",
       "aussehen": "Aussehen",
@@ -1044,7 +1282,10 @@
       "alt": "Deckblatt der Mappe: Bewerbung um {wohnung}. {wer} Was beiliegt: je Person die Unterlagen mit Seitenzahl.",
       "altOhne": "eine Wohnung"
     },
-    "schrittLabel": "In welchem Schritt bist du?",
+    "schrittLabel": {
+      "ihr": "In welchem Schritt seid ihr?",
+      "du": "In welchem Schritt bist du?"
+    },
     "fehltNoch": "fehlt noch",
     "ohneBonitaet": "Bonitätsnachweis ist nicht dabei. Viele Vermieter erwarten ihn schon jetzt.",
     "zusageOffen": "Die Frage nach der Zusage ist noch offen bei: {namen}. In der Selbstauskunft steht dort sonst „keine Angabe“.",
@@ -1061,9 +1302,12 @@
     },
     "wirdErstellt": "Mappe wird erstellt …",
     "legtZusammen": "{app} legt die Mappe zusammen.",
-    "fehler": "Die Mappe ließ sich nicht erstellen. Versuch es noch einmal.",
+    "fehler": {
+      "ihr": "Die Mappe ließ sich nicht erstellen. Versucht es noch einmal.",
+      "du": "Die Mappe ließ sich nicht erstellen. Versuch es noch einmal."
+    },
     "anpassen": "Mappe anpassen",
-    "eine": "Eine PDF",
+    "eine": "Ein PDF",
     "einzeln": "Einzeldateien",
     "deckblatt": "Deckblatt",
     "inhalt": "Inhalts­verzeichnis",
@@ -1083,7 +1327,7 @@
     "anpassenSeite": {
       "lead": "Ausgabe und Dateiname gelten für diese Bewerbung, das Aussehen für alle.",
       "ausgabe": "Ausgabe",
-      "ausgabeHinweis": "Einzeldateien helfen bei Portalen mit getrennten Upload-Feldern.",
+      "ausgabeHinweis": "Einzeldateien helfen bei Portalen, die für jede Unterlage ein eigenes Feld haben.",
       "dateinameHinweis": "Umlaute und Leerzeichen werden ersetzt, damit jedes Portal die Datei annimmt.",
       "bestandteile": "Bestandteile",
       "inhaltHinweis": "Steht auf dem Deckblatt",
@@ -1114,7 +1358,10 @@
     "kleinerLaeuft": "Scans und Bilder werden verkleinert …",
     "groesseWird": "wird berechnet …",
     "unlesbarName": "{unterlage} von {name}",
-    "zeichenFehlen": "Ein paar Zeichen kann die Mappe nicht schreiben, dort steht ein Fragezeichen: {texte}. Trag die Angabe am besten in lateinischen Buchstaben ein.",
+    "zeichenFehlen": {
+      "ihr": "Ein paar Zeichen kann die Mappe nicht schreiben, dort steht ein Fragezeichen: {texte}. Tragt die Angabe am besten in lateinischen Buchstaben ein.",
+      "du": "Ein paar Zeichen kann die Mappe nicht schreiben, dort steht ein Fragezeichen: {texte}. Trag die Angabe am besten in lateinischen Buchstaben ein."
+    },
     "feldBei": "{feld} bei {name}",
     "feldAdresse": "Adresse der Wohnung",
     "feldBitte": "Bitte zum Löschen",
@@ -1126,8 +1373,14 @@
     "feldOrt": "Ort",
     "vorherLabel": "Vor dem Senden ansehen",
     "vorher": {
-      "one": "Eine Sache solltest du vorher ansehen",
-      "other": "{Wort} Dinge solltest du vorher ansehen"
+      "one": {
+        "ihr": "Eine Sache solltet ihr vorher ansehen",
+        "du": "Eine Sache solltest du vorher ansehen"
+      },
+      "other": {
+        "ihr": "{Wort} Dinge solltet ihr vorher ansehen",
+        "du": "{Wort} Dinge solltest du vorher ansehen"
+      }
     },
     "vorherGeht": "Die Mappe geht trotzdem.",
     "vorherUnlesbar": "Lässt sich nicht lesen",
@@ -1139,7 +1392,7 @@
         "source_serif": "Source Serif",
         "plex_sans": "Plex Sans"
       },
-      "schriftHinweis": "Alle drei sind eingebettet und frei. Aufbau und Leiste bleiben gleich: Daran erkennt man {app}.",
+      "schriftHinweis": "Alle drei kommen in der Mappe mit und sehen überall gleich aus. Aufbau und Leiste bleiben gleich: Daran erkennt man {app}.",
       "flaeche": "Fläche hinter „Wer einzieht“",
       "flaecheName": {
         "personen": "Personenfarbe",
@@ -1163,7 +1416,10 @@
       "deckAus": "Deckblatt ist aus. So sähe es aus.",
       "tippGanz": "Tipp für die ganze Mappe.",
       "grossLaedt": "Die ganze Mappe wird erstellt …",
-      "grossFehler": "Das hat nicht geklappt. Versuch es noch einmal.",
+      "grossFehler": {
+        "ihr": "Das hat nicht geklappt. Versucht es noch einmal.",
+        "du": "Das hat nicht geklappt. Versuch es noch einmal."
+      },
       "grossIhr": "Vorschau eurer Mappe groß ansehen",
       "grossDu": "Vorschau deiner Mappe groß ansehen",
       "beispielIhr": "Beispiel. Mit euren Namen sieht es genauso aus.",
@@ -1181,9 +1437,15 @@
       },
       "personen": "Farben der Personen",
       "personenSatz": "Jede Person in ihrer Farbe, klein.",
-      "personenHinweis": "Ein kleines Quadrat vor dem Namen, dunkler als in der App, damit es gedruckt trägt. Tipp auf einen Namen, um die Farbe zu ändern.",
+      "personenHinweis": {
+        "ihr": "Ein kleines Quadrat vor dem Namen, dunkler als in der App, damit es gedruckt trägt. Tippt auf einen Namen, um die Farbe zu ändern.",
+        "du": "Ein kleines Quadrat vor dem Namen, dunkler als in der App, damit es gedruckt trägt. Tipp auf einen Namen, um die Farbe zu ändern."
+      },
       "farbeVon": "Farbe von {name}",
-      "gilt": "Gilt für alle Bewerbungen, bis du es änderst. Gedruckt in Schwarzweiß bleibt alles lesbar."
+      "gilt": {
+        "ihr": "Gilt für alle Bewerbungen, bis ihr es ändert. Gedruckt in Schwarzweiß bleibt alles lesbar.",
+        "du": "Gilt für alle Bewerbungen, bis du es änderst. Gedruckt in Schwarzweiß bleibt alles lesbar."
+      }
     }
   },
   "zahlen": {
@@ -1210,7 +1472,10 @@
   },
   "backupSeite": {
     "titel": "Backup erstellen",
-    "lead": "Eine Datei mit allem. Damit holst du deine Daten auf jedes Gerät zurück.",
+    "lead": {
+      "ihr": "Eine Datei mit allem. Damit holt ihr eure Daten auf jedes Gerät zurück.",
+      "du": "Eine Datei mit allem. Damit holst du deine Daten auf jedes Gerät zurück."
+    },
     "drin": "Drin",
     "groesse": "Größe",
     "ungefaehr": "ungefähr {groesse}",
@@ -1222,17 +1487,29 @@
     "nochmal": "Noch einmal",
     "hinweis": "Mindestens 8 Zeichen. Ein vergessenes Passwort lässt sich nicht wiederherstellen, auch nicht von uns.",
     "ungleich": "Die beiden Passwörter sind nicht gleich.",
-    "ohneWarnung": "Ohne Passwort kann jeder, der die Datei bekommt, alle Unterlagen lesen. Bewahre sie gut auf und schick sie nicht per Mail.",
+    "ohneWarnung": {
+      "ihr": "Ohne Passwort kann jeder, der die Datei bekommt, alle Unterlagen lesen. Bewahrt sie gut auf und schickt sie nicht per Mail.",
+      "du": "Ohne Passwort kann jeder, der die Datei bekommt, alle Unterlagen lesen. Bewahr sie gut auf und schick sie nicht per Mail."
+    },
     "knopf": "Backup sichern",
     "grund": "Mindestens 8 Zeichen, zweimal gleich.",
     "wirdErstellt": "Backup wird erstellt …",
     "sichern": "Backup sichern",
     "alsDatei": "Als Datei herunterladen",
-    "fehler": "Das Backup ließ sich nicht erstellen. Versuch es noch einmal.",
+    "fehler": {
+      "ihr": "Das Backup ließ sich nicht erstellen. Versucht es noch einmal.",
+      "du": "Das Backup ließ sich nicht erstellen. Versuch es noch einmal."
+    },
     "fertigTitel": "Backup ist fertig.",
-    "fertigText": "Jetzt noch sichern, zum Beispiel in „Dateien“ oder in deiner Cloud.",
+    "fertigText": {
+      "ihr": "Jetzt noch sichern, zum Beispiel in „Dateien“ oder in eurer Cloud.",
+      "du": "Jetzt noch sichern, zum Beispiel in „Dateien“ oder in deiner Cloud."
+    },
     "verschluesselt": "mit Passwort verschlüsselt",
-    "zweiterTipp": "Das Verschlüsseln hat etwas gedauert. Tipp noch einmal, dann öffnet sich das Sichern."
+    "zweiterTipp": {
+      "ihr": "Das Verschlüsseln hat etwas gedauert. Tippt noch einmal, dann öffnet sich das Sichern.",
+      "du": "Das Verschlüsseln hat etwas gedauert. Tipp noch einmal, dann öffnet sich das Sichern."
+    }
   },
   "einspielenSeite": {
     "titel": "Backup einspielen",
@@ -1242,7 +1519,10 @@
     "mitPasswort": "Mit Passwort, {groesse}",
     "andere": "Andere Datei wählen",
     "passwort": "Passwort des Backups",
-    "falsch": "Das Passwort passt nicht. Achte auf Groß- und Kleinschreibung.",
+    "falsch": {
+      "ihr": "Das Passwort passt nicht. Achtet auf Groß- und Kleinschreibung.",
+      "du": "Das Passwort passt nicht. Achte auf Groß- und Kleinschreibung."
+    },
     "pruefen": "Passwort prüfen",
     "wasPassiert": "Was passiert",
     "jetzt": "Jetzt in der App",
@@ -1251,25 +1531,55 @@
     "ersetzt": "Das Backup ersetzt alles, was jetzt in der App ist.",
     "knopf": "Einspielen",
     "abbrechen": "Abbrechen",
-    "keineDatei": "Wähl zuerst eine Backup-Datei.",
-    "fehler": {
-      "passwort_falsch": "Das Passwort passt nicht. Achte auf Groß- und Kleinschreibung.",
-      "passwort_noetig": "Dieses Backup hat ein Passwort. Trag es ein.",
-      "kein_backup": "Das ist kein Backup von {app}.",
-      "beschaedigt": "Die Datei ist beschädigt oder unvollständig. Nimm ein anderes Backup.",
-      "version_neu": "Das Backup stammt aus einer neueren Version. Aktualisiere {app} und versuch es noch einmal.",
-      "zu_gross": "Das Backup ist zu groß. Dein bisheriger Stand ist unverändert.",
-      "kein_platz": "Auf dem Gerät ist nicht genug Platz für dieses Backup. Dein bisheriger Stand ist unverändert.",
-      "unbekannt": "Das Einspielen hat nicht geklappt. Dein bisheriger Stand ist unverändert."
+    "keineDatei": {
+      "ihr": "Wählt zuerst eine Backup-Datei.",
+      "du": "Wähl zuerst eine Backup-Datei."
     },
-    "passwortFehlt": "Gib das Passwort des Backups ein.",
+    "fehler": {
+      "passwort_falsch": {
+        "ihr": "Das Passwort passt nicht. Achtet auf Groß- und Kleinschreibung.",
+        "du": "Das Passwort passt nicht. Achte auf Groß- und Kleinschreibung."
+      },
+      "passwort_noetig": {
+        "ihr": "Dieses Backup hat ein Passwort. Tragt es ein.",
+        "du": "Dieses Backup hat ein Passwort. Trag es ein."
+      },
+      "kein_backup": "Das ist kein Backup von {app}.",
+      "beschaedigt": {
+        "ihr": "Die Datei ist beschädigt oder unvollständig. Nehmt ein anderes Backup.",
+        "du": "Die Datei ist beschädigt oder unvollständig. Nimm ein anderes Backup."
+      },
+      "version_neu": {
+        "ihr": "Das Backup stammt aus einer neueren Version. Aktualisiert {app} und versucht es noch einmal.",
+        "du": "Das Backup stammt aus einer neueren Version. Aktualisier {app} und versuch es noch einmal."
+      },
+      "zu_gross": {
+        "ihr": "Das Backup ist zu groß. Euer bisheriger Stand ist unverändert.",
+        "du": "Das Backup ist zu groß. Dein bisheriger Stand ist unverändert."
+      },
+      "kein_platz": {
+        "ihr": "Auf dem Gerät ist nicht genug Platz für dieses Backup. Euer bisheriger Stand ist unverändert.",
+        "du": "Auf dem Gerät ist nicht genug Platz für dieses Backup. Dein bisheriger Stand ist unverändert."
+      },
+      "unbekannt": {
+        "ihr": "Das Einspielen hat nicht geklappt. Euer bisheriger Stand ist unverändert.",
+        "du": "Das Einspielen hat nicht geklappt. Dein bisheriger Stand ist unverändert."
+      }
+    },
+    "passwortFehlt": {
+      "ihr": "Gebt das Passwort des Backups ein.",
+      "du": "Gib das Passwort des Backups ein."
+    },
     "dateiWaehlen": "Datei wählen",
     "laeuft": "Wird eingespielt …",
     "groesse": "{groesse}"
   },
   "loeschenSeite": {
     "titel": "Alles löschen?",
-    "lead": "Das lässt sich nicht rückgängig machen. Ohne Backup sind die Daten in {app} danach weg. Deine Originaldateien bleiben, wo du sie gespeichert hast.",
+    "lead": {
+      "ihr": "Das lässt sich nicht rückgängig machen. Ohne Backup sind die Daten in {app} danach weg. Eure Originaldateien bleiben, wo ihr sie gespeichert habt.",
+      "du": "Das lässt sich nicht rückgängig machen. Ohne Backup sind die Daten in {app} danach weg. Deine Originaldateien bleiben, wo du sie gespeichert hast."
+    },
     "was": "Was gelöscht wird",
     "personenKinder": "{personen} und {kinder}",
     "unterlagen": {
@@ -1280,7 +1590,10 @@
       "one": "1 Bewerbung und ihre Einstellungen",
       "other": "{anzahl} Bewerbungen und ihre Einstellungen"
     },
-    "einstellungen": "Deine Einstellungen",
+    "einstellungen": {
+      "ihr": "Eure Einstellungen",
+      "du": "Deine Einstellungen"
+    },
     "backupKeins": "Noch kein Backup. Danach sind alle Unterlagen weg.",
     "erstBackup": "Erst Backup erstellen",
     "knopf": "Alles endgültig löschen",
@@ -1317,28 +1630,46 @@
     "datumNehmen": "Datum übernehmen",
     "datumKeinsDavon": "Keins davon",
     "datumKeinTitel": "Kein Datum gefunden.",
-    "datumKeinScan": "Gescannte Seiten kann {app} nicht lesen. Sieh auf der Seite nach und trag das Datum hier ein.",
-    "datumKeinText": "Auf dieser Seite hat {app} kein Datum erkannt. Sieh nach und trag es hier ein.",
+    "datumKeinScan": {
+      "ihr": "Gescannte Seiten kann {app} nicht lesen. Seht auf der Seite nach und tragt das Datum hier ein.",
+      "du": "Gescannte Seiten kann {app} nicht lesen. Sieh auf der Seite nach und trag das Datum hier ein."
+    },
+    "datumKeinText": {
+      "ihr": "Auf dieser Seite hat {app} kein Datum erkannt. Seht nach und tragt es hier ein.",
+      "du": "Auf dieser Seite hat {app} kein Datum erkannt. Sieh nach und trag es hier ein."
+    },
     "datumFeld": "Datum auf der Seite",
     "datumFehlt": "Es fehlt noch: Datum"
   },
   "stoerung": {
-    "speicherTitel": "{app} kommt gerade nicht an deine Daten.",
+    "speicherTitel": {
+      "ihr": "{app} kommt gerade nicht an eure Daten.",
+      "du": "{app} kommt gerade nicht an deine Daten."
+    },
     "speicherText": "{app} hat nichts gelöscht. Meist hilft einer dieser Schritte:",
     "nochmal": "Noch einmal versuchen",
-    "andererTabTitel": "{app} ist in einem anderen Fenster neuer.",
-    "andererTabText": "Lade diese Seite neu, dann geht es mit der neuen Version weiter. Gespeichertes bleibt.",
+    "andererTabTitel": "{app} ist in einem anderen Fenster schon auf dem neuen Stand.",
+    "andererTabText": {
+      "ihr": "Ladet diese Seite neu, dann geht es mit der neuen Version weiter. Gespeichertes bleibt.",
+      "du": "Lad diese Seite neu, dann geht es mit der neuen Version weiter. Gespeichertes bleibt."
+    },
     "neuLaden": "Neu laden",
     "schliessen": "Schließen",
     "schritt1": "{app} ganz schließen und neu öffnen.",
-    "schritt2": "Ist Privates Surfen an? Dann dort schließen und {app} vom Homescreen öffnen.",
+    "schritt2": "Ist Privates Surfen an? Dann dort schließen und {app} vom Home-Bildschirm öffnen.",
     "schritt3": "Auf dem iPhone etwas Platz freimachen (Einstellungen › Allgemein › iPhone-Speicher).",
-    "backup": "Hast du ein Backup? Dann kannst du es auch auf einem anderen Gerät einspielen.",
+    "backup": {
+      "ihr": "Habt ihr ein Backup? Dann könnt ihr es auch auf einem anderen Gerät einspielen.",
+      "du": "Hast du ein Backup? Dann kannst du es auch auf einem anderen Gerät einspielen."
+    },
     "fehlerCode": "Fehler: {code}",
     "kopieren": "Fehler kopieren",
     "kopiert": "Kopiert",
     "fehlerTitel": "Das hat nicht geklappt.",
-    "fehlerText": "Dein letzter Schritt ist vielleicht nicht gespeichert.",
+    "fehlerText": {
+      "ihr": "Euer letzter Schritt ist vielleicht nicht gespeichert.",
+      "du": "Dein letzter Schritt ist vielleicht nicht gespeichert."
+    },
     "knappTitel": "Auf dem Gerät ist kaum noch Platz.",
     "knappText": "Neue Unterlagen lassen sich vielleicht nicht speichern.",
     "speicherAnsehen": "Speicher ansehen",
@@ -1346,7 +1677,7 @@
   },
   "ersterStart": {
     "titel": "Eure Mappe für die Wohnungs­suche.",
-    "lead": "Unterlagen sammeln, aktuell halten, als eine PDF schicken.",
+    "lead": "Unterlagen sammeln, aktuell halten, als ein PDF schicken.",
     "punkt1": "Person für Person, in ein paar Minuten.",
     "punkt2": "{app} schickt eure Daten nirgendwohin. Kein Konto.",
     "punkt3": "Am Ende eine Mappe, wie Vermieter sie erwarten.",
@@ -1357,8 +1688,11 @@
     "vermieterNach": "."
   },
   "homescreen": {
-    "titel": "Erst auf den Home­screen.",
-    "lead": "Safari löscht die Daten einer Website, wenn du sie sieben Tage nicht öffnest. Vom Homescreen aus passiert das nicht so leicht.",
+    "titel": "Erst auf den Home-Bildschirm.",
+    "lead": {
+      "ihr": "Safari löscht die Daten einer Website, wenn ihr sie sieben Tage nicht öffnet. Vom Home-Bildschirm aus passiert das nicht so leicht.",
+      "du": "Safari löscht die Daten einer Website, wenn du sie sieben Tage nicht öffnest. Vom Home-Bildschirm aus passiert das nicht so leicht."
+    },
     "schritt1Vor": "Unten in Safari auf",
     "teilen": "Teilen",
     "schritt1Nach": "tippen.",
@@ -1367,20 +1701,29 @@
     "schritt3Vor": "Oben rechts",
     "hinzufuegen": "Hinzufügen",
     "schritt3Nach": ", dann {app} über das neue Symbol öffnen.",
-    "backup": "Ein Backup schützt trotzdem am besten. {app} erinnert dich daran.",
+    "backup": {
+      "ihr": "Ein Backup schützt trotzdem am besten. {app} erinnert euch daran.",
+      "du": "Ein Backup schützt trotzdem am besten. {app} erinnert dich daran."
+    },
     "erledigt": "Ist erledigt",
     "spaeter": "Später",
     "appTitel": "{app} gibt es als App.",
-    "appLead": "In Safari löscht das iPhone deine Unterlagen, wenn du {app} eine Woche lang nicht öffnest. In der App bleiben sie.",
+    "appLead": {
+      "ihr": "In Safari löscht das iPhone eure Unterlagen, wenn ihr {app} eine Woche lang nicht öffnet. In der App bleiben sie.",
+      "du": "In Safari löscht das iPhone deine Unterlagen, wenn du {app} eine Woche lang nicht öffnest. In der App bleiben sie."
+    },
     "appLaden": "Im App Store laden",
     "appWeiter": "Weiter im Browser",
-    "appBackup": "Schon etwas angelegt? Mach in den Einstellungen ein Backup und spiel es in der App ein. Safari und die App haben getrennte Speicher."
+    "appBackup": {
+      "ihr": "Schon etwas angelegt? Macht in den Einstellungen ein Backup und spielt es in der App ein. Safari und die App haben getrennte Speicher.",
+      "du": "Schon etwas angelegt? Mach in den Einstellungen ein Backup und spiel es in der App ein. Safari und die App haben getrennte Speicher."
+    }
   },
   "aufteilen": {
     "titel": "Welche Seite gehört zu welchem Monat?",
-    "lead": "{name}. Vorbelegt nach dem Datum auf jeder Seite.",
+    "lead": "{name}. Verteilt nach dem Datum auf jeder Seite.",
     "leadOhne": "{name}, steckt in mehreren Monaten.",
-    "bittePruefen": "Auf den Seiten hat {app} kein Datum gefunden. Vorbelegt der Reihe nach, die erste Seite als ältester Monat. Bitte prüfen.",
+    "bittePruefen": "Auf den Seiten hat {app} kein Datum gefunden. Verteilt ist der Reihe nach, die erste Seite als ältester Monat. Bitte prüfen.",
     "seite": "Seite {nummer}",
     "monatVon": "Monat von Seite {nummer}",
     "fund": "„{monat}“ auf der Seite",
@@ -1397,7 +1740,7 @@
     "grund": "Es fehlt noch: Monat",
     "erledigt": "Erledigt. Jeder Monat hat jetzt seine Seiten.",
     "leadOhneName": "Die Datei steckt in mehreren Monaten.",
-    "leadOhneDatei": "Vorbelegt nach dem Datum auf jeder Seite."
+    "leadOhneDatei": "Verteilt nach dem Datum auf jeder Seite."
   },
   "seiten": {
     "titel": "Seiten bearbeiten",
@@ -1406,13 +1749,19 @@
     "standEine": "Diese Seite kommt in die Mappe.",
     "kommtRein": "Kommt in die Mappe",
     "nichtDrin": "Nicht in der Mappe. Bleibt hier gespeichert.",
-    "tipp": "Tipp auf eine Seite, um sie groß zu sehen. Nach links wischen löscht sie.",
+    "tipp": {
+      "ihr": "Tippt auf eine Seite, um sie groß zu sehen. Nach links wischen löscht sie.",
+      "du": "Tipp auf eine Seite, um sie groß zu sehen. Nach links wischen löscht sie."
+    },
     "grossAnsehen": "Seite {nummer} groß ansehen",
     "aktionen": "Was mit Seite {nummer} geschehen soll",
     "nichtInMappe": "Nicht in die Mappe",
     "inMappe": "In die Mappe",
     "bleibtHier": "Bleibt hier gespeichert",
-    "letzteInMappe": "Das ist die letzte Seite in der Mappe. Ohne sie lösch die Version lieber.",
+    "letzteInMappe": {
+      "ihr": "Das ist die letzte Seite in der Mappe. Ohne sie löscht ihr besser die ganze Version.",
+      "du": "Das ist die letzte Seite in der Mappe. Ohne sie löschst du besser die ganze Version."
+    },
     "verschieben": "Verschieben",
     "verschiebenSatz": "Zu einem anderen Monat, einer anderen Unterlage oder Person",
     "nurKopie": "Nur die Kopie in {app}",
@@ -1455,7 +1804,7 @@
     "nameKnopf": "Zu {name} verschieben",
     "nameHinzufuegen": "Ja, zu {name} hinzufügen",
     "nameFehltKurz": "Der Name {name} steht nicht darauf",
-    "nameFehltVor": "Auf dem Dokument finden wir den Namen ",
+    "nameFehltVor": "Auf dem Dokument findet {app} den Namen",
     "nameFehltNach": " nicht. Ist es wirklich von {eigen}?",
     "nameFehltKnopf": "Ansehen",
     "vonFund": "Seite {n} von {gesamt}",
@@ -1483,7 +1832,7 @@
     "titel": "Wofür ist diese Datei?",
     "mehrere": "{anzahl} Dateien",
     "leer": "Hier ist gerade nichts angekommen.",
-    "keinHaushalt": "Leg zuerst deinen Haushalt an. Danach kannst du die Datei noch einmal an {app} schicken.",
+    "keinHaushalt": "Legt zuerst euren Haushalt an. Danach könnt ihr die Datei noch einmal an {app} schicken.",
     "einrichten": "Haushalt anlegen"
   },
   "hefte": {
@@ -1511,52 +1860,27 @@
     "ergebnis": {
       "zusage": "Zusage",
       "absage": "Absage",
-      "nicht_mehr": "Nicht mehr",
+      "nicht_mehr": "Nicht mehr gewollt",
       "abgelegt": "Abgelegt"
     }
   },
   "heft": {
     "zurueck": "Wohnungen",
     "fehlt": "Dieses Heft gibt es nicht mehr.",
-    "stand": {
-      "gemerkt": "Gemerkt",
-      "beworben": "Beworben",
-      "keine_antwort": "Keine Antwort",
-      "besichtigung": "Besichtigung",
-      "abgelegt": "Abgelegt"
-    },
-    "standVon": "Stand {nummer} von 4",
-    "standLabel": "Stand: {stand}",
-    "gefunden": "Gefunden auf {portal} am {datum}",
-    "gefundenAm": "Gemerkt am {datum}",
-    "inseratOeffnen": "Inserat öffnen",
     "notizen": "Notizen",
     "notizIhr": "Was euch sonst auffällt",
     "notizDu": "Was dir sonst auffällt",
     "wuenscheIhr": "Zu euren Wünschen",
     "wuenscheDu": "Zu deinen Wünschen",
-    "merkmalEigen": "Eigenes Merkmal",
-    "merkmalInserat": "Merkmal aus dem Inserat",
-    "merkmalKeins": "Noch kein Merkmal",
     "aendern": "Ändern",
-    "beworbenHeute": "Beworben heute",
-    "beworbenTag": "Beworben am {datum}, seit einem Tag",
-    "beworbenTage": "Beworben am {datum}, seit {tage} Tagen",
-    "beworbenSatzIhr": "Meldet sich jemand, tragt den Termin ein. Nach drei Wochen ohne Antwort steht das Heft bei „Keine Antwort“.",
-    "beworbenSatzDu": "Meldet sich jemand, trag den Termin ein. Nach drei Wochen ohne Antwort steht das Heft bei „Keine Antwort“.",
-    "beworbenSatzLeiseIhr": "Meldet sich jemand, tragt den Termin ein. Nach drei Wochen ohne Antwort sagt {app} leise Bescheid.",
-    "beworbenSatzLeiseDu": "Meldet sich jemand, trag den Termin ein. Nach drei Wochen ohne Antwort sagt {app} leise Bescheid.",
     "terminEintragen": "Termin eintragen",
     "inDenKalender": "In den Kalender",
     "terminAendern": "Termin ändern",
-    "standSelbst": "Stand selbst setzen",
-    "besichtigt": "Besichtigt am {datum}{punkt} Wie ist es ausgegangen?",
     "zusageAm": "Zusage am {datum}",
     "absageAm": "Absage am {datum}",
     "dagegenAm": "Dagegen entschieden am {datum}",
     "abgelegtAm": "Abgelegt am {datum}",
     "abgelegtSatz": "Das Heft liegt bei den abgelegten.",
-    "hervorholen": "Wieder hervorholen",
     "spurTitel": "Was hinausging",
     "spurMail": "Mail an {an}",
     "spurMailOhne": "Mail",
@@ -1582,46 +1906,43 @@
     "spurGeloescht": "Ob gelöscht wurde, kann {app} nicht wissen.",
     "unterlagenNochIhr": "Der Vermieter hat noch eure Unterlagen.",
     "unterlagenNochDu": "Der Vermieter hat noch deine Unterlagen.",
-    "loeschbitteSchreiben": "Löschbitte schreiben",
-    "loeschbitteAm": "Löschbitte geschickt am {datum}. Ob gelöscht wurde, kann {app} nicht wissen.",
     "nachfassen": "Kurz nachfragen",
     "loeschbitteFrageIhr": "Habt ihr die Löschbitte abgeschickt?",
     "loeschbitteFrageDu": "Hast du die Löschbitte abgeschickt?",
     "nachfrageFrageIhr": "Habt ihr die Nachfrage abgeschickt?",
     "nachfrageFrageDu": "Hast du die Nachfrage abgeschickt?",
     "mailJa": "Ja, abgeschickt",
-    "nachgefasstAm": "Nachgefragt am {datum}.",
-    "keineAntwortSatz": "Seit drei Wochen keine Antwort.",
-    "ablegen": "Ablegen",
     "kalenderGesichert": "Im Kalender eingetragen.",
-    "kalenderDatei": "Die Datei für den Kalender ist da. Öffne sie, dann trägt dein Kalender den Termin ein.",
-    "kalenderNein": "Ohne Zugriff auf den Kalender geht das nicht. Erlauben kannst du ihn in den Einstellungen von iOS unter {app}.",
-    "naechstesBewerben": "Als Nächstes: bewerben",
-    "naechstesSatzIhr": "{app} legt Anschreiben und Mappe bereit. Abschicken müsst ihr selbst.",
-    "naechstesSatzDu": "{app} legt Anschreiben und Mappe bereit. Abschicken musst du selbst.",
-    "jetztBewerben": "Jetzt bewerben",
-    "ohneHaushaltSatzIhr": "Für die Bewerbung braucht {app} euren Haushalt. Daraus entsteht die Mappe.",
-    "ohneHaushaltSatzDu": "Für die Bewerbung braucht {app} deinen Haushalt. Daraus entsteht die Mappe.",
-    "werZiehtEin": "Wer zieht ein?",
-    "vorschlag": "Vorschlag",
-    "vorschlagBeworben": "{app} schlägt vor: Beworben",
-    "vorschlagPortalIhr": "Am {tag} habt ihr den Text fürs Portal kopiert und die Mappe geteilt. Ob abgeschickt wurde, sieht {app} nicht.",
-    "vorschlagPortalDu": "Am {tag} hast du den Text fürs Portal kopiert und die Mappe geteilt. Ob abgeschickt wurde, sieht {app} nicht.",
+    "kalenderDatei": {
+      "ihr": "Die Datei für den Kalender ist da. Öffnet sie, dann trägt euer Kalender den Termin ein.",
+      "du": "Die Datei für den Kalender ist da. Öffne sie, dann trägt dein Kalender den Termin ein."
+    },
+    "kalenderNein": {
+      "ihr": "Ohne Zugriff auf den Kalender geht das nicht. Erlauben könnt ihr ihn in den Einstellungen von iOS unter {app}.",
+      "du": "Ohne Zugriff auf den Kalender geht das nicht. Erlauben kannst du ihn in den Einstellungen von iOS unter {app}."
+    },
     "vorschlagWebsiteIhr": "Am {tag} habt ihr die Angaben für die Website kopiert und die Mappe geteilt. Ob abgeschickt wurde, sieht {app} nicht.",
     "vorschlagWebsiteDu": "Am {tag} hast du die Angaben für die Website kopiert und die Mappe geteilt. Ob abgeschickt wurde, sieht {app} nicht.",
-    "vorschlagMailIhr": "Am {tag} habt ihr die Mail mit der Mappe geöffnet. Ob sie hinausging, meldet das System hier nicht.",
-    "vorschlagMailDu": "Am {tag} hast du die Mail mit der Mappe geöffnet. Ob sie hinausging, meldet das System hier nicht.",
-    "jaBeworben": "Ja, beworben",
+    "vorschlagMailIhr": "Am {tag} habt ihr die Mail mit der Mappe geöffnet. Ob sie hinausging, erfährt {app} nicht.",
+    "vorschlagMailDu": "Am {tag} hast du die Mail mit der Mappe geöffnet. Ob sie hinausging, erfährt {app} nicht.",
     "nochNicht": "Noch nicht",
-    "nurEinmalIhr": "{app} fragt nur dieses eine Mal. Den Stand könnt ihr jederzeit selbst setzen.",
-    "nurEinmalDu": "{app} fragt nur dieses eine Mal. Den Stand kannst du jederzeit selbst setzen."
+    "ort": "Heft",
+    "nameAendern": "Name der Wohnung · ändern",
+    "zumInserat": "Zum Inserat ↗",
+    "eckWarm": "{betrag} warm · {zimmer} Zi · {flaeche} m²",
+    "fotoAlt": "Foto aus dem Inserat",
+    "wunschAnteil": "Anteil am Einkommen {wert} %",
+    "wunschAnteilGrenze": {
+      "ihr": "Ihr wollt höchstens {grenze} %.",
+      "du": "Du willst höchstens {grenze} %."
+    }
   },
   "merkmal": {
     "zurueck": "Heft",
-    "titelIhr": "Woran erkennt ihr sie wieder?",
-    "titelDu": "Woran erkennst du sie wieder?",
+    "titelIhr": "Name der Wohnung",
+    "titelDu": "Name der Wohnung",
     "sub": "Das Merkmal steht in der Übersicht ganz oben, die Adresse darunter im Heft.",
-    "feld": "Merkmal",
+    "feld": "Name",
     "zaehler": "{n} von 40",
     "ausInserat": "Aus dem Inserat",
     "wiederherstellen": "Vorschlag von {app} wiederherstellen",
@@ -1634,22 +1955,25 @@
   },
   "neuesHeft": {
     "abbrechen": "Abbrechen",
-    "titelApp": "Anzeigentext einsetzen",
-    "titelWeb": "Anzeigentext einfügen",
-    "subWeb": "Im Browser gibt es kein Teilen an {app}. Darum der Weg über den Text: in der Anzeige alles markieren, kopieren, hier einfügen.",
-    "subApp": "In der Anzeige alles markieren, kopieren und hier einsetzen.",
-    "textLabelApp": "Text der Anzeige hier einsetzen",
-    "textLabelWeb": "Text der Anzeige hier einfügen",
+    "titelApp": "Text des Inserats einsetzen",
+    "titelWeb": "Text des Inserats einfügen",
+    "subWeb": "Im Browser gibt es kein Teilen an {app}. Darum der Weg über den Text: im Inserat alles markieren, kopieren, hier einfügen.",
+    "subApp": "Im Inserat alles markieren, kopieren und hier einsetzen.",
+    "textLabelApp": "Text des Inserats hier einsetzen",
+    "textLabelWeb": "Text des Inserats hier einfügen",
     "ausAblageApp": "Aus der Zwischenablage einsetzen",
     "ausAblageWeb": "Aus der Zwischenablage einfügen",
     "ablageLeer": "In der Zwischenablage ist kein Text.",
-    "ablageNein": "Der Browser lässt das nicht zu. Halt im Feld gedrückt und wähl „Einfügen“.",
-    "link": "Link zur Anzeige",
+    "ablageNein": {
+      "ihr": "Der Browser lässt das nicht zu. Haltet im Feld gedrückt und wählt „Einfügen“.",
+      "du": "Der Browser lässt das nicht zu. Halt im Feld gedrückt und wähl „Einfügen“."
+    },
+    "link": "Link zum Inserat",
     "freiwillig": "freiwillig",
-    "linkHinweisIhr": "Mit dem Link findet ihr die Anzeige später wieder. {app} liest nur den eingesetzten Text.",
-    "linkHinweisDu": "Mit dem Link findest du die Anzeige später wieder. {app} liest nur den eingesetzten Text.",
+    "linkHinweisIhr": "Mit dem Link findet ihr das Inserat später wieder. {app} liest nur den eingesetzten Text.",
+    "linkHinweisDu": "Mit dem Link findest du das Inserat später wieder. {app} liest nur den eingesetzten Text.",
     "lesen": "Eckdaten lesen",
-    "lesenGrund": "Erst den Text der Anzeige einfügen.",
+    "lesenGrund": "Erst den Text des Inserats einfügen.",
     "kontrolle": "Letzte Kontrolle",
     "weichtAb": {
       "one": "Weicht in einem Punkt von euren Wünschen ab.",
@@ -1716,7 +2040,10 @@
     "tippHinweisDu": "Tipp auf eine Angabe, um sie zu ändern.",
     "fertig": "Fertig",
     "anlegen": "Heft anlegen",
-    "ohneText": "Kein Text da. Fang noch einmal an.",
+    "ohneText": {
+      "ihr": "Kein Text da. Fangt noch einmal an.",
+      "du": "Kein Text da. Fang noch einmal an."
+    },
     "linkTitel": "Wohnung hinzufügen",
     "linkSubIhr": "Setzt den Link zum Inserat ein. {app} zeigt euch zuerst eine kleine Vorschau.",
     "linkSubDu": "Setz den Link zum Inserat ein. {app} zeigt dir zuerst eine kleine Vorschau.",
@@ -1755,8 +2082,8 @@
       "one": "Eine weitere Abweichung steht in der Kontrolle.",
       "other": "{anzahl} weitere Abweichungen stehen in der Kontrolle."
     },
-    "lesesatzIhr": "{app} hat nur dieses Inserat gelesen. Gespeichert wird erst, was ihr gleich bestätigt.",
-    "lesesatzDu": "{app} hat nur dieses Inserat gelesen. Gespeichert wird erst, was du gleich bestätigst.",
+    "lesesatzIhr": "{app} hat das Inserat nur gelesen. Gespeichert wird erst, was ihr gleich bestätigt.",
+    "lesesatzDu": "{app} hat das Inserat nur gelesen. Gespeichert wird erst, was du gleich bestätigst.",
     "einlesen": "Ja, einlesen",
     "andererLink": "Anderer Link",
     "ganzeSeite": "Ganze Seite ansehen",
@@ -1792,9 +2119,8 @@
     "zurueck": "Wünsche",
     "titelIhr": "Was sucht ihr?",
     "titelDu": "Was suchst du?",
-    "sub": "Einmal festlegen. {app} vergleicht jede Wohnung damit, Kriterium für Kriterium, ohne Gesamtnote.",
+    "sub": "Einmal festlegen. {app} vergleicht jede Wohnung damit, Punkt für Punkt, ohne Gesamtnote.",
     "ohneHaushalt": "Legt fest, wer einzieht und was ihr sucht. Dann zeigt {app} hier, was passt.",
-    "warm": "Höchstens warm",
     "zimmer": "Zimmer",
     "flaeche": "Fläche",
     "weg": "Weg dorthin",
@@ -1828,9 +2154,8 @@
     "nettoLeerIhr": "Steht hier, sobald ihr in der Selbstauskunft das Einkommen eingetragen habt.",
     "nettoLeerDu": "Steht hier, sobald du in der Selbstauskunft das Einkommen eingetragen hast.",
     "nichtInMappe": "Diese Zahl kommt nicht in die Mappe.",
-    "grenze": "Grenze für die Miete",
-    "grenzeWert": "höchstens {wert} % des Nettos",
-    "grenzeKlein": "Freiwillig. Ohne eigene Grenze zeigt {app} nur den Anteil, ohne Urteil.",
+    "grenzeWert": "Miete höchstens {wert} % vom Einkommen",
+    "grenzeKlein": "Ohne eigene Grenze zeigt {app} nur den Anteil, ohne Urteil.",
     "anteilSatz": "Daraus rechnet {app} den Anteil der Miete am Einkommen, bei jeder Wohnung.",
     "fertig": "Fertig",
     "nettoSub": "Was im Monat zusammen hereinkommt. Daraus rechnet {app} den Anteil der Miete.",
@@ -1843,7 +2168,26 @@
     "aendern": "Wünsche ändern",
     "ohneIhr": "Legt fest, was ihr sucht. Dann zeigt {app} hier, was passt.",
     "ohneDu": "Leg fest, was du suchst. Dann zeigt {app} hier, was passt.",
-    "nichtAngegeben": "nicht angegeben"
+    "nichtAngegeben": "nicht angegeben",
+    "warmName": "Warmmiete",
+    "warmWert": "höchstens {betrag} €",
+    "grenzeName": "Miete und Einkommen",
+    "grenzeSatz": "{app} warnt, wenn eine Wohnung darüber liegt. Gemeint ist die Warmmiete.",
+    "einkommen": "Einkommen des Haushalts",
+    "einkommenWert": "{betrag} netto im Monat",
+    "zimmerAb": "ab {zahl} Zimmer",
+    "zimmerHalb": "+ ½",
+    "zimmerHalbAnsage": "Ein halbes Zimmer mehr",
+    "tiereAngegeben": {
+      "ihr": "Ihr habt {tier} angegeben. {app} achtet darauf, dass Haustiere erlaubt sind.",
+      "du": "Du hast {tier} angegeben. {app} achtet darauf, dass Haustiere erlaubt sind."
+    },
+    "tiereAendern": "In der Selbstauskunft ändern",
+    "tiereFrage": {
+      "ihr": "Habt ihr Haustiere?",
+      "du": "Hast du Haustiere?"
+    },
+    "tiereAngeben": "In der Selbstauskunft angeben"
   },
   "anleitung": {
     "titel": "So kommt ein Inserat zu {app}",
@@ -1909,27 +2253,6 @@
     "abbrechen": "Abbrechen",
     "kalenderIhr": "Einen Eintrag in eurem Kalender löscht ihr dort selbst.",
     "kalenderDu": "Einen Eintrag in deinem Kalender löschst du dort selbst."
-  },
-  "standSetzen": {
-    "zurueck": "Heft",
-    "titel": "Stand selbst setzen",
-    "gemerktSub": "Noch nicht beworben",
-    "beworbenSub": "Die Bewerbung ist raus",
-    "besichtigungSubIhr": "Mit Termin; den tragt ihr danach ein",
-    "besichtigungSubDu": "Mit Termin; den trägst du danach ein",
-    "ergebnis": "Ergebnis",
-    "ergebnisSub": "Zusage, Absage oder nicht mehr gewollt. Danach wird das Heft abgelegt.",
-    "keineAntwort": "„Keine Antwort“ setzt {app} selbst, nach drei Wochen ohne Nachricht."
-  },
-  "ergebnis": {
-    "zurueck": "Heft",
-    "titel": "Wie ist es ausgegangen?",
-    "satzIhr": "Ihr setzt das Ergebnis, {app} legt das Heft dann ab.",
-    "satzDu": "Du setzt das Ergebnis, {app} legt das Heft dann ab.",
-    "zusage": "Zusage",
-    "absage": "Absage",
-    "nichtMehrIhr": "Wir wollen nicht mehr",
-    "nichtMehrDu": "Ich will nicht mehr"
   },
   "fragen": {
     "titel": "Fragen für die Besichtigung",
@@ -2017,9 +2340,9 @@
     "satzMail": "Die Mail ist fertig, die Mappe hängt an. Prüfen, abschicken, fertig.",
     "satzPortalIhr": "Im Portal: Text ins Nachrichtenfeld einsetzen. Die Mappe schickt ihr, sobald der Vermieter euch eine Mailadresse nennt oder nach Unterlagen fragt.",
     "satzPortalDu": "Im Portal: Text ins Nachrichtenfeld einsetzen. Die Mappe schickst du, sobald der Vermieter dir eine Mailadresse nennt oder nach Unterlagen fragt.",
-    "satzWebsite": "Auf der Website ein Formular ausfüllen. Die Angaben stehen unten zum Abschreiben.",
-    "ueberspringen": "überspringen",
-    "ueberspringenLabel": "{schritt} überspringen",
+    "satzWebsite": "Auf der Website ein Formular ausfüllen. Die Angaben stehen unten zum Kopieren.",
+    "ueberspringen": "Diesen Schritt auslassen",
+    "ueberspringenLabel": "{schritt} auslassen",
     "schritt": {
       "anschreiben": "Anschreiben",
       "angaben": "Was das Inserat wissen will",
@@ -2038,7 +2361,10 @@
     "kopieren": "Kopieren",
     "kopierenLabel": "{was} kopieren",
     "kopiert": "Kopiert.",
-    "nichtKopiert": "Kopieren ging nicht. Halt den Text gedrückt und wähl „Kopieren“.",
+    "nichtKopiert": {
+      "ihr": "Kopieren ging nicht. Haltet den Text gedrückt und wählt „Kopieren“.",
+      "du": "Kopieren ging nicht. Halt den Text gedrückt und wähl „Kopieren“."
+    },
     "nurVerlangt": "Nur, was verlangt ist",
     "alles": "Alles, was da ist",
     "seiten": {
@@ -2049,17 +2375,26 @@
     "nurVerlangtMitschicken": "Nur, was verlangt ist",
     "buergschaftVon": "Bürgschaft von {name}",
     "mappeBaut": "Die Mappe wird zusammengelegt …",
-    "mappeFehler": "Die Mappe ließ sich nicht zusammenlegen. Versuch es noch einmal.",
+    "mappeFehler": {
+      "ihr": "Die Mappe ließ sich nicht zusammenlegen. Versucht es noch einmal.",
+      "du": "Die Mappe ließ sich nicht zusammenlegen. Versuch es noch einmal."
+    },
     "mailOeffnen": "Mail mit Mappe öffnen",
     "textKopieren": "Text kopieren",
     "mappeTeilen": "Mappe teilen",
     "websiteOeffnen": "Website öffnen",
-    "ohneLink": "Für dieses Heft ist kein Link gespeichert. Öffne die Website des Anbieters selbst.",
+    "ohneLink": {
+      "ihr": "Für dieses Heft ist kein Link gespeichert. Öffnet die Website des Anbieters selbst.",
+      "du": "Für dieses Heft ist kein Link gespeichert. Öffne die Website des Anbieters selbst."
+    },
     "versprechenIhr": "{app} schickt eure Daten nirgendwohin. Was hinausgeht, schickt ihr selbst.",
     "versprechenDu": "{app} schickt deine Daten nirgendwohin. Was hinausgeht, schickst du selbst.",
     "betreff": "Bewerbung um die Wohnung {wohnung}",
     "betreffOhne": "Bewerbung um die Wohnung",
-    "anhangSelbst": "Die Mappe ist geladen. Häng sie in der Mail selbst an.",
+    "anhangSelbst": {
+      "ihr": "Die Mappe ist geladen. Hängt sie in der Mail selbst an.",
+      "du": "Die Mappe ist geladen. Häng sie in der Mail selbst an."
+    },
     "ohneHaushalt": "Für die Bewerbung braucht {app} einen Haushalt."
   },
   "mappeStart": {
@@ -2106,5 +2441,125 @@
     "allesLoeschen": "Alles löschen",
     "abbrechen": "Abbrechen",
     "weiterAnlegen": "Weiter anlegen"
+  },
+  "stand": {
+    "ort": {
+      "gemerkt": "Gemerkt",
+      "beworben": "Beworben",
+      "besichtigung": "Besichtigung",
+      "ergebnis": "Ergebnis"
+    },
+    "ansage": "Stand: {ort}. {titel}",
+    "gemerkt": {
+      "titel": "Gemerkt",
+      "satz": {
+        "ihr": "Seit {datum} · Die Wohnung liegt hier, bis ihr euch bewerbt.",
+        "du": "Seit {datum} · Die Wohnung liegt hier, bis du dich bewirbst."
+      },
+      "frage": "Wie geht es weiter?",
+      "bewerben": "Jetzt bewerben",
+      "bewerbenUnter": "Anschreiben und Mappe liegen bereit",
+      "schon": {
+        "ihr": "Wir haben uns schon beworben",
+        "du": "Ich habe mich schon beworben"
+      },
+      "werZiehtEin": "Wer zieht ein?",
+      "werZiehtEinUnter": "Für die Bewerbung braucht {app} euren Haushalt"
+    },
+    "vorschlag": {
+      "frage": {
+        "ihr": "Habt ihr euch beworben?",
+        "du": "Hast du dich beworben?"
+      },
+      "portal": {
+        "ihr": "Am {tag} habt ihr den Text fürs Portal kopiert und die Mappe geteilt. Ob abgeschickt wurde, sieht {app} nicht.",
+        "du": "Am {tag} hast du den Text fürs Portal kopiert und die Mappe geteilt. Ob abgeschickt wurde, sieht {app} nicht."
+      },
+      "ja": "Ja, beworben",
+      "nein": "Noch nicht",
+      "fuss": "Danach fragt {app} nicht noch einmal."
+    },
+    "beworben": {
+      "titelHeute": "Heute beworben",
+      "titel": "Beworben am {datum}",
+      "satzHeute": {
+        "ihr": "Jetzt ist der Vermieter dran. Ihr müsst nichts tun.",
+        "du": "Jetzt ist der Vermieter dran. Du musst nichts tun."
+      },
+      "satzTage": "Seit {tage} Tagen. Meldet sich drei Wochen lang niemand, steht hier „Keine Antwort“.",
+      "frage": "Hat sich jemand gemeldet?",
+      "einladung": "Einladung zur Besichtigung",
+      "einladungUnter": "Termin eintragen",
+      "zurueck": "‹ Doch noch nicht beworben"
+    },
+    "antwort": {
+      "absage": "Absage",
+      "ablegenUnter": "Heft ablegen",
+      "nichtMehr": {
+        "ihr": "Wir wollen sie nicht mehr",
+        "du": "Ich will sie nicht mehr"
+      },
+      "zusage": "Zusage"
+    },
+    "keine": {
+      "titel": "Keine Antwort",
+      "satz": "Beworben am {datum}. Seit drei Wochen meldet sich niemand. Eine kurze Nachfrage hilft oft.",
+      "frage": "Was jetzt?",
+      "nachfragen": "Kurz nachfragen",
+      "nachfragenUnter": "Mail an {an}",
+      "doch": "Doch eine Einladung",
+      "ablegen": "Ablegen",
+      "ablegenUnter": "Es kommt wohl nichts mehr"
+    },
+    "nachgefragt": {
+      "titel": "Nachgefragt am {datum}",
+      "satz": "Beworben am {datum}. Jetzt ist wieder der Vermieter dran."
+    },
+    "termin": {
+      "titel": "Besichtigung am {tag}, {uhr} Uhr",
+      "kalender": "In den Kalender",
+      "aendern": "Termin ändern",
+      "frage": "Kommt etwas dazwischen?",
+      "entfernen": "‹ Termin entfernen"
+    },
+    "besichtigt": {
+      "titel": "Besichtigt am {datum}",
+      "satz": {
+        "ihr": "Sagt der Vermieter zu oder ab, tragt es hier ein.",
+        "du": "Sagt der Vermieter zu oder ab, trag es hier ein."
+      },
+      "frage": "Wie ist es ausgegangen?"
+    },
+    "zusage": {
+      "titel": "Zusage",
+      "satz": "Glückwunsch! Das Heft bleibt hier, bis der Vertrag unterschrieben ist.",
+      "frage": "Noch offen",
+      "mietrueck": "Frage zu Mietrückständen",
+      "mietrueckUnter": "Jetzt beantworten, in der Selbstauskunft"
+    },
+    "absage": {
+      "titel": "Absage"
+    },
+    "nichtMehr": {
+      "titel": {
+        "ihr": "Ihr wollt sie nicht mehr",
+        "du": "Du willst sie nicht mehr"
+      }
+    },
+    "ohneAntwort": {
+      "titel": "Ohne Antwort abgelegt"
+    },
+    "abgelegt": {
+      "satz": {
+        "ihr": "Das Heft liegt jetzt bei den abgelegten. Der Vermieter hat noch eure Unterlagen.",
+        "du": "Das Heft liegt jetzt bei den abgelegten. Der Vermieter hat noch deine Unterlagen."
+      },
+      "bitte": "Um Löschung bitten",
+      "bitteUnter": "Mail an {an}",
+      "bitteAm": "Das Heft liegt jetzt bei den abgelegten. Löschbitte geschickt am {datum}. Ob gelöscht wurde, kann {app} nicht wissen."
+    },
+    "ergebnis": {
+      "zurueck": "‹ Doch noch offen"
+    }
   }
 }

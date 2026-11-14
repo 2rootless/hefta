@@ -4,7 +4,7 @@
   // dafür kein Urteil. Darunter „Nur für euch“: Netto des Haushalts und eine eigene Grenze für die Miete;
   // beides kommt nicht in die Mappe. „Wo“ (Stadtteile) kommt mit der Stadtkarte in Schritt 2.
   import { daten, db, stillLaden } from '../app/daten.svelte';
-  import { gehe, zurueckGehen } from '../app/router.svelte';
+  import { zurueckGehen } from '../app/router.svelte';
   import { haushaltsNetto, nettoAusSelbstauskuenften } from '../domain/netto';
   import type { Wuensche } from '../domain/urteile';
   import { t } from '../i18n';
@@ -67,13 +67,57 @@
     }
   }
 
-  /** Zimmer „ab n“ setzen; derselbe Chip noch einmal nimmt den Wunsch zurück (PC9). */
-  async function zimmerWaehlen(n: number) {
-    if (!hh) return;
-    const neu: Wuensche = { ...wu, zimmerAb: wu.zimmerAb === n ? null : n };
-    await haushaltAendern(await db(), hh.id, { wuensche: neu, mietgrenze: hh.mietgrenze ?? null });
-    await stillLaden();
+  /** Wünsche und Grenze direkt speichern (B28b: Felder statt Zeilen zum Aufklappen). */
+  // Nacheinander und immer auf dem gespeicherten Stand: Zwei schnelle Änderungen (Warmmiete, gleich danach
+  // ein Zimmer-Chip) überschrieben sonst die erste mit dem alten Stand der Seite.
+  let reihe: Promise<void> = Promise.resolve();
+  function speichern(neu: Partial<Wuensche>, mietgrenze?: number | null): Promise<void> {
+    const id = hh?.id;
+    if (!id) return reihe;
+    reihe = reihe
+      .then(async () => {
+        const d = await db();
+        const frisch = await d.get('haushalte', id);
+        await haushaltAendern(d, id, {
+          wuensche: { ...LEER, ...(frisch?.wuensche ?? {}), ...neu },
+          mietgrenze: mietgrenze === undefined ? (frisch?.mietgrenze ?? null) : mietgrenze,
+        });
+        await stillLaden();
+      })
+      .catch((f: unknown) => {
+        // Der nächste Schritt soll trotzdem laufen; den Fehler meldet der Kasten für Unerwartetes.
+        reportError(f);
+      });
+    return reihe;
   }
+
+  // Zimmer (PC9, B28b): Die Reihe „1 · 2 · 3 · 4 · 5“; neben der gewählten Zahl ein schmales „+ ½“, mit ihr
+  // zu einer Fläche verbunden. Noch ein Tipp auf „+ ½“ nimmt es zurück, noch einer auf die Zahl den Wunsch.
+  const zimmerGanz = $derived(wu.zimmerAb != null ? Math.floor(wu.zimmerAb) : null);
+  const zimmerHalb = $derived(wu.zimmerAb != null && wu.zimmerAb % 1 !== 0);
+  function zimmerWaehlen(n: number) {
+    void speichern({ zimmerAb: zimmerGanz === n ? null : n });
+  }
+  function zimmerHalbWaehlen() {
+    if (zimmerGanz === null) return;
+    void speichern({ zimmerAb: zimmerHalb ? zimmerGanz : zimmerGanz + 0.5 });
+  }
+
+  /** Text vor und nach dem Platzhalter eines Wortlauts, für ein Feld mitten im Satz. */
+  function teile(text: string): [string, string] {
+    const i = text.indexOf('\u0000');
+    return i < 0 ? [text, ''] : [text.slice(0, i).trim(), text.slice(i + 1).trim()];
+  }
+  const warmTeile = $derived(teile(t('wuensche.warmWert', { betrag: '\u0000' })));
+  const grenzeTeile = $derived(teile(t('wuensche.grenzeWert', { wert: '\u0000' })));
+  const flaecheTeile = $derived(teile(t('wuensche.ab', { wert: '\u0000' })));
+  const feldWert = (n: number | null | undefined) => (n != null ? zahlText(n) : '');
+
+  /** Haustiere folgen der Selbstauskunft (DP16, DP21); der Weg dorthin führt zur ersten Person. */
+  const selbstauskunftZiel = $derived.by(() => {
+    const m = ansicht?.mitglieder.find((x) => x.zugehoerigkeit.rolle !== 'buerge');
+    return m ? `#/selbstauskunft/${m.person.id}` : '#/';
+  });
 
   const nummer = (s: string) => (s.trim() ? zahl(s.replace(/[€%m²\s]/g, '')) : null);
 
@@ -120,14 +164,6 @@
       new Date(`${d}T12:00`),
     );
 
-  const tiereText = $derived(
-    hh?.haustiere === 'ja'
-      ? hh.haustiereText?.trim() || t('wuensche.tiereJa')
-      : hh?.haustiere === 'nein'
-        ? t('wuensche.tiereNein')
-        : null,
-  );
-
   interface Zeile {
     k: Schluessel;
     name: string;
@@ -135,20 +171,6 @@
     klein?: string;
   }
   const zeilen = $derived<Zeile[]>([
-    { k: 'warm', name: t('wuensche.warm'), wert: wu.warmBis != null ? eur(wu.warmBis) : null },
-    {
-      k: 'zimmer',
-      name: t('wuensche.zimmer'),
-      wert: wu.zimmerAb != null ? t('wuensche.ab', { wert: zahlText(wu.zimmerAb) }) : null,
-    },
-    {
-      k: 'flaeche',
-      name: t('wuensche.flaeche'),
-      wert:
-        wu.flaecheAb != null
-          ? t('wuensche.ab', { wert: `${zahlText(wu.flaecheAb)}${NB}m²` })
-          : null,
-    },
     {
       k: 'weg',
       name: t('wuensche.weg'),
@@ -217,26 +239,130 @@
     <h1 class="h2">{t(ihr ? 'wuensche.titelIhr' : 'wuensche.titelDu')}</h1>
     <p class="sub">{t('wuensche.sub')}</p>
 
+    <!-- B28b (DP21): jeder Wunsch eine weiche Fläche, das Feld steht im Satz. -->
+    <div class="feld">
+      <label class="name" for="w-warm">{t('wuensche.warmName')}</label>
+      <div class="wert">
+        <span>{warmTeile[0]}</span>
+        <input
+          id="w-warm"
+          inputmode="decimal"
+          value={feldWert(wu.warmBis)}
+          onchange={(e) => speichern({ warmBis: nummer(e.currentTarget.value) })}
+        /><span>{warmTeile[1]}</span>
+      </div>
+    </div>
+
+    <div class="feld">
+      <label class="name" for="w-grenze">{t('wuensche.grenzeName')}</label>
+      <div class="wert">
+        <span>{grenzeTeile[0]}</span>
+        <input
+          id="w-grenze"
+          inputmode="decimal"
+          value={feldWert(hh.mietgrenze)}
+          onchange={(e) => speichern({}, nummer(e.currentTarget.value))}
+        /><span>{grenzeTeile[1]}</span>
+      </div>
+      {#if netto == null}
+        <p class="satz">
+          {t(ihr ? 'wuensche.nettoLeerIhr' : 'wuensche.nettoLeerDu')}
+          {t('wuensche.grenzeKlein')}
+        </p>
+      {:else}
+        <p class="satz">{t('wuensche.grenzeSatz')}</p>
+        <div class="aus">
+          <span
+            >{t('wuensche.einkommen')}<br /><b
+              >{t('wuensche.einkommenWert', { betrag: eur(netto) })}</b
+            ></span
+          >
+          <a class="link" href="#/wuensche/netto">{t('allgemein.aendern')}</a>
+        </div>
+        <p class="klein">
+          {ausSa.teile.length > 1 || ihr
+            ? t('wuensche.nettoAusIhr', {
+                namen: ausSa.teile.map((x) => x.name).join(` ${t('wuensche.und')} `),
+              })
+            : t('wuensche.nettoAusDu')}
+          {t('wuensche.nichtInMappe')}
+        </p>
+      {/if}
+    </div>
+
+    <div class="feld">
+      <p class="name" id="w-zimmer-l">{t('wuensche.zimmer')}</p>
+      <div class="chips" role="group" aria-labelledby="w-zimmer-l">
+        {#each [1, 2, 3, 4, 5] as n (n)}
+          {#if zimmerGanz === n}
+            <span class="paar">
+              <button
+                class="chip an"
+                type="button"
+                aria-pressed="true"
+                aria-label={t('wuensche.ab', { wert: zahlText(n) })}
+                onclick={() => zimmerWaehlen(n)}>{n}</button
+              ><button
+                class="chip halb"
+                class:an={zimmerHalb}
+                type="button"
+                aria-pressed={zimmerHalb}
+                aria-label={t('wuensche.zimmerHalbAnsage')}
+                onclick={zimmerHalbWaehlen}>{t('wuensche.zimmerHalb')}</button
+              >
+            </span>
+          {:else}
+            <button
+              class="chip"
+              type="button"
+              aria-pressed="false"
+              aria-label={t('wuensche.ab', { wert: zahlText(n) })}
+              onclick={() => zimmerWaehlen(n)}>{n}</button
+            >
+          {/if}
+        {/each}
+      </div>
+      <p class="satz">
+        {wu.zimmerAb != null
+          ? t('wuensche.zimmerAb', { zahl: zahlText(wu.zimmerAb) })
+          : t('wuensche.nichtFestgelegt')}
+      </p>
+    </div>
+
+    <div class="feld">
+      <label class="name" for="w-flaeche">{t('wuensche.flaeche')}</label>
+      <div class="wert">
+        <span>{flaecheTeile[0]}</span>
+        <input
+          id="w-flaeche"
+          inputmode="decimal"
+          value={feldWert(wu.flaecheAb)}
+          onchange={(e) => speichern({ flaecheAb: nummer(e.currentTarget.value) })}
+        /><span>m²</span>
+      </div>
+    </div>
+
+    <div class="feld">
+      <p class="name">{t('wuensche.haustiere')}</p>
+      {#if hh.haustiere === 'ja'}
+        <p class="satz tier">
+          {t('wuensche.tiereAngegeben', {
+            tier: hh.haustiereText?.trim() || t('wuensche.tiereJa'),
+          })}
+        </p>
+        <a class="link" href={selbstauskunftZiel}>{t('wuensche.tiereAendern')}</a>
+      {:else if hh.haustiere === 'nein'}
+        <p class="satz tier">{t('wuensche.haustiere')}: {t('wuensche.tiereNein')}</p>
+        <a class="link" href={selbstauskunftZiel}>{t('wuensche.tiereAendern')}</a>
+      {:else}
+        <p class="satz tier">{t('wuensche.tiereFrage')}</p>
+        <a class="link" href={selbstauskunftZiel}>{t('wuensche.tiereAngeben')}</a>
+      {/if}
+    </div>
+
     <div class="blatt">
       {#each zeilen as z (z.k)}
-        {#if z.k === 'zimmer'}
-          <!-- PC9 (CP8 F1): die Wahl der Zimmer sofort sichtbar; ein zweiter Tipp nimmt sie zurück. -->
-          <div class="wz fest zimmer">
-            <span class="l" id="w-zimmer-l">{z.name}</span>{@render wert(z)}
-            <div class="chips" role="group" aria-labelledby="w-zimmer-l">
-              {#each [1, 2, 3, 4, 5] as n (n)}
-                <button
-                  class="chip"
-                  class:on={wu.zimmerAb === n}
-                  type="button"
-                  aria-pressed={wu.zimmerAb === n}
-                  aria-label={t('wuensche.ab', { wert: zahlText(n) })}
-                  onclick={() => zimmerWaehlen(n)}>{n}</button
-                >
-              {/each}
-            </div>
-          </div>
-        {:else if offen === z.k}
+        {#if offen === z.k}
           {@render editor(z.k, z.name)}
         {:else}
           <button class="wz" type="button" onclick={() => oeffnen(z.k)}>
@@ -248,61 +374,11 @@
         {/if}
       {/each}
       <div class="wz fest">
-        <span class="l">{t('wuensche.haustiere')}</span>
-        <!-- Aus der Selbstauskunft, hier nicht festlegbar: „nicht angegeben“ (E84.4). -->
-        {#if tiereText}<span class="v">{tiereText}</span>{:else}<span class="v offenwert"
-            >{t('wuensche.nichtAngegeben')}</span
-          >{/if}
-        <small>{t(ihr ? 'wuensche.haustiereKleinIhr' : 'wuensche.haustiereKleinDu')}</small>
-      </div>
-      <div class="wz fest">
         <span class="l">{t('wuensche.befristung')}</span><span class="v"
           >{t('wuensche.nurUnbefristet')}</span
         >
       </div>
     </div>
-
-    <h2 class="h3">
-      <Symbol name="schloss" groesse={16} />{t(ihr ? 'wuensche.nurIhr' : 'wuensche.nurDu')}
-    </h2>
-    <div class="blatt">
-      {#if ausSa.summe === null && hh.netto == null}
-        <div class="wz fest">
-          <span class="l">{t('wuensche.netto')}</span><span class="v">–</span>
-          <small>{t(ihr ? 'wuensche.nettoLeerIhr' : 'wuensche.nettoLeerDu')}</small>
-        </div>
-      {:else}
-        <button class="wz" type="button" onclick={() => gehe('/wuensche/netto')}>
-          <span class="l">{t('wuensche.netto')}</span><span class="v"
-            >{netto != null ? eur(netto) : '–'}</span
-          ><span class="p"><Symbol name="weiter" groesse={16} /></span>
-          <small
-            >{ausSa.teile.length > 1 || ihr
-              ? t('wuensche.nettoAusIhr', {
-                  namen: ausSa.teile.map((x) => x.name).join(` ${t('wuensche.und')} `),
-                })
-              : t('wuensche.nettoAusDu')}</small
-          >
-          <small class="nm"
-            ><Symbol name="schloss" groesse={16} />{t('wuensche.nichtInMappe')}</small
-          >
-        </button>
-      {/if}
-      {#if offen === 'grenze'}
-        {@render editor('grenze', t('wuensche.grenze'))}
-      {:else}
-        <button class="wz" type="button" onclick={() => oeffnen('grenze')}>
-          <span class="l">{t('wuensche.grenze')}</span>{@render wert({
-            wert:
-              hh.mietgrenze != null
-                ? t('wuensche.grenzeWert', { wert: zahlText(hh.mietgrenze) })
-                : null,
-          })}<span class="p"><Symbol name="weiter" groesse={16} /></span>
-          <small>{t('wuensche.grenzeKlein')}</small>
-        </button>
-      {/if}
-    </div>
-    <p class="klein">{t('wuensche.anteilSatz')}</p>
 
     <div class="cta">
       <Hauptbutton text={t('wuensche.fertig')} onclick={() => zurueckGehen('/wohnungen')} />
@@ -331,6 +407,143 @@
   .sub {
     margin: 0 0 16px;
     color: var(--ink-muted);
+  }
+
+  /* Felder (B28b, DP21): weiche Fläche, das Feld im Satz, Einheit direkt daneben. */
+  .feld {
+    margin: 0 0 12px;
+    padding: 14px 16px;
+    border-radius: 20px;
+    background: var(--surface);
+  }
+
+  .feld .name {
+    display: block;
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: calc(12 * var(--px));
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .feld .wert {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: calc(22 * var(--px));
+    font-weight: 720;
+  }
+
+  .feld .wert span {
+    color: var(--ink-muted);
+    font-size: calc(16 * var(--px));
+    font-weight: 600;
+  }
+
+  .feld .wert input {
+    box-sizing: border-box;
+    width: 4.2em;
+    min-height: 44px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--ground);
+    color: inherit;
+    font: inherit;
+  }
+
+  .feld .satz {
+    margin: 8px 0 0;
+    color: var(--ink-muted);
+    font-size: calc(14 * var(--px));
+  }
+
+  .feld .satz.tier {
+    color: var(--ink);
+    font-size: calc(15 * var(--px));
+  }
+
+  .feld .klein {
+    margin: 6px 0 0;
+    color: var(--ink-quiet);
+    font-size: calc(13 * var(--px));
+  }
+
+  .feld .link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent-text);
+    font-size: calc(14 * var(--px));
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .feld .aus {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    box-shadow: 0 -1px 0 var(--line);
+    font-size: calc(14.5 * var(--px));
+  }
+
+  .feld .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .feld .chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    height: 48px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--ground);
+    color: var(--ink);
+    font: inherit;
+    font-size: calc(17 * var(--px));
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .feld .chip.an,
+  .feld .chip.halb.an {
+    box-shadow: none;
+    background: var(--action);
+    color: var(--on-action);
+  }
+
+  .feld .chip.halb {
+    min-width: 44px;
+    padding: 0 10px;
+    box-shadow: inset 0 0 0 1.5px var(--line-strong);
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: calc(15 * var(--px));
+  }
+
+  .paar {
+    display: inline-flex;
+    gap: 2px;
+  }
+
+  .paar .chip.an:first-child {
+    border-radius: var(--radius-full) 6px 6px var(--radius-full);
+  }
+
+  .paar .chip.halb {
+    border-radius: 6px var(--radius-full) var(--radius-full) 6px;
   }
 
   .blatt {
@@ -384,54 +597,12 @@
     color: var(--ink-quiet);
   }
 
-  .chips {
-    display: flex;
-    flex-wrap: wrap;
-    grid-column: 1 / -1;
-    gap: 8px;
-    margin-top: 10px;
-  }
-
-  .chip {
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0 14px;
-    border: 1.5px solid var(--line-strong);
-    border-radius: var(--radius-full);
-    background: none;
-    color: var(--ink);
-    font: inherit;
-    font-size: calc(15 * var(--px));
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .chip.on {
-    border-color: var(--ink);
-    background: var(--ground);
-  }
-
   .wz small {
     grid-column: 1 / -1;
     margin-top: 4px;
     color: var(--ink-muted);
     font-size: calc(13 * var(--px));
     line-height: 1.35;
-  }
-
-  .wz small.nm {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .h3 {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 22px 2px 8px;
-    font-size: calc(16 * var(--px));
-    font-weight: 650;
   }
 
   /* Feste Leiste (B23 F2): Ihr Übergang deckt sonst den letzten Satz. */

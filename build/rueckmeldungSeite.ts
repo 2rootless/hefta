@@ -16,7 +16,9 @@ type Baum = { [k: string]: string | Baum };
 const de = JSON.parse(readFileSync(join(wurzel, 'src/i18n/de.json'), 'utf8')) as Baum;
 const rm = de.rueckmeldung as Baum;
 const text = (pfad: string): string => {
-  const wert = pfad.split('.').reduce<string | Baum>((k, s) => (k as Baum)[s]!, rm);
+  let wert = pfad.split('.').reduce<string | Baum>((k, s) => (k as Baum)[s]!, rm);
+  // Paar „ihr“/„du“ (B28b): Die Seite spricht wie bisher eine Person an, die den Link bekam.
+  if (typeof wert === 'object' && 'du' in wert) wert = wert.du!;
   return (wert as string).replaceAll('{app}', APP_NAME);
 };
 const esc = (t: string) =>

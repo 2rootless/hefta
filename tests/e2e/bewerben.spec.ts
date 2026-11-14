@@ -95,12 +95,9 @@ test('Bewerben per Portal: Anschreiben, Angaben, Mappe, Text kopieren, dann der 
   await hefteAnlegen(page, [heft('linden')]);
   await heftOeffnen(page, 'linden');
 
-  // Gemerkt: „Als Nächstes: bewerben“.
-  await expect(page.getByText('Als Nächstes: bewerben')).toBeVisible();
-  // Planung 12z: der geänderte Satz, allein „musst du“.
-  await expect(
-    page.getByText('Hefta legt Anschreiben und Mappe bereit. Abschicken musst du selbst.'),
-  ).toBeVisible();
+  // Gemerkt (B28b): die Frage im Stand, „Jetzt bewerben“ als Hauptantwort.
+  await expect(page.getByText('Wie geht es weiter?')).toBeVisible();
+  await expect(page.getByText('Anschreiben und Mappe liegen bereit')).toBeVisible();
   await page.getByRole('link', { name: 'Jetzt bewerben' }).click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'Bewerben in einer Minute' }),
@@ -151,17 +148,17 @@ test('Bewerben per Portal: Anschreiben, Angaben, Mappe, Text kopieren, dann der 
       'mein eigener Text.',
     );
 
-  // Im Heft: „Hefta schlägt vor: Beworben“, einmal.
+  // Im Heft (B28b): der Vorschlag ist die Frage im Stand, einmal.
   await page.goBack();
-  await expect(page.getByText('Hefta schlägt vor: Beworben')).toBeVisible();
+  await expect(page.getByText('Hast du dich beworben?')).toBeVisible();
   await expect(
     page.getByText(/^Am 12\.\sNov\. hast du den Text fürs Portal kopiert und die Mappe geteilt\./),
   ).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Stand: Gemerkt' })).toBeVisible();
+  await expect(page.getByRole('region', { name: /^Stand: Gemerkt/ })).toBeVisible();
   await ganzesBild(page, 'heft-vorschlag.png');
   await page.getByRole('button', { name: 'Ja, beworben' }).click();
-  await expect(page.getByRole('img', { name: 'Stand: Beworben' })).toBeVisible();
-  await expect(page.getByText('Hefta schlägt vor: Beworben')).toHaveCount(0);
+  await expect(page.getByRole('region', { name: /^Stand: Beworben/ })).toBeVisible();
+  await expect(page.getByText('Hast du dich beworben?')).toHaveCount(0);
 });
 
 test('„Noch nicht“: Hefta fragt nicht wieder, der Stand bleibt „Gemerkt“', async ({ page }) => {
@@ -176,10 +173,10 @@ test('„Noch nicht“: Hefta fragt nicht wieder, der Stand bleibt „Gemerkt“
     page.getByText(/hast du die Mail mit der Mappe geöffnet\. Ob sie hinausging/),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Noch nicht' }).click();
-  await expect(page.getByText('Hefta schlägt vor: Beworben')).toHaveCount(0);
-  await expect(page.getByRole('img', { name: 'Stand: Gemerkt' })).toBeVisible();
+  await expect(page.getByText('Hast du dich beworben?')).toHaveCount(0);
+  await expect(page.getByRole('region', { name: /^Stand: Gemerkt/ })).toBeVisible();
   await page.reload();
-  await expect(page.getByText('Hefta schlägt vor: Beworben')).toHaveCount(0);
+  await expect(page.getByText('Hast du dich beworben?')).toHaveCount(0);
 });
 
 test('Ohne Haushalt: „Wer zieht ein?“ statt „Jetzt bewerben“', async ({ page }) => {
@@ -187,7 +184,7 @@ test('Ohne Haushalt: „Wer zieht ein?“ statt „Jetzt bewerben“', async ({ 
   await page.waitForFunction(() => !!document.querySelector('main'));
   await hefteAnlegen(page, [heft('ohne')]);
   await heftOeffnen(page, 'ohne');
-  await expect(page.getByText('Als Nächstes: bewerben')).toBeVisible();
+  await expect(page.getByText('Wie geht es weiter?')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Wer zieht ein?' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Jetzt bewerben' })).toHaveCount(0);
 });
@@ -255,6 +252,6 @@ test('PC8 A6: Nach dem Teilen der Mail kehrt Hefta ins Heft zurück, mit dem Vor
   await page.getByRole('link', { name: 'Jetzt bewerben' }).click();
   await page.getByRole('button', { name: 'Mail', exact: true }).click();
   await page.getByRole('button', { name: 'Mail mit Mappe öffnen' }).click();
-  await expect(page.getByText('Hefta schlägt vor: Beworben')).toBeVisible();
+  await expect(page.getByText('Hast du dich beworben?')).toBeVisible();
   await expect(page).toHaveURL(/#\/heft\/linden$/);
 });

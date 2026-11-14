@@ -19,6 +19,7 @@
   import Zurueck from '../ui/Zurueck.svelte';
   import { homescreenFragen } from '../ui/homescreen';
   import { aussehenSetzen, aussehenWahl, type Aussehen } from '../app/theme';
+  import { dauer } from '../ui/bewegung';
   import { herkunftsReiter } from '../ui/herkunft.svelte';
   import { erinnerungenMoeglich, mitteilungen } from '../app/erinnerungen.svelte';
   import { einstellungenAendern } from '../storage/speicher';
@@ -105,7 +106,8 @@
     try {
       await navigator.clipboard.writeText(RUECKMELDUNG_ADRESSE);
       kopiert = true;
-      setTimeout(() => (kopiert = false), 2000);
+      // Handbuch: „Kopiert“ steht `verweilen` lang.
+      setTimeout(() => (kopiert = false), dauer('verweilen'));
     } catch {
       // Ohne Erlaubnis zum Kopieren bleibt die Adresse als Text und Link stehen.
     }
@@ -402,9 +404,11 @@
     cursor: pointer;
   }
 
+  /* B28b (DP21 Abschnitt 4): Grund als Fläche, gewählt hell gehoben, ohne Rahmen. */
   .segmente button[aria-checked='true'] {
-    background: var(--action);
-    color: var(--on-action);
+    box-shadow: var(--shadow-chip);
+    background: var(--surface);
+    color: var(--ink);
   }
 
   .seite {

@@ -2,7 +2,6 @@
   "seite.titel": "Hefta für Vermieter",
   "kopf.fuer": "für Vermieter",
   "kopf.versprechen": "Ihre Mappen verlassen dieses Gerät nicht",
-
   "leer.titel": "Bewerbungs­mappen auf einen Blick",
   "leer.textZiehen": "Ziehen Sie die Mappen Ihrer Bewerber hierher. Sie sehen je Mappe, wer einziehen will, was beiliegt und was nicht, wie sich Nachweise prüfen lassen und wann gelöscht werden soll.",
   "leer.textWaehlen": "Wählen Sie die Mappen Ihrer Bewerber aus. Sie sehen je Mappe, wer einziehen will, was beiliegt und was nicht, wie sich Nachweise prüfen lassen und wann gelöscht werden soll.",
@@ -15,8 +14,7 @@
   "leer.kontoTitel": "Kein Konto, nichts gespeichert",
   "leer.kontoText": "Schließen Sie die Seite, ist alles weg. Ihre Dateien bleiben, wo sie waren.",
   "leer.geraetTitel": "Ihre Mappen verlassen dieses Gerät nicht",
-  "leer.geraetText": "Die Seite liest die Mappen in Ihrem Browser. Das Hosting sieht nur den Aufruf der Seite. Prüfen können Sie das selbst: Seite laden, Internet ausschalten, Mappen hineinziehen. Es geht trotzdem.",
-
+  "leer.geraetText": "Die Seite liest die Mappen in Ihrem Browser. Der Anbieter, über den die Seite läuft, sieht nur, dass sie aufgerufen wird. Prüfen können Sie das selbst: Seite laden, Internet ausschalten, Mappen hineinziehen. Es geht trotzdem.",
   "eingang.titel": "Eingang",
   "eingang.fuer": "für {strasse}",
   "eingang.reihenfolge": "In der Reihenfolge, in der sie hier ankamen.",
@@ -30,16 +28,14 @@
   "eingang.mappen": "Mappen",
   "stand.ohne": "Ohne Lesehilfe",
   "stand.passtNicht": "Lesehilfe passt nicht zur Mappe",
-
   "fehler.titel": "Nicht aufgenommen",
   "fehler.ausblenden": "Ausblenden",
-  "fehler.keinePdf": "Keine PDF. Diese Seite liest nur PDF-Mappen.",
+  "fehler.keinePdf": "Kein PDF. Diese Seite liest nur Mappen als PDF.",
   "fehler.zuGross": "Größer als 100 MB. Öffnen Sie die Datei wie gewohnt.",
   "fehler.passwort": "Mit Passwort geschützt. Öffnen Sie die Datei wie gewohnt, mit dem Passwort der Bewerber.",
   "fehler.kaputt": "Lässt sich nicht lesen, vielleicht ist sie unvollständig angekommen. Bitten Sie die Bewerber, sie noch einmal zu schicken.",
   "fehler.doppelt": "Steht schon in der Liste, als Nummer {nummer}.",
   "fehler.oeffnen": "Die Datei lässt sich nicht mehr lesen. Vielleicht wurde sie verschoben. Ziehen Sie sie noch einmal hierher.",
-
   "mappe.eingang": "Eingang",
   "mappe.kopf": "Mappe {nummer} von {gesamt} · erstellt am {datum}",
   "mappe.kopfOhne": "Mappe {nummer} von {gesamt}",
@@ -64,7 +60,6 @@
   "mappe.nichtDabei": "nicht dabei · {ueblich}",
   "mappe.nichtDabeiListe": "Nicht dabei: {liste}",
   "mappe.pruefen": "Prüfen, nach Ihrer Entscheidung",
-
   "loeschen.titel": "Wann löschen",
   "loeschen.bitte": "Bitte der Bewerber",
   "loeschen.text": "Nach der Orientierungs­hilfe der Datenschutz­konferenz sind Unterlagen von Bewerbern, mit denen kein Vertrag zustande kommt, zu löschen, sobald sie für die Entscheidung nicht mehr gebraucht werden. Länger nur, wenn Ansprüche wegen Benachteiligung (§ 21 AGG) in Frage kommen, und dann in der Regel höchstens sechs Monate. Auch vom neuen Mieter bleibt nur, was für das Mietverhältnis gebraucht wird.",
@@ -73,7 +68,6 @@
   "loeschen.entfernenText": "Nimmt die Mappe von dieser Seite. Die Datei auf Ihrem Gerät und die Mail der Bewerber löschen Sie selbst.",
   "loeschen.quelle": "Orientierungs­hilfe der Datenschutz­konferenz, Version 2.0, Januar 2026, Abschnitt D. Ein Hinweis, keine Rechtsberatung.",
   "quelle.lesen": "Orientierungs­hilfe lesen",
-
   "schritte.link": "Welche Unterlagen wann: die drei Schritte",
   "schritte.titel": "Welche Unterlagen wann: die drei Schritte",
   "schritte.zurMappe": "Zur Mappe",
@@ -105,14 +99,12 @@
   "absagen.unterlagen": "Unterlagen",
   "absagen.geloescht": "Schon gelöscht",
   "absagen.spaeter": "Lösche ich später",
-  "absagen.vorschlag": "Der Text ist ein Vorschlag; ändern Sie, was nicht passt. Hefta sieht die Mail nicht. Löschen Sie danach auch die PDF und die Mail der Bewerber mit ihrem Anhang.",
+  "absagen.vorschlag": "Der Text ist ein Vorschlag; ändern Sie, was nicht passt. Hefta sieht die Mail nicht. Löschen Sie danach auch das PDF und die Mail der Bewerber mit ihrem Anhang.",
   "absagen.quelle": "Nach der Orientierungs­hilfe der Datenschutz­konferenz, Version 2.0, Januar 2026, Abschnitt D. Ein Hinweis, keine Rechtsberatung.",
-
   "fuss.recht": "Impressum und Datenschutz",
   "fuss.mieter": "Hefta für Mieter",
   "fuss.quellcode": "Quellcode ansehen",
   "fuss.lizenz": "Steht unter der AGPL-3.0.",
-
   "recht.titel": "Impressum und Datenschutz",
   "recht.stand": "Stand 6. November 2026.",
   "recht.impressum": "Impressum",
@@ -122,7 +114,7 @@
   "recht.hosting": "Hosting",
   "recht.hostingText": "Die Seite wird über Cloudflare Pages (Cloudflare, Inc.) ausgeliefert. Beim Laden verarbeitet der Anbieter technisch notwendige Daten wie die IP-Adresse und den Zeitpunkt des Abrufs, um die Dateien auszuliefern und den Dienst abzusichern. Das kann auch in den USA geschehen. Cloudflare stützt solche Übermittlungen nach eigenen Angaben auf das EU-U.S. Data Privacy Framework und auf Standardvertragsklauseln. Rechtsgrundlage ist das berechtigte Interesse an einer sicheren Auslieferung (Art. 6 Abs. 1 lit. f DSGVO).",
   "recht.cookies": "Keine Cookies, keine Analyse",
-  "recht.cookiesText": "Die Seite setzt keine Cookies und bindet keine Dienste Dritter ein. Was Hefta weiß, sind die Summen des Hostings: wie oft die Seite am Tag geladen wurde, ohne Kennung und ohne Verlauf. Links zu anderen Seiten, etwa zur SCHUFA oder zur Datenschutzkonferenz, öffnen Sie selbst; dort gelten deren Bedingungen.",
+  "recht.cookiesText": "Die Seite setzt keine Cookies und bindet keine Dienste Dritter ein. Hefta weiß nur, wie oft die Seite am Tag geladen wurde, ohne Kennung und ohne Verlauf. Links zu anderen Seiten, etwa zur SCHUFA oder zur Datenschutzkonferenz, öffnen Sie selbst; dort gelten deren Bedingungen.",
   "recht.rechte": "Ihre Rechte",
   "recht.rechteText": "Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch sowie auf Beschwerde bei einer Datenschutz-Aufsichtsbehörde."
 }

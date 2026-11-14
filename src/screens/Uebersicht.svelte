@@ -186,8 +186,17 @@
   $effect(() => {
     const nr = wechsel.nr;
     if (!nr) return;
-    const uhr = setTimeout(() => (vorbei = nr), 450);
-    return () => clearTimeout(uhr);
+    // Handbuch, Abschnitt 5: auf das Ende der Bewegung warten (`finished`), nicht auf eine Zahl.
+    let aus = false;
+    const bild = requestAnimationFrame(() => {
+      void Promise.allSettled(document.getAnimations().map((x) => x.finished)).then(() => {
+        if (!aus) vorbei = nr;
+      });
+    });
+    return () => {
+      aus = true;
+      cancelAnimationFrame(bild);
+    };
   });
   const aktiv = $derived(wechsel.nr > 0 && wechsel.nr !== vorbei);
   const bw = $derived(aktiv ? wechsel : keinWechsel<PersonStand, Aufgabe>());

@@ -35,7 +35,10 @@ export function pruefen() {
     parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--px')) || 1;
   // Zugeklappte Abschnitte zählen nicht, nur ihre Überschrift.
   const zugeklappt = (e: Element) => !!e.closest('details:not([open])') && !e.closest('summary');
-  const sichtbar = (e: Element) => !e.closest('.visually-hidden') && !zugeklappt(e);
+  // Unsichtbar Geschaltetes (`visibility: hidden`, etwa die Wörter am Weg des Stands bei großer Schrift)
+  // zählt nicht.
+  const sichtbar = (e: Element) =>
+    !e.closest('.visually-hidden') && !zugeklappt(e) && getComputedStyle(e).visibility !== 'hidden';
   out.c1 = document.documentElement.scrollWidth > window.innerWidth + 1;
 
   const rechtecke = (r: Range) => [...r.getClientRects()].filter((x) => x.width > 0);

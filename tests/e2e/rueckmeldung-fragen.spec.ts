@@ -38,10 +38,10 @@ test('vier Fragen; Abbrechen sendet nichts, Abschicken nur Frage und Antwort', a
   const angekommen = await empfang(page);
   await einstellungen(page);
   for (const frage of [
-    'Hat dir Hefta bei der Bewerbung geholfen?',
+    'Hat euch Hefta bei der Bewerbung geholfen?',
     'Was soll Hefta als Nächstes können?',
-    'Was fehlt dir sonst?',
-    'Wie hast du von Hefta erfahren?',
+    'Was fehlt euch sonst?',
+    'Wie habt ihr von Hefta erfahren?',
   ])
     await expect(page.getByRole('group', { name: frage })).toBeVisible();
   await expect(
@@ -49,14 +49,14 @@ test('vier Fragen; Abbrechen sendet nichts, Abschicken nur Frage und Antwort', a
       'Eine Antwort geht erst nach einer Rückfrage hinaus, anonym und ohne Daten aus Hefta.',
     ),
   ).toBeVisible();
-  // „Etwas anderes …“ nur bei „Was fehlt dir sonst?“, als Mail.
+  // „Etwas anderes …“ nur bei „Was fehlt euch sonst?“, als Mail.
   await expect(page.getByRole('link', { name: 'Etwas anderes …' })).toHaveAttribute(
     'href',
     /^mailto:/,
   );
   await expect(page.getByRole('link', { name: 'Etwas anderes …' })).toHaveCount(1);
 
-  const geholfen = page.getByRole('group', { name: 'Hat dir Hefta bei der Bewerbung geholfen?' });
+  const geholfen = page.getByRole('group', { name: 'Hat euch Hefta bei der Bewerbung geholfen?' });
   await geholfen.getByRole('button', { name: 'Teils' }).click();
   const fenster = page.getByRole('dialog', { name: 'Anonym an hefta.de schicken?' });
   await expect(fenster).toBeVisible();
@@ -88,12 +88,12 @@ test('vier Fragen; Abbrechen sendet nichts, Abschicken nur Frage und Antwort', a
   const kopf = await angekommen[0]!.allHeaders();
   expect(kopf.cookie).toBeUndefined();
   expect(kopf.referer).toBeUndefined();
-  await expect(page.getByText('Deine Antwort: Teils')).toBeVisible();
+  await expect(page.getByText('Eure Antwort: Teils')).toBeVisible();
   await expect(page.getByText('Danke. Angekommen.')).toBeVisible();
 
   // Gemerkt nur auf dem Gerät: Nach dem Neuladen steht die Antwort noch da, ohne neuen Aufruf.
   await page.reload();
-  await expect(page.getByText('Deine Antwort: Teils')).toBeVisible();
+  await expect(page.getByText('Eure Antwort: Teils')).toBeVisible();
   expect(angekommen).toHaveLength(1);
 
   // Ändern zählt eine neue Antwort, mit derselben Rückfrage.
@@ -104,7 +104,7 @@ test('vier Fragen; Abbrechen sendet nichts, Abschicken nur Frage und Antwort', a
   );
   await geholfen.getByRole('button', { name: 'Ja' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Abschicken' }).click();
-  await expect(page.getByText('Deine Antwort: Ja')).toBeVisible();
+  await expect(page.getByText('Eure Antwort: Ja')).toBeVisible();
   expect(angekommen.map((r) => JSON.parse(r.postData()!))).toEqual([
     { f: 'geholfen', a: 'teils' },
     { f: 'geholfen', a: 'ja' },
@@ -120,7 +120,7 @@ test('ohne Netz: Hinweis, die Wahl bleibt, nichts wird nachgeschickt', async ({ 
   await naechstes.getByRole('button', { name: 'Lage auf einer Karte' }).click();
   const fenster = page.getByRole('dialog');
   await fenster.getByRole('button', { name: 'Abschicken' }).click();
-  const aus = 'Gerade nicht verbunden. Versuch es später noch einmal.';
+  const aus = 'Gerade keine Verbindung. Versucht es später noch einmal.';
   await expect(fenster.getByText(aus)).toBeVisible();
   await fenster.getByRole('button', { name: 'Abbrechen' }).click();
   await expect(naechstes.getByRole('button', { name: 'Lage auf einer Karte' })).toHaveAttribute(
@@ -135,7 +135,7 @@ test('ohne Netz: Hinweis, die Wahl bleibt, nichts wird nachgeschickt', async ({ 
   // Erst ein neuer Tipp öffnet das Fenster wieder.
   await naechstes.getByRole('button', { name: 'Lage auf einer Karte' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Abschicken' }).click();
-  await expect(page.getByText('Deine Antwort: Lage auf einer Karte')).toBeVisible();
+  await expect(page.getByText('Eure Antwort: Lage auf einer Karte')).toBeVisible();
   expect(angekommen).toHaveLength(1);
 });
 

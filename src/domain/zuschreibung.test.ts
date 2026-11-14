@@ -17,6 +17,9 @@ const AUSNAHMEN = new Set<string>([
   'data/nachforderung.de.json:schwaerzen',
   'src/i18n/de.json:heft.naechstesSatzIhr',
   'src/i18n/de.json:heft.naechstesSatzDu',
+  // B28b: „Ihr müsst nichts tun“ sagt, dass der Vermieter dran ist, nichts über Recht.
+  'src/i18n/de.json:stand.beworben.satzHeute.ihr',
+  'src/i18n/de.json:stand.beworben.satzHeute.du',
 ]);
 
 function texte(wert: unknown, pfad = ''): [string, string][] {

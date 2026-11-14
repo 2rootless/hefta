@@ -12,9 +12,23 @@
   import { t, type TextSchluessel } from '../i18n';
   import Sheet from './Sheet.svelte';
 
-  let { fragen = FRAGE_REIHE }: { fragen?: readonly Frage[] } = $props();
+  let {
+    fragen = FRAGE_REIHE,
+    frisch = false,
+    gesendetBei,
+  }: {
+    fragen?: readonly Frage[];
+    /**
+     * PC12: Im Heft fragt Hefta je Heft einmal; eine Antwort aus einem anderen Heft steht hier nicht als
+     * „Deine Antwort“. Es zählt nur, was in dieser Ansicht gesendet wurde.
+     */
+    frisch?: boolean;
+    /** Nach dem Senden einer Antwort (für „je Heft einmal“ und „nach drei Antworten nicht mehr“). */
+    gesendetBei?: (f: Frage, a: string) => void;
+  } = $props();
 
-  const gesendet = $derived(daten.einstellungen?.rueckmeldung ?? {});
+  let hierGesendet = $state<Partial<Record<Frage, string>>>({});
+  const gesendet = $derived(frisch ? hierGesendet : (daten.einstellungen?.rueckmeldung ?? {}));
   let aendern = $state<Partial<Record<Frage, boolean>>>({});
   let danke = $state<Partial<Record<Frage, boolean>>>({});
   /** Gewählt, aber ohne Netz nicht angekommen: bleibt mit Hinweis stehen. */
@@ -46,8 +60,12 @@
       return;
     }
     aus = Object.fromEntries(Object.entries(aus).filter(([k]) => k !== f));
-    await einstellungenAendern(await db(), { rueckmeldung: { ...gesendet, [f]: a } });
+    await einstellungenAendern(await db(), {
+      rueckmeldung: { ...(daten.einstellungen?.rueckmeldung ?? {}), [f]: a },
+    });
+    hierGesendet = { ...hierGesendet, [f]: a };
     await neuLaden();
+    gesendetBei?.(f, a);
     aendern = { ...aendern, [f]: false };
     danke = { ...danke, [f]: true };
     offen = false;
@@ -159,7 +177,8 @@
     max-width: 100%;
     min-height: var(--tap-target);
     padding: 8px 14px;
-    border: 1.5px solid var(--control-border);
+    /* B28b (DP21 Abschnitt 4): Antworten als weiche Flächen wie im Heft, ohne Rahmen. */
+    border: 0;
     border-radius: 22px;
     background: var(--surface);
     color: var(--ink);
@@ -175,13 +194,12 @@
   }
 
   .chip[aria-pressed='true'] {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--ground);
+    background: var(--action);
+    color: var(--on-action);
   }
 
   .chip.mail {
-    border-style: dashed;
+    border: 1.5px dashed var(--line-strong);
   }
 
   .antwort {

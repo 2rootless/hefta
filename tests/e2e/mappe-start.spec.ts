@@ -87,6 +87,10 @@ test('Abbruch mit Max und Lea: „ihr“, zwei Personen im Deckblatt, Lea ersche
   await expect(
     page.getByRole('heading', { level: 1, name: 'Wer gehört noch dazu?' }),
   ).toBeVisible();
+  // PC10 (DP20): Solange die Einrichtung offen ist, steht die ihr-Fassung.
+  await expect(
+    page.getByText('Tippt an, was auf euch zutrifft. Den Rest lasst ihr einfach leer.'),
+  ).toBeVisible();
   await page.goto('/#/');
   await expect(page.getByText('Eure Mappe entsteht')).toBeVisible();
   await expect(

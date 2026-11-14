@@ -17,8 +17,97 @@
   import { terminNaehe } from '../domain/terminNaehe';
   import { naeheWort } from './terminWorte';
   import { zuletzt } from './neuesHeft.svelte';
+  import { onMount, untrack } from 'svelte';
+  import { daten } from '../app/daten.svelte';
+  import { haushaltsNetto } from '../domain/netto';
+  import { lageAnwenden } from '../domain/lage';
+  import { urteile } from '../domain/urteile';
+  import { wohnungAus } from '../lesen/angaben';
+  import { plzTabelle } from './plz.svelte';
+  import { foto, fotoLaden } from './heftFoto.svelte';
+  import { flugFuer, landen, merken, wartendesHeft } from './heftFlug';
 
   let { hefte, jetzt }: { hefte: Heft[]; jetzt: Date } = $props();
+
+  // ---------- B28b: Urteile mit Zeichen und Daumenbild auf jeder Karte ----------
+
+  const ihr = $derived(
+    !daten.ansicht ||
+      daten.ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
+  );
+  const URTEIL_REIHE = ['nicht', 'knapp', 'offen'] as const;
+  /** Höchstens zwei Abweichungen; passt alles, „Passt zu euren Wünschen“ (DP21). */
+  function wunschMarken(h: Heft): { art: string; text: string }[] {
+    const hh = daten.ansicht?.haushalt;
+    if (!h.angaben || !hh?.wuensche) return [];
+    const w = lageAnwenden(wohnungAus(h.angaben), h.adresse, hh.wuensche, plzTabelle());
+    const u = urteile(w.w, w.wu, {
+      netto: haushaltsNetto(hh, daten.ansicht?.mitglieder ?? []),
+      grenze: hh.mietgrenze ?? null,
+      ihr,
+    });
+    const ab = URTEIL_REIHE.flatMap((art) => u.filter((x) => x.art === art))
+      .slice(0, 2)
+      .map((x) => ({ art: x.art, text: x.kriterium }));
+    if (ab.length) return ab;
+    if (!u.some((x) => x.art === 'passt')) return [];
+    return [
+      { art: 'passt', text: t(ihr ? 'vorschau.passtIhr' : 'vorschau.passtDu').replace(/\.$/, '') },
+    ];
+  }
+
+  $effect(() => {
+    const ids = hefte.map((h) => h.foto);
+    untrack(() => ids.forEach((fid) => void fotoLaden(fid)));
+  });
+
+  // Muster „Heft aufschlagen“ (Handbuch 3.9): Beim Tipp auf eine Karte hält die Liste ihr Abbild fest; das
+  // Heft landet den Flug. Zurück aus dem Heft landet die Liste ihn.
+  let liste = $state<HTMLElement | null>(null);
+  function seiteVon(el: Element): HTMLElement {
+    return (el.closest('main') as HTMLElement | null) ?? (el as HTMLElement);
+  }
+  function teileOhne(karte: Element): Element[] {
+    const seite = seiteVon(karte);
+    return [
+      ...[...seite.children].filter((c) => !c.contains(karte)),
+      ...(liste
+        ? [...liste.querySelectorAll('.gr, .bl, .z')].filter(
+            (c) => !c.contains(karte) && c !== karte,
+          )
+        : []),
+      ...karte.querySelectorAll('.e, .i, .wm, .tl, .w'),
+    ];
+  }
+  /** Der Daumen, wenn er zu sehen ist; in sehr schmalen Listen fällt er weg, dann blendet der Flug über. */
+  function daumen(karte: HTMLElement): HTMLElement | null {
+    const d = karte.querySelector<HTMLElement>('.daumen');
+    return d && d.getBoundingClientRect().width > 0 ? d : null;
+  }
+  function aufschlagenVon(e: MouseEvent, h: Heft) {
+    const karte = e.currentTarget as HTMLElement;
+    merken({
+      nach: 'heft',
+      heftId: h.id,
+      seite: seiteVon(karte),
+      bild: daumen(karte),
+      name: karte.querySelector('.ti'),
+      teile: teileOhne(karte),
+    });
+  }
+  onMount(() => {
+    const id = wartendesHeft();
+    if (!flugFuer('liste') || !liste || !id) return;
+    const karte = liste.querySelector<HTMLElement>(`[data-heft-karte="${CSS.escape(id)}"]`);
+    if (!karte) return;
+    void landen({
+      nach: 'liste',
+      seite: seiteVon(karte),
+      bild: daumen(karte),
+      name: karte.querySelector('.ti'),
+      teile: teileOhne(karte),
+    });
+  });
 
   const g = $derived(gruppieren(hefte, jetzt));
   const imSpiel = $derived(g.stehtAn.length + g.wartet.length + g.gemerkt.length);
@@ -121,36 +210,50 @@
   {@const titel = heftTitel(h)}
   {@const info = infoZeile(h, z.art)}
   <!-- Bewegung beim Neuen (Zeile 6, Design 12.11.): die Zeile des eben angelegten Hefts, einmal. -->
+  {@const fo = foto(h.foto)}
+  {@const marken = wunschMarken(h)}
   <a
     class="z {z.art}"
     class:neu={h.id === zuletzt.heftId}
     href={`#/heft/${h.id}`}
+    data-heft-karte={h.id}
+    onclick={(e) => aufschlagenVon(e, h)}
     onanimationend={(e) => {
       // Erst wenn das Steigen fertig ist; das Überblenden für „Bewegung reduzieren“ endet früher.
       if (e.animationName === 'bw-hoch' && h.id === zuletzt.heftId) zuletzt.heftId = null;
     }}
   >
-    <span class="k">
-      <b class="ti" class:str={titel.strasse}>{titel.text}</b>
-      {#if z.art === 'termin' && h.ereignisse.termin}
-        <!-- Dieselben Wörter wie der Reiter der Terminkarte, heute und morgen in Violett (Planung 12w). -->
-        {@const n = terminNaehe(h.ereignisse.termin.am, jetzt)}
-        <span class="w termin {n.art}">{naeheWort(n)}</span>
-      {:else}
-        <span class="w {z.art}">{wort(z.wort)}</span>
+    <span class="daumen" data-foto={fo.zustand} aria-hidden="true"
+      >{#if fo.url}<img src={fo.url} alt="" />{/if}</span
+    >
+    <span class="text">
+      <span class="k">
+        <b class="ti" class:str={titel.strasse}>{titel.text}</b>
+        {#if z.art === 'termin' && h.ereignisse.termin}
+          <!-- Dieselben Wörter wie der Reiter der Terminkarte, heute und morgen in Violett (Planung 12w). -->
+          {@const n = terminNaehe(h.ereignisse.termin.am, jetzt)}
+          <span class="w termin {n.art}">{naeheWort(n)}</span>
+        {:else}
+          <span class="w {z.art}">{wort(z.wort)}</span>
+        {/if}
+      </span>
+      <small class="e">{zweiteZeile(h)}</small>
+      {#if z.art === 'tun' && h.ereignisse.termin}
+        <span class="i"
+          >{t('hefte.besichtigtAm', { datum: terminKurz(h.ereignisse.termin.am, false) })} ·
+          <b>{t('hefte.wieAusgegangen')}</b></span
+        >
+      {:else if info}
+        <span class="i termin">{info}</span>
       {/if}
-    </span>
-    <small class="e">{zweiteZeile(h)}</small>
-    {#if z.art === 'tun' && h.ereignisse.termin}
-      <span class="i"
-        >{t('hefte.besichtigtAm', { datum: terminKurz(h.ereignisse.termin.am, false) })} ·
-        <b>{t('hefte.wieAusgegangen')}</b></span
-      >
-    {:else if info}
-      <span class="i termin">{info}</span>
-    {/if}
-    <span class="tl" aria-hidden="true">
-      {#each linie(z.marke) as l, i (i)}<i class={l.klasse} style={l.stil}></i>{/each}
+      <span class="tl" aria-hidden="true">
+        {#each linie(z.marke) as l, i (i)}<i class={l.klasse} style={l.stil}></i>{/each}
+      </span>
+      {#if marken.length}
+        <span class="wm"
+          >{#each marken as m (m.text)}<span class="urteil {m.art}">{m.text}</span>{/each}</span
+        >
+      {/if}
     </span>
   </a>
 {/snippet}
@@ -167,79 +270,81 @@
   {imSpiel ? t('hefte.imSpiel', { anzahl: imSpiel }) : t('hefte.keineImSpiel')}
 </p>
 
-{#if g.stehtAn.length}
-  {@render gruppe('termin', t('hefte.stehtAn'), g.stehtAn.length)}
-  {#if naechste}
-    <TerminKarte heft={naechste} {jetzt} href={`#/heft/${naechste.id}`} />
-  {/if}
-  {#if stehtAnZeilen.length}
-    <div class="bl st">
-      {#each stehtAnZeilen as h (h.id)}{@render zeileVon(h)}{/each}
-    </div>
-  {/if}
-{/if}
-
-{#if g.wartet.length}
-  {@render gruppe('wartet', t('hefte.wartet'), g.wartet.length)}
-  <div class="bl wa">
-    {#each g.wartet as h (h.id)}{@render zeileVon(h)}{/each}
-  </div>
-{/if}
-
-{#if g.gemerkt.length}
-  {@render gruppe('gemerkt', t('hefte.gemerkt'), g.gemerkt.length)}
-  <div class="bl gm">
-    {#each g.gemerkt as h (h.id)}{@render zeileVon(h)}{/each}
-  </div>
-{/if}
-
-{#if g.keineAntwort.length}
-  <button
-    class="auf"
-    type="button"
-    aria-expanded={offen === 'keine'}
-    onclick={() => (offen = offen === 'keine' ? null : 'keine')}
-  >
-    <span>{t('hefte.keineAntwort')}</span><span class="an">{g.keineAntwort.length}</span>
-    <Symbol name={offen === 'keine' ? 'auf' : 'ab'} groesse={20} />
-  </button>
-  {#if offen === 'keine'}
-    <div class="bl ke">
-      {#each g.keineAntwort as h (h.id)}{@render zeileVon(h)}{/each}
-    </div>
-    {#if g.keineAntwort.length >= ALLE_AB}
-      <div class="alle">
-        {#if loeschbitteFehlt}
-          <p>{t('hefte.ohneLoeschbitte', { anzahl: loeschbitteFehlt })}</p>
-        {/if}
-        <button type="button" class="alle-ab" onclick={alleAblegen}
-          >{t('hefte.alleAblegen', { anzahl: g.keineAntwort.length })}</button
-        >
+<div class="hefte" bind:this={liste}>
+  {#if g.stehtAn.length}
+    {@render gruppe('termin', t('hefte.stehtAn'), g.stehtAn.length)}
+    {#if naechste}
+      <TerminKarte heft={naechste} {jetzt} href={`#/heft/${naechste.id}`} />
+    {/if}
+    {#if stehtAnZeilen.length}
+      <div class="bl st">
+        {#each stehtAnZeilen as h (h.id)}{@render zeileVon(h)}{/each}
       </div>
     {/if}
   {/if}
-{/if}
 
-{#if g.abgelegt.length}
-  <button
-    class="auf"
-    type="button"
-    aria-expanded={offen === 'abgelegt'}
-    onclick={() => (offen = offen === 'abgelegt' ? null : 'abgelegt')}
-  >
-    <span>{t('hefte.abgelegt')}</span><span class="an">{g.abgelegt.length}</span>
-    <Symbol name={offen === 'abgelegt' ? 'auf' : 'ab'} groesse={20} />
-  </button>
-  {#if offen === 'abgelegt'}
-    <div class="leise">
-      {#each g.abgelegt as h (h.id)}
-        <a class="lz" href={`#/heft/${h.id}`}
-          ><b>{heftTitel(h).text}</b><span>{ergebnisWort(h)}</span></a
-        >
-      {/each}
+  {#if g.wartet.length}
+    {@render gruppe('wartet', t('hefte.wartet'), g.wartet.length)}
+    <div class="bl wa">
+      {#each g.wartet as h (h.id)}{@render zeileVon(h)}{/each}
     </div>
   {/if}
-{/if}
+
+  {#if g.gemerkt.length}
+    {@render gruppe('gemerkt', t('hefte.gemerkt'), g.gemerkt.length)}
+    <div class="bl gm">
+      {#each g.gemerkt as h (h.id)}{@render zeileVon(h)}{/each}
+    </div>
+  {/if}
+
+  {#if g.keineAntwort.length}
+    <button
+      class="auf"
+      type="button"
+      aria-expanded={offen === 'keine'}
+      onclick={() => (offen = offen === 'keine' ? null : 'keine')}
+    >
+      <span>{t('hefte.keineAntwort')}</span><span class="an">{g.keineAntwort.length}</span>
+      <Symbol name={offen === 'keine' ? 'auf' : 'ab'} groesse={20} />
+    </button>
+    {#if offen === 'keine'}
+      <div class="bl ke">
+        {#each g.keineAntwort as h (h.id)}{@render zeileVon(h)}{/each}
+      </div>
+      {#if g.keineAntwort.length >= ALLE_AB}
+        <div class="alle">
+          {#if loeschbitteFehlt}
+            <p>{t('hefte.ohneLoeschbitte', { anzahl: loeschbitteFehlt })}</p>
+          {/if}
+          <button type="button" class="alle-ab" onclick={alleAblegen}
+            >{t('hefte.alleAblegen', { anzahl: g.keineAntwort.length })}</button
+          >
+        </div>
+      {/if}
+    {/if}
+  {/if}
+
+  {#if g.abgelegt.length}
+    <button
+      class="auf"
+      type="button"
+      aria-expanded={offen === 'abgelegt'}
+      onclick={() => (offen = offen === 'abgelegt' ? null : 'abgelegt')}
+    >
+      <span>{t('hefte.abgelegt')}</span><span class="an">{g.abgelegt.length}</span>
+      <Symbol name={offen === 'abgelegt' ? 'auf' : 'ab'} groesse={20} />
+    </button>
+    {#if offen === 'abgelegt'}
+      <div class="leise">
+        {#each g.abgelegt as h (h.id)}
+          <a class="lz" href={`#/heft/${h.id}`}
+            ><b>{heftTitel(h).text}</b><span>{ergebnisWort(h)}</span></a
+          >
+        {/each}
+      </div>
+    {/if}
+  {/if}
+</div>
 
 <style>
   .alle {
@@ -327,6 +432,7 @@
 
   .bl {
     overflow: hidden;
+    container-type: inline-size;
     border: 1px solid var(--line);
     border-radius: 14px;
     background: var(--surface);
@@ -348,7 +454,9 @@
   }
 
   .z {
-    display: block;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
     min-height: 56px;
     padding: 11px 14px 10px;
     border-top: 1px solid var(--line);
@@ -368,6 +476,49 @@
     border-top: 0;
   }
 
+  /* B28b: Daumenbild der Karte; Heft aufschlagen fliegt von hier zum Foto im Kopf. */
+  .daumen {
+    position: relative;
+    flex: none;
+    overflow: hidden;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: var(--accent-soft);
+  }
+
+  /* Sehr schmal (320 px mit großer Schrift): Der Titel braucht den Platz, der Daumen fällt weg. */
+  @container (max-width: 260px) {
+    .daumen {
+      display: none;
+    }
+  }
+
+  .daumen[data-foto='laedt'] {
+    background: var(--foto-grund);
+  }
+
+  .daumen img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .text {
+    display: block;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .wm {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 7px;
+  }
+
   .k {
     display: flex;
     flex-wrap: wrap;
@@ -376,8 +527,9 @@
     gap: 0 10px;
   }
 
+  /* Der Titel hat die ganze Breite neben dem Daumen (DP21, .wkarte); das Wort zum Stand steht darunter. */
   .ti {
-    flex: 1 1 11em;
+    flex: 1 1 100%;
     min-width: 0;
     font-size: calc(15.5 * var(--px));
     font-weight: 650;
@@ -390,7 +542,6 @@
 
   .w {
     flex: none;
-    margin-left: auto;
     font-size: calc(13.5 * var(--px));
     font-variant-numeric: tabular-nums;
     font-weight: 600;

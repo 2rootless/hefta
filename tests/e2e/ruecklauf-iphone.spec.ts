@@ -83,7 +83,7 @@ test('Vorname geändert: Überall steht der neue Name, auch bei den Unterlagen',
   const vorname = page.getByLabel('Vorname');
   await vorname.click();
   await vorname.fill('Marie');
-  await expect(page.getByText(/^Wir nennen sie Marie\./)).toBeVisible();
+  await expect(page.getByText(/^Hefta nennt sie Marie\./)).toBeVisible();
   await page.getByRole('button', { name: 'Speichern' }).click();
   await expect(page.getByLabel('Vorname')).toHaveCount(0);
   await page.goto('about:blank');
@@ -219,17 +219,17 @@ test('Selbstauskunft: Hinweis zum Format, Knopf zum nächsten Teil, von wem der 
   await page.getByRole('button', { name: /^Kontakt/ }).click();
   const email = page.getByLabel('E-Mail');
   await email.fill('max-at-beispiel');
-  await expect(page.getByText(/sieht nicht nach einer E-Mail-Adresse aus/)).toHaveCount(0);
+  await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toHaveCount(0);
   await page.getByLabel('Telefon').click();
-  await expect(page.getByText(/sieht nicht nach einer E-Mail-Adresse aus/)).toBeVisible();
+  await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toBeVisible();
   await email.fill('max@beispiel.de');
   await page.getByLabel('Telefon').fill('abc');
   await email.click();
-  await expect(page.getByText(/sieht nicht nach einer Telefonnummer aus/)).toBeVisible();
+  await expect(page.getByText(/Die Telefonnummer sieht ungewöhnlich aus/)).toBeVisible();
   // Nur ein Hinweis: Es wird trotzdem gespeichert, und der Knopf führt weiter.
   await page.getByLabel('Telefon').fill('040 123456');
   await email.click();
-  await expect(page.getByText(/sieht nicht nach einer Telefonnummer aus/)).toHaveCount(0);
+  await expect(page.getByText(/Die Telefonnummer sieht ungewöhnlich aus/)).toHaveCount(0);
   await page.getByRole('button', { name: /^Weiter: / }).click();
   await expect(page.getByLabel('E-Mail')).toHaveCount(0);
 
@@ -238,7 +238,7 @@ test('Selbstauskunft: Hinweis zum Format, Knopf zum nächsten Teil, von wem der 
   await page.getByRole('button', { name: /^Kontakt/ }).click();
   await page.getByLabel('E-Mail').fill('max-at-beispiel');
   await page.getByRole('button', { name: /^Weiter: / }).click();
-  await expect(page.getByText(/sieht nicht nach einer E-Mail-Adresse aus/)).toBeVisible();
+  await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toBeVisible();
   await expect(page.getByLabel('E-Mail')).toBeVisible();
   await page.getByRole('button', { name: /^Weiter: / }).click();
   await expect(page.getByLabel('E-Mail')).toHaveCount(0);
@@ -247,7 +247,7 @@ test('Selbstauskunft: Hinweis zum Format, Knopf zum nächsten Teil, von wem der 
   await page.getByRole('button', { name: /^Kontakt/ }).click();
   await page.getByLabel('E-Mail').fill('max@beispiel');
   await page.getByLabel('E-Mail').press('Enter');
-  await expect(page.getByText(/sieht nicht nach einer E-Mail-Adresse aus/)).toBeVisible();
+  await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toBeVisible();
   // Beide zweifelhaft: ein Satz für beide (Planung 12r).
   await page.getByLabel('Telefon').fill('abc');
   await page.getByRole('button', { name: /^Weiter: / }).click();
@@ -445,9 +445,9 @@ test('BAföG und Unterhalt: wählbar, und aus dem Dokument erkannt', async ({ pa
       timeout: 30_000,
     },
   );
-  await expect(blatt.getByText('Aus dem Dokument erkannt. Du kannst es ändern.')).toBeVisible();
+  await expect(blatt.getByText('Aus dem Dokument erkannt. Ihr könnt es ändern.')).toBeVisible();
   await blatt.getByRole('radio', { name: 'Unterhaltsnachweis' }).click();
-  await expect(blatt.getByText('Aus dem Dokument erkannt. Du kannst es ändern.')).toHaveCount(0);
+  await expect(blatt.getByText('Aus dem Dokument erkannt. Ihr könnt es ändern.')).toHaveCount(0);
 });
 
 test('Nur die gewählten Seiten stehen in der Monatsliste', async ({ page }) => {

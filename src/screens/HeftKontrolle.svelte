@@ -8,7 +8,7 @@
   // Beträge (E78): genau wie im Inserat, mit Cent, wenn es sie nennt; gerechnet gerundet mit „ca.“.
   import { daten, db, stillLaden } from '../app/daten.svelte';
   import { abschliessen, abschliessenMit, route } from '../app/router.svelte';
-  import { WECHSEL_HOECHSTENS_MS, wechselArt } from '../ui/wechsel';
+  import { sicherungMs, wechselArt } from '../ui/wechsel';
   import { onMount, untrack } from 'svelte';
   import { heftTitel } from '../domain/heftKarte';
   import type { HeftAngaben } from '../domain/modell';
@@ -26,12 +26,13 @@
   import Zurueck from '../ui/Zurueck.svelte';
 
   const NB = ' ';
+  let seiteEl = $state<HTMLElement | null>(null);
   // PC8 A5: wie im Heft fällt die Bewegung der Gruppen nach ihrer Dauer sicher weg.
   let werte = $state(untrack(() => wechselArt(route.von, route.pfad, route.richtung) === 'werte'));
   onMount(() => {
     if (!werte) return;
     const ende = () => (werte = false);
-    const uhr = setTimeout(ende, WECHSEL_HOECHSTENS_MS);
+    const uhr = setTimeout(ende, seiteEl ? sicherungMs(seiteEl) : 0);
     document.addEventListener('visibilitychange', ende);
     return () => {
       clearTimeout(uhr);
@@ -374,18 +375,39 @@
     offen = null;
   }
 
+  /**
+   * Foto der Vorschau (Daten-Adresse) als Datei, ohne `fetch`: Die Inhaltsrichtlinie erlaubt keine
+   * Verbindungen zu `data:`. Unlesbar: kein Foto, das Heft ist ohne vollständig.
+   */
+  function bildAusDaten(url: string): Blob | null {
+    const m = /^data:([^;,]+);base64,(.*)$/.exec(url);
+    if (!m) return null;
+    try {
+      const roh = atob(m[2]!);
+      const bytes = new Uint8Array(roh.length);
+      for (let i = 0; i < roh.length; i++) bytes[i] = roh.charCodeAt(i);
+      return new Blob([bytes], { type: m[1] });
+    } catch {
+      return null;
+    }
+  }
+
   let speichert = $state(false);
   async function anlegen() {
     if (!entwurf.angaben || speichert) return;
     speichert = true;
-    const heft = await heftAnlegen(await db(), {
-      haushaltId: hh?.id ?? null,
-      adresse: entwurf.adresse,
-      link: entwurf.link.trim() || null,
-      quelle: entwurf.angaben.portal ?? '',
-      inseratText: entwurf.text,
-      angaben: $state.snapshot(entwurf.angaben),
-    });
+    const heft = await heftAnlegen(
+      await db(),
+      {
+        haushaltId: hh?.id ?? null,
+        adresse: entwurf.adresse,
+        link: entwurf.link.trim() || null,
+        quelle: entwurf.angaben.portal ?? '',
+        inseratText: entwurf.text,
+        angaben: $state.snapshot(entwurf.angaben),
+      },
+      entwurf.bild ? bildAusDaten(entwurf.bild) : null,
+    );
     await stillLaden();
     entwurfVergessen();
     zuletzt.heftId = heft.id;
@@ -491,7 +513,7 @@
 {/snippet}
 
 <!-- Vorschau → Kontrolle wie `werte` aus B18 (Design 12.11.): Kopf steht, die Gruppen folgen versetzt. -->
-<main class="seite" class:werte>
+<main class="seite" class:werte bind:this={seiteEl}>
   <header class="kopf">
     <!-- B23: „Abbrechen“ beendet den ganzen Ablauf und führt zur Übersicht; nichts ist gespeichert. -->
     <Zurueck

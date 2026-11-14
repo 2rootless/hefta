@@ -403,6 +403,12 @@ public class HeftaInseratPlugin: CAPPlugin, CAPBridgedPlugin {
             : UIColor(red: 0xfa / 255, green: 0xf6 / 255, blue: 0xef / 255, alpha: 1)
     }
 
+    /// Bewegung aus dem Handbuch (design/bewegung.md, 3.22): Swift liest keine Tokens, darum stehen die Werte
+    /// hier; `src/ui/bewegungSwift.test.ts` prüft sie gegen `design/tokens.css` (`--bw-kurz`, `--bw-weich`).
+    static let bwKurz: TimeInterval = 0.16
+    static let bwWeich1 = CGPoint(x: 0, y: 0)
+    static let bwWeich2 = CGPoint(x: 0.58, y: 1)
+
     private var knopfAnsicht: UIView?
     private let empfaenger = EinsetzenEmpfaenger(frame: .zero)
     private var tastaturOffen = false
@@ -455,8 +461,15 @@ public class HeftaInseratPlugin: CAPPlugin, CAPBridgedPlugin {
                 knopf.alpha = 0
                 oben.addSubview(knopf)
                 self.knopfAnsicht = knopf
-                UIView.animate(withDuration: 0.15, delay: verzoegerung,
-                               options: [.curveEaseOut, .allowUserInteraction]) { knopf.alpha = 1 }
+                // Handbuch 3.22: blendet in `kurz` mit `weich` ein, nach dem Ende des Wechsels.
+                let blende = UIViewPropertyAnimator(
+                    duration: HeftaInseratPlugin.bwKurz,
+                    timingParameters: UICubicTimingParameters(
+                        controlPoint1: HeftaInseratPlugin.bwWeich1,
+                        controlPoint2: HeftaInseratPlugin.bwWeich2))
+                blende.isUserInteractionEnabled = true
+                blende.addAnimations { knopf.alpha = 1 }
+                blende.startAnimation(afterDelay: verzoegerung)
             }
             // PC8 A1 (TestFlight 13.11.): Die Karte war leer. WebKit legt eigene Ansichten in die
             // Scroll-Ansicht und kann die Seite über den Knopf schieben. Darum liegt er bei jedem Setzen ganz

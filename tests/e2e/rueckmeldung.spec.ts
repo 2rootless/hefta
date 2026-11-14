@@ -120,7 +120,7 @@ test('Rutsch: Punkte, Personen, Zurück und Weiter; nichts geht verloren', async
   await page.getByRole('button', { name: 'Überspringen' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Gut gemacht.' })).toBeVisible();
   await expect(page.locator('.lead')).toContainText('Eine Unterlage ist drin.');
-  await expect(page.locator('.lead')).toContainText('Vier hast du übersprungen');
+  await expect(page.locator('.lead')).toContainText('Vier habt ihr übersprungen');
   await page.getByRole('button', { name: /^Selbstauskunft/ }).click();
   await expect(page.getByText('3 von 5')).toBeVisible();
   await expect(page.getByText('Für Lea')).toBeVisible();
@@ -223,7 +223,7 @@ test('Mappe teilen (B23): Satz, Liste, Stand unten, Auswahl je Person (ME5, ME8)
     .waitFor({ timeout: 30000 });
   // B23 „Mappe teilen“: Satz unter dem Titel, Liste, was drinliegt, Stand unten, „Als PDF teilen“.
   await expect(
-    page.getByText('Eine PDF mit Deckblatt und Lesehilfe. Ihr schickt sie, wohin ihr wollt.'),
+    page.getByText('Ein PDF mit Deckblatt und Lesehilfe. Ihr schickt es, wohin ihr wollt.'),
   ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Was in der Mappe liegt' })).toBeVisible();
   await expect(page.locator('ul.inhalt li').first()).toContainText('Selbst');
@@ -257,7 +257,7 @@ test('Mappe teilen (B23): Satz, Liste, Stand unten, Auswahl je Person (ME5, ME8)
   ).toBeVisible();
   await expect(page.getByRole('checkbox')).toHaveCount(0);
   await expect(
-    page.getByText('Eine PDF mit Deckblatt und Lesehilfe. Du schickst sie, wohin du willst.'),
+    page.getByText('Ein PDF mit Deckblatt und Lesehilfe. Du schickst es, wohin du willst.'),
   ).toBeVisible();
   expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
 });
@@ -486,7 +486,7 @@ test('Fehlt eine Datei, nennt die Mappe sie mit Rufname und führt zur Seite der
   // „Teilen“ bleibt: Der Rest der Mappe geht.
   await expect(page.getByRole('button', { name: 'Als PDF teilen' })).toBeVisible();
   await expect(page.getByText('Eine Datei fehlt in der Mappe')).toBeVisible();
-  await expect(page.getByText('Lad sie noch einmal hoch. Teilen geht trotzdem.')).toBeVisible();
+  await expect(page.getByText('Ladet sie noch einmal hoch. Teilen geht trotzdem.')).toBeVisible();
   await page.getByRole('link', { name: /^Bonitätsnachweis von Max/ }).click();
   await expect(page).toHaveURL(/#\/unterlage\/p-04-fertig-0\/bonitaet$/);
 });
@@ -736,7 +736,7 @@ test('Prüfhinweis Name: Übersicht, Person, Seite, Mappe; „Passt so“ gilt f
   await expect(page.getByText(/^Bitte prüfen: Auf dem Dokument steht Lea/)).toBeVisible();
 
   await page.evaluate(() => (location.hash = '#/mappe'));
-  await expect(page.getByText('Eine Sache solltest du vorher ansehen')).toBeVisible();
+  await expect(page.getByText('Eine Sache solltet ihr vorher ansehen')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Als PDF teilen' })).toBeVisible();
 
   await page.evaluate(() => (location.hash = '#/unterlage/p-04-fertig-0/bonitaet'));
@@ -933,10 +933,10 @@ test('„Seiten auswählen“ gleich nach dem Hochladen: Auch noch nicht geladen
   });
   // Nicht warten: Der Knopf erscheint, sobald die Datei offen ist, die Bilder kommen danach.
   await blatt.getByRole('button', { name: 'Seiten auswählen' }).click();
-  await expect(blatt.getByText('Tipp die Seiten an, die der Vermieter sehen soll.')).toBeVisible();
+  await expect(blatt.getByText('Tippt die Seiten an, die der Vermieter sehen soll.')).toBeVisible();
   await expect(blatt.getByRole('checkbox')).toHaveCount(40, { timeout: 60_000 });
   await expect(blatt.getByRole('checkbox', { checked: true })).toHaveCount(0);
-  await expect(blatt.getByText('Tipp die Seiten an, die der Vermieter sehen soll.')).toBeVisible();
+  await expect(blatt.getByText('Tippt die Seiten an, die der Vermieter sehen soll.')).toBeVisible();
 });
 
 test('„Speichern“ getippt, während die Datei noch lädt: Der Tipp geht nicht verloren', async ({
@@ -1011,7 +1011,7 @@ test('Farbe bei der Person: wählen, vergebene wird getauscht, wirkt überall (P
   await expect(flieder).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByText('· Flieder')).toBeVisible();
   await expect(
-    page.getByText(/Mit Buchstabe: hat schon jemand bei euch, dann tauscht ihr\.$/),
+    page.getByText(/Eine Farbe mit Buchstabe hat schon jemand\. Wählt ihr sie, tauscht ihr\.$/),
   ).toBeVisible();
 
   // Vergeben: gewählt wird trotzdem, Max bekommt dafür die bisherige. Noch ist nichts gespeichert.
@@ -1057,7 +1057,7 @@ test('Farbe bei der Person: wählen, vergebene wird getauscht, wirkt überall (P
   await page.goto('about:blank');
   await page.goto('/#/mappe/anpassen');
   await page.getByRole('radio', { name: /^Farben der Personen/ }).click();
-  await expect(page.getByText(/Tipp auf einen Namen, um die Farbe zu ändern\.$/)).toBeVisible();
+  await expect(page.getByText(/Tippt? auf einen Namen, um die Farbe zu ändern\.$/)).toBeVisible();
   await expect
     .poll(() =>
       page
@@ -1199,7 +1199,7 @@ test('Neues Logo: Symbole, Zeichen im Kopf, Ziel offen und erreicht, Kachel beim
   await page.goto('about:blank');
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
+    page.getByRole('heading', { level: 2, name: 'Fangt an, wo ihr gerade seid' }),
   ).toBeVisible();
   await expect(page.locator('.kopf .logo').first()).toBeVisible();
 });

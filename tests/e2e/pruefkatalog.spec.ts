@@ -955,7 +955,7 @@ const BILDER: Bild[] = [
     szenario: '26-fremde-zeichen',
     pfad: '/mappe',
     vorher: async (page) => {
-      await page.getByText(/solltest du vorher ansehen/).waitFor({ timeout: 30_000 });
+      await page.getByText(/sollte(st du|t ihr) vorher ansehen/).waitFor({ timeout: 30_000 });
       await vorschau(page);
     },
   },
@@ -1264,8 +1264,8 @@ const BILDER: Bild[] = [
     pfad: '/wohnung-neu/text',
     vorher: async (page) => {
       await katalogWuensche(page);
-      await page.getByRole('textbox', { name: 'Text der Anzeige hier einfügen' }).fill(IS24.text);
-      await page.getByRole('textbox', { name: 'Link zur Anzeige' }).fill(IS24.url);
+      await page.getByRole('textbox', { name: 'Text des Inserats hier einfügen' }).fill(IS24.text);
+      await page.getByRole('textbox', { name: 'Link zum Inserat' }).fill(IS24.url);
       await page.getByRole('button', { name: 'Eckdaten lesen' }).click();
       await page.getByRole('heading', { level: 1, name: 'Letzte Kontrolle' }).waitFor();
     },
@@ -1331,7 +1331,7 @@ const BILDER: Bild[] = [
       await los(page);
       await page.locator('[data-feld="pdf"]').setInputFiles(vielePfad);
       await page.getByRole('button', { name: 'Seiten auswählen' }).click();
-      await page.getByText('Tipp die Seiten an, die der Vermieter sehen soll.').waitFor();
+      await page.getByText(/^Tippt? die Seiten an, die der Vermieter sehen soll.$/).waitFor();
     },
   },
   {
@@ -1669,7 +1669,7 @@ const BILDER: Bild[] = [
     pfad: '/mappe',
     vorher: async (page) => {
       await versionenPatchen(page, '-0-bonitaet', FAKTEN({ woerter: ['lea', 'mustermann'] }));
-      await page.getByText(/solltest du vorher ansehen/).waitFor({ timeout: 30_000 });
+      await page.getByText(/sollte(st du|t ihr) vorher ansehen/).waitFor({ timeout: 30_000 });
       await vorschau(page);
     },
   },

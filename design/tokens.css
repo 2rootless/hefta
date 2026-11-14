@@ -42,6 +42,11 @@
   --termin: #2b5a86;
   --termin-soft: #e3ebf4;
   --termin-line: #a9bfd8;
+  /* B28b (DP21): Urteil „passt nicht“ und „offen“, Grund hinter dem Foto. */
+  --nicht: #26221e;
+  --nicht-text: #ffffff;
+  --offen-text: #71675d;
+  --foto-grund: #e9dcc9;
   --nah: #3a17a0;
   --nah-text: #3a17a0;
   --nah-hell: #efeaf8;
@@ -96,6 +101,10 @@
   --termin: #a9c8ee;
   --termin-soft: #1d2a38;
   --termin-line: #3f5a78;
+  --nicht: #f3ede4;
+  --nicht-text: #1b1814;
+  --offen-text: #9a8f81;
+  --foto-grund: #3a3128;
   --nah: #7400b2;
   --nah-text: #f3ede4;
   --nah-hell: #2c2540;
@@ -147,9 +156,17 @@
   --bw-blende: var(--bw-knapp);
   /* Nur bei „Bewegung reduzieren“: Wo B21 „blendet knapp ein“ sagt, überblendet dieses Token. */
   --bw-nur-reduziert: 0ms;
+  /* B28b (DP21, Handbuch design/bewegung.md): Eins wird zum anderen; bewusste Ausnahme von „höchstens
+     aufschlagen“, vom Auftraggeber gewählt. */
+  --bw-verwandeln: 700ms;
+  /* Wie lange eine kurze Meldung („Kopiert“) steht; keine Bewegung, bleibt darum auch bei „reduzieren“. */
+  --bw-verweilen: 2000ms;
   --bw-ziel: cubic-bezier(0.2, 0.7, 0.2, 1);
+  /* = cubic-bezier(0, 0, 0.58, 1), wie im Handbuch. */
   --bw-weich: ease-out;
   --bw-setzen: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Lange Wege, die man sehen soll: sanft los, gleichmäßig, weich an (DP21). */
+  --bw-gleiten: cubic-bezier(0.45, 0.05, 0.2, 1);
   --bw-gleich: linear;
 }
 
@@ -162,6 +179,7 @@
     --bw-mittel: 0ms;
     --bw-lang: 0ms;
     --bw-aufschlagen: 0ms;
+    --bw-verwandeln: 0ms;
     --bw-takt: 0ms;
     --bw-blende: 120ms;
     --bw-nur-reduziert: 120ms;

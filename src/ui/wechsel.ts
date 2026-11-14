@@ -37,8 +37,20 @@ export function wechselDauerToken(w: Wechsel): string {
   return w === 'folgen' ? '--bw-aufschlagen' : w === 'zurueck' ? '--bw-mittel' : '--bw-kurz';
 }
 
-/** Längster Wechsel samt Takt, mit Luft: danach ist jede Bewegung des Wechsels vorbei. */
-export const WECHSEL_HOECHSTENS_MS = 900;
+import { dauer } from './bewegung';
+
+/**
+ * Sicherung (Handbuch, Abschnitt 5; PC8 A5): das geplante Ende aller Bewegungen in `el` plus `knapp`,
+ * statt einer festen Zahl. Ein Wechsel mit Verwandeln dauert länger als die früheren 900 ms.
+ */
+export function sicherungMs(el: Element): number {
+  let ende = 0;
+  for (const a of el.getAnimations({ subtree: true })) {
+    const e = a.effect?.getComputedTiming().endTime;
+    if (typeof e === 'number' && Number.isFinite(e)) ende = Math.max(ende, e);
+  }
+  return ende + Math.max(dauer('knapp'), 120);
+}
 
 /**
  * PC8 A5: Die Bewegungen des Wechsels halten den Bildschirm bis zu ihrem Start unsichtbar (`backwards`).
@@ -50,10 +62,13 @@ export function wechselEnde(knoten: HTMLElement): { destroy(): void } {
   const ende = () => {
     if (knoten.className) knoten.className = '';
   };
-  const uhr = setTimeout(ende, WECHSEL_HOECHSTENS_MS);
+  let uhr: ReturnType<typeof setTimeout> | undefined;
+  // Erst wenn die Bewegungen des Wechsels laufen, steht ihr geplantes Ende fest.
+  const bild = requestAnimationFrame(() => (uhr = setTimeout(ende, sicherungMs(knoten))));
   document.addEventListener('visibilitychange', ende);
   return {
     destroy() {
+      cancelAnimationFrame(bild);
       clearTimeout(uhr);
       document.removeEventListener('visibilitychange', ende);
     },

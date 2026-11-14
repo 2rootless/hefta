@@ -1,15 +1,19 @@
 import { APP_NAME } from '../app/name';
 import de from './de.json';
+import { anrede, type Anrede } from './anrede.svelte';
 
 // Texte der Oberfläche. Startsprache Deutsch; weitere Sprachen bekommen eine eigene JSON-Datei
 // mit denselben Schlüsseln. Die erzeugten PDFs haben einen eigenen, festen deutschen Katalog.
 
 type Katalog = typeof de;
-type Mehrzahl = { one: string; other: string };
+type Mehrzahl = { one: string | Paar<string>; other: string | Paar<string> };
+/** Ein Text mit beiden Ansprachen (B28b): `t()` wählt nach der Anrede der App. */
+type Paar<T> = { ihr: T; du: T };
+type Blatt = string | Mehrzahl | Paar<string | Mehrzahl>;
 
 /** Alle Punkt-Pfade im Katalog, z. B. 'uebersicht.leer.titel'. Mehrzahl-Objekte zählen als Blatt. */
 type Pfade<T, P extends string = ''> = {
-  [K in keyof T & string]: T[K] extends string | Mehrzahl
+  [K in keyof T & string]: T[K] extends Blatt
     ? `${P}${K}`
     : T[K] extends readonly unknown[]
       ? never
@@ -46,20 +50,33 @@ function einsetzen(text: string, werte: Werte): string {
   });
 }
 
+function text(schluessel: TextSchluessel, werte: Werte, an: Anrede): string {
+  let eintrag = nachschlagen(schluessel);
+  // Paar und Mehrzahl in beliebiger Schachtelung: erst die Ansprache, dann die Zahl (oder umgekehrt).
+  for (let tiefe = 0; tiefe < 3 && eintrag && typeof eintrag === 'object'; tiefe++) {
+    if ('ihr' in eintrag && 'du' in eintrag) eintrag = (eintrag as Paar<unknown>)[an];
+    else if ('other' in eintrag) {
+      const formen = eintrag as Mehrzahl;
+      const anzahl = Number(werte.anzahl ?? 0);
+      eintrag = mehrzahlRegeln.select(anzahl) === 'one' ? formen.one : formen.other;
+    }
+  }
+  if (typeof eintrag === 'string') return einsetzen(eintrag, werte);
+  throw new Error(`Text fehlt: ${schluessel}`);
+}
+
 /**
  * Text zum Schlüssel. Mehrzahl über den Wert `anzahl`:
- * t('export.seiten', { anzahl: 3 }) → „3 Seiten“.
+ * t('export.seiten', { anzahl: 3 }) → „3 Seiten“. Hat der Text ein Paar „ihr“/„du“, gilt die Anrede der
+ * App (`anrede.svelte.ts`).
  */
 export function t(schluessel: TextSchluessel, werte: Werte = {}): string {
-  const eintrag = nachschlagen(schluessel);
-  if (typeof eintrag === 'string') return einsetzen(eintrag, werte);
-  if (eintrag && typeof eintrag === 'object' && 'other' in eintrag) {
-    const formen = eintrag as Mehrzahl;
-    const anzahl = Number(werte.anzahl ?? 0);
-    const form = mehrzahlRegeln.select(anzahl) === 'one' ? formen.one : formen.other;
-    return einsetzen(form, werte);
-  }
-  throw new Error(`Text fehlt: ${schluessel}`);
+  return text(schluessel, werte, anrede.wert);
+}
+
+/** Text in einer bestimmten Ansprache, unabhängig von der Anrede der App (etwa „Wer bist du?“). */
+export function tIn(an: Anrede, schluessel: TextSchluessel, werte: Werte = {}): string {
+  return text(schluessel, werte, an);
 }
 
 const datumLang = new Intl.DateTimeFormat(sprache, {

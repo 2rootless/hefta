@@ -859,7 +859,11 @@ export async function verwaisteDateienLoeschen(
   const genutzt = new Set([
     ...(await tx.objectStore('versionen').getAll()).flatMap((v) => [v.original, v.aufbereitet]),
     // Fotos der Besichtigung hängen am Heft, nicht an einer Version.
-    ...(await tx.objectStore('hefte').getAll()).flatMap((h) => h.fotos ?? []),
+    // Ebenso das Foto aus dem Inserat (B28b, K1).
+    ...(await tx.objectStore('hefte').getAll()).flatMap((h) => [
+      ...(h.fotos ?? []),
+      ...(h.foto ? [h.foto] : []),
+    ]),
   ]);
   for (const id of await tx.objectStore('dateien').getAllKeys()) {
     if (genutzt.has(id)) continue;
@@ -1072,6 +1076,8 @@ export async function heftFotoEntfernen(db: HeftaDb, heftId: Id, fotoId: Id): Pr
 export async function heftAnlegen(
   db: HeftaDb,
   entwurf: Pick<Heft, 'haushaltId' | 'adresse' | 'link' | 'quelle' | 'inseratText' | 'angaben'>,
+  /** Foto aus der Vorschau (B28b, K1); es kommt als Datei in `dateien`. */
+  foto?: Blob | null,
 ): Promise<Heft> {
   const zeit = jetzt();
   const heft: Heft = {
@@ -1084,6 +1090,7 @@ export async function heftAnlegen(
     ...entwurf,
   };
   if (!heft.angaben) delete heft.angaben;
+  if (foto) heft.foto = await dateiSpeichern(db, foto);
   await db.put('hefte', heft);
   return heft;
 }

@@ -260,6 +260,17 @@ export interface Heft extends Basis {
   spur?: SpurEintrag[];
   /** Fotos der Besichtigung (Zeile 9, B21): Kennungen im Speicherort `dateien`, nur auf dem Gerät. */
   fotos?: Id[];
+  /**
+   * Foto aus dem Inserat für den Kopf des Hefts (B28b, K1): Kennung im Speicherort `dateien`. Es kommt aus
+   * der Vorschau (E72, genau ein Laden) und wird nie nachgeladen. Fehlt es, zeigt das Heft das gezeichnete
+   * Feld.
+   */
+  foto?: Id;
+  /**
+   * PC12: Die Rückmeldung bei den Ergebnissen fragt je Heft höchstens einmal. Gesetzt nach einer Antwort
+   * oder „Nicht mehr fragen“; dann steht sie in diesem Heft nicht mehr.
+   */
+  rueckmeldungFertig?: true;
   /** Wie die Adresse in Version 1: erste Zeile Straße und Lage, zweite Postleitzahl und Ort. */
   adresse: string;
   /** Link zum Inserat; Hefta lädt ihn nie selbst. */
@@ -375,6 +386,8 @@ export interface Einstellungen {
   rueckmeldung?: Partial<Record<import('../rueckmeldung/fragen').Frage, string>>;
   /** Moment im Heft (B19): einmal gezeigt, abgeschickt oder „Nicht mehr fragen“. */
   rueckmeldungMomentFertig?: boolean;
+  /** PC12: Antworten auf die Rückmeldung im Heft, über alle Hefte; ab drei fragt Hefta nicht mehr. */
+  rueckmeldungAntworten?: number;
   /** Eigene Fragen für die Besichtigung (E52): gehören zum Gerät, nicht zum Haushalt (Planung 10i). */
   eigeneFragen?: string[];
   /**

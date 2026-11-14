@@ -1,5 +1,23 @@
-import { describe, expect, it } from 'vitest';
-import { datum, groesse, t } from './index';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { anrede } from './anrede.svelte';
+import { datum, groesse, t, tIn } from './index';
+
+// Die Sätze hier sind in der Fassung „du“ geschrieben; die Anrede der App setzt sonst App.svelte.
+beforeEach(() => {
+  anrede.wert = 'du';
+});
+
+describe('Ansprache „ihr“ und „du“ (B28b)', () => {
+  it('wählt die Fassung nach der Anrede der App, auch in der Mehrzahl', () => {
+    expect(t('rueckmeldung.mehr')).toBe('Mehr zu sagen? Schreib uns.');
+    anrede.wert = 'ihr';
+    expect(t('rueckmeldung.mehr')).toBe('Mehr zu sagen? Schreibt uns.');
+    expect(t('rutsch.endeUebersprungen', { anzahl: 3 })).toBe(
+      'Drei habt ihr übersprungen, sie bleiben auf der Übersicht offen.',
+    );
+    expect(tIn('du', 'rueckmeldung.mehr')).toBe('Mehr zu sagen? Schreib uns.');
+  });
+});
 
 describe('i18n', () => {
   it('liefert Texte zum Schlüssel', () => {

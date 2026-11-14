@@ -85,9 +85,11 @@ test('„Keine Antwort“ im Heft: nachfragen und Löschbitte, Hefta merkt sich 
   await hefteOhneAntwort(page, 2);
   await page.goto('/#/heft/ohne-1');
   await page.reload();
-  await expect(page.getByText('Seit drei Wochen keine Antwort.')).toBeVisible();
+  const stand = (name: RegExp) => page.getByRole('region', { name });
+  await expect(stand(/^Stand: Beworben\. Keine Antwort$/)).toBeVisible();
+  await expect(page.getByText(/Seit drei Wochen meldet sich niemand\./)).toBeVisible();
 
-  await page.getByRole('link', { name: 'Kurz nachfragen' }).click();
+  await page.getByRole('link', { name: /^Kurz nachfragen/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Kurz nachfragen' })).toBeVisible();
   await expect(page.getByLabel('Betreff')).toHaveValue('Nachfrage zur Wohnung Weg 2');
   await expect(page.getByLabel('Text')).toHaveValue(
@@ -97,35 +99,37 @@ test('„Keine Antwort“ im Heft: nachfragen und Löschbitte, Hefta merkt sich 
   await page.getByRole('button', { name: 'Mail öffnen' }).click();
   // E100: Ohne „gesendet“ aus dem Mailfenster fragt Hefta einmal; „Noch nicht“ lässt alles, wie es war.
   await page.getByRole('button', { name: 'Noch nicht' }).click();
-  await expect(page.getByText(/^Nachgefragt am /)).toHaveCount(0);
-  await page.getByRole('link', { name: 'Kurz nachfragen' }).click();
+  await expect(stand(/^Stand: Beworben\. Nachgefragt am /)).toHaveCount(0);
+  await page.getByRole('link', { name: /^Kurz nachfragen/ }).click();
   await page.getByRole('button', { name: 'Mail öffnen' }).click();
   await page.getByRole('button', { name: 'Ja, abgeschickt' }).click();
-  await expect(page.getByText(/^Nachgefragt am /)).toBeVisible();
+  await expect(stand(/^Stand: Beworben\. Nachgefragt am /)).toBeVisible();
   const mails = await page.evaluate(() => (window as unknown as { __mails: string[] }).__mails);
   expect(mails).toHaveLength(2);
   expect(mails[0]!.startsWith('mailto:?subject=Nachfrage%20zur%20Wohnung%20Weg%202&body=')).toBe(
     true,
   );
 
-  await page.getByRole('link', { name: 'Löschbitte schreiben' }).click();
+  // Nach der Nachfrage: ohne Antwort ablegen, dann um Löschung bitten (DP21).
+  await page.getByRole('button', { name: /^Ablegen/ }).click();
+  await expect(stand(/^Stand: Ergebnis\. Ohne Antwort abgelegt$/)).toBeVisible();
+  await page.getByRole('link', { name: /^Um Löschung bitten/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Löschbitte' })).toBeVisible();
   await expect(page.getByLabel('Betreff')).toHaveValue('Bitte um Löschung meiner Unterlagen');
   await page.getByRole('button', { name: 'Mail öffnen' }).click();
   await page.getByRole('button', { name: 'Ja, abgeschickt' }).click();
   await expect(
-    page.getByText(/^Löschbitte geschickt am .*Ob gelöscht wurde, kann Hefta nicht wissen\.$/),
+    page.getByText(/Löschbitte geschickt am .*Ob gelöscht wurde, kann Hefta nicht wissen\.$/),
   ).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Löschbitte schreiben' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /^Um Löschung bitten/ })).toHaveCount(0);
   // Datenspur (B21 „Was hinausging“): neueste zuerst.
-  const spur = page.locator('section.spur li');
+  const spur = page
+    .locator('section.block', { has: page.getByRole('heading', { name: 'Was hinausging' }) })
+    .locator('.zeile');
   await expect(spur).toHaveCount(2);
   await expect(spur.nth(0)).toContainText('· Löschbitte');
   await expect(spur.nth(0)).toContainText('Ob gelöscht wurde, kann Hefta nicht wissen.');
   await expect(spur.nth(1)).toContainText('· Nachfrage');
-
-  await page.getByRole('button', { name: 'Ablegen', exact: true }).click();
-  await expect(page.getByText('Das Heft liegt bei den abgelegten.')).toBeVisible();
 });
 
 test('Moment der Rückmeldung nach der Zusage: einmal, „Nicht mehr fragen“ beendet ihn (B19)', async ({

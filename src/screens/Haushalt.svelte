@@ -40,6 +40,13 @@
     ...mitglieder.filter((m) => m.zugehoerigkeit.rolle === 'mitmieter'),
   ]);
   const buergen = $derived(mitglieder.filter((m) => m.zugehoerigkeit.rolle === 'buerge'));
+  // PC10 (DP20): Solange die Einrichtung nicht weiß, wer einzieht, „ihr“. Danach ab zwei Personen „ihr“,
+  // allein „du“.
+  const leadIhr = $derived.by(() => {
+    const hh = daten.ansicht?.haushalt;
+    if (!hh || hh.einrichtungOffen) return true;
+    return mitglieder.length - buergen.length + hh.kinder + hh.weitereErwachsene > 1;
+  });
   const haushalt = $derived(daten.ansicht?.haushalt);
   const suffix = $derived(einrichtung ? '/einrichtung' : '');
   // Lange Namen nie mitten im Wort trennen: lieber kleinere Schrift (wie auf der Übersicht).
@@ -235,7 +242,9 @@
       {einrichtung ? t('einrichtung.haushalt.titel') : t('einrichtung.haushalt.titelBearbeiten')}
     </h1>
     <p class="lead">
-      {einrichtung ? t('einrichtung.haushalt.lead') : t('einrichtung.haushalt.leadBearbeiten')}
+      {einrichtung
+        ? t(leadIhr ? 'einrichtung.haushalt.leadIhr' : 'einrichtung.haushalt.leadDu')
+        : t('einrichtung.haushalt.leadBearbeiten')}
     </p>
   </div>
   {#if !einrichtung && mitglieder.length}

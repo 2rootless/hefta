@@ -258,6 +258,26 @@
       return t('selbstauskunft.offen', { anzahl: teil.offen });
     return t(`selbstauskunft.teil.${teil.id}Offen`);
   }
+
+  // Netto im Jahr (B28b, DP21): Hefta rechnet durch zwölf; gespeichert und in der Mappe steht der Monat.
+  let imJahr = $state(false);
+  let jahrEingabe = $state('');
+  const zahlAus = (s: string) => {
+    const n = Number(s.replace(/[\s.€]/g, '').replace(',', '.'));
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  function jahrUmschalten(jahr: boolean) {
+    if (jahr && !imJahr) {
+      const monat = zahlAus(String(eingabe.netto ?? ''));
+      jahrEingabe = monat ? new Intl.NumberFormat('de-DE').format(Math.round(monat * 12)) : '';
+    }
+    imJahr = jahr;
+  }
+  function jahrGesetzt(v: string) {
+    jahrEingabe = v;
+    const n = zahlAus(v);
+    eingabe.netto = n ? String(Math.round(n / 12)) : '';
+  }
 </script>
 
 {#snippet jaNein(wert: JaNein, setzen: (w: JaNein) => void, beschriftung: string)}
@@ -421,20 +441,56 @@
             </p>{/if}
         {:else if teil.id === 'einkommen'}
           {#if felder.has('nettoeinkommen')}
-            <label class="eingabe">
-              {person.lebenssituation === 'rente'
-                ? t('selbstauskunft.nettoRente')
-                : t('selbstauskunft.nettoKurz')}
-              <span class="euro">
-                <input
-                  bind:value={eingabe.netto}
-                  inputmode="numeric"
-                  autocomplete="off"
-                  {...weiterTaste(teil.id)}
-                />
-                <span aria-hidden="true">€</span>
-              </span>
-            </label>
+            {#if imJahr}
+              <label class="eingabe">
+                {person.lebenssituation === 'rente'
+                  ? t('selbstauskunft.nettoRente')
+                  : t('selbstauskunft.nettoKurz')}
+                <span class="euro">
+                  <input
+                    value={jahrEingabe}
+                    oninput={(e) => jahrGesetzt(e.currentTarget.value)}
+                    inputmode="numeric"
+                    autocomplete="off"
+                    {...weiterTaste(teil.id)}
+                  />
+                  <span aria-hidden="true">€</span>
+                </span>
+              </label>
+              {#if eingabe.netto}<p class="hinweis">
+                  {t('selbstauskunft.nettoJahrSatz', {
+                    betrag: `${new Intl.NumberFormat('de-DE').format(Number(eingabe.netto))} €`,
+                  })}
+                </p>{/if}
+            {:else}
+              <label class="eingabe">
+                {person.lebenssituation === 'rente'
+                  ? t('selbstauskunft.nettoRente')
+                  : t('selbstauskunft.nettoKurz')}
+                <span class="euro">
+                  <input
+                    bind:value={eingabe.netto}
+                    inputmode="numeric"
+                    autocomplete="off"
+                    {...weiterTaste(teil.id)}
+                  />
+                  <span aria-hidden="true">€</span>
+                </span>
+              </label>
+            {/if}
+            <!-- B28b (DP21): Netto im Monat oder im Jahr; in der Mappe steht immer der Monat. -->
+            <div class="jn" role="radiogroup" aria-label={t('selbstauskunft.nettoKurz')}>
+              {#each [false, true] as jahr (jahr)}
+                <button
+                  type="button"
+                  class="chip"
+                  role="radio"
+                  aria-checked={imJahr === jahr}
+                  onclick={() => jahrUmschalten(jahr)}
+                  >{jahr ? t('selbstauskunft.nettoJahr') : t('selbstauskunft.nettoMonat')}</button
+                >
+              {/each}
+            </div>
             <div class="jn" role="radiogroup" aria-label={t('selbstauskunft.nettoArt')}>
               {#each ['betrag', 'mindestens'] as const as art (art)}
                 <button

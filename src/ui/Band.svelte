@@ -15,7 +15,7 @@
 </script>
 
 <script lang="ts">
-  import { bewegungReduziert } from './bewegung';
+  import { bewegungReduziert, dauer, insHaus } from './bewegung';
   // Schwingendes Band links neben den Karten (design/stil-c.md, „Umsetzung des Bands“).
   // Zeilen setzen sich normal im Fluss; jede Zeile, die zum Band gehört, trägt data-band
   // („p“ Person, „track“ Station, „open“ Trennung) und bei Personen data-farbe, data-duenn, data-docs.
@@ -63,10 +63,18 @@
   let fuellenBeginn: number | null = null;
   let feiern = $state(false);
   const ruhig = bewegungReduziert;
-  const SANFT = 'calcMode="spline" keyTimes="0;1" keySplines="0.2 0 0 1"';
+  // Handbuch 3.19 „Farben laufen ins Haus“: Dauern und Kurve `ziel` aus den Tokens; SMIL liest keine
+  // CSS-Variablen, darum setzt das Modul die Werte. Unter „Bewegung reduzieren“ sind die Dauern 0 ms; dann
+  // gilt für die Blenden `blende`.
+  const bw = (was: 'luecke' | 'stein' | 'schritt' | 'haus'): number => {
+    const v = insHaus()[was];
+    return v > 0 ? v : dauer('blende') / 1000;
+  };
+  const versatz = () => insHaus().versatz;
+  const SANFT = () => `calcMode="spline" keyTimes="0;1" keySplines="${insHaus().keySplines}"`;
 
   function animation(attribut: string, werte: string, beginn: number, dauer: number): string {
-    return `<animate attributeName="${attribut}" values="${werte}" begin="${beginn.toFixed(3)}s" dur="${dauer}s" fill="freeze" ${SANFT}/>`;
+    return `<animate attributeName="${attribut}" values="${werte}" begin="${beginn.toFixed(3)}s" dur="${dauer}s" fill="freeze" ${SANFT()}/>`;
   }
 
   let kasten: HTMLDivElement | undefined = $state();
@@ -107,28 +115,28 @@
     if (ruhig())
       return (
         linie(ya, yb, farbe, 3, true) +
-        linie(ya, yb, farbe, breite, false, animation('opacity', '0;1', t0, 0.2))
+        linie(ya, yb, farbe, breite, false, animation('opacity', '0;1', t0, bw('luecke')))
       );
     let d = '';
     for (let y = ya; y <= yb; y += 3) d += `${d ? 'L' : 'M'}${X(y).toFixed(1)} ${y.toFixed(1)} `;
     return (
       linie(ya, yb, farbe, 3, true) +
-      `<path d="${d}" class="${farbe}" stroke-width="${breite}" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1">${animation('stroke-dashoffset', '1;0', t0, 0.24)}</path>`
+      `<path d="${d}" class="${farbe}" stroke-width="${breite}" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1">${animation('stroke-dashoffset', '1;0', t0, bw('luecke'))}</path>`
     );
   }
 
   /** Der alte Stein blendet aus und schrumpft. */
   function steinVergeht(x: number, y: number, art: string, vorher: SteinArt, t0: number) {
     const klasse = vorher === 'bald' ? 'stein-bald' : 'stein-fehlt';
-    const schrumpfen = ruhig() ? '' : animation('r', '12;4', t0, 0.24);
-    return `<g opacity="1"><circle cx="${x}" cy="${y}" r="12" class="${klasse}">${schrumpfen}</circle>${symbol(art, x, y)}${animation('opacity', '1;0', t0, 0.2)}</g>`;
+    const schrumpfen = ruhig() ? '' : animation('r', '12;4', t0, bw('stein'));
+    return `<g opacity="1"><circle cx="${x}" cy="${y}" r="12" class="${klasse}">${schrumpfen}</circle>${symbol(art, x, y)}${animation('opacity', '1;0', t0, bw('luecke'))}</g>`;
   }
 
   /** Stein, der zum Punkt wird: Der Punkt bleibt. */
   function steinZuPunkt(x: number, y: number, art: string, vorher: SteinArt, t0: number) {
     return (
       steinVergeht(x, y, art, vorher, t0) +
-      `<circle cx="${x}" cy="${y}" r="4.6" class="punkt" opacity="0">${animation('opacity', '0;1', t0, 0.2)}</circle>`
+      `<circle cx="${x}" cy="${y}" r="4.6" class="punkt" opacity="0">${animation('opacity', '0;1', t0, bw('luecke'))}</circle>`
     );
   }
 
@@ -139,7 +147,7 @@
       `<svg aria-hidden="true" x="${x - 6}" y="${y - 6}" width="12" height="12" viewBox="0 0 32 32" class="icon haken">${ICON.haken}</svg>`;
     return t0 === undefined
       ? stein
-      : `<g opacity="0">${stein}${animation('opacity', '0;1', t0 + 0.1, 0.2)}</g>`;
+      : `<g opacity="0">${stein}${animation('opacity', '0;1', t0 + versatz(), bw('luecke'))}</g>`;
   }
 
   /** Mehr Offenes, als in den Abschnitt passt: ein Stein mit Zahl. */
@@ -289,7 +297,7 @@
       // Alles da: nach dem letzten Stein läuft ein Leuchten in den Personenfarben einmal von oben
       // nach unten ins Haus und klingt dann aus. Es liegt unter den Farben und verdeckt nichts.
       const clip = `fuellen-${uid}`;
-      const t0 = fuellenBeginn + 0.24;
+      const t0 = fuellenBeginn + bw('stein');
       const leuchten = abschnitte
         .filter(({ z }) => z.dataset.band === 'p')
         .map(({ a, b, z }) =>
@@ -298,8 +306,8 @@
         .join('');
       out +=
         `<defs><clipPath id="${clip}"><rect x="-40" y="-20" width="160" height="0">` +
-        `${animation('height', `0;${Math.round(hoehe + 40)}`, t0, 0.6)}</rect></clipPath></defs>` +
-        `<g clip-path="url(#${clip})" opacity="0.5">${leuchten}${animation('opacity', '0.5;0', t0 + 0.6, 0.3)}</g>`;
+        `${animation('height', `0;${Math.round(hoehe + 40)}`, t0, bw('haus'))}</rect></clipPath></defs>` +
+        `<g clip-path="url(#${clip})" opacity="0.5">${leuchten}${animation('opacity', '0.5;0', t0 + bw('haus'), bw('schritt'))}</g>`;
     }
     out += farbig;
     svg.setAttribute('width', '80');

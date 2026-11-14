@@ -18,17 +18,17 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   await page.getByLabel('Telefon').press('Enter');
   await expect(page.getByLabel('E-Mail')).toBeFocused();
   await page.getByLabel('E-Mail').press('Enter');
-  await expect(page.getByLabel('Netto im Monat')).toBeFocused();
+  await expect(page.getByRole('textbox', { name: 'Netto im Monat' })).toBeFocused();
   await expect(page.getByRole('button', { name: /^Kontakt .*Ändern/ })).toBeVisible();
 
   // Einkommen offen lassen und zu den Fragen: Der gedämpfte Knopf führt zurück zum ersten fehlenden Teil.
   await page.getByRole('button', { name: /^Fragen, die Vermieter stellen dürfen/ }).click();
-  await expect(page.getByLabel('Netto im Monat')).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: 'Netto im Monat' })).toHaveCount(0);
   const weiter = page.getByRole('button', { name: 'Speichern und weiter' });
   await expect(weiter).toHaveAttribute('aria-disabled', 'true');
   await weiter.click({ force: true });
-  await expect(page.getByLabel('Netto im Monat')).toBeVisible();
-  await page.getByLabel('Netto im Monat').fill('2800');
+  await expect(page.getByRole('textbox', { name: 'Netto im Monat' })).toBeVisible();
+  await page.getByRole('textbox', { name: 'Netto im Monat' }).fill('2800');
   await page.getByRole('radio', { name: 'Mindestens' }).click();
 
   // Ein Ja als letzte Antwort lässt den Teil offen, die Erklärung darunter ist freiwillig (A3).
@@ -41,7 +41,7 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
       .click();
   await antwort('Insolvenzverfahren', 'Nein');
   await antwort('Räumungstitel', 'Ja');
-  const erklaerung = page.getByLabel(/Möchtest du es kurz erklären/);
+  const erklaerung = page.getByLabel(/^Kurz erklären\?/);
   await expect(erklaerung).toHaveCount(1);
   await erklaerung.fill('Zwei Monate 2023, längst beglichen.');
 
@@ -67,12 +67,12 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   // „Weiter: Einkommen“ mit dem Fokus noch im Feld: ein Tipp genügt, der Fokus steht danach in
   // „Netto im Monat“ (auf dem iPhone ging sonst erst die Tastatur zu und der Tipp verloren).
   await page.getByRole('button', { name: /^Einkommen .*Ändern/ }).click();
-  await page.getByLabel('Netto im Monat').fill('');
+  await page.getByRole('textbox', { name: 'Netto im Monat' }).fill('');
   await page.getByRole('button', { name: /^Kontakt .*Ändern/ }).click();
   await page.getByLabel('E-Mail').fill('max@example.org');
   await page.getByLabel('E-Mail').focus();
   await page.getByRole('button', { name: 'Weiter: Einkommen' }).click();
-  await expect(page.getByLabel('Netto im Monat')).toBeFocused();
+  await expect(page.getByRole('textbox', { name: 'Netto im Monat' })).toBeFocused();
 
   // Angaben eines Teils löschen, nach einer Rückfrage; der Teil ist danach wieder offen.
   await page.getByRole('button', { name: /^Kontakt .*Ändern/ }).click();

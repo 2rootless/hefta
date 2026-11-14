@@ -14,7 +14,7 @@ test('zeigt den ersten Start im Stil des Designs', async ({ page, browserName })
     page.getByRole('heading', { level: 1, name: /^(Guten Morgen|Hallo|Guten Abend)$/ }),
   ).toBeVisible();
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
+    page.getByRole('heading', { level: 2, name: 'Fangt an, wo ihr gerade seid' }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: /^Wer zieht ein\?/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /^Eine Wohnung gefunden\?/ })).toBeVisible();
@@ -95,7 +95,7 @@ test('öffnet offline aus dem Service Worker', async ({ page, context, browserNa
   await context.setOffline(true);
   await page.reload();
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
+    page.getByRole('heading', { level: 2, name: 'Fangt an, wo ihr gerade seid' }),
   ).toBeVisible();
   await page.goto('/#/technik-test');
   await expect(page.getByRole('heading', { level: 1, name: 'Technik-Test' })).toBeVisible();
@@ -197,7 +197,7 @@ test('ohne Speicher: ruhiger Hinweis statt leerer Seite, „Erneut versuchen“'
   });
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Hefta kommt gerade nicht an deine Daten.' }),
+    page.getByRole('heading', { level: 1, name: 'Hefta kommt gerade nicht an eure Daten.' }),
   ).toBeVisible();
   await expect(page.getByText('Hefta hat nichts gelöscht.', { exact: false })).toBeVisible();
   await expect(page.getByRole('listitem')).toHaveCount(3);
@@ -217,7 +217,7 @@ test('unerwarteter Fehler: Kasten mit „Noch einmal versuchen“, schließbar, 
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }).waitFor();
+  await page.getByRole('heading', { level: 2, name: 'Fangt an, wo ihr gerade seid' }).waitFor();
   const obenVorher = await page.locator('h1').evaluate((e) => e.getBoundingClientRect().top);
   await page.evaluate(() => {
     void Promise.reject(new Error('Testfehler'));

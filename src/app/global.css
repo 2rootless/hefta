@@ -599,3 +599,67 @@ a.listenzeile {
   -webkit-user-select: none;
   user-select: none;
 }
+
+/* Urteil zu einem Wunsch (B28b, DP21): Fläche und Zeichen, nie Farbe allein. passt: Kreis, knapp: halber
+   Kreis, passt nicht: Quadrat, offen: Ring. Im Heft unter „Zu euren Wünschen“ und auf den Karten. */
+.urteil {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 7px;
+  border-radius: var(--radius-full);
+  font-size: calc(12.5 * var(--px));
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.urteil::before {
+  content: '';
+  flex: none;
+  width: 9px;
+  height: 9px;
+}
+
+.urteil.passt {
+  background: var(--passt);
+  color: var(--passt-text);
+}
+
+.urteil.passt::before {
+  border-radius: 50%;
+  background: currentcolor;
+}
+
+.urteil.knapp {
+  background: var(--knapp);
+  color: var(--knapp-text);
+}
+
+.urteil.knapp::before {
+  border-radius: 50%;
+  background: linear-gradient(90deg, currentcolor 50%, transparent 50%);
+  box-shadow: inset 0 0 0 1.5px currentcolor;
+}
+
+.urteil.nicht {
+  background: var(--nicht);
+  color: var(--nicht-text);
+}
+
+.urteil.nicht::before {
+  border-radius: 2px;
+  background: currentcolor;
+}
+
+.urteil.offen {
+  box-shadow: inset 0 0 0 1.5px var(--line-strong);
+  background: transparent;
+  color: var(--offen-text);
+}
+
+.urteil.offen::before {
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px currentcolor;
+}

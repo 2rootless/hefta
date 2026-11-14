@@ -2,8 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { haushaltMitMax } from './einrichtung';
 import { ganzesBild } from './hefte-hilfen';
 
-// Zeile 9: Termin eintragen und ändern, „In den Kalender“ (im Browser eine .ics-Datei), „Stand selbst
-// setzen“, das Ergebnis und „Wieder hervorholen“. Die Hefte legt der Test direkt in die Datenbank.
+// Zeile 9: Termin eintragen und ändern, „In den Kalender“ (im Browser eine .ics-Datei), die Antworten im
+// Stand (DP21) und „Doch noch offen“. Die Hefte legt der Test direkt in die Datenbank.
 
 const JETZT = new Date(2026, 10, 8, 20, 0); // So, 8. Nov. 2026, abends
 
@@ -70,7 +70,7 @@ test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(JETZT);
 });
 
-test('Termin eintragen, in den Kalender, ändern, Ergebnis und wieder hervorholen (Zeile 9)', async ({
+test('Termin eintragen, in den Kalender, ändern, Absage und doch noch offen (Zeile 9, DP21)', async ({
   page,
 }) => {
   await haushaltMitMax(page);
@@ -81,12 +81,15 @@ test('Termin eintragen, in den Kalender, ändern, Ergebnis und wieder hervorhole
   ]);
   await heftOeffnen(page, 'muster');
   // Der Link oben heißt wie die Seite, aus der man kam (Design 12.11.).
-  await expect(page.locator('header.kopf').getByRole('link')).toHaveText('Wohnungen');
+  await expect(page.locator('header.bar').getByRole('link')).toContainText('Wohnungen');
 
-  await expect(page.getByRole('img', { name: 'Stand: Beworben' })).toBeVisible();
-  await expect(page.getByText(/^Beworben am 5\.\sNov\., seit 3 Tagen$/)).toBeVisible();
-  await expect(page.getByText(/Meldet sich jemand, trag den Termin ein\./)).toBeVisible();
-  await page.getByRole('link', { name: 'Termin eintragen' }).click();
+  const stand = (name: RegExp) => page.getByRole('region', { name });
+  await expect(stand(/^Stand: Beworben\. Beworben am 5\.\sNov\.$/)).toBeVisible();
+  await expect(
+    page.getByText(/^Seit 3 Tagen\. Meldet sich drei Wochen lang niemand/),
+  ).toBeVisible();
+  await expect(page.getByText('Hat sich jemand gemeldet?')).toBeVisible();
+  await page.getByRole('link', { name: /^Einladung zur Besichtigung/ }).click();
 
   // Termin: die nächsten vier Tage, Uhrzeit, Treffpunkt.
   await expect(page.getByRole('heading', { level: 1, name: 'Termin eintragen' })).toBeVisible();
@@ -103,9 +106,11 @@ test('Termin eintragen, in den Kalender, ändern, Ergebnis und wieder hervorhole
   await ganzesBild(page, 'termin.png');
   await page.getByRole('button', { name: 'Termin speichern' }).click();
 
-  // Zurück im Heft: Besichtigung mit Karte, Kalender, „Termin ändern“, „Stand selbst setzen“.
-  await expect(page.getByRole('img', { name: 'Stand: Besichtigung' })).toBeVisible();
-  await expect(page.getByRole('group')).toContainText('Klingeln bei Okafor');
+  // Zurück im Heft: Besichtigung mit der Termin-Karte im Stand (DP21).
+  const termin = stand(/^Stand: Besichtigung\. Besichtigung/);
+  await expect(termin).toBeVisible();
+  await expect(termin.locator('.karte')).toContainText('Klingeln bei Okafor');
+  await expect(termin.locator('.karte')).toContainText('17:30');
   const laden = page.waitForEvent('download');
   await page.getByRole('button', { name: 'In den Kalender' }).click();
   const datei = await laden;
@@ -140,30 +145,18 @@ test('Termin eintragen, in den Kalender, ändern, Ergebnis und wieder hervorhole
   await page.getByRole('button', { name: 'Anderer Tag' }).click();
   await page.getByLabel('Datum').fill('2026-11-20');
   await page.getByRole('button', { name: 'Termin speichern' }).click();
-  await expect(page.getByRole('group')).toContainText('Fr');
-  await expect(page.getByRole('group')).toContainText('20');
-
-  // Stand selbst setzen: Besichtigung ist gewählt; Ergebnis führt zur Frage.
-  await page.getByRole('link', { name: 'Stand selbst setzen' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Stand selbst setzen' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Besichtigung/ })).toHaveAttribute(
-    'aria-current',
-    'true',
-  );
-  await expect(page.getByText('„Keine Antwort“ setzt Hefta selbst')).toBeVisible();
-  await ganzesBild(page, 'stand.png');
-  await page.getByRole('button', { name: /^Ergebnis/ }).click();
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Wie ist es ausgegangen?' }),
+    stand(/^Stand: Besichtigung\. Besichtigung am Fr\., 20\.\sNov\., 17:30\sUhr$/),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Ich will nicht mehr' })).toBeVisible();
-  await page.getByRole('button', { name: 'Absage' }).click();
 
-  // Zurück im Heft, abgelegt; „Zurück“ führt nicht mehr durch Stand und Ergebnis.
-  await expect(page.getByRole('img', { name: 'Stand: Abgelegt' })).toBeVisible();
-  await expect(page.getByText(/^Absage am 8\.\sNov\.$/)).toBeVisible();
-  await page.getByRole('button', { name: 'Wieder hervorholen' }).click();
-  await expect(page.getByRole('img', { name: 'Stand: Besichtigung' })).toBeVisible();
+  // Absage aus dem Stand: abgelegt; „Doch noch offen“ holt den Termin zurück (DP21 statt „Stand
+  // selbst setzen“ und der Seite Ergebnis).
+  await expect(page.getByText('Kommt etwas dazwischen?')).toBeVisible();
+  await page.getByRole('button', { name: /^Absage/ }).click();
+  await expect(stand(/^Stand: Ergebnis\. Absage$/)).toBeVisible();
+  await expect(page.getByText(/^Das Heft liegt jetzt bei den abgelegten\./)).toBeVisible();
+  await page.getByRole('button', { name: '‹ Doch noch offen' }).click();
+  await expect(termin).toBeVisible();
 
   // E91: Termin entfernen, mit Rückfrage im Blatt. Danach „Beworben“ mit dem ersten Datum, und eine
   // Absage lässt sich weiter eintragen (Bedingung des Auftraggebers).
@@ -174,27 +167,19 @@ test('Termin eintragen, in den Kalender, ändern, Ergebnis und wieder hervorhole
   await expect(blatt).toContainText('Einen Eintrag in deinem Kalender löschst du dort selbst.');
   await ganzesBild(page, 'termin-entfernen.png');
   await blatt.getByRole('button', { name: 'Termin entfernen' }).click();
-  await expect(page.getByRole('img', { name: 'Stand: Beworben' })).toBeVisible();
-  await expect(page.getByText(/^Beworben am 5\.\sNov\., seit 3 Tagen$/)).toBeVisible();
+  await expect(stand(/^Stand: Beworben\. Beworben am 5\.\sNov\.$/)).toBeVisible();
   await page.goBack();
   await expect(page).not.toHaveURL(/\/termin$/);
   await page.goForward();
-  await page.getByRole('link', { name: 'Stand selbst setzen' }).click();
-  await expect(page.getByRole('button', { name: /^Beworben/ })).toHaveAttribute(
-    'aria-current',
-    'true',
-  );
-  await page.getByRole('button', { name: /^Ergebnis/ }).click();
-  await page.getByRole('button', { name: 'Absage' }).click();
-  await expect(page.getByRole('img', { name: 'Stand: Abgelegt' })).toBeVisible();
+  await page.getByRole('button', { name: /^Absage/ }).click();
+  await expect(stand(/^Stand: Ergebnis\. Absage$/)).toBeVisible();
 
-  // „Gemerkt“ nimmt Termin und Bewerbung zurück.
-  await page.getByRole('link', { name: 'Stand selbst setzen' }).click();
-  await page.getByRole('button', { name: /^Gemerkt/ }).click();
-  await expect(page.getByRole('img', { name: 'Stand: Gemerkt' })).toBeVisible();
+  // Zurück bis „Gemerkt“: Termin und Bewerbung sind weg.
+  await page.getByRole('button', { name: '‹ Doch noch offen' }).click();
+  await expect(stand(/^Stand: Beworben\. Beworben am 5\.\sNov\.$/)).toBeVisible();
+  await page.getByRole('button', { name: '‹ Doch noch nicht beworben' }).click();
+  await expect(stand(/^Stand: Gemerkt\. Gemerkt$/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'Termin ändern' })).toHaveCount(0);
-  await page.goBack();
-  await expect(page).not.toHaveURL(/\/stand$/);
 });
 
 test('Besichtigung vorbei: Ergebnis direkt im Heft (Zeile 9)', async ({ page }) => {
@@ -207,12 +192,13 @@ test('Besichtigung vorbei: Ergebnis direkt im Heft (Zeile 9)', async ({ page }) 
   ]);
   await heftOeffnen(page, 'vorbei');
   await expect(
-    page.getByText(/^Besichtigt am Fr, 6\.\sNov\. Wie ist es ausgegangen\?$/),
+    page.getByRole('region', { name: /^Stand: Besichtigung\. Besichtigt am 6\.\sNov\.$/ }),
   ).toBeVisible();
+  await expect(page.getByText('Wie ist es ausgegangen?')).toBeVisible();
   await expect(page.getByRole('button', { name: 'In den Kalender' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Zusage' }).click();
-  await expect(page.getByRole('img', { name: 'Stand: Abgelegt' })).toBeVisible();
-  await expect(page.getByText(/^Zusage am 8\.\sNov\.$/)).toBeVisible();
+  await page.getByRole('button', { name: /^Zusage/ }).click();
+  await expect(page.getByRole('region', { name: /^Stand: Ergebnis\. Zusage$/ })).toBeVisible();
+  await expect(page.getByText(/^Glückwunsch!/)).toBeVisible();
 });
 
 test('Termin entfernen ohne Kalender: kein Satz zum Kalender (Planung 12t)', async ({ page }) => {
@@ -304,26 +290,44 @@ test('Terminkarte nach B25 n1: 15 Fälle, Reiter, Satz, Band, immer gleich hoch 
     ['sechs', am(24, 11), 'im Dezember', 'Do, 24. Dez., 17:30'],
     ['zehn', am(23, 8, 2027), 'im September', 'Do, 23. Sept., 17:30'],
     ['dreizehn', am(9, 11, 2027), 'im Dezember 2027', 'Do, 9. Dez. 2027, 17:30'],
-    ['vorbei', am(10), 'vorbei', 'war am Di, 10. Nov.'],
-    ['zwei', am(30, 9), 'vorbei', 'war am Fr, 30. Okt.'],
     ['lang', am(17), 'nächste Woche', 'Dienstag nächster Woche, 17:30', LANG],
     ['ohne', am(13), 'morgen', 'morgen, 17:30', { treff: '' }],
   ];
-  await hefteAnlegen(
-    page,
-    faelle.map(([id, wann, , , extra]) => ({
-      ...heft(id, `Fall ${id}`, {
-        termin: { am: wann, ort: '', treffpunkt: extra?.treff ?? 'Klingeln' },
-      }),
-      // Die Adresse gehört ans Heft, nicht zu den Ereignissen.
-      ...(extra?.adresse ? { adresse: extra.adresse } : {}),
-    })),
-  );
+  // Seit DP21 steht die Karte nur noch oben in „Wohnungen“, für den nächsten Termin; im Heft zeigt der
+  // Stand den Termin. Darum liegt je Fall genau ein Heft in der Datenbank. Vergangene Termine zeigt die
+  // Liste nicht als Karte.
+  const nurDieses = async (h: unknown) => {
+    await page.evaluate(
+      () =>
+        new Promise<void>((fertig, fehler) => {
+          const r = indexedDB.open('hefta');
+          r.onsuccess = () => {
+            const tx = r.result.transaction('hefte', 'readwrite');
+            tx.objectStore('hefte').clear();
+            tx.oncomplete = () => {
+              r.result.close();
+              fertig();
+            };
+            tx.onerror = () => fehler(tx.error);
+          };
+          r.onerror = () => fehler(r.error);
+        }),
+    );
+    await hefteAnlegen(page, [h]);
+  };
+  const fall = (id: string, wann: string, extra?: { adresse?: string; treff?: string }) => ({
+    ...heft(id, `Fall ${id}`, {
+      termin: { am: wann, ort: '', treffpunkt: extra?.treff ?? 'Klingeln' },
+    }),
+    // Die Adresse gehört ans Heft, nicht zu den Ereignissen.
+    ...(extra?.adresse ? { adresse: extra.adresse } : {}),
+  });
   const hoehen = new Set<number>();
   const pruefen = async (id: string, reiter: string, satz: string, luecke: boolean) => {
-    await heftOeffnen(page, id);
+    await page.goto('/#/wohnungen');
+    await page.reload();
     // Der Name als Satz nach wortlaute-B25.md; das Datum trägt ein geschütztes Leerzeichen.
-    const karte = page.getByRole('group', {
+    const karte = page.getByRole('link', {
       name: `Besichtigung ${satz}, Fall ${id}`,
       exact: true,
     });
@@ -342,20 +346,18 @@ test('Terminkarte nach B25 n1: 15 Fälle, Reiter, Satz, Band, immer gleich hoch 
     hoehen.add(Math.round(box.height));
     return karte;
   };
-  for (const [id, , reiter, satz] of faelle) {
-    await pruefen(id, reiter, satz, ['drei', 'sechs', 'zehn', 'dreizehn', 'zwei'].includes(id));
+  for (const [id, wann, reiter, satz, extra] of faelle) {
+    await nurDieses(fall(id, wann, extra));
+    await pruefen(id, reiter, satz, ['drei', 'sechs', 'zehn', 'dreizehn'].includes(id));
     if (id === 'heute') await ganzesBild(page, 'karte-heute.png');
     if (id === 'morgen') await ganzesBild(page, 'karte-morgen.png');
     if (id === 'lang') await ganzesBild(page, 'karte-lang.png');
   }
   // Heute Sonntag: Montag ist „morgen“, der Sonntag darauf „nächste Woche“.
   await page.clock.setFixedTime(new Date(2026, 10, 15, 9, 0));
-  await hefteAnlegen(page, [
-    heft('so-mo', 'Fall so-mo', { termin: { am: am(16), ort: '', treffpunkt: 'Klingeln' } }),
-    heft('so-so', 'Fall so-so', { termin: { am: am(22), ort: '', treffpunkt: 'Klingeln' } }),
-  ]);
-  await page.reload();
+  await nurDieses(fall('so-mo', am(16)));
   await pruefen('so-mo', 'morgen', 'morgen, 17:30', false);
+  await nurDieses(fall('so-so', am(22)));
   await pruefen('so-so', 'nächste Woche', 'Sonntag nächster Woche, 17:30', false);
   // K1: alle Karten gleich hoch, auch mit langen Angaben und ohne Treffpunkt.
   expect([...hoehen]).toHaveLength(1);

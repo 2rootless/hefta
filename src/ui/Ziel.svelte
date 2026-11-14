@@ -64,7 +64,9 @@
     stroke: var(--ink);
     stroke-width: 2.2;
     stroke-linecap: round;
-    animation: funken 280ms ease-out 820ms backwards;
+    /* Handbuch 3.18: Beginn nach „Farben laufen ins Haus“ (verwandeln plus drei Takte), dann aufschlagen. */
+    animation: funken var(--bw-aufschlagen) var(--bw-weich)
+      calc(var(--bw-verwandeln) + 3 * var(--bw-takt)) backwards;
   }
 
   @keyframes funken {
@@ -84,9 +86,10 @@
     box-shadow: var(--shadow-goal);
   }
 
-  /* Wenn das Leuchten angekommen ist (nach 840 ms), hebt sich das Ziel einmal kurz. */
+  /* Wenn das Leuchten angekommen ist (Handbuch 3.18), hebt sich das Ziel einmal kurz. */
   .feiern {
-    animation: ankommen 280ms ease-out 820ms backwards;
+    animation: ankommen var(--bw-aufschlagen) var(--bw-weich)
+      calc(var(--bw-verwandeln) + 3 * var(--bw-takt)) backwards;
   }
 
   @keyframes ankommen {

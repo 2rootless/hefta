@@ -138,7 +138,7 @@ test('Fehler stehen getrennt, die Nummern zählen nur Mappen', async ({ page }, 
   await auswahl(page).setInputFiles(gross);
   const kasten = page.getByRole('region', { name: 'Nicht aufgenommen' });
   await expect(kasten.locator('li')).toHaveCount(5, { timeout: 30_000 });
-  await expect(kasten).toContainText('Keine PDF.');
+  await expect(kasten).toContainText('Kein PDF.');
   await expect(kasten).toContainText('Lässt sich nicht lesen');
   await expect(kasten).toContainText('Mit Passwort geschützt');
   await expect(kasten).toContainText('Steht schon in der Liste, als Nummer 1.');
