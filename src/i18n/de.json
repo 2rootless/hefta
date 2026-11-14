@@ -24,7 +24,11 @@
     "fertig": "Fertig"
   },
   "rueckmeldung": {
-    "titel": "Über {app}",
+    "titel": "Rückmeldung",
+    "freiwillig": {
+      "ihr": "Freiwillig. Ihr könnt jede Frage auslassen.",
+      "du": "Freiwillig. Du kannst jede Frage auslassen."
+    },
     "neinDanke": "Nein danke",
     "sendet": "Wird gesendet …",
     "mailZeile": {
@@ -357,6 +361,10 @@
       "du": "Was fehlt dir? Schreib uns."
     },
     "rueckmeldungBetreff": "Rückmeldung zu {app}",
+    "ueber": "Über {app}",
+    "rueckmeldung": "Rückmeldung geben",
+    "rueckmeldungUnter": "Freiwillig, {Zahl} kurze Fragen",
+    "rueckmeldungDanke": "Danke, beantwortet am {datum}",
     "mehrereGeraete": {
       "ihr": "Auf mehreren Geräten nutzen? Sagt uns, ob ihr das braucht",
       "du": "Auf mehreren Geräten nutzen? Sag uns, ob du das brauchst"
@@ -2294,18 +2302,18 @@
     "antwortAendern": "Antwort ändern: {antwort}",
     "eigeneFrage": "Eigene Frage",
     "eigeneHinzufuegen": "Hinzufügen",
-    "eigeneSatz": "Eigene Fragen schlägt {app} bei der nächsten Besichtigung wieder vor, nur auf diesem Gerät.",
+    "eigeneSatz": "Eigene Fragen schlägt {app} bei der nächsten Besichtigung wieder vor.",
     "mehr": "Mehr zu dieser Frage",
     "ausblendenNeu": "Ausblenden, auch in neuen Heften",
     "ausblendenHier": "Nur in diesem Heft ausblenden",
     "meldungNeu": "Ausgeblendet, auch in neuen Heften",
     "meldungHier": "In diesem Heft ausgeblendet",
-    "alle": "Alle {anzahl} Fragen",
-    "wiederZeigenAnzahl": {
-      "one": "Eine ausgeblendete Frage wieder zeigen",
-      "other": "{anzahl} ausgeblendete Fragen wieder zeigen"
-    },
-    "wiederZeigen": "Wieder zeigen",
+    "alle": "Alle {Zahl} Fragen",
+    "weniger": "Weniger zeigen",
+    "ausgeblendet": "{Zahl} ausgeblendet",
+    "ausgeblendetZeigen": "Zeigen",
+    "ausgeblendetVerbergen": "Verbergen",
+    "einblenden": "Einblenden",
     "auchNeu": "Auch in neuen Heften ausgeblendet",
     "bearbeiten": "Bearbeiten",
     "entfernen": "Frage entfernen",
@@ -2527,10 +2535,6 @@
     },
     "besichtigt": {
       "titel": "Besichtigt am {datum}",
-      "satz": {
-        "ihr": "Sagt der Vermieter zu oder ab, tragt es hier ein.",
-        "du": "Sagt der Vermieter zu oder ab, trag es hier ein."
-      },
       "frage": "Wie ist es ausgegangen?"
     },
     "zusage": {

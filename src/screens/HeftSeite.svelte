@@ -21,6 +21,7 @@
   import { plzTabelle } from '../ui/plz.svelte';
   import { einstellungenAendern, heftAendern } from '../storage/speicher';
   import Rueckmeldung from '../ui/Rueckmeldung.svelte';
+  import { empfangLive } from '../rueckmeldung/senden';
   import RueckmeldungMail from '../ui/RueckmeldungMail.svelte';
   import { passend } from '../ui/passend';
   import TabLeiste from '../ui/TabLeiste.svelte';
@@ -185,7 +186,10 @@
   // ---------- Rückmeldung bei den Ergebnissen (PC12: je Heft einmal, nach drei Antworten nicht mehr) ----
 
   const rueckmeldungZeigen = $derived(
-    !!heft && !heft.rueckmeldungFertig && (daten.einstellungen?.rueckmeldungAntworten ?? 0) < 3,
+    (empfangLive() || istAndroidApp()) &&
+      !!heft &&
+      !heft.rueckmeldungFertig &&
+      (daten.einstellungen?.rueckmeldungAntworten ?? 0) < 3,
   );
   // Nach einer Antwort bleibt „Danke“ stehen, bis das Heft wieder geöffnet wird.
   const rueckmeldungBeimOeffnen = untrack(() => rueckmeldungZeigen);
@@ -387,13 +391,34 @@
       </div>
       <div class="kopf">
         <!-- Lange Wörter nie mitten im Wort trennen: lieber kleinere Schrift (Prüfkatalog C2). -->
-        <h1 use:passend={TITEL_STUFEN} bind:this={nameEl}>{titel.text}</h1>
-        <p class="adr">{heftAdresseKurz(heft)}</p>
-        {#if eck}<p class="eck">{eck}</p>{/if}
-        <div class="links">
-          <a href={`#/heft/${heft.id}/merkmal`}>{t('heft.nameAendern')}</a>
+        <!-- PC23 B1: Stift neben dem Namen; „Zum Inserat ↗“ rechts neben Adresse und Eckdaten. -->
+        <div class="namezeile">
+          <h1 use:passend={TITEL_STUFEN} bind:this={nameEl}>{titel.text}</h1>
+          <a class="stift" href={`#/heft/${heft.id}/merkmal`} aria-label={t('heft.nameAendern')}
+            ><!-- Stift im Strich der Symbole (B11); ein eigenes Zeichen fehlt im Satz noch. -->
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 32 32"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              ><path d="M20.5 7.5l4 4L11 25H7v-4z" /><path d="M17.5 10.5l4 4" /></svg
+            ></a
+          >
+        </div>
+        <div class="angaben">
+          <div class="angaben-text">
+            <p class="adr">{heftAdresseKurz(heft)}</p>
+            {#if eck}<p class="eck">{eck}</p>{/if}
+          </div>
           {#if heft.link}
-            <a href={heft.link} target="_blank" rel="noopener noreferrer">{t('heft.zumInserat')}</a>
+            <a class="inserat" href={heft.link} target="_blank" rel="noopener noreferrer"
+              >{t('heft.zumInserat')}</a
+            >
           {/if}
         </div>
       </div>
@@ -472,11 +497,6 @@
       {/each}
     </section>
 
-    {#if heft.ereignisse.termin}
-      <!-- Fragen für die Besichtigung (E52): ab dem Termin, danach mit den Antworten. -->
-      <BesichtigungsFragen {heft} urteile={alleUrteile ?? []} {ihr} />
-    {/if}
-
     {#if daten.ansicht}
       <section class="block">
         <h2>{t(ihr ? 'heft.wuenscheIhr' : 'heft.wuenscheDu')}</h2>
@@ -495,6 +515,12 @@
           <a class="mehr" href="#/wuensche">{t('wuensche.festlegen')}</a>
         {/if}
       </section>
+    {/if}
+
+    <!-- PC23 B3: „Zu euren Wünschen“ steht über den Fragen. -->
+    {#if heft.ereignisse.termin}
+      <!-- Fragen für die Besichtigung (E52): ab dem Termin, danach mit den Antworten. -->
+      <BesichtigungsFragen {heft} urteile={alleUrteile ?? []} {ihr} />
     {/if}
 
     <section class="block">
@@ -615,22 +641,50 @@
     font-weight: 650;
   }
 
-  /* PC19 B3: Zwei Links, je eine eigene Zeile, mit Abstand zu den Eckdaten. */
-  .links {
+  .namezeile {
     display: flex;
-    flex-direction: column;
     align-items: flex-start;
-    margin-top: 10px;
+    gap: 4px;
   }
 
-  .links a {
+  .namezeile h1 {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .stift {
     display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: -8px -8px 0 0;
+    color: var(--accent-text);
+  }
+
+  .angaben {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .angaben-text {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .inserat {
+    display: inline-flex;
+    flex: none;
     align-items: center;
     min-height: 44px;
+    margin-top: -8px;
     color: var(--accent-text);
     font-size: calc(14 * var(--px));
     font-weight: 500;
     text-decoration: none;
+    white-space: nowrap;
   }
 
   /* Unter dem Stand: weiche Flächen, keine Rahmen (DP21). */

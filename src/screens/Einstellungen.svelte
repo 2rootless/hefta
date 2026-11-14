@@ -9,12 +9,15 @@
   import { tageSeit } from '../domain/zeit';
   import { backupAccept } from '../storage/backup';
   import { KATALOG_STAND } from '../domain/regelkatalog';
-  import { groesse, monatName, t } from '../i18n';
+  import { groesse, monatName, t, zahlwort } from '../i18n';
   import { speicherBelegt } from '../storage/speicher';
   import { einstellungenZustand } from '../ui/einstellungen.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import { passend, TITEL } from '../ui/passend';
   import Rueckmeldung from '../ui/Rueckmeldung.svelte';
+  import { empfangLive } from '../rueckmeldung/senden';
+  import { FRAGE_REIHE } from '../rueckmeldung/fragen';
+  import Sheet from '../ui/Sheet.svelte';
   import RueckmeldungMail from '../ui/RueckmeldungMail.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
   import { homescreenFragen } from '../ui/homescreen';
@@ -115,6 +118,15 @@
 
   onMount(() => {
     void speicherMessen();
+  });
+
+  // DP29: Rückmeldung als Zeile mit Blatt; nach einer Antwort „Danke, beantwortet am …“.
+  let rueckOffen = $state(false);
+  const rueckAm = $derived.by(() => {
+    const am = daten.einstellungen?.rueckmeldungAm;
+    return am
+      ? new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short' }).format(new Date(am))
+      : null;
   });
 </script>
 
@@ -253,13 +265,29 @@
   {/if}
 
   <section class="abschnitt" aria-labelledby="g-ueber">
-    <h2 id="g-ueber">{t('rueckmeldung.titel')}</h2>
-    <!-- E54 (B19 Fassung 4 und 5): Antworten zum Antippen, mit Rückfrage; längere Kommentare per Mail. -->
+    <h2 id="g-ueber">{t('einstellungen.ueber')}</h2>
     <!-- Unter Android ohne Internet-Berechtigung: statt der Fragen eine Mail (Planung 13.11.). -->
-    <div class="blatt-rueck">
-      {#if istAndroidApp()}<RueckmeldungMail />{:else}<Rueckmeldung />{/if}
-    </div>
+    {#if istAndroidApp()}
+      <div class="blatt-rueck"><RueckmeldungMail /></div>
+    {/if}
     <ul class="zeilen">
+      {#if !istAndroidApp() && empfangLive()}
+        <!-- DP29: eine Zeile; die Fragen stehen in einem Blatt von unten. -->
+        <li>
+          <button type="button" class="listenzeile" onclick={() => (rueckOffen = true)}>
+            <span class="tx"
+              ><b>{t('einstellungen.rueckmeldung')}</b><small
+                >{rueckAm
+                  ? t('einstellungen.rueckmeldungDanke', { datum: rueckAm })
+                  : t('einstellungen.rueckmeldungUnter', {
+                      Zahl: zahlwort(FRAGE_REIHE.length),
+                    })}</small
+              ></span
+            >
+            {@render pfeil()}
+          </button>
+        </li>
+      {/if}
       <li>
         <div class="listenzeile rueck">
           <span class="tx"
@@ -276,6 +304,11 @@
       </li>
     </ul>
   </section>
+
+  <Sheet bind:offen={rueckOffen} titel={t('rueckmeldung.titel')}>
+    <p class="rueck-satz">{t('rueckmeldung.freiwillig')}</p>
+    <Rueckmeldung />
+  </Sheet>
 
   <section class="abschnitt" aria-labelledby="g-app">
     <h2 id="g-app">{t('einstellungen.app')}</h2>
@@ -515,5 +548,20 @@
     font: inherit;
     font-weight: 600;
     cursor: pointer;
+  }
+
+  button.listenzeile {
+    width: 100%;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .rueck-satz {
+    margin: 0 0 12px;
+    color: var(--ink-muted);
   }
 </style>

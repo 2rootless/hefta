@@ -23,6 +23,7 @@
   import { t, type TextSchluessel } from '../i18n';
   import { einstellungenAendern, heftAendern } from '../storage/speicher';
   import { abschnitt, lauf, ruhig } from './bewegung';
+  import { zahlwort } from '../i18n';
   import Symbol from './Symbol.svelte';
 
   let { heft, urteile, ihr }: { heft: Heft; urteile: Urteil[]; ihr: boolean } = $props();
@@ -47,16 +48,26 @@
 
   // PC19 B7: Bei mehr als drei offenen Fragen stehen erst drei da, darunter „Alle {n} Fragen“.
   let alleOffen = $state(false);
+  /** „Zwei ausgeblendet“; eine Frage: „Eine ausgeblendet“. */
+  const anzahlAmAnfang = (n: number) => {
+    const w = n === 1 ? 'eine' : zahlwort(n);
+    return w.charAt(0).toUpperCase() + w.slice(1);
+  };
   let restEl = $state<HTMLElement | null>(null);
-  const geteilt = $derived(liste.fragen.filter((f) => !beantwortet(f.id)).length > 3);
+  // DP29: Bis drei Fragen keine Teilung; darüber die ersten drei, „Alle … Fragen“ und „Weniger zeigen“.
+  const geteilt = $derived(liste.fragen.length > 3);
   const erste = $derived(geteilt ? liste.fragen.slice(0, 3) : liste.fragen);
   const rest = $derived(geteilt ? liste.fragen.slice(3) : []);
-  function alleZeigen() {
-    alleOffen = true;
-    if (!restEl) return;
-    const l = lauf();
+  function alleZeigen(zeigen = true) {
     const el = restEl;
-    ruhig(() => abschnitt(l, el, true));
+    if (!el) {
+      alleOffen = zeigen;
+      return;
+    }
+    const l = lauf();
+    if (zeigen) alleOffen = true;
+    ruhig(() => abschnitt(l, el, zeigen));
+    if (!zeigen) l.danach(() => (alleOffen = false));
     l.start();
   }
 
@@ -399,43 +410,44 @@
       {@render fragZeile(f)}
     {/each}
     {#if rest.length}
-      <!-- PC19 B7: ab mehr als drei offenen Fragen nur die ersten drei (Muster „Abschnitt erscheint“). -->
+      <!-- PC19 B7, DP29: die übrigen Fragen; nur Überblenden (PC21). -->
       <div class="rest" bind:this={restEl} hidden={!alleOffen}>
         {#each rest as f (f.id)}
           {@render fragZeile(f)}
         {/each}
       </div>
-      {#if !alleOffen}
-        <button class="plus alle-knopf" type="button" aria-expanded="false" onclick={alleZeigen}
-          >{t('fragen.alle', { anzahl: liste.fragen.length })}</button
-        >
-      {/if}
+    {/if}
+    {#if versteckteOffen}
+      <!-- DP29: Ausgeblendete gedämpft unter den anderen, je mit „Einblenden“. -->
+      {#each liste.versteckt as v (v.thema)}
+        {@const frage = text({ id: v.thema, thema: v.thema, offen: false, text: null })}
+        <div class="zeile versteckt-zeile">
+          <span class="kasten-leer" aria-hidden="true"></span>
+          <div class="tx">
+            <span class="frage">{frage}</span>
+            {#if v.auchNeu}<small>{t('fragen.auchNeu')}</small>{/if}
+          </div>
+          <button
+            class="einblenden"
+            type="button"
+            aria-label={`${t('fragen.einblenden')}: ${frage}`}
+            onclick={() => wiederZeigen(v.thema)}>{t('fragen.einblenden')}</button
+          >
+        </div>
+      {/each}
     {/if}
     {#if liste.versteckt.length}
-      <button
-        class="plus versteckt-knopf"
-        type="button"
-        aria-expanded={versteckteOffen}
-        onclick={() => (versteckteOffen = !versteckteOffen)}
-        >{t('fragen.wiederZeigenAnzahl', { anzahl: liste.versteckt.length })}</button
-      >
-      {#if versteckteOffen}
-        <ul class="versteckt">
-          {#each liste.versteckt as v (v.thema)}
-            {@const frage = text({ id: v.thema, thema: v.thema, offen: false, text: null })}
-            <li>
-              <span class="frage">{frage}</span>
-              {#if v.auchNeu}<small>{t('fragen.auchNeu')}</small>{/if}
-              <button
-                class="notieren"
-                type="button"
-                aria-label={`${t('fragen.wiederZeigen')}: ${frage}`}
-                onclick={() => wiederZeigen(v.thema)}>{t('fragen.wiederZeigen')}</button
-              >
-            </li>
-          {/each}
-        </ul>
-      {/if}
+      <p class="leise-zeile">
+        <span>{t('fragen.ausgeblendet', { Zahl: anzahlAmAnfang(liste.versteckt.length) })}</span>
+        <button
+          type="button"
+          aria-expanded={versteckteOffen}
+          onclick={() => (versteckteOffen = !versteckteOffen)}
+          >{t(
+            versteckteOffen ? 'fragen.ausgeblendetVerbergen' : 'fragen.ausgeblendetZeigen',
+          )}</button
+        >
+      </p>
     {/if}
     {#if neuOffen}
       <form
@@ -455,11 +467,28 @@
         />
         <button class="hinzu" type="submit">{t('fragen.eigeneHinzufuegen')}</button>
       </form>
-    {:else}
-      <button class="plus" type="button" onclick={eigeneOeffnen}
-        ><Symbol name="plus" groesse={20} /><span>{t('fragen.eigeneFrage')}</span></button
-      >
     {/if}
+    <!-- DP29: eine Zeile, oben feine Linie: links Alle oder Weniger, rechts Eigene Frage. -->
+    <div class="fuss">
+      {#if geteilt}
+        <button
+          class="plus"
+          type="button"
+          aria-expanded={alleOffen}
+          onclick={() => alleZeigen(!alleOffen)}
+          ><span
+            >{alleOffen
+              ? t('fragen.weniger')
+              : t('fragen.alle', { Zahl: zahlwort(liste.fragen.length) })}</span
+          ><Symbol name={alleOffen ? 'auf' : 'ab'} groesse={16} /></button
+        >
+      {/if}
+      {#if !neuOffen}
+        <button class="plus rechts" type="button" onclick={eigeneOeffnen}
+          ><Symbol name="plus" groesse={16} /><span>{t('fragen.eigeneFrage')}</span></button
+        >
+      {/if}
+    </div>
   </div>
   <p class="klein">{t('fragen.eigeneSatz')}</p>
 </section>
@@ -680,25 +709,67 @@
     cursor: pointer;
   }
 
-  .versteckt-knopf {
+  /* DP29: Fuß der Liste, ausgeblendete Fragen. */
+  .fuss {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0 12px;
+    min-height: 44px;
+    margin-top: 4px;
     border-top: 1px solid var(--line);
   }
 
-  .versteckt {
-    margin: 0;
-    padding: 0 14px 8px 48px;
-    list-style: none;
+  .fuss .rechts {
+    margin-left: auto;
   }
 
-  .versteckt li {
+  .leise-zeile {
     display: flex;
-    flex-direction: column;
-    padding: 8px 0 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 10px;
+    margin: 4px 0 0;
+    padding: 0 14px;
     color: var(--ink-muted);
+    font-size: calc(14 * var(--px));
   }
 
-  .versteckt small {
+  .leise-zeile button,
+  .einblenden {
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .einblenden {
+    flex: none;
+    font-size: calc(13 * var(--px));
+  }
+
+  .versteckt-zeile {
+    opacity: 0.6;
+  }
+
+  .versteckt-zeile small {
+    display: block;
     font-size: calc(12 * var(--px));
+  }
+
+  .kasten-leer {
+    flex: none;
+    box-sizing: border-box;
+    width: 22px;
+    height: 22px;
+    margin: 11px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 6px;
   }
 
   .bearbeiten {

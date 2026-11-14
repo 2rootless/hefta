@@ -70,6 +70,7 @@
     aus = Object.fromEntries(Object.entries(aus).filter(([k]) => k !== f));
     await einstellungenAendern(await db(), {
       rueckmeldung: { ...(daten.einstellungen?.rueckmeldung ?? {}), [f]: a },
+      rueckmeldungAm: new Date().toISOString(),
     });
     hierGesendet = { ...hierGesendet, [f]: a };
     await neuLaden();

@@ -209,7 +209,7 @@
       case 'besichtigt':
         return {
           titel: t('stand.besichtigt.titel', { datum: tagKurz(e.termin!.am) }),
-          satz: t('stand.besichtigt.satz'),
+          // PC23 B2: kein Satz „Sagt der Vermieter zu oder ab …“ mehr.
           frage: t('stand.besichtigt.frage'),
           antworten: [
             {
@@ -218,7 +218,14 @@
             },
             absage(),
             nichtMehr(),
+            // PC23 A1: Auch nach dem Termin lässt er sich ändern und entfernen.
+            {
+              text: t('stand.termin.aendern'),
+              leise: true,
+              aktion: { href: `#/heft/${id}/termin` },
+            },
           ],
+          zurueck: { text: t('stand.termin.entfernen'), tun: terminWeg },
         };
       case 'zusage':
         return {

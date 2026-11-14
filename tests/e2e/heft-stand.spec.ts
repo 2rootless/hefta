@@ -228,7 +228,7 @@ test('Fragen für die Besichtigung: weglassen, abhaken, Antwort, eigene Frage (E
 
   const fragen = page.getByRole('region', { name: /Fragen für die Besichtigung/ });
   // PC19 B7: Bei mehr als drei offenen Fragen stehen erst drei da.
-  await fragen.getByRole('button', { name: /^Alle \d+ Fragen$/ }).click();
+  await fragen.getByRole('button', { name: /^Alle \S+ Fragen$/ }).click();
   await expect(fragen).toContainText('0 von 9');
   await expect(fragen).toContainText(
     'Nicht in der Liste, weil das Inserat es schon sagt: Heizung, Kaution.',
@@ -262,7 +262,7 @@ test('Fragen für die Besichtigung: weglassen, abhaken, Antwort, eigene Frage (E
   await page.reload();
   await expect(fragen).toContainText('2 von 10');
   await heftOeffnen(page, 'fragen2');
-  await fragen.getByRole('button', { name: /^Alle \d+ Fragen$/ }).click();
+  await fragen.getByRole('button', { name: /^Alle \S+ Fragen$/ }).click();
   // Das zweite Heft nennt eine Warmmiete, aber keine Kaution: zehn plus die eigene Frage.
   await expect(fragen).toContainText('0 von 11');
   await expect(fragen.getByRole('checkbox', { name: 'Wo stehen die Mülltonnen?' })).toBeVisible();
@@ -375,7 +375,7 @@ test('Fragen ausblenden: nur hier, auch in neuen Heften, Rückgängig, wieder ze
   await heftOeffnen(page, 'aus1');
   const fragen = page.getByRole('region', { name: /Fragen für die Besichtigung/ });
   // PC19 B7: Bei mehr als drei offenen Fragen stehen erst drei da.
-  await fragen.getByRole('button', { name: /^Alle \d+ Fragen$/ }).click();
+  await fragen.getByRole('button', { name: /^Alle \S+ Fragen$/ }).click();
   const zeile = (text: RegExp) =>
     fragen.locator('.zeile').filter({ has: page.getByRole('checkbox', { name: text }) });
   const menue = async (text: RegExp) =>
@@ -420,16 +420,17 @@ test('Fragen ausblenden: nur hier, auch in neuen Heften, Rückgängig, wieder ze
   await expect(meldung).toBeHidden({ timeout: 4000 });
 
   // Am Ende der Liste: wieder zeigen.
-  await fragen.getByRole('button', { name: '2 ausgeblendete Fragen wieder zeigen' }).click();
+  // DP29: leise Zeile „Zwei ausgeblendet · Zeigen“, die Fragen gedämpft mit „Einblenden“.
+  await expect(fragen.locator('.leise-zeile')).toContainText('Zwei ausgeblendet');
+  await fragen.getByRole('button', { name: 'Zeigen', exact: true }).click();
   await expect(
-    fragen.locator('.versteckt li').filter({ hasText: 'Internetanschluss' }),
+    fragen.locator('.versteckt-zeile').filter({ hasText: 'Internetanschluss' }),
   ).toContainText('Auch in neuen Heften ausgeblendet');
   await ganzesBild(page, 'fragen-ausgeblendet.png');
-  await fragen.getByRole('button', { name: /Wieder zeigen: Gibt es Keller/ }).click();
+  await fragen.getByRole('button', { name: /Einblenden: Gibt es Keller/ }).click();
   await expect(fragen).toContainText('1 von 9');
-  await expect(
-    fragen.getByRole('button', { name: 'Eine ausgeblendete Frage wieder zeigen' }),
-  ).toBeVisible();
+  await expect(fragen.locator('.leise-zeile')).toContainText('Eine ausgeblendet');
+  await expect(fragen.getByRole('button', { name: 'Verbergen', exact: true })).toBeVisible();
 
   // Ein neues Heft danach: Internet und Mängel fehlen, Keller ist da. Ein älteres bleibt unverändert.
   await hefteAnlegen(page, [
@@ -437,13 +438,13 @@ test('Fragen ausblenden: nur hier, auch in neuen Heften, Rückgängig, wieder ze
     heft('aus3', 'Dachgeschoss', mitTermin),
   ]);
   await heftOeffnen(page, 'aus2');
-  await fragen.getByRole('button', { name: /^Alle \d+ Fragen$/ }).click();
+  await fragen.getByRole('button', { name: /^Alle \S+ Fragen$/ }).click();
   await expect(fragen.getByRole('checkbox', { name: /Internetanschluss/ })).toHaveCount(0);
   await expect(fragen.getByRole('checkbox', { name: /Mängel, Feuchtigkeit/ })).toHaveCount(0);
   await expect(fragen.getByRole('checkbox', { name: /Keller, Fahrradraum/ })).toBeVisible();
   await expect(fragen).toContainText('0 von 8');
   await heftOeffnen(page, 'aus3');
-  await fragen.getByRole('button', { name: /^Alle \d+ Fragen$/ }).click();
+  await fragen.getByRole('button', { name: /^Alle \S+ Fragen$/ }).click();
   await expect(fragen).toContainText('0 von 10');
 
   // Eigene Frage: bearbeiten und entfernen, mit Rückgängig.
@@ -467,4 +468,31 @@ test('Fragen ausblenden: nur hier, auch in neuen Heften, Rückgängig, wieder ze
   // Auch in den anderen Heften weg.
   await heftOeffnen(page, 'aus1');
   await expect(fragen.getByRole('checkbox', { name: /Fahrräder/ })).toHaveCount(0);
+});
+
+test('PC23 A1: Termin in der Vergangenheit ändern und entfernen; aus „Besichtigt“ führt ein Weg zurück', async ({
+  page,
+}) => {
+  await page.goto('/#/wohnungen');
+  await hefteAnlegen(page, [
+    heft('vorbei', 'Altbau am Kanal', {
+      beworben: { am: tag(-6), weg: 'mail', sicher: true },
+      termin: { am: tag(-2, 17), ort: '', treffpunkt: '' },
+    }),
+  ]);
+  await heftOeffnen(page, 'vorbei');
+  const stand = page.getByRole('region', { name: /^Stand: / });
+  await expect(stand.getByRole('heading', { level: 2, name: /^Besichtigt am/ })).toBeVisible();
+  // B2: kein Satz „Sagt der Vermieter zu oder ab …“
+  await expect(stand).not.toContainText('Sagt der Vermieter');
+
+  // Ändern: auf einen anderen vergangenen Tag
+  await stand.getByRole('link', { name: 'Termin ändern' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Termin ändern' })).toBeVisible();
+  await page.getByRole('button', { name: 'Termin speichern' }).click();
+  await expect(stand.getByRole('heading', { level: 2, name: /^Besichtigt am/ })).toBeVisible();
+
+  // Entfernen: zurück auf „Beworben“
+  await stand.getByRole('button', { name: '‹ Termin entfernen' }).click();
+  await expect(stand.getByRole('heading', { level: 2, name: /beworben/i })).toBeVisible();
 });

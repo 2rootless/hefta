@@ -389,7 +389,11 @@ test('PC21: Liste und Heft wechseln mit Foto nur per Blende, nichts fliegt, nich
         // Nur Deckkraft (und die Pflichtfelder der Schlüsselbilder), keine Lage, Größe oder Form.
         fremd: [
           ...new Set(
-            art.flat().filter((k) => !['offset', 'computedOffset', 'easing', 'composite', 'opacity'].includes(k)),
+            art
+              .flat()
+              .filter(
+                (k) => !['offset', 'computedOffset', 'easing', 'composite', 'opacity'].includes(k),
+              ),
           ),
         ],
       };

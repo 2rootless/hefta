@@ -384,6 +384,8 @@ export interface Einstellungen {
   version1Eingeordnet?: Zeitpunkt;
   /** Rückmeldung (E54): abgeschickte Antworten je Frage, nur auf dem Gerät, damit Hefta „Deine Antwort“ zeigt. */
   rueckmeldung?: Partial<Record<import('../rueckmeldung/fragen').Frage, string>>;
+  /** DP29: wann zuletzt eine Antwort abgeschickt wurde („Danke, beantwortet am …“). */
+  rueckmeldungAm?: Zeitpunkt;
   /** Moment im Heft (B19): einmal gezeigt, abgeschickt oder „Nein danke“. */
   rueckmeldungMomentFertig?: boolean;
   /** PC12: Antworten auf die Rückmeldung im Heft, über alle Hefte; ab drei fragt Hefta nicht mehr. */

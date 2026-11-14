@@ -45,6 +45,49 @@ async function hefteOhneAntwort(page: Page, anzahl: number) {
   );
 }
 
+/** Ein Heft mit Bewerbung und Besichtigung vor zwei Tagen: Zusage und Absage stehen an. */
+async function besuchtesHeft(page: Page) {
+  await page.evaluate(
+    () =>
+      new Promise<void>((fertig, fehler) => {
+        const r = indexedDB.open('hefta');
+        r.onsuccess = () => {
+          const db = r.result;
+          const tx = db.transaction(['hefte'], 'readwrite');
+          const vor = new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString();
+          tx.objectStore('hefte').put({
+            id: 'besucht',
+            createdAt: vor,
+            updatedAt: vor,
+            haushaltId: null,
+            adresse: 'Weg 9\n20259 Hamburg',
+            link: null,
+            quelle: '',
+            inseratText: null,
+            kennung: 'k-besucht',
+            ereignisse: {
+              beworben: { am: vor, weg: 'mail', sicher: true },
+              gefragtAm: null,
+              termin: {
+                am: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
+                ort: '',
+                treffpunkt: '',
+              },
+              ergebnis: null,
+            },
+            notiz: '',
+          });
+          tx.oncomplete = () => {
+            db.close();
+            fertig();
+          };
+          tx.onerror = () => fehler(tx.error);
+        };
+        r.onerror = () => fehler(r.error);
+      }),
+  );
+}
+
 test('Ab drei Heften ohne Antwort: Hinweis auf Löschbitten, „Alle 3 ablegen“, Rückgängig', async ({
   page,
 }) => {
@@ -135,46 +178,12 @@ test('„Keine Antwort“ im Heft: nachfragen und Löschbitte, Hefta merkt sich 
 test('Moment der Rückmeldung nach der Zusage: einmal, „Nein danke“ beendet ihn (B19)', async ({
   page,
 }) => {
+  // PC23 A3: Der Empfang ist noch nicht deployt; der Test schaltet ihn an.
+  await page.addInitScript(() => {
+    (globalThis as { __heftaEmpfangTest?: boolean }).__heftaEmpfangTest = true;
+  });
   await haushaltMitMax(page);
-  await page.evaluate(
-    () =>
-      new Promise<void>((fertig, fehler) => {
-        const r = indexedDB.open('hefta');
-        r.onsuccess = () => {
-          const db = r.result;
-          const tx = db.transaction(['hefte'], 'readwrite');
-          const vor = new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString();
-          tx.objectStore('hefte').put({
-            id: 'besucht',
-            createdAt: vor,
-            updatedAt: vor,
-            haushaltId: null,
-            adresse: 'Weg 9\n20259 Hamburg',
-            link: null,
-            quelle: '',
-            inseratText: null,
-            kennung: 'k-besucht',
-            ereignisse: {
-              beworben: { am: vor, weg: 'mail', sicher: true },
-              gefragtAm: null,
-              termin: {
-                am: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
-                ort: '',
-                treffpunkt: '',
-              },
-              ergebnis: null,
-            },
-            notiz: '',
-          });
-          tx.oncomplete = () => {
-            db.close();
-            fertig();
-          };
-          tx.onerror = () => fehler(tx.error);
-        };
-        r.onerror = () => fehler(r.error);
-      }),
-  );
+  await besuchtesHeft(page);
   await page.goto('/#/heft/besucht');
   await page.reload();
   await expect(page.getByText('Hat dir Hefta bei der Bewerbung geholfen?')).toHaveCount(0);
@@ -184,4 +193,15 @@ test('Moment der Rückmeldung nach der Zusage: einmal, „Nein danke“ beendet 
   await expect(page.getByText('Hat dir Hefta bei der Bewerbung geholfen?')).toHaveCount(0);
   await page.reload();
   await expect(page.getByText('Hat dir Hefta bei der Bewerbung geholfen?')).toHaveCount(0);
+});
+
+test('PC23 A3: Ohne Empfang keine Rückmeldung im Heft, kein Fehler', async ({ page }) => {
+  await haushaltMitMax(page);
+  await besuchtesHeft(page);
+  await page.goto('/#/heft/besucht');
+  await page.reload();
+  await page.getByRole('button', { name: 'Zusage', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 2, name: /Zusage/ })).toBeVisible();
+  await expect(page.getByText(/Hefta bei der Bewerbung geholfen/)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Nein danke' })).toHaveCount(0);
 });

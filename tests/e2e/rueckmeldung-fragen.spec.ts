@@ -12,6 +12,10 @@ import { HEUTE } from './szenarien';
 test.use({ serviceWorkers: 'block' });
 
 test.beforeEach(async ({ page }) => {
+  // PC23 A3: Ohne deployten Empfang zeigt Hefta die Fragen nicht; der Test schaltet ihn an.
+  await page.addInitScript(() => {
+    (globalThis as { __heftaEmpfangTest?: boolean }).__heftaEmpfangTest = true;
+  });
   await cspMelden(page);
   await page.clock.setFixedTime(HEUTE);
 });
@@ -32,6 +36,12 @@ async function einstellungen(page: Page) {
   await page.locator('h1').first().waitFor();
   await page.evaluate(() => (location.hash = '#/einstellungen'));
   await expect(page.getByRole('heading', { level: 2, name: 'Über Hefta' })).toBeVisible();
+  // DP29: Die Fragen stehen in einem Blatt hinter „Rückmeldung geben“.
+  await expect(
+    page.getByRole('button', { name: /Rückmeldung geben\s*Freiwillig, vier kurze Fragen/ }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: /^Rückmeldung geben/ }).click();
+  await expect(page.getByRole('dialog', { name: 'Rückmeldung' })).toBeVisible();
 }
 
 test('vier Fragen; Abbrechen sendet nichts, Abschicken nur Frage und Antwort', async ({ page }) => {
@@ -93,6 +103,11 @@ test('vier Fragen; Abbrechen sendet nichts, Abschicken nur Frage und Antwort', a
 
   // Gemerkt nur auf dem Gerät: Nach dem Neuladen steht die Antwort noch da, ohne neuen Aufruf.
   await page.reload();
+  // DP29: Nach dem Neuladen ist das Blatt zu; die Zeile sagt Danke, die Antwort steht im Blatt.
+  await expect(
+    page.getByRole('button', { name: /^Rückmeldung geben\s*Danke, beantwortet am/ }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: /^Rückmeldung geben/ }).click();
   await expect(page.getByText('Eure Antwort: Teils')).toBeVisible();
   expect(angekommen).toHaveLength(1);
 
@@ -103,7 +118,7 @@ test('vier Fragen; Abbrechen sendet nichts, Abschicken nur Frage und Antwort', a
     'true',
   );
   await geholfen.getByRole('button', { name: 'Ja' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Abschicken' }).click();
+  await page.getByRole('dialog').last().getByRole('button', { name: 'Abschicken' }).click();
   await expect(page.getByText('Eure Antwort: Ja')).toBeVisible();
   expect(angekommen.map((r) => JSON.parse(r.postData()!))).toEqual([
     { f: 'geholfen', a: 'teils' },
@@ -118,7 +133,7 @@ test('ohne Netz: Hinweis, die Wahl bleibt, nichts wird nachgeschickt', async ({ 
   await einstellungen(page);
   const naechstes = page.getByRole('group', { name: 'Was soll Hefta als Nächstes können?' });
   await naechstes.getByRole('button', { name: 'Lage auf einer Karte' }).click();
-  const fenster = page.getByRole('dialog');
+  const fenster = page.getByRole('dialog').last();
   await fenster.getByRole('button', { name: 'Abschicken' }).click();
   const aus = 'Gerade keine Verbindung. Versucht es später noch einmal.';
   await expect(fenster.getByText(aus)).toBeVisible();
@@ -134,7 +149,7 @@ test('ohne Netz: Hinweis, die Wahl bleibt, nichts wird nachgeschickt', async ({ 
   expect(angekommen).toHaveLength(0);
   // Erst ein neuer Tipp öffnet das Fenster wieder.
   await naechstes.getByRole('button', { name: 'Lage auf einer Karte' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Abschicken' }).click();
+  await page.getByRole('dialog').last().getByRole('button', { name: 'Abschicken' }).click();
   await expect(page.getByText('Eure Antwort: Lage auf einer Karte')).toBeVisible();
   expect(angekommen).toHaveLength(1);
 });

@@ -8,6 +8,17 @@ import type { Antwort, Frage } from './fragen';
 /** Die eine erlaubte Adresse (CSP, check-dist). Hefta im Web ruft denselben Empfang vom eigenen Ursprung. */
 export const EMPFANG = 'https://hefta.de/api/rueckmeldung';
 
+/**
+ * PC23 A3: Der Empfang auf hefta.de ist noch nicht deployt (ein POST bekommt 405). Bis er live ist, zeigt
+ * Hefta die Fragen zum Abschicken nicht an, statt einen Fehler zu melden. Mit dem Deploy des Empfangs
+ * (nur mit „Ja, deployen“) `EMPFANG_DEPLOYT` auf `true` setzen. Unter Android bleibt die Mail (RueckmeldungMail).
+ */
+const EMPFANG_DEPLOYT = false;
+
+/** Ist der Empfang da? Browsertests schalten ihn mit `__heftaEmpfangTest` an, um das Verhalten zu prüfen. */
+export const empfangLive = (): boolean =>
+  EMPFANG_DEPLOYT || (globalThis as { __heftaEmpfangTest?: boolean }).__heftaEmpfangTest === true;
+
 export async function abschicken(
   f: Frage,
   a: Antwort,
