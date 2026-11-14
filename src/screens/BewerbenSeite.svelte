@@ -252,10 +252,6 @@
     zurueckGehen(`/heft/${id}`);
   }
 
-  function springen(nach: string) {
-    document.getElementById(nach)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-  }
-
   const SCHRITTE = ['anschreiben', 'angaben', 'mappe', 'abschicken'] as const;
   // Planung 12z: mit Leerzeichen vor und nach dem Punkt; als Wert, sonst kürzt Svelte die Leerzeichen.
   const TRENNER = ' · ';
@@ -264,19 +260,11 @@
 {#snippet kopf(nr: number)}
   {@const schritt = SCHRITTE[nr - 1]!}
   <h2 class="schritt" id="schritt-{schritt}">
-    <!-- Nummer und Titel als Einheit: Wird es eng, rutscht „überspringen“ in die nächste Zeile (C21). -->
+    <!-- Nummer und Titel als Einheit. PC20 (B8): „Diesen Schritt auslassen“ entfällt. -->
     <span class="titelzeile"
       ><span class="nr" aria-hidden="true">{nr}</span><span>{t(`bewerben.schritt.${schritt}`)}</span
       ></span
     >
-    {#if nr < 4}
-      <button
-        class="ueber"
-        type="button"
-        aria-label={t('bewerben.ueberspringenLabel', { schritt: t(`bewerben.schritt.${schritt}`) })}
-        onclick={() => springen(`schritt-${SCHRITTE[nr]}`)}>{t('bewerben.ueberspringen')}</button
-      >
-    {/if}
   </h2>
 {/snippet}
 
@@ -499,19 +487,6 @@
     background: var(--ink);
     color: var(--ground);
     font-size: calc(13 * var(--px));
-  }
-
-  .ueber {
-    min-height: 44px;
-    margin-left: auto;
-    padding: 0 2px;
-    border: 0;
-    background: none;
-    color: var(--ink-muted);
-    font: inherit;
-    font-size: calc(13 * var(--px));
-    font-weight: 500;
-    cursor: pointer;
   }
 
   /* Die vier Schritte als weiche Flächen ohne Linie (DP21). */

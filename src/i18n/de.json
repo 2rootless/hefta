@@ -2346,8 +2346,6 @@
     "satzPortalIhr": "Im Portal: Text ins Nachrichtenfeld einsetzen. Die Mappe schickt ihr, sobald der Vermieter euch eine Mailadresse nennt oder nach Unterlagen fragt.",
     "satzPortalDu": "Im Portal: Text ins Nachrichtenfeld einsetzen. Die Mappe schickst du, sobald der Vermieter dir eine Mailadresse nennt oder nach Unterlagen fragt.",
     "satzWebsite": "Auf der Website ein Formular ausfüllen. Die Angaben stehen unten zum Kopieren.",
-    "ueberspringen": "Diesen Schritt auslassen",
-    "ueberspringenLabel": "{schritt} auslassen",
     "schritt": {
       "anschreiben": "Anschreiben",
       "angaben": "Was das Inserat wissen will",
