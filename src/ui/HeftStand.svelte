@@ -22,15 +22,7 @@
   import { tagKurz } from '../domain/heftKarte';
   import { t, type TextSchluessel } from '../i18n';
   import { anrede } from '../i18n/anrede.svelte';
-  import {
-    abschliessen,
-    abschnitt,
-    bewegungReduziert,
-    hoeheGleitet,
-    lauf,
-    verwandeln,
-    wechseln,
-  } from './bewegung';
+  import { abschliessen, abschnitt, hoeheGleitet, lauf, ruhig, wechseln } from './bewegung';
 
   let {
     heft,
@@ -329,7 +321,6 @@
   let eZuletzt: HeftEreignisse | null = null;
   let buehne = $state<HTMLDivElement | null>(null);
   /** Die getippte Antwort, wenn der Wechsel von einem Tipp kommt. */
-  let held: HTMLElement | null = null;
   let vomTipp = false;
   let zuletzt = '';
 
@@ -369,17 +360,14 @@
     neuEl.classList.add('frei');
     buehne.style.height = `${hAlt}px`;
     const hNeu = neuEl.offsetHeight;
-    const titelAlt = inhalt(vorher, eAlt).titel;
-    const titelNeu = inhalt(neu).titel;
-    const titelEl = neuEl.querySelector<HTMLElement>('h2');
-    const hz =
-      held && !bewegungReduziert() && alt.contains(held) && titelAlt !== titelNeu && titelEl
-        ? verwandeln(lf, buehne, alt, neuEl, held, titelEl, { r })
-        : { schrumpfAb: wechseln(lf, buehne, alt, neuEl, { r }) };
-    held = null;
-    hoeheGleitet(lf, buehne, hAlt, hNeu, hz);
-    if (spur && spur.hidden === neu.ort >= 1 && heft.spur?.length)
-      abschnitt(lf, spur, neu.ort >= 1);
+    // PC21 (DP28): immer die ruhige Fassung, kein Verwandeln. `verwandeln()` bleibt im Modul.
+    const b0 = buehne;
+    ruhig(() => {
+      const hz = { schrumpfAb: wechseln(lf, b0, alt, neuEl, { r }) };
+      hoeheGleitet(lf, b0, hAlt, hNeu, hz);
+      if (spur && spur.hidden === neu.ort >= 1 && heft.spur?.length)
+        abschnitt(lf, spur, neu.ort >= 1);
+    });
     const b = buehne;
     lf.danach(() => {
       anzeige = anzeige.slice(-1);
@@ -389,10 +377,9 @@
     lf.start();
   }
 
-  async function antwort(a: Antwort, el: HTMLElement) {
+  async function antwort(a: Antwort) {
     abschliessen();
     if ('tun' in a.aktion) {
-      held = el;
       vomTipp = true;
       await aendern(a.aktion.tun($state.snapshot(heft.ereignisse) as HeftEreignisse));
     } else if ('knopf' in a.aktion) a.aktion.knopf();
@@ -400,7 +387,6 @@
 
   async function zurueckTippen(tun: (e: HeftEreignisse) => HeftEreignisse) {
     abschliessen();
-    held = null;
     vomTipp = true;
     await aendern(tun($state.snapshot(heft.ereignisse) as HeftEreignisse));
   }
@@ -464,8 +450,7 @@
           class="antw"
           class:haupt={a.haupt}
           class:leise={a.leise}
-          onclick={(ev) =>
-            antwort(a, (ev.target as Element).closest<HTMLElement>('.antw') ?? ev.currentTarget)}
+          onclick={() => antwort(a)}
           ><span class="antw-text"
             >{a.text}{#if a.unter}<small>{a.unter}</small>{/if}</span
           ><i aria-hidden="true">›</i></button

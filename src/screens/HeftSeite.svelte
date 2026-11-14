@@ -29,7 +29,7 @@
   import HeftFotos from '../ui/HeftFotos.svelte';
   import HeftStand from '../ui/HeftStand.svelte';
   import { foto, fotoLaden, fotoVergessen } from '../ui/heftFoto.svelte';
-  import { abschnitt, blende, lauf } from '../ui/bewegung';
+  import { abschnitt, blende, lauf, ruhig } from '../ui/bewegung';
   import { flugFuer, landen, merken } from '../ui/heftFlug';
   import { sicherungMs, wechselArt } from '../ui/wechsel';
   import Zurueck from '../ui/Zurueck.svelte';
@@ -204,7 +204,7 @@
         return;
       }
       const l = lauf();
-      abschnitt(l, el, false);
+      ruhig(() => abschnitt(l, el, false));
       l.danach(() => (rueckmeldungWeg = true));
       l.start();
     }, warten);

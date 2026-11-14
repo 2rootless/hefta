@@ -20,9 +20,39 @@ export type Dauer =
   | 'verweilen';
 export type Kurve = 'ziel' | 'weich' | 'setzen' | 'gleiten' | 'gleich';
 
-/** „Bewegung reduzieren“ ist an. */
+/** Während `ruhig()` läuft, gilt die ruhige Fassung, auch ohne „Bewegung reduzieren“ (PC21). */
+let ruhigErzwungen = 0;
+
+/** „Bewegung reduzieren“ ist an, oder die Stelle verlangt die ruhige Fassung. */
 export function bewegungReduziert(): boolean {
-  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  return (
+    ruhigErzwungen > 0 || (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false)
+  );
+}
+
+/**
+ * PC21 (DP28): Die Bewegungen in `f` nehmen immer die ruhige Fassung. Die Bewegungen werden in den
+ * Funktionen des Moduls sofort angelegt, darum reicht es, die Regel für die Dauer des Aufrufs zu setzen.
+ */
+export function ruhig<T>(f: () => T): T {
+  ruhigErzwungen += 1;
+  try {
+    return f();
+  } finally {
+    ruhigErzwungen -= 1;
+  }
+}
+
+/**
+ * Ruhiger Seitenwechsel (PC21): Erst geht die eine Ansicht (`knapp`), dann kommt die andere (`knapp`),
+ * linear. Bei „Bewegung reduzieren“ mit der ruhigen Blende.
+ */
+export function ueberblenden(l: Lauf, von: HTMLElement, nach: HTMLElement): void {
+  const b = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ? ruhigeBlende()
+    : dauer('knapp');
+  l.an(von, [{ opacity: 1 }, { opacity: 0 }], { duration: b, easing: 'linear' });
+  l.an(nach, [{ opacity: 0 }, { opacity: 1 }], { delay: b, duration: b, easing: 'linear' });
 }
 
 function wert(name: string): string {

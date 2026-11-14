@@ -126,6 +126,21 @@ const geplant = (page: Page) =>
     ),
   );
 
+/** Wie viele Schlüsselbilder etwas verschieben oder unscharf machen (die ruhige Fassung hat keine). */
+const verschoben = (page: Page) =>
+  page.evaluate(
+    () =>
+      document
+        .getAnimations()
+        .filter((a) => !(a.effect as KeyframeEffect).target?.classList.contains('marke'))
+        .flatMap((a) => (a.effect as KeyframeEffect).getKeyframes())
+        .filter(
+          (k) =>
+            (k.transform && k.transform !== 'none') ||
+            (k.filter && String(k.filter).includes('blur')),
+        ).length,
+  );
+
 async function heftOeffnen(
   page: Page,
   o: { breite?: number; zoom?: number; dunkel?: boolean } = {},
@@ -169,13 +184,14 @@ for (const fall of [
   { name: '390 hell', breite: 390 },
   { name: '320 mit 130 % dunkel', breite: 320, zoom: 1.3, dunkel: true },
 ]) {
-  test(`P1, P2, P9: Verwandeln und Wechseln, ${fall.name}`, async ({ page }) => {
+  test(`P1, P2, P9: Wechseln, immer ruhig (PC21), ${fall.name}`, async ({ page }) => {
     await heftOeffnen(page, fall);
-    // Verwandeln: „Wir haben uns schon beworben“ wird „Heute beworben“.
+    // PC21 (DP28): Auch ohne „Bewegung reduzieren“ kein Verwandeln, nur die ruhige Fassung.
     await tippenUndWarten(page, /schon beworben/);
-    expect(await page.locator('.flug-text').count()).toBe(1);
+    expect(await page.locator('.flug-text, .flug-flaeche').count()).toBe(0);
+    expect(await verschoben(page)).toBe(0);
     const lang = await geplant(page);
-    const f1 = await durchgehen(page, lang, 'Verwandeln');
+    const f1 = await durchgehen(page, lang, 'Wechseln ruhig');
     // Wechseln: „‹ Doch noch nicht beworben“ (der Titel kommt nicht aus einer Antwort).
     await expect(page.getByRole('heading', { level: 2, name: 'Heute beworben' })).toBeVisible();
     await merken(page);
@@ -184,7 +200,7 @@ for (const fall of [
     const f2 = await durchgehen(page, await geplant(page), 'Wechseln');
     expect([...f1, ...f2]).toEqual([]);
     // P9: kein Wechsel länger als rund 1 s bis zum letzten Teil.
-    test.info().annotations.push({ type: 'P9', description: `Verwandeln ${Math.round(lang)} ms` });
+    test.info().annotations.push({ type: 'P9', description: `Wechseln ${Math.round(lang)} ms` });
     expect(lang).toBeLessThanOrEqual(1100);
     await expect(page.getByRole('heading', { level: 2, name: 'Gemerkt' })).toBeVisible();
   });
@@ -197,18 +213,7 @@ test('P3: Ruhige Fassung, kein Flug, nichts verschiebt sich, P1 und P2 halten', 
   await heftOeffnen(page);
   await tippenUndWarten(page, /schon beworben/);
   expect(await page.locator('.flug-text, .flug-flaeche').count()).toBe(0);
-  const bewegt = await page.evaluate(
-    () =>
-      document
-        .getAnimations()
-        .flatMap((a) => (a.effect as KeyframeEffect).getKeyframes())
-        .filter(
-          (k) =>
-            (k.transform && k.transform !== 'none') ||
-            (k.filter && String(k.filter).includes('blur')),
-        ).length,
-  );
-  expect(bewegt).toBe(0);
+  expect(await verschoben(page)).toBe(0);
   expect(await durchgehen(page, await geplant(page), 'ruhig')).toEqual([]);
 });
 
@@ -275,15 +280,15 @@ test('P6: Ohne Animation: alles abgebrochen, jedes Teil der neuen Lage voll sich
   expect(unsichtbar).toBe(0);
 });
 
-for (const ms of [500, 700, 900]) {
-  test(`P7: verwandeln = ${ms} ms, P1 bis P3`, async ({ page }) => {
+for (const ms of [80, 120, 240]) {
+  test(`P7: Blende = ${ms} ms, P1 bis P3 (ruhig, PC21)`, async ({ page }) => {
     await heftOeffnen(page);
     await page.evaluate(
-      (d) => document.documentElement.style.setProperty('--bw-verwandeln', `${d}ms`),
+      (d) => document.documentElement.style.setProperty('--bw-blende', `${d}ms`),
       ms,
     );
     await tippenUndWarten(page, /schon beworben/);
-    expect(await durchgehen(page, await geplant(page), `verwandeln ${ms}`)).toEqual([]);
+    expect(await durchgehen(page, await geplant(page), `Blende ${ms}`)).toEqual([]);
   });
 }
 
@@ -355,29 +360,7 @@ async function fotoAnHeft(page: Page) {
   );
 }
 
-/** Das fliegende Bild mitten im Flug: Lage und Größe im Verhältnis zu Start und Ziel. */
-async function flugMitte(page: Page) {
-  await page.waitForFunction(() => !!document.querySelector('.flug-bild'));
-  return page.evaluate(() => {
-    const alle = document.getAnimations();
-    alle.forEach((a) => a.pause());
-    const fb = document.querySelector<HTMLElement>('.flug-bild')!;
-    const anim = alle.find((a) => (a.effect as KeyframeEffect).target === fb)!;
-    const ende = Number(anim.effect!.getComputedTiming().endTime);
-    const r = (t: number) => {
-      anim.currentTime = t;
-      const q = fb.getBoundingClientRect();
-      const img = fb.querySelector('img')!.getBoundingClientRect();
-      return { l: q.left, t: q.top, w: q.width, h: q.height, iw: img.width, ih: img.height };
-    };
-    const werte = [r(0), r(ende / 2), r(ende - 1)];
-    const lage = getComputedStyle(fb).position;
-    alle.forEach((a) => a.finish());
-    return { werte, lage, vw: innerWidth, vh: innerHeight };
-  });
-}
-
-test('PC19 A1, A2: Mit Foto fliegt das Bild in seinen Maßen, nie größer als das Ziel, nie außerhalb', async ({
+test('PC21: Liste und Heft wechseln mit Foto nur per Blende, nichts fliegt, nichts verschiebt sich', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -387,37 +370,37 @@ test('PC19 A1, A2: Mit Foto fliegt das Bild in seinen Maßen, nie größer als d
   await page.reload();
   const karte = page.locator('[data-heft-karte="h1"]');
   await expect(karte.locator('.daumen img')).toBeVisible();
-  const daumen = await karte.locator('.daumen').boundingBox();
-  await karte.click();
-  const auf = await flugMitte(page);
-  const kopf = await page.locator('.kopfteil .bild').boundingBox();
-  expect(auf.lage).toBe('fixed');
-  for (const w of auf.werte) {
-    // Das Foto füllt genau das fliegende Rechteck, ohne darüber hinauszuragen (A1, A2).
-    expect(w.iw).toBeCloseTo(w.w, 0);
-    expect(w.ih).toBeCloseTo(w.h, 0);
-    expect(w.w).toBeLessThanOrEqual(Math.max(daumen!.width, kopf!.width) + 1);
-    expect(w.t + w.h).toBeLessThanOrEqual(auf.vh);
+  for (const schritt of ['auf', 'zu'] as const) {
+    if (schritt === 'auf') await karte.click();
+    else
+      await page
+        .getByRole('link', { name: /Wohnungen/ })
+        .first()
+        .click();
+    await page.waitForFunction(() => !!document.querySelector('.flug-ebene'));
+    const stand = await page.evaluate(() => {
+      const alle = document.getAnimations();
+      alle.forEach((a) => a.pause());
+      const art = alle.flatMap((a) =>
+        (a.effect as KeyframeEffect).getKeyframes().map((k) => Object.keys(k)),
+      );
+      const ergebnis = {
+        bild: document.querySelectorAll('.flug-bild').length,
+        // Nur Deckkraft (und die Pflichtfelder der Schlüsselbilder), keine Lage, Größe oder Form.
+        fremd: [
+          ...new Set(
+            art.flat().filter((k) => !['offset', 'computedOffset', 'easing', 'composite', 'opacity'].includes(k)),
+          ),
+        ],
+      };
+      alle.forEach((a) => a.finish());
+      return ergebnis;
+    });
+    expect(stand.bild).toBe(0);
+    expect(stand.fremd).toEqual([]);
+    await expect(page.locator('.flug-ebene, .flug-bild, .flug-abbild')).toHaveCount(0, {
+      timeout: 3000,
+    });
   }
-  expect(auf.werte[0]!.l).toBeCloseTo(daumen!.x, 0);
-  expect(auf.werte[2]!.w).toBeCloseTo(kopf!.width, -1);
-  await expect(page.locator('.flug-ebene, .flug-bild, .flug-abbild')).toHaveCount(0, {
-    timeout: 3000,
-  });
-
-  // Zuschlagen: das Bild schrumpft auf den Daumen der Karte.
-  await page
-    .getByRole('link', { name: /Wohnungen/ })
-    .first()
-    .click();
-  const zu = await flugMitte(page);
-  for (const w of zu.werte) {
-    expect(w.iw).toBeCloseTo(w.w, 0);
-    expect(w.w).toBeLessThanOrEqual(Math.max(daumen!.width, kopf!.width) + 1);
-  }
-  await expect(page.locator('.flug-ebene, .flug-bild, .flug-abbild')).toHaveCount(0, {
-    timeout: 3000,
-  });
-  const ziel = await page.locator('[data-heft-karte="h1"] .daumen').boundingBox();
-  expect(zu.werte[2]!.w).toBeCloseTo(ziel!.width, -1);
+  await expect(karte).toBeVisible();
 });

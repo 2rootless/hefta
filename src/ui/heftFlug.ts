@@ -4,7 +4,7 @@
 // Modul fliegt Bild und Namen vom Abbild in die neue Seite. Am Ende ist die Flugebene weg (P8), auch wenn
 // eine Bewegung hängen bleibt (Sicherung des Laufs).
 
-import { abschliessen, aufschlagen, lauf, type Richtung } from './bewegung';
+import { abschliessen, lauf, ueberblenden } from './bewegung';
 
 interface Flug {
   /** Wohin es geht: ins Heft (auf) oder zurück in die Liste (zu). */
@@ -127,21 +127,11 @@ export function landen(o: {
   const vorher = { position: o.seite.style.position, zIndex: o.seite.style.zIndex };
   o.seite.style.position = 'relative';
   o.seite.style.zIndex = '1';
-  const r: Richtung = o.nach === 'heft' ? 1 : -1;
   const l = lauf();
   document.body.append(f.ebene);
-  aufschlagen(l, {
-    buehne: f.ebene,
-    r,
-    von: f.ebene.firstElementChild as HTMLElement,
-    nach: o.seite,
-    vonTeile: f.teile,
-    nachTeile: o.teile,
-    bildVon: f.bild,
-    bildNach: o.bild,
-    nameVon: f.name,
-    nameNach: o.name,
-  });
+  // PC21 (DP28): Liste und Heft wechseln nur noch mit der Blende, ohne Flug von Bild und Name.
+  // `aufschlagen()` bleibt im Modul.
+  ueberblenden(l, f.ebene.firstElementChild as HTMLElement, o.seite);
   l.danach(() => {
     f.ebene.remove();
     o.seite.style.position = vorher.position;

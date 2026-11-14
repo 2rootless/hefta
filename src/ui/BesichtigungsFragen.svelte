@@ -22,7 +22,7 @@
   import type { Urteil } from '../domain/urteile';
   import { t, type TextSchluessel } from '../i18n';
   import { einstellungenAendern, heftAendern } from '../storage/speicher';
-  import { abschnitt, lauf } from './bewegung';
+  import { abschnitt, lauf, ruhig } from './bewegung';
   import Symbol from './Symbol.svelte';
 
   let { heft, urteile, ihr }: { heft: Heft; urteile: Urteil[]; ihr: boolean } = $props();
@@ -55,7 +55,8 @@
     alleOffen = true;
     if (!restEl) return;
     const l = lauf();
-    abschnitt(l, restEl, true);
+    const el = restEl;
+    ruhig(() => abschnitt(l, el, true));
     l.start();
   }
 
