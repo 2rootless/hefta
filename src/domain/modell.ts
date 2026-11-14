@@ -268,7 +268,7 @@ export interface Heft extends Basis {
   foto?: Id;
   /**
    * PC12: Die Rückmeldung bei den Ergebnissen fragt je Heft höchstens einmal. Gesetzt nach einer Antwort
-   * oder „Nicht mehr fragen“; dann steht sie in diesem Heft nicht mehr.
+   * oder „Nein danke“; dann steht sie in diesem Heft nicht mehr.
    */
   rueckmeldungFertig?: true;
   /** Wie die Adresse in Version 1: erste Zeile Straße und Lage, zweite Postleitzahl und Ort. */
@@ -384,7 +384,7 @@ export interface Einstellungen {
   version1Eingeordnet?: Zeitpunkt;
   /** Rückmeldung (E54): abgeschickte Antworten je Frage, nur auf dem Gerät, damit Hefta „Deine Antwort“ zeigt. */
   rueckmeldung?: Partial<Record<import('../rueckmeldung/fragen').Frage, string>>;
-  /** Moment im Heft (B19): einmal gezeigt, abgeschickt oder „Nicht mehr fragen“. */
+  /** Moment im Heft (B19): einmal gezeigt, abgeschickt oder „Nein danke“. */
   rueckmeldungMomentFertig?: boolean;
   /** PC12: Antworten auf die Rückmeldung im Heft, über alle Hefte; ab drei fragt Hefta nicht mehr. */
   rueckmeldungAntworten?: number;

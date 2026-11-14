@@ -48,6 +48,8 @@ export const vorschauStand = $state<{
   link: string;
   zustand: 'laden' | 'ok' | 'zeit' | 'netz' | 'leer' | 'liste' | 'schon';
   roh: InseratGelesen | null;
+  /** PC19 A4: Uhrzeit des letzten Versuchs, damit „Noch einmal versuchen“ sichtbar etwas tut. */
+  versuchtUm?: Date;
 }>({ link: '', zustand: 'laden', roh: null });
 
 /** Liest den eingefügten Text. Einmal: „Heft anlegen“ übernimmt nur, was hier gelesen ist (E72). */

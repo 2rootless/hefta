@@ -63,7 +63,13 @@
     vorschauStand.link = link;
     vorschauStand.zustand = 'laden';
     vorschauStand.roh = null;
-    const g: InseratGelesen = await plugin.vorschau({ url: link });
+    // PC19 A4: Ohne Netz kommt die Antwort sofort. Der Ladezustand steht trotzdem kurz da, damit man
+    // sieht, dass es noch einmal versucht wurde; danach die Meldung neu, mit der Uhrzeit.
+    const [g] = await Promise.all([
+      plugin.vorschau({ url: link }) as Promise<InseratGelesen>,
+      new Promise((fertig) => setTimeout(fertig, 700)),
+    ]);
+    vorschauStand.versuchtUm = new Date();
     if (vorschauStand.link !== link) return;
     vorschauStand.roh = g;
     if (g.zustand === 'ok') {
@@ -370,6 +376,16 @@
         {:else if zustand === 'netz'}
           <p class="fh">{t('vorschau.netzTitel')}</p>
           <p class="fs">{t(ihr ? 'vorschau.netzIhr' : 'vorschau.netzDu')}</p>
+          {#if vorschauStand.versuchtUm}
+            <p class="fs" role="status">
+              {t('allgemein.versuchtUm', {
+                uhrzeit: new Intl.DateTimeFormat('de-DE', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }).format(vorschauStand.versuchtUm),
+              })}
+            </p>
+          {/if}
         {:else if zustand === 'liste'}
           <p class="fh">{t('vorschau.listeTitel')}</p>
           <p class="fs">{t(ihr ? 'vorschau.listeIhr' : 'vorschau.listeDu')}</p>

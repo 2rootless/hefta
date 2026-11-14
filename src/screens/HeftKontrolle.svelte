@@ -84,7 +84,7 @@
     name: string;
     art: Art;
     wert: string | null;
-    /** Fehlt der Wert: „Eintragen · nicht gefunden“ oder nur ein Strich (Angaben, die oft fehlen). */
+    /** Fehlt der Wert: gedämpft „nicht angegeben“ (PC19 B4) oder nur ein Strich (Angaben, die oft fehlen). */
     fehlt?: 'eintragen' | 'strich';
     urteil?: Urteil | null;
     /** Hinweis mit (i), ohne Urteil (Staffel oder Index). */
@@ -471,7 +471,8 @@
           {#if z.wert}
             <span class="v">{z.wert}</span>
           {:else if z.fehlt === 'eintragen'}
-            <span class="v ein">{t('neuesHeft.eintragen')}</span>
+            <!-- PC19 B4: gedämpft, kein Knopf; ändern geht wie bei jedem Wert über die Zeile. -->
+            <span class="v ein">{t('neuesHeft.nichtAngegeben')}</span>
           {:else}
             <span class="v">–</span>
           {/if}
@@ -483,10 +484,6 @@
                 ><b class={z.urteil.art}>{t(URTEIL_WORT[z.urteil.art]!)}</b
                 >{#if g}{` · ${g}`}{/if}</span
               >
-            </span>
-          {:else if !z.wert && z.fehlt === 'eintragen'}
-            <span class="g">
-              <UrteilZeichen art="offen" /><span>{t('neuesHeft.nichtGefunden')}</span>
             </span>
           {/if}
           <span class="p"><Symbol name="weiter" groesse={16} /></span>
@@ -758,7 +755,8 @@
   }
 
   .v.ein {
-    color: var(--accent-text);
+    color: var(--ink-quiet);
+    font-weight: 400;
   }
 
   .g {

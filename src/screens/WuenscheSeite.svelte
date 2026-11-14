@@ -111,6 +111,13 @@
   const warmTeile = $derived(teile(t('wuensche.warmWert', { betrag: '\u0000' })));
   const grenzeTeile = $derived(teile(t('wuensche.grenzeWert', { wert: '\u0000' })));
   const flaecheTeile = $derived(teile(t('wuensche.ab', { wert: '\u0000' })));
+  /** PC19 B1: Die Einheit („€“, „%“) steht im Feld; der Rest des Satzes dahinter. */
+  function einheit(rest: string): [string, string] {
+    const m = /^(€|%|m²)\s*(.*)$/.exec(rest);
+    return m ? [m[1]!, m[2]!] : ['', rest];
+  }
+  const warmEh = $derived(einheit(warmTeile[1]));
+  const grenzeEh = $derived(einheit(grenzeTeile[1]));
   const feldWert = (n: number | null | undefined) => (n != null ? zahlText(n) : '');
 
   /** Haustiere folgen der Selbstauskunft (DP16, DP21); der Weg dorthin führt zur ersten Person. */
@@ -244,12 +251,14 @@
       <label class="name" for="w-warm">{t('wuensche.warmName')}</label>
       <div class="wert">
         <span>{warmTeile[0]}</span>
-        <input
-          id="w-warm"
-          inputmode="decimal"
-          value={feldWert(wu.warmBis)}
-          onchange={(e) => speichern({ warmBis: nummer(e.currentTarget.value) })}
-        /><span>{warmTeile[1]}</span>
+        <span class="box"
+          ><input
+            id="w-warm"
+            inputmode="decimal"
+            value={feldWert(wu.warmBis)}
+            onchange={(e) => speichern({ warmBis: nummer(e.currentTarget.value) })}
+          />{#if warmEh[0]}<span class="eh" aria-hidden="true">{warmEh[0]}</span>{/if}</span
+        >{#if warmEh[1]}<span>{warmEh[1]}</span>{/if}
       </div>
     </div>
 
@@ -257,12 +266,14 @@
       <label class="name" for="w-grenze">{t('wuensche.grenzeName')}</label>
       <div class="wert">
         <span>{grenzeTeile[0]}</span>
-        <input
-          id="w-grenze"
-          inputmode="decimal"
-          value={feldWert(hh.mietgrenze)}
-          onchange={(e) => speichern({}, nummer(e.currentTarget.value))}
-        /><span>{grenzeTeile[1]}</span>
+        <span class="box"
+          ><input
+            id="w-grenze"
+            inputmode="decimal"
+            value={feldWert(hh.mietgrenze)}
+            onchange={(e) => speichern({}, nummer(e.currentTarget.value))}
+          />{#if grenzeEh[0]}<span class="eh" aria-hidden="true">{grenzeEh[0]}</span>{/if}</span
+        >{#if grenzeEh[1]}<span>{grenzeEh[1]}</span>{/if}
       </div>
       {#if netto == null}
         <p class="satz">
@@ -333,12 +344,14 @@
       <label class="name" for="w-flaeche">{t('wuensche.flaeche')}</label>
       <div class="wert">
         <span>{flaecheTeile[0]}</span>
-        <input
-          id="w-flaeche"
-          inputmode="decimal"
-          value={feldWert(wu.flaecheAb)}
-          onchange={(e) => speichern({ flaecheAb: nummer(e.currentTarget.value) })}
-        /><span>m²</span>
+        <span class="box"
+          ><input
+            id="w-flaeche"
+            inputmode="decimal"
+            value={feldWert(wu.flaecheAb)}
+            onchange={(e) => speichern({ flaecheAb: nummer(e.currentTarget.value) })}
+          /><span class="eh" aria-hidden="true">m²</span></span
+        >
       </div>
     </div>
 
@@ -352,7 +365,7 @@
         </p>
         <a class="link" href={selbstauskunftZiel}>{t('wuensche.tiereAendern')}</a>
       {:else if hh.haustiere === 'nein'}
-        <p class="satz tier">{t('wuensche.haustiere')}: {t('wuensche.tiereNein')}</p>
+        <p class="satz tier">{t('wuensche.tiereNein')}</p>
         <a class="link" href={selbstauskunftZiel}>{t('wuensche.tiereAendern')}</a>
       {:else}
         <p class="satz tier">{t('wuensche.tiereFrage')}</p>
@@ -373,9 +386,24 @@
           </button>
         {/if}
       {/each}
-      <div class="wz fest">
-        <span class="l">{t('wuensche.befristung')}</span><span class="v"
-          >{t('wuensche.nurUnbefristet')}</span
+    </div>
+
+    <!-- PC19 A3: Befristung als Wahl, nicht mehr fest; Fläche wie Zimmer. -->
+    <div class="feld befristung">
+      <p class="name" id="w-befristung-l">{t('wuensche.befristung')}</p>
+      <div class="chips" role="group" aria-labelledby="w-befristung-l">
+        <button
+          class="chip wort"
+          class:an={!wu.auchBefristet}
+          type="button"
+          aria-pressed={!wu.auchBefristet}
+          onclick={() => speichern({ auchBefristet: false })}>{t('wuensche.nurUnbefristet')}</button
+        ><button
+          class="chip wort"
+          class:an={!!wu.auchBefristet}
+          type="button"
+          aria-pressed={!!wu.auchBefristet}
+          onclick={() => speichern({ auchBefristet: true })}>{t('wuensche.auchBefristet')}</button
         >
       </div>
     </div>
@@ -443,16 +471,41 @@
     font-weight: 600;
   }
 
+  /* PC19 B1: Feld mit Einheit darin, wie ein Betrag mit „€“. */
+  .feld .wert .box {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-right: 10px;
+    border-radius: 12px;
+    background: var(--ground);
+    color: var(--ink);
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  .feld .wert .box:focus-within {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
   .feld .wert input {
     box-sizing: border-box;
     width: 4.2em;
     min-height: 44px;
-    padding: 6px 10px;
+    padding: 6px 4px 6px 10px;
     border: 0;
     border-radius: 12px;
-    background: var(--ground);
+    background: transparent;
     color: inherit;
     font: inherit;
+    outline: none;
+  }
+
+  .feld .wert .box .eh {
+    color: var(--ink-muted);
+    font-size: calc(18 * var(--px));
+    font-weight: 600;
   }
 
   .feld .satz {
@@ -574,11 +627,6 @@
     border-top: 0;
   }
 
-  .wz.fest {
-    grid-template-columns: minmax(0, 1fr) auto;
-    cursor: default;
-  }
-
   .l {
     font-weight: 600;
   }
@@ -660,6 +708,11 @@
     font: inherit;
     font-weight: 650;
     cursor: pointer;
+  }
+
+  /* PC19 A3: Der Schatten des Knopfs unten deckt die letzte Fläche nicht mehr ab. */
+  .befristung {
+    margin-bottom: 32px;
   }
 
   .cta {

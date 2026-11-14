@@ -22,6 +22,7 @@
   import type { Urteil } from '../domain/urteile';
   import { t, type TextSchluessel } from '../i18n';
   import { einstellungenAendern, heftAendern } from '../storage/speicher';
+  import { abschnitt, lauf } from './bewegung';
   import Symbol from './Symbol.svelte';
 
   let { heft, urteile, ihr }: { heft: Heft; urteile: Urteil[]; ihr: boolean } = $props();
@@ -43,6 +44,20 @@
     }),
   );
   const abgehakt = $derived(liste.fragen.filter((f) => gespeichert.antworten[f.id]?.ab).length);
+
+  // PC19 B7: Bei mehr als drei offenen Fragen stehen erst drei da, darunter „Alle {n} Fragen“.
+  let alleOffen = $state(false);
+  let restEl = $state<HTMLElement | null>(null);
+  const geteilt = $derived(liste.fragen.filter((f) => !beantwortet(f.id)).length > 3);
+  const erste = $derived(geteilt ? liste.fragen.slice(0, 3) : liste.fragen);
+  const rest = $derived(geteilt ? liste.fragen.slice(3) : []);
+  function alleZeigen() {
+    alleOffen = true;
+    if (!restEl) return;
+    const l = lauf();
+    abschnitt(l, restEl, true);
+    l.start();
+  }
 
   function text(f: Frage): string {
     if (f.text) return f.text;
@@ -260,6 +275,111 @@
   }}
 />
 
+{#snippet fragZeile(f: Frage)}
+  {@const e = eintrag(f.id)}
+  {@const frage = text(f)}
+  <div class="zeile" class:ab={e.ab}>
+    <button
+      class="kasten"
+      type="button"
+      role="checkbox"
+      aria-checked={e.ab}
+      aria-label={frage}
+      onclick={() => haken(f)}
+      ><span class="k" aria-hidden="true"
+        >{#if e.ab}<Symbol name="haken" groesse={16} />{/if}</span
+      ></button
+    >
+    <div class="tx">
+      {#if f.offen}<small class="etikett offen"
+          >{t(ihr ? 'fragen.offenIhr' : 'fragen.offenDu')}</small
+        >{:else if f.thema === 'eigen'}<small class="etikett">{t('fragen.eigenEtikett')}</small
+        >{/if}
+      {#if bearbeitet === f.id}
+        <form
+          class="neu bearbeiten"
+          onsubmit={(ev) => {
+            ev.preventDefault();
+            void bearbeitenSichern(f);
+          }}
+        >
+          <input
+            bind:this={bearbeitetFeld}
+            bind:value={bearbeitetText}
+            maxlength="140"
+            autocomplete="off"
+            enterkeyhint="done"
+            aria-label={t('fragen.bearbeitenLabel')}
+          />
+          <button class="hinzu" type="submit">{t('fragen.uebernehmen')}</button>
+        </form>
+      {:else}
+        <span class="frage" aria-hidden="true">{frage}</span>
+      {/if}
+      {#if schreibt === f.id}
+        <textarea
+          bind:this={feld}
+          bind:value={entwurf}
+          rows="2"
+          aria-label={t('fragen.antwortLabel', { frage })}
+          onblur={() => antwortSichern(f)}></textarea>
+      {:else if e.antwort}
+        <button
+          class="antwort"
+          type="button"
+          aria-label={t('fragen.antwortAendern', { antwort: e.antwort })}
+          onclick={() => notieren(f)}>{e.antwort}</button
+        >
+      {:else}
+        <button class="notieren" type="button" onclick={() => notieren(f)}
+          ><Symbol name="plus" groesse={16} /><span>{t('fragen.antwortNotieren')}</span></button
+        >
+      {/if}
+    </div>
+    <div class="menuewrap">
+      <button
+        class="punkte"
+        type="button"
+        aria-label={t('fragen.mehr')}
+        aria-haspopup="menu"
+        aria-expanded={menue === f.id}
+        onclick={() => (menue = menue === f.id ? null : f.id)}
+        ><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"
+          ><circle cx="4" cy="10" r="1.8" /><circle cx="10" cy="10" r="1.8" /><circle
+            cx="16"
+            cy="10"
+            r="1.8"
+          /></svg
+        ></button
+      >
+      {#if menue === f.id}
+        <div class="menue" role="menu">
+          {#if f.thema === 'eigen'}
+            <button role="menuitem" type="button" onclick={() => bearbeiten(f)}
+              >{t('fragen.bearbeiten')}</button
+            >
+            <button role="menuitem" type="button" onclick={() => entfernen(f)}
+              >{t('fragen.entfernen')}</button
+            >
+          {:else}
+            <button role="menuitem" type="button" onclick={() => ausblenden(f.thema as Thema, true)}
+              >{t(beantwortet(f.id) ? 'fragen.ausblendenFuerNeue' : 'fragen.ausblendenNeu')}</button
+            >
+            {#if !beantwortet(f.id)}
+              <button
+                role="menuitem"
+                type="button"
+                onclick={() => ausblenden(f.thema as Thema, false)}
+                >{t('fragen.ausblendenHier')}</button
+              >
+            {/if}
+          {/if}
+        </div>
+      {/if}
+    </div>
+  </div>
+{/snippet}
+
 <section class="fragen" aria-labelledby="fragen-titel">
   <h2 class="kopf" id="fragen-titel">
     <span>{t('fragen.titel')}</span>
@@ -274,115 +394,22 @@
     </p>
   {/if}
   <div class="blatt">
-    {#each liste.fragen as f (f.id)}
-      {@const e = eintrag(f.id)}
-      {@const frage = text(f)}
-      <div class="zeile" class:ab={e.ab}>
-        <button
-          class="kasten"
-          type="button"
-          role="checkbox"
-          aria-checked={e.ab}
-          aria-label={frage}
-          onclick={() => haken(f)}
-          ><span class="k" aria-hidden="true"
-            >{#if e.ab}<Symbol name="haken" groesse={16} />{/if}</span
-          ></button
-        >
-        <div class="tx">
-          {#if f.offen}<small class="etikett offen"
-              >{t(ihr ? 'fragen.offenIhr' : 'fragen.offenDu')}</small
-            >{:else if f.thema === 'eigen'}<small class="etikett">{t('fragen.eigenEtikett')}</small
-            >{/if}
-          {#if bearbeitet === f.id}
-            <form
-              class="neu bearbeiten"
-              onsubmit={(ev) => {
-                ev.preventDefault();
-                void bearbeitenSichern(f);
-              }}
-            >
-              <input
-                bind:this={bearbeitetFeld}
-                bind:value={bearbeitetText}
-                maxlength="140"
-                autocomplete="off"
-                enterkeyhint="done"
-                aria-label={t('fragen.bearbeitenLabel')}
-              />
-              <button class="hinzu" type="submit">{t('fragen.uebernehmen')}</button>
-            </form>
-          {:else}
-            <span class="frage" aria-hidden="true">{frage}</span>
-          {/if}
-          {#if schreibt === f.id}
-            <textarea
-              bind:this={feld}
-              bind:value={entwurf}
-              rows="2"
-              aria-label={t('fragen.antwortLabel', { frage })}
-              onblur={() => antwortSichern(f)}></textarea>
-          {:else if e.antwort}
-            <button
-              class="antwort"
-              type="button"
-              aria-label={t('fragen.antwortAendern', { antwort: e.antwort })}
-              onclick={() => notieren(f)}>{e.antwort}</button
-            >
-          {:else}
-            <button class="notieren" type="button" onclick={() => notieren(f)}
-              ><Symbol name="plus" groesse={16} /><span>{t('fragen.antwortNotieren')}</span></button
-            >
-          {/if}
-        </div>
-        <div class="menuewrap">
-          <button
-            class="punkte"
-            type="button"
-            aria-label={t('fragen.mehr')}
-            aria-haspopup="menu"
-            aria-expanded={menue === f.id}
-            onclick={() => (menue = menue === f.id ? null : f.id)}
-            ><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"
-              ><circle cx="4" cy="10" r="1.8" /><circle cx="10" cy="10" r="1.8" /><circle
-                cx="16"
-                cy="10"
-                r="1.8"
-              /></svg
-            ></button
-          >
-          {#if menue === f.id}
-            <div class="menue" role="menu">
-              {#if f.thema === 'eigen'}
-                <button role="menuitem" type="button" onclick={() => bearbeiten(f)}
-                  >{t('fragen.bearbeiten')}</button
-                >
-                <button role="menuitem" type="button" onclick={() => entfernen(f)}
-                  >{t('fragen.entfernen')}</button
-                >
-              {:else}
-                <button
-                  role="menuitem"
-                  type="button"
-                  onclick={() => ausblenden(f.thema as Thema, true)}
-                  >{t(
-                    beantwortet(f.id) ? 'fragen.ausblendenFuerNeue' : 'fragen.ausblendenNeu',
-                  )}</button
-                >
-                {#if !beantwortet(f.id)}
-                  <button
-                    role="menuitem"
-                    type="button"
-                    onclick={() => ausblenden(f.thema as Thema, false)}
-                    >{t('fragen.ausblendenHier')}</button
-                  >
-                {/if}
-              {/if}
-            </div>
-          {/if}
-        </div>
-      </div>
+    {#each erste as f (f.id)}
+      {@render fragZeile(f)}
     {/each}
+    {#if rest.length}
+      <!-- PC19 B7: ab mehr als drei offenen Fragen nur die ersten drei (Muster „Abschnitt erscheint“). -->
+      <div class="rest" bind:this={restEl} hidden={!alleOffen}>
+        {#each rest as f (f.id)}
+          {@render fragZeile(f)}
+        {/each}
+      </div>
+      {#if !alleOffen}
+        <button class="plus alle-knopf" type="button" aria-expanded="false" onclick={alleZeigen}
+          >{t('fragen.alle', { anzahl: liste.fragen.length })}</button
+        >
+      {/if}
+    {/if}
     {#if liste.versteckt.length}
       <button
         class="plus versteckt-knopf"

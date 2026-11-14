@@ -3,6 +3,7 @@
     "alt": "{app}"
   },
   "allgemein": {
+    "versuchtUm": "Zuletzt versucht um {uhrzeit} Uhr.",
     "rueckgaengigFehler": {
       "ihr": "Das hat nicht geklappt. Versucht es noch einmal.",
       "du": "Das hat nicht geklappt. Versuch es noch einmal."
@@ -24,7 +25,8 @@
   },
   "rueckmeldung": {
     "titel": "Über {app}",
-    "nichtMehrFragen": "Nicht mehr fragen",
+    "neinDanke": "Nein danke",
+    "sendet": "Wird gesendet …",
     "mailZeile": {
       "ihr": "Was fehlt euch? Schreibt uns an {adresse}.",
       "du": "Was fehlt dir? Schreib uns an {adresse}."
@@ -408,7 +410,7 @@
     "ganzeErklaerung": "Die ganze Datenschutzerklärung",
     "kurz": "{app} schickt deine Daten nirgendwohin. Was hinausgeht, schickst du selbst. {app} speichert deine Angaben und Unterlagen nur auf deinem Gerät. Es gibt kein Konto, keinen Server mit deinen Daten und kein Tracking. Eine Rückmeldung geht nur hinaus, wenn du sie abschickst.",
     "geraetTitel": "Was auf deinem Gerät liegt",
-    "geraetText": "Namen, Kontaktangaben, Angaben der Selbstauskunft, hochgeladene Unterlagen und Einstellungen. Sie liegen im Speicher deines Browsers und bleiben dort, bis du sie in der App löschst, die Daten der Website im Browser löschst oder der Browser sie entfernt. Wir haben darauf keinen Zugriff.",
+    "geraetText": "Namen, Kontaktangaben, Angaben der Selbstauskunft, hochgeladene Unterlagen und Einstellungen. Sie liegen im Speicher deines Browsers und bleiben dort, bis du sie in der App löschst, die Daten der Website im Browser löschst oder der Browser sie entfernt. {app} bittet den Browser, diesen Speicher nicht von selbst zu leeren. Wir haben darauf keinen Zugriff.",
     "geraetTextApp": "Namen, Kontaktangaben, Angaben der Selbstauskunft, hochgeladene Unterlagen und Einstellungen. Sie liegen im Speicher der App auf deinem Gerät und bleiben dort, bis du sie in der App löschst oder die App vom Gerät entfernst. Wir haben darauf keinen Zugriff.",
     "backupTitel": "Backups",
     "backupText": "Ein Backup ist eine Datei, die du selbst erstellst und ablegst. Mit Passwort ist sie verschlüsselt. Wo du sie speicherst, entscheidest du; dann gelten die Bedingungen dieses Dienstes.",
@@ -417,7 +419,7 @@
     "hostingTitel": "Hosting",
     "hostingText": "Die App wird über Cloudflare Pages (Cloudflare, Inc.) ausgeliefert. Beim Laden und bei Updates verarbeitet der Anbieter technisch notwendige Daten wie die IP-Adresse und den Zeitpunkt des Abrufs, um die Dateien auszuliefern und den Dienst abzusichern. Das kann auch in den USA geschehen. Cloudflare stützt solche Übermittlungen nach eigenen Angaben auf das EU-U.S. Data Privacy Framework und auf Standardvertragsklauseln. Rechtsgrundlage ist das berechtigte Interesse an einer sicheren Auslieferung (Art. 6 Abs. 1 lit. f DSGVO). Deine Unterlagen und Angaben werden dabei nie übertragen.",
     "storeTitel": "App und Store",
-    "storeText": "Die App lädt nichts aus dem Internet; alles, was sie braucht, kommt mit ihr. Sie sendet nur eine Rückmeldung, wenn du sie abschickst (siehe „Rückmeldung“). Updates bekommst du über den App Store oder Google Play. Dabei verarbeiten Apple oder Google Daten nach ihren eigenen Datenschutzbestimmungen. Hast du auf deinem Gerät erlaubt, Analysedaten mit App-Entwicklern zu teilen, zeigen uns Apple oder Google Absturzberichte und zusammengefasste Zahlen, etwa wie oft die App geladen wurde. Deine Angaben und Unterlagen sind nie dabei.",
+    "storeText": "Auf dem iPhone lädt die App nur dann eine Seite aus dem Internet, wenn du selbst einen Link zu einem Inserat einsetzt oder an {app} teilst; unter Android lädt sie nichts. Dann verbindet sich dein Gerät direkt mit dem Portal, nicht mit uns, und wir erhalten dabei keine Daten. Gespeichert wird nur, was du mit „Heft anlegen“ bestätigst, mit dem Foto aus der Vorschau, und nur auf deinem Gerät. Mit „In den Kalender“ trägt die App eine Besichtigung in den Kalender deines Geräts ein, auf dem iPhone erst, wenn du sie dort sicherst. Deinen Kalender liest sie nicht. Sie sendet nur eine Rückmeldung, wenn du sie abschickst (siehe „Rückmeldung“). Updates bekommst du über den App Store oder Google Play. Dabei verarbeiten Apple oder Google Daten nach ihren eigenen Datenschutzbestimmungen. Hast du auf deinem Gerät erlaubt, Analysedaten mit App-Entwicklern zu teilen, zeigen uns Apple oder Google Absturzberichte und zusammengefasste Zahlen, etwa wie oft die App geladen wurde. Deine Angaben und Unterlagen sind nie dabei.",
     "cookiesTitel": "Keine Cookies, keine Analyse",
     "cookiesText": "{app} setzt keine Cookies und bindet keine Dienste Dritter ein. {app} zählt nicht, was du in der App tust. Wir wissen nur, wie oft die App am Tag geladen wurde, ohne Kennung und ohne Verlauf.",
     "cookiesTextApp": "{app} setzt keine Cookies und bindet keine Dienste Dritter ein. {app} zählt nicht, was du in der App tust.",
@@ -1927,7 +1929,7 @@
     "vorschlagMailDu": "Am {tag} hast du die Mail mit der Mappe geöffnet. Ob sie hinausging, erfährt {app} nicht.",
     "nochNicht": "Noch nicht",
     "ort": "Heft",
-    "nameAendern": "Name der Wohnung · ändern",
+    "nameAendern": "Name der Wohnung ändern",
     "zumInserat": "Zum Inserat ↗",
     "eckWarm": "{betrag} warm · {zimmer} Zi · {flaeche} m²",
     "fotoAlt": "Foto aus dem Inserat",
@@ -2031,7 +2033,7 @@
     "strasse": "Straße und Hausnummer",
     "plzOrt": "Postleitzahl und Ort",
     "eintragen": "Eintragen",
-    "nichtGefunden": "nicht gefunden",
+    "nichtAngegeben": "nicht angegeben",
     "ca": "ca.",
     "sofort": "sofort",
     "befristet": "befristet",
@@ -2128,6 +2130,7 @@
     "haustiere": "Haustiere",
     "befristung": "Befristung",
     "nurUnbefristet": "nur unbefristet",
+    "auchBefristet": "auch befristet",
     "ab": "ab {wert}",
     "nichtFestgelegt": "nicht festgelegt",
     "wegKlein": "Bis {km} km Luftlinie. Fahrzeiten mit Bahn und Rad kommen später.",
@@ -2142,7 +2145,7 @@
     "einzugBis": "bis {bis}",
     "leerLassen": "Leer lassen, wenn es egal ist.",
     "tiereJa": "ein Haustier",
-    "tiereNein": "keine",
+    "tiereNein": "Keine Haustiere angegeben.",
     "haustiereKleinIhr": "Aus eurer Selbstauskunft.",
     "haustiereKleinDu": "Aus deiner Selbstauskunft.",
     "nurIhr": "Nur für euch",
@@ -2176,7 +2179,7 @@
     "einkommen": "Einkommen des Haushalts",
     "einkommenWert": "{betrag} netto im Monat",
     "zimmerAb": "ab {zahl} Zimmer",
-    "zimmerHalb": "+ ½",
+    "zimmerHalb": "½",
     "zimmerHalbAnsage": "Ein halbes Zimmer mehr",
     "tiereAngegeben": {
       "ihr": "Ihr habt {tier} angegeben. {app} achtet darauf, dass Haustiere erlaubt sind.",
@@ -2205,6 +2208,7 @@
     "aufnehmen": "Aufnehmen",
     "auswaehlen": "Auswählen",
     "zeigen": "Foto {nummer} ansehen",
+    "stelle": "{nummer} von {anzahl}",
     "loeschen": "Foto löschen",
     "geloescht": "Foto gelöscht"
   },
@@ -2296,6 +2300,7 @@
     "ausblendenHier": "Nur in diesem Heft ausblenden",
     "meldungNeu": "Ausgeblendet, auch in neuen Heften",
     "meldungHier": "In diesem Heft ausgeblendet",
+    "alle": "Alle {anzahl} Fragen",
     "wiederZeigenAnzahl": {
       "one": "Eine ausgeblendete Frage wieder zeigen",
       "other": "{anzahl} ausgeblendete Fragen wieder zeigen"

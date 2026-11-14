@@ -314,3 +314,110 @@ test('P8: Aufschlagen und Zuschlagen: genau die Zielseite, keine Flugebene bleib
     .evaluate((e) => getComputedStyle(e).visibility);
   expect(o).toBe('visible');
 });
+
+/** Ein Foto am Heft h1, wie es die Vorschau ablegt (B28b, K1): eine Datei im Speicherort `dateien`. */
+async function fotoAnHeft(page: Page) {
+  await page.evaluate(
+    () =>
+      new Promise<void>((fertig, fehler) => {
+        const c = document.createElement('canvas');
+        c.width = 1200;
+        c.height = 900;
+        const k = c.getContext('2d')!;
+        k.fillStyle = '#7a8f6a';
+        k.fillRect(0, 0, 1200, 900);
+        k.fillStyle = '#e8dcc4';
+        k.fillRect(300, 200, 600, 500);
+        c.toBlob(async (blob) => {
+          const daten = await blob!.arrayBuffer();
+          const r = indexedDB.open('hefta');
+          r.onsuccess = () => {
+            const db = r.result;
+            const tx = db.transaction(['dateien', 'hefte'], 'readwrite');
+            tx.objectStore('dateien').put({
+              id: 'foto-h1',
+              createdAt: new Date().toISOString(),
+              typ: 'image/jpeg',
+              groesse: daten.byteLength,
+              daten,
+            });
+            const h = tx.objectStore('hefte').get('h1');
+            h.onsuccess = () => tx.objectStore('hefte').put({ ...h.result, foto: 'foto-h1' });
+            tx.oncomplete = () => {
+              db.close();
+              fertig();
+            };
+            tx.onerror = () => fehler(tx.error);
+          };
+          r.onerror = () => fehler(r.error);
+        }, 'image/jpeg');
+      }),
+  );
+}
+
+/** Das fliegende Bild mitten im Flug: Lage und Größe im Verhältnis zu Start und Ziel. */
+async function flugMitte(page: Page) {
+  await page.waitForFunction(() => !!document.querySelector('.flug-bild'));
+  return page.evaluate(() => {
+    const alle = document.getAnimations();
+    alle.forEach((a) => a.pause());
+    const fb = document.querySelector<HTMLElement>('.flug-bild')!;
+    const anim = alle.find((a) => (a.effect as KeyframeEffect).target === fb)!;
+    const ende = Number(anim.effect!.getComputedTiming().endTime);
+    const r = (t: number) => {
+      anim.currentTime = t;
+      const q = fb.getBoundingClientRect();
+      const img = fb.querySelector('img')!.getBoundingClientRect();
+      return { l: q.left, t: q.top, w: q.width, h: q.height, iw: img.width, ih: img.height };
+    };
+    const werte = [r(0), r(ende / 2), r(ende - 1)];
+    const lage = getComputedStyle(fb).position;
+    alle.forEach((a) => a.finish());
+    return { werte, lage, vw: innerWidth, vh: innerHeight };
+  });
+}
+
+test('PC19 A1, A2: Mit Foto fliegt das Bild in seinen Maßen, nie größer als das Ziel, nie außerhalb', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/#/wohnungen');
+  await page.reload();
+  await fotoAnHeft(page);
+  await page.reload();
+  const karte = page.locator('[data-heft-karte="h1"]');
+  await expect(karte.locator('.daumen img')).toBeVisible();
+  const daumen = await karte.locator('.daumen').boundingBox();
+  await karte.click();
+  const auf = await flugMitte(page);
+  const kopf = await page.locator('.kopfteil .bild').boundingBox();
+  expect(auf.lage).toBe('fixed');
+  for (const w of auf.werte) {
+    // Das Foto füllt genau das fliegende Rechteck, ohne darüber hinauszuragen (A1, A2).
+    expect(w.iw).toBeCloseTo(w.w, 0);
+    expect(w.ih).toBeCloseTo(w.h, 0);
+    expect(w.w).toBeLessThanOrEqual(Math.max(daumen!.width, kopf!.width) + 1);
+    expect(w.t + w.h).toBeLessThanOrEqual(auf.vh);
+  }
+  expect(auf.werte[0]!.l).toBeCloseTo(daumen!.x, 0);
+  expect(auf.werte[2]!.w).toBeCloseTo(kopf!.width, -1);
+  await expect(page.locator('.flug-ebene, .flug-bild, .flug-abbild')).toHaveCount(0, {
+    timeout: 3000,
+  });
+
+  // Zuschlagen: das Bild schrumpft auf den Daumen der Karte.
+  await page
+    .getByRole('link', { name: /Wohnungen/ })
+    .first()
+    .click();
+  const zu = await flugMitte(page);
+  for (const w of zu.werte) {
+    expect(w.iw).toBeCloseTo(w.w, 0);
+    expect(w.w).toBeLessThanOrEqual(Math.max(daumen!.width, kopf!.width) + 1);
+  }
+  await expect(page.locator('.flug-ebene, .flug-bild, .flug-abbild')).toHaveCount(0, {
+    timeout: 3000,
+  });
+  const ziel = await page.locator('[data-heft-karte="h1"] .daumen').boundingBox();
+  expect(zu.werte[2]!.w).toBeCloseTo(ziel!.width, -1);
+});

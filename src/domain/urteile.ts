@@ -62,6 +62,11 @@ export interface Wuensche {
   /** Einzug von bis, als „JJJJ-MM-TT“; jede Grenze für sich freiwillig. */
   einzugVon: string | null;
   einzugBis: string | null;
+  /**
+   * PC19 A3: Auch befristete Wohnungen kommen in Frage. Fehlt es oder ist es falsch, gilt wie bisher
+   * „nur unbefristet“.
+   */
+  auchBefristet?: boolean;
 }
 
 /** Wünsche mit neutral gefüllten Lücken: So rechnet `urteile` unverändert, Lücken werden danach „ohne“. */
@@ -93,6 +98,7 @@ function ohneWunsch(wu: Wuensche): Set<Urteil['kriterium']> {
   if (wu.flaecheAb === null) ohne.add('Fläche');
   if (!wu.ort) ohne.add('Lage');
   if (wu.einzugVon === null && wu.einzugBis === null) ohne.add('Einzug');
+  if (wu.auchBefristet) ohne.add('Befristung');
   return ohne;
 }
 

@@ -45,8 +45,10 @@ export function tageZwischen(von: string, bis: Date): number {
   return Math.round((ende - start) / TAG_MS);
 }
 
-/** Wie lange ein Termin dauert, bis „Besichtigt“ gilt (DP21: „ab dem Ende des Termins“). */
-export const TERMIN_DAUER_MS = 60 * 60 * 1000;
+/**
+ * Ab wann nach Beginn „Besichtigt“ gilt. PC19 B5: ab Beginn des Termins (vorher DP21: eine Stunde danach).
+ */
+export const TERMIN_DAUER_MS = 0;
 
 /** Ist der Termin vorbei? Ab seinem Ende fragt das Heft nach dem Ausgang, vorher nur „Kommt etwas dazwischen?“. */
 export function terminVorbeiAb(e: HeftEreignisse, jetzt: Date): boolean {

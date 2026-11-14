@@ -82,7 +82,11 @@
   /** Der Daumen, wenn er zu sehen ist; in sehr schmalen Listen fällt er weg, dann blendet der Flug über. */
   function daumen(karte: HTMLElement): HTMLElement | null {
     const d = karte.querySelector<HTMLElement>('.daumen');
-    return d && d.getBoundingClientRect().width > 0 ? d : null;
+    if (!d) return null;
+    // PC19 A2: Nur ein sicher messbares Ziel im Bild; sonst blendet der Flug über.
+    const r = d.getBoundingClientRect();
+    const sichtbar = r.width > 0 && r.top >= 0 && r.bottom <= window.innerHeight;
+    return sichtbar && d.dataset.foto !== 'laedt' ? d : null;
   }
   function aufschlagenVon(e: MouseEvent, h: Heft) {
     const karte = e.currentTarget as HTMLElement;

@@ -492,7 +492,27 @@ export function aufschlagen(
   fb.className = 'flug-bild';
   fb.setAttribute('aria-hidden', 'true');
   fb.innerHTML = o.bildVon.innerHTML;
-  o.buehne.append(fb);
+  // PC19 A1/A2: Die Stile von Daumen und Kopf sind an ihre Komponente gebunden und greifen hier nicht.
+  // Ohne eigene Stile stand das Bild in voller Größe unten in der Ebene. Liegt die Bühne fest über dem
+  // Bildschirm (Flug zwischen zwei Seiten), fliegt das Bild darüber, sonst läge die neue Seite darauf.
+  const fest = getComputedStyle(o.buehne).position === 'fixed';
+  Object.assign(fb.style, {
+    position: fest ? 'fixed' : 'absolute',
+    zIndex: fest ? '20' : '6',
+    margin: '0',
+    overflow: 'hidden',
+    pointerEvents: 'none',
+    background: getComputedStyle(o.bildVon).backgroundColor,
+  });
+  for (const k of fb.querySelectorAll<HTMLElement>('img, svg, canvas'))
+    Object.assign(k.style, {
+      position: 'absolute',
+      inset: '0',
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover',
+    });
+  (fest ? document.body : o.buehne).append(fb);
   const ra = getComputedStyle(o.bildVon).borderRadius;
   const rz = getComputedStyle(o.bildNach).borderRadius;
   l.an(

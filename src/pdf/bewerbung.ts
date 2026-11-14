@@ -853,7 +853,21 @@ function deckblattSetzen(
     }
     y -= V(4);
   };
-  if (a.inhaltsverzeichnis) {
+  const leer = !eintraege.length;
+  if (a.inhaltsverzeichnis && leer && a.schritt === 'besichtigung') {
+    // PC19 B9 (DP27): Sparsam zur Besichtigung liegt nichts bei; statt einer leeren Überschrift ein Satz.
+    text('Was beiliegt', rx, y, F(11.5), s.bold);
+    y -= V(9);
+    for (const zeile of umbrechen(
+      'Zur Besichtigung nur dieses Deckblatt. Die Unterlagen folgen auf Wunsch.',
+      s.regular,
+      F(10.5),
+      rw,
+    )) {
+      text(zeile, rx, y, F(10.5), s.regular);
+      y -= V(5.4);
+    }
+  } else if (a.inhaltsverzeichnis && !leer) {
     text('Was beiliegt', rx, y, F(11.5), s.bold);
     y -= V(9);
     vertrag.forEach(block);

@@ -29,7 +29,7 @@
   import HeftFotos from '../ui/HeftFotos.svelte';
   import HeftStand from '../ui/HeftStand.svelte';
   import { foto, fotoLaden, fotoVergessen } from '../ui/heftFoto.svelte';
-  import { blende, lauf } from '../ui/bewegung';
+  import { abschnitt, blende, lauf } from '../ui/bewegung';
   import { flugFuer, landen, merken } from '../ui/heftFlug';
   import { sicherungMs, wechselArt } from '../ui/wechsel';
   import Zurueck from '../ui/Zurueck.svelte';
@@ -190,15 +190,35 @@
   // Nach einer Antwort bleibt „Danke“ stehen, bis das Heft wieder geöffnet wird.
   const rueckmeldungBeimOeffnen = untrack(() => rueckmeldungZeigen);
   let rueckmeldungWeg = $state(false);
+  let rueckEl = $state<HTMLElement | null>(null);
+  /**
+   * PC19 A5: Nach „Nein danke“ und nach dem Absenden geht der ganze Abschnitt (Muster „Abschnitt geht“),
+   * nicht nur sein Inhalt; die leere Fläche blieb sonst stehen. Nach dem Absenden steht „Danke“ noch
+   * kurz da.
+   */
+  function rueckmeldungGehen(warten = 0) {
+    setTimeout(() => {
+      const el = rueckEl?.closest<HTMLElement>('.rueck');
+      if (!el) {
+        rueckmeldungWeg = true;
+        return;
+      }
+      const l = lauf();
+      abschnitt(l, el, false);
+      l.danach(() => (rueckmeldungWeg = true));
+      l.start();
+    }, warten);
+  }
   async function rueckmeldungFertig(beantwortet: boolean) {
     if (!heft) return;
+    if (!beantwortet) rueckmeldungGehen();
     await heftAendern(await db(), heft.id, { rueckmeldungFertig: true });
     if (beantwortet)
       await einstellungenAendern(await db(), {
         rueckmeldungAntworten: (daten.einstellungen?.rueckmeldungAntworten ?? 0) + 1,
       });
-    else rueckmeldungWeg = true;
     await stillLaden();
+    if (beantwortet) rueckmeldungGehen(2000);
   }
 
   // E100: Löschbitte oder Nachfrage geöffnet, aber nicht sicher hinaus: einmal fragen.
@@ -393,6 +413,7 @@
     >
       {#snippet rueckmeldung()}
         {#if rueckmeldungBeimOeffnen && !rueckmeldungWeg}
+          <span class="rueck-anker" bind:this={rueckEl} hidden></span>
           {#if istAndroidApp()}<RueckmeldungMail />{:else}<Rueckmeldung
               fragen={['geholfen']}
               frisch
@@ -400,7 +421,7 @@
             />{/if}
           {#if rueckmeldungZeigen}
             <button class="leis" type="button" onclick={() => rueckmeldungFertig(false)}
-              >{t('rueckmeldung.nichtMehrFragen')}</button
+              >{t('rueckmeldung.neinDanke')}</button
             >
           {/if}
         {/if}
@@ -594,11 +615,12 @@
     font-weight: 650;
   }
 
+  /* PC19 B3: Zwei Links, je eine eigene Zeile, mit Abstand zu den Eckdaten. */
   .links {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0 18px;
-    margin-top: 4px;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 10px;
   }
 
   .links a {

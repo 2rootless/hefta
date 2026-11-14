@@ -857,6 +857,11 @@
     background: var(--ground);
   }
 
+  /* PC19 A5: Ohne Inhalt (Rückmeldung erledigt) keine leere Fläche. */
+  .rueck:not(:has(*)) {
+    display: none;
+  }
+
   /* Flug-Ebenen aus dem Modul (Verwandeln). */
   .buehne :global(.flug-flaeche),
   .buehne :global(.flug-text) {

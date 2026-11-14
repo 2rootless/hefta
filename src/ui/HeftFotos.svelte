@@ -1,7 +1,8 @@
 <script lang="ts">
   // Fotos der Besichtigung (Zeile 9, B21 „Fotos · Aufnehmen · Auswählen“): nur auf dem Gerät, am Heft.
-  // Ein Tipp zeigt das Foto groß; dort lässt es sich löschen, mit „Rückgängig“.
-  import { onDestroy } from 'svelte';
+  // Ein Tipp zeigt das Foto groß; dort lassen sich alle Fotos seitlich durchwischen (PC19 B6) und das
+  // gezeigte löschen, mit „Rückgängig“.
+  import { onDestroy, tick } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import { db, stillLaden } from '../app/daten.svelte';
   import { rueckgaengigAnbieten } from '../app/rueckgaengig.svelte';
@@ -75,10 +76,21 @@
 
   let gross = $state<string | null>(null);
   let offen = $state(false);
-  function zeigen(id: string) {
+  let streifen = $state<HTMLElement | null>(null);
+  async function zeigen(id: string) {
     gross = id;
     offen = true;
+    await tick();
+    const i = fotos.indexOf(id);
+    if (streifen && i >= 0) streifen.scrollLeft = i * streifen.clientWidth;
   }
+  /** Welches Foto gerade steht, folgt dem Wischen. */
+  function gewischt() {
+    if (!streifen || !streifen.clientWidth) return;
+    const i = Math.round(streifen.scrollLeft / streifen.clientWidth);
+    gross = fotos[Math.min(Math.max(i, 0), fotos.length - 1)] ?? gross;
+  }
+  const stelle = $derived(gross ? fotos.indexOf(gross) + 1 : 0);
 
   async function loeschen() {
     if (!gross) return;
@@ -105,7 +117,7 @@
         <li>
           <button
             type="button"
-            onclick={() => zeigen(id)}
+            onclick={() => void zeigen(id)}
             aria-label={t('fotos.zeigen', { nummer: i + 1 })}
           >
             {#if adressen.get(id)}<img src={adressen.get(id)} alt="" />{/if}
@@ -145,8 +157,17 @@
 </section>
 
 <Sheet bind:offen titel={t('fotos.titel')}>
-  {#if gross && adressen.get(gross)}
-    <img class="gross" src={adressen.get(gross)} alt="" />
+  <div class="streifen" bind:this={streifen} onscroll={gewischt}>
+    {#each fotos as id (id)}
+      <div class="platz">
+        {#if adressen.get(id)}<img class="gross" src={adressen.get(id)} alt="" />{/if}
+      </div>
+    {/each}
+  </div>
+  {#if fotos.length > 1}
+    <p class="stelle" aria-live="polite">
+      {t('fotos.stelle', { nummer: stelle, anzahl: fotos.length })}
+    </p>
   {/if}
   <button type="button" class="knopf breit" onclick={loeschen}>{t('fotos.loeschen')}</button>
 </Sheet>
@@ -211,11 +232,35 @@
     margin-top: 12px;
   }
 
+  .streifen {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .streifen::-webkit-scrollbar {
+    display: none;
+  }
+
+  .platz {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+  }
+
   .gross {
     display: block;
     width: 100%;
     max-height: 60dvh;
     object-fit: contain;
     border-radius: 12px;
+  }
+
+  .stelle {
+    margin: 8px 0 0;
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
+    text-align: center;
   }
 </style>

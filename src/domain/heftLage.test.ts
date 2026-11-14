@@ -41,11 +41,12 @@ describe('Die 13 Lagen des Stands (B28b, DP21)', () => {
     ).toBe('nachgefragt');
   });
 
-  it('Termin bis zu seinem Ende, danach „Besichtigt“', () => {
+  it('Termin bis zu seinem Beginn, ab dann „Besichtigt“ (PC19 B5)', () => {
     const termin = (am: string) => ({ termin: { am, ort: '', treffpunkt: '' } });
     expect(lage(e(termin(tag(1))), JETZT, true)).toMatchObject({ art: 'termin', ort: 2 });
-    expect(art(termin(new Date(2026, 10, 14, 11, 30).toISOString()))).toBe('termin');
-    expect(art(termin(new Date(2026, 10, 14, 11, 0).toISOString()))).toBe('besichtigt');
+    expect(art(termin(new Date(JETZT.getTime() + 60_000).toISOString()))).toBe('termin');
+    expect(art(termin(JETZT.toISOString()))).toBe('besichtigt');
+    expect(art(termin(new Date(JETZT.getTime() - 4 * 60_000).toISOString()))).toBe('besichtigt');
     expect(art(termin(tag(-1)))).toBe('besichtigt');
   });
 

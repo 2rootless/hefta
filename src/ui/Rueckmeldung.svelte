@@ -37,6 +37,7 @@
   let offen = $state(false);
   let sendet = $state(false);
   let fensterAus = $state(false);
+  let versuchtUm = $state<Date | null>(null);
 
   // „Android-App“ fragt die Android-App nicht (B19 Fassung 4).
   const antworten = (f: Frage) =>
@@ -52,9 +53,16 @@
     if (!fenster || sendet) return;
     const { f, a } = fenster;
     sendet = true;
-    const ergebnis = await abschicken(f, a as Antwort);
+    // PC19 A4: Der Hinweis geht beim neuen Versuch weg und kommt, wenn es wieder nicht geht, neu, mit
+    // der Uhrzeit. Ohne Netz kommt die Antwort sofort; der Knopf bleibt trotzdem kurz gesperrt.
+    fensterAus = false;
+    const [ergebnis] = await Promise.all([
+      abschicken(f, a as Antwort),
+      new Promise((fertig) => setTimeout(fertig, 700)),
+    ]);
     sendet = false;
     if (ergebnis === 'aus') {
+      versuchtUm = new Date();
       fensterAus = true;
       aus = { ...aus, [f]: a };
       return;
@@ -133,7 +141,16 @@
       <small>{t(`rueckmeldung.fragen.${fenster.f}`)}</small>
       <b>{antwortText(fenster.f, fenster.a)}</b>
     </div>
-    {#if fensterAus}<p class="status leise" role="status">{t('rueckmeldung.aus')}</p>{/if}
+    {#if sendet}<p class="status leise" role="status">{t('rueckmeldung.sendet')}</p>
+    {:else if fensterAus}<p class="status leise" role="status">
+        {t('rueckmeldung.aus')}
+        {#if versuchtUm}{t('allgemein.versuchtUm', {
+            uhrzeit: new Intl.DateTimeFormat('de-DE', {
+              hour: '2-digit',
+              minute: '2-digit',
+            }).format(versuchtUm),
+          })}{/if}
+      </p>{/if}
     <div class="knoepfe">
       <!-- svelte-ignore a11y_autofocus -->
       <button type="button" class="haupt" autofocus disabled={sendet} onclick={senden}

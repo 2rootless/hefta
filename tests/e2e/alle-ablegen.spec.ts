@@ -132,7 +132,7 @@ test('„Keine Antwort“ im Heft: nachfragen und Löschbitte, Hefta merkt sich 
   await expect(spur.nth(1)).toContainText('· Nachfrage');
 });
 
-test('Moment der Rückmeldung nach der Zusage: einmal, „Nicht mehr fragen“ beendet ihn (B19)', async ({
+test('Moment der Rückmeldung nach der Zusage: einmal, „Nein danke“ beendet ihn (B19)', async ({
   page,
 }) => {
   await haushaltMitMax(page);
@@ -180,7 +180,7 @@ test('Moment der Rückmeldung nach der Zusage: einmal, „Nicht mehr fragen“ b
   await expect(page.getByText('Hat dir Hefta bei der Bewerbung geholfen?')).toHaveCount(0);
   await page.getByRole('button', { name: 'Zusage', exact: true }).click();
   await expect(page.getByText('Hat dir Hefta bei der Bewerbung geholfen?')).toBeVisible();
-  await page.getByRole('button', { name: 'Nicht mehr fragen' }).click();
+  await page.getByRole('button', { name: 'Nein danke' }).click();
   await expect(page.getByText('Hat dir Hefta bei der Bewerbung geholfen?')).toHaveCount(0);
   await page.reload();
   await expect(page.getByText('Hat dir Hefta bei der Bewerbung geholfen?')).toHaveCount(0);

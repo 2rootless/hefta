@@ -227,6 +227,8 @@ test('Fragen für die Besichtigung: weglassen, abhaken, Antwort, eigene Frage (E
   await heftOeffnen(page, 'fragen1');
 
   const fragen = page.getByRole('region', { name: /Fragen für die Besichtigung/ });
+  // PC19 B7: Bei mehr als drei offenen Fragen stehen erst drei da.
+  await fragen.getByRole('button', { name: /^Alle \d+ Fragen$/ }).click();
   await expect(fragen).toContainText('0 von 9');
   await expect(fragen).toContainText(
     'Nicht in der Liste, weil das Inserat es schon sagt: Heizung, Kaution.',
@@ -260,6 +262,7 @@ test('Fragen für die Besichtigung: weglassen, abhaken, Antwort, eigene Frage (E
   await page.reload();
   await expect(fragen).toContainText('2 von 10');
   await heftOeffnen(page, 'fragen2');
+  await fragen.getByRole('button', { name: /^Alle \d+ Fragen$/ }).click();
   // Das zweite Heft nennt eine Warmmiete, aber keine Kaution: zehn plus die eigene Frage.
   await expect(fragen).toContainText('0 von 11');
   await expect(fragen.getByRole('checkbox', { name: 'Wo stehen die Mülltonnen?' })).toBeVisible();
@@ -371,6 +374,8 @@ test('Fragen ausblenden: nur hier, auch in neuen Heften, Rückgängig, wieder ze
   await hefteAnlegen(page, [heft('aus1', 'Zwei Zimmer am Park', mitTermin)]);
   await heftOeffnen(page, 'aus1');
   const fragen = page.getByRole('region', { name: /Fragen für die Besichtigung/ });
+  // PC19 B7: Bei mehr als drei offenen Fragen stehen erst drei da.
+  await fragen.getByRole('button', { name: /^Alle \d+ Fragen$/ }).click();
   const zeile = (text: RegExp) =>
     fragen.locator('.zeile').filter({ has: page.getByRole('checkbox', { name: text }) });
   const menue = async (text: RegExp) =>
@@ -432,11 +437,13 @@ test('Fragen ausblenden: nur hier, auch in neuen Heften, Rückgängig, wieder ze
     heft('aus3', 'Dachgeschoss', mitTermin),
   ]);
   await heftOeffnen(page, 'aus2');
+  await fragen.getByRole('button', { name: /^Alle \d+ Fragen$/ }).click();
   await expect(fragen.getByRole('checkbox', { name: /Internetanschluss/ })).toHaveCount(0);
   await expect(fragen.getByRole('checkbox', { name: /Mängel, Feuchtigkeit/ })).toHaveCount(0);
   await expect(fragen.getByRole('checkbox', { name: /Keller, Fahrradraum/ })).toBeVisible();
   await expect(fragen).toContainText('0 von 8');
   await heftOeffnen(page, 'aus3');
+  await fragen.getByRole('button', { name: /^Alle \d+ Fragen$/ }).click();
   await expect(fragen).toContainText('0 von 10');
 
   // Eigene Frage: bearbeiten und entfernen, mit Rückgängig.
