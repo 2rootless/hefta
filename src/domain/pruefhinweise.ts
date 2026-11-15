@@ -9,7 +9,7 @@ import { eigeneSeiten, kommtInMappe } from './seitenVersion';
 // Reine Rechnung auf dem, was beim Lesen der Datei gemerkt wurde (src/pdf/fakten.ts).
 
 /** Ändert sich, was gelesen wird: Dann liest Hefta vorhandene Dateien einmal neu. */
-export const FAKTEN_STAND = 1;
+export const FAKTEN_STAND = 2; // 2 (PC38): zusammengesetzte Wörter und „Art. 15“
 
 export type PruefArt =
   | 'datei'
@@ -78,7 +78,16 @@ export function wortForm(wort: string): string {
 /** Wörter eines Texts, ohne Zahlen und Doppelte. */
 export function woerterAus(text: string): string[] {
   const liste = text.match(/\p{L}[\p{L}'’]+/gu) ?? [];
-  return [...new Set(liste.map(wortForm))];
+  // PC38: Zusammengesetztes mit Bindestrich auch als ein Wort („Miet-Zertifikat“ → „mietzertifikat“) und
+  // „Art. 15“ als „art15“ (Datenkopie nach Art. 15 DSGVO). Zahlen zählen sonst nicht.
+  const zusammen = (text.match(/\p{L}+(?:-\p{L}+)+/gu) ?? []).map((w) => w.replaceAll('-', ''));
+  const artikel = /\bArt\.?\s?15\b/i.test(text) ? ['art15'] : [];
+  return [...new Set([...liste, ...zusammen].map(wortForm).concat(artikel))];
+}
+
+/** Ein Wort aus dem Regelkatalog so, wie es unter den gelesenen Wörtern steht („Art. 15“ → „art15“). */
+export function katalogWort(wort: string): string {
+  return wortForm(wort).replace(/[^\p{L}\p{N}]/gu, '');
 }
 
 /** Steht auf dieser Fassung erkennbar ein Prüfcode? Bei Scans und anderen Anbietern nicht. */
@@ -89,7 +98,7 @@ export function hatPruefcode(
   const woerter = typ.erkennen?.pruefcode;
   if (!woerter) return false;
   const seiten = version?.erkannteWerte?.seiten ?? [];
-  return seiten.some((s) => woerter.some((w) => s.woerter.includes(wortForm(w))));
+  return seiten.some((s) => woerter.some((w) => s.woerter.includes(katalogWort(w))));
 }
 
 /**
@@ -188,10 +197,10 @@ export function versionPruefen(
 
   // PH-h: falsche Art, nach den Wörtern im Regelkatalog. Ein Wort allein ist ein schwaches Zeichen:
   // Eine echte Auskunft kann die Datenkopie im Kleingedruckten erwähnen.
-  const passt = typ.erkennen?.passt?.some((w) => woerter.has(wortForm(w)));
+  const passt = typ.erkennen?.passt?.some((w) => woerter.has(katalogWort(w)));
   const treffer = passt
     ? undefined
-    : typ.erkennen?.passtNicht.find((p) => p.woerter.some((w) => woerter.has(wortForm(w))));
+    : typ.erkennen?.passtNicht.find((p) => p.woerter.some((w) => woerter.has(katalogWort(w))));
   if (treffer)
     funde.push({ ...basis, art: 'art', anzeige: treffer.anzeige, hinweis: treffer.hinweis });
 

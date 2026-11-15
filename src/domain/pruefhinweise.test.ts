@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DateiVersion, SeitenFakten } from './modell';
 import { FAKTEN_STAND, pruefcodeStand, pruefhinweise, woerterAus } from './pruefhinweise';
-import type { Dokumenttyp, PersonStand } from './regelkatalog';
+import { dokumenttyp, type Dokumenttyp, type PersonStand } from './regelkatalog';
 
 const seite = (teil: Partial<SeitenFakten> = {}): SeitenFakten => ({
   monat: null,
@@ -230,5 +230,45 @@ describe('Prüfcode beim Bonitätsnachweis', () => {
     expect(pruefcodeStand(b, b.heute)).toBeNull();
     const c = stand(70, ['bonitaetscheck']);
     expect(pruefcodeStand(c, c.heute)?.art).toBe('abgelaufen');
+  });
+});
+
+describe('PC38: weitere Auskunfteien, nach dem Regelkatalog', () => {
+  // Der echte Eintrag „bonitaet“ aus dem Regelkatalog, nicht der Kurz-Typ oben.
+  const ECHT = dokumenttyp('bonitaet')!;
+  const mit = (text: string) =>
+    eins(ECHT, [
+      version({ ausstellungsdatum: '2026-10-01', fakten: [seite({ woerter: woerterAus(text) })] }),
+    ]);
+
+  it('Miet-Zertifikat, BonitätsPass und Bonitätszertifikat passen zur Bonität', () => {
+    for (const text of [
+      'CRIFBÜRGEL Miet-Zertifikat für Max Muster. Gemäß Art. 15 DSGVO …',
+      'itsmyData BonitätsPass Max Muster',
+      'Bonitätszertifikat Max Muster',
+    ])
+      expect(mit(text), text).toBeUndefined();
+  });
+
+  it('„Selbstauskunft nach Art. 15“ und „Art. 15 DSGVO“ gelten als Datenkopie, mit dem Hinweis wie bei „Datenkopie“', () => {
+    for (const text of [
+      'Selbstauskunft nach Art. 15 DSGVO für Max Muster',
+      'Auskunft gemäß Art.15 DSGVO, Max Muster',
+    ]) {
+      const f = mit(text);
+      expect(f?.art, text).toBe('art');
+      expect(f?.anzeige, text).toBe('Datenkopie');
+    }
+  });
+
+  it('lieber kein Treffer als ein falscher: Art. 6 oder eine Zahl 15 allein sind kein Zeichen', () => {
+    expect(mit('Einwilligung nach Art. 6 DSGVO, Max Muster')).toBeUndefined();
+    expect(mit('Seite 15 von 20, Max Muster')).toBeUndefined();
+  });
+
+  it('woerterAus: Zusammengesetztes als ein Wort, „Art. 15“ als „art15“', () => {
+    expect(woerterAus('Miet-Zertifikat nach Art. 15')).toEqual(
+      expect.arrayContaining(['miet', 'zertifikat', 'mietzertifikat', 'art15']),
+    );
   });
 });

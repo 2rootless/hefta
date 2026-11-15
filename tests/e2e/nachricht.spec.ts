@@ -39,7 +39,9 @@ test.describe('Feinschliff', () => {
     );
     await expect(page.getByRole('radio')).toHaveText(['Nur das Übliche', 'Alles']);
     await expect(
-      page.getByText(/Reicht für die meisten Bewerbungen. Alles darin ist erlaubt/),
+      page.getByText(
+        /Reicht für die meisten Bewerbungen. Nichts, was die Datenschutzkonferenz ausschließt/,
+      ),
     ).toBeVisible();
     await page.getByRole('radio', { name: 'Alles' }).click();
     await expect(
