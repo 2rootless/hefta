@@ -16,11 +16,10 @@
     type Bewerbung,
     type MappenAkzent,
     type MappenAussehen,
-    type MappenFlaeche,
     type MappenSchrift,
   } from '../domain/modell';
   import { t } from '../i18n';
-  import { AKZENTE, druckTon, flaechenTon, flaecheVon, PERSONENFARBEN } from '../pdf/mappe';
+  import { AKZENTE, druckTon, PERSONENFARBEN } from '../pdf/mappe';
   import type { PdfDokument } from '../pdf/pdfjs';
   import {
     bewerbungLaden,
@@ -34,7 +33,6 @@
   import { passend, TITEL } from '../ui/passend';
   import Schalter from '../ui/Schalter.svelte';
   import { staendeAus, standardDateiname } from '../ui/mappeDaten';
-  import { bauSchluessel, gebauteMappen } from '../ui/mappeSpeicher';
   import type { AussehenVorschau } from '../ui/mappeVorschau';
   import SeitenAnsicht from '../ui/SeitenAnsicht.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
@@ -82,7 +80,7 @@
   async function vorschauHolen() {
     if (!daten.ansicht) return;
     const wahl = $state.snapshot(aussehen);
-    const schluessel = `${wahl.art}-${wahl.akzent ?? ''}-${wahl.schrift ?? ''}-${wahl.kompakt ?? ''}-${wahl.flaeche ?? ''}`;
+    const schluessel = `${wahl.art}-${wahl.akzent ?? ''}-${wahl.schrift ?? ''}`;
     const lauf = ++vorschauLauf;
     let fertig = fertigeVorschauen[schluessel];
     if (!fertig) {
@@ -113,22 +111,16 @@
     void aussehen.art;
     void aussehen.akzent;
     void aussehen.schrift;
-    void aussehen.kompakt;
-    void aussehen.flaeche;
     if (geladen) untrack(() => void vorschauHolen());
   });
 
   async function aussehenWaehlen(wahl: MappenAussehen) {
-    // Die Art ist eine Wahl, Schrift, Kompakt und Fläche sind andere: Sie bleiben beim Wechsel erhalten.
-    // Auch die Akzentfarbe bleibt: Die Fläche kann sie nutzen, wenn die Art längst eine andere ist.
+    // Die Art ist eine Wahl, die Schrift eine andere: Sie bleibt beim Wechsel erhalten, die Akzentfarbe auch.
+    // „Kompakt“ und „Fläche“ entfallen (PC30): Ältere Werte bleiben gespeichert, wirken aber nicht mehr.
     const neu: MappenAussehen = { ...wahl };
     const schrift = wahl.schrift ?? aussehen.schrift;
-    const kompakt = wahl.kompakt ?? aussehen.kompakt;
-    const flaecheWahl = wahl.flaeche ?? aussehen.flaeche;
     const akzent = wahl.akzent ?? aussehen.akzent;
     if (schrift) neu.schrift = schrift;
-    if (kompakt !== undefined) neu.kompakt = kompakt;
-    if (flaecheWahl) neu.flaeche = flaecheWahl;
     if (akzent) neu.akzent = akzent;
     aussehen = neu;
     if (!daten.ansicht) return;
@@ -139,30 +131,6 @@
   }
 
   const SCHRIFTEN: MappenSchrift[] = ['archivo', 'source_serif', 'plex_sans'];
-  const FLAECHEN: MappenFlaeche[] = ['personen', 'akzent', 'grau', 'keine'];
-  const hauptStand = $derived(staende.find((s) => s.rolle === 'hauptmieter') ?? staende[0]);
-  const flaechenPunkt = (id: MappenFlaeche) =>
-    flaechenTon(
-      id,
-      aussehen.akzent,
-      hauptStand && PERSONENFARBEN[(hauptStand.farbe - 1) % PERSONENFARBEN.length],
-    ) ?? '#ffffff';
-  // Was „Kompakt“ gerade bewirkt, aus dem letzten Bau dieser Wahl; ohne ihn der allgemeine Satz.
-  const gebaut = $derived(
-    daten.ansicht && geladen
-      ? gebauteMappen.holen(bauSchluessel(daten.ansicht, bewerbung, $state.snapshot(e)))
-      : undefined,
-  );
-  const kompaktText = $derived.by(() => {
-    if (gebaut?.deckSeiten === undefined) return t('mappe.aussehen.kompaktUnter');
-    if (gebaut.deckSeiten === 1) {
-      return (gebaut.deckMassstab ?? 1) < 1
-        ? t('mappe.aussehen.kompaktWirkt')
-        : t('mappe.aussehen.kompaktUnnoetig');
-    }
-    return gebaut.kompaktHilft ? t('mappe.aussehen.kompaktHilft') : t('mappe.aussehen.kompaktNein');
-  });
-
   // Farbe einer Person gleich hier ändern: Vorher wusste man nicht, wozu sie einmal dient.
   let farbeOffen = $state(false);
   let farbePerson = $state<string | null>(null);
@@ -472,39 +440,6 @@
   </section>
 
   <section>
-    <h2>{t('mappe.aussehen.flaeche')}</h2>
-    <div class="schriften" role="radiogroup" aria-label={t('mappe.aussehen.flaeche')}>
-      {#each FLAECHEN as id (id)}
-        <button
-          type="button"
-          class="chip mit-punkt"
-          role="radio"
-          aria-checked={flaecheVon(aussehen) === id}
-          onclick={() => aussehenWaehlen({ ...aussehen, flaeche: id })}
-        >
-          <i class:keine={id === 'keine'} use:flaeche={flaechenPunkt(id)}></i>
-          {t(`mappe.aussehen.flaecheName.${id}`)}
-        </button>
-      {/each}
-    </div>
-    <p class="hinweis">{t('mappe.aussehen.flaecheHinweis')}</p>
-  </section>
-
-  <section>
-    <h2>{t('mappe.deckblatt')}</h2>
-    <ul class="kasten">
-      <li>
-        <span class="tx"><b>{t('mappe.aussehen.kompakt')}</b><small>{kompaktText}</small></span>
-        <Schalter
-          an={!!aussehen.kompakt}
-          label={t('mappe.aussehen.kompakt')}
-          onclick={() => aussehenWaehlen({ ...aussehen, kompakt: !aussehen.kompakt })}
-        />
-      </li>
-    </ul>
-  </section>
-
-  <section>
     <h2>{t('mappe.anpassenSeite.bestandteile')}</h2>
     <ul class="kasten">
       <li>
@@ -701,19 +636,6 @@
   .chip[aria-checked='true'] {
     border: 2.5px solid var(--ink);
     font-weight: 700;
-  }
-  .mit-punkt {
-    gap: 8px;
-  }
-  .mit-punkt i {
-    flex-shrink: 0;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--ton);
-  }
-  .mit-punkt i.keine {
-    border: 1.5px solid var(--ink-muted);
   }
   /* Jeder Chip in einer Schrift seiner Art; die PDF-Schriften selbst lädt die App nur fürs PDF. */
   .schrift-source_serif {

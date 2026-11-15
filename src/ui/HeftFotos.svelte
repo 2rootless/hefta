@@ -156,7 +156,8 @@
   />
 </section>
 
-<Sheet bind:offen titel={t('fotos.titel')}>
+<!-- PC31 (A2): „Schließen“ oben (44 px) und nach unten wischen, überall auf dem Foto. -->
+<Sheet bind:offen titel={t('fotos.titel')} kreuz ueberallWischen>
   <div class="streifen" bind:this={streifen} onscroll={gewischt}>
     {#each fotos as id (id)}
       <div class="platz">
@@ -235,6 +236,8 @@
   .streifen {
     display: flex;
     overflow-x: auto;
+    /* Seitlich wischt das Foto, senkrecht nimmt das Blatt die Geste (Schließen). */
+    touch-action: pan-x;
     scroll-snap-type: x mandatory;
     overscroll-behavior-x: contain;
     scrollbar-width: none;

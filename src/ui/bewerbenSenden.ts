@@ -1,16 +1,9 @@
 // Was beim Bewerben hinausgeht (Zeile 8): Hefta verschickt nichts selbst. Es öffnet die Mail mit Mappe,
 // kopiert Text, teilt die Mappe oder öffnet die Website, und sagt danach, ob es sicher weiß, dass etwas
 // hinausging. Sicher nur, wenn das System „gesendet“ meldet (Mailfenster unter iOS, 09b).
-import { teilenMelden } from '../app/testbauAnzeige';
-import {
-  ablageLeeren,
-  ablegen,
-  appTeilen,
-  appTeilenWohin,
-  istApp,
-  istIosApp,
-} from '../app/plattform';
-import { teilenZiel } from '../domain/teilenZiel';
+import { ablageLeeren, ablegen, appTeilenWohin, istApp, istIosApp } from '../app/plattform';
+import type { BewerbungsWeg } from '../domain/bewerben';
+import { teilenWerten, teilenZiel } from '../domain/teilenZiel';
 import { mailLink } from '../domain/nachricht';
 import { sichern } from './mappeErstellen';
 
@@ -46,11 +39,13 @@ export async function mailMitMappe(o: {
       text: o.text,
       betreff: o.betreff,
     });
-    await teilenMelden(app, geteilt);
-    return geteilt ? 'geoeffnet' : 'abgebrochen';
+    return alsGesendet(teilenWerten(app, geteilt, 'mail'));
   }
-  // Ohne Mailkonto, in einer anderen Mail-App, auf Android: das Teilen-Blatt, der Stand bleibt unsicher.
-  if (istApp()) return (await appTeilen(o.dateien, o.text)) ? 'geoeffnet' : 'abgebrochen';
+  // Ohne Mailkonto, in einer anderen Mail-App, auf Android: das Teilen-Blatt (PC31: nach der Liste).
+  if (istApp()) {
+    const { geteilt, kennung } = await appTeilenWohin(o.dateien, o.text);
+    return alsGesendet(teilenWerten(kennung, geteilt, 'mail'));
+  }
   // Ein Mail-Link trägt keinen Anhang: Das Teilen-Blatt kann beides, ohne Titel (sonst legt iOS eine
   // Textdatei bei).
   if (navigator.canShare?.({ files: o.dateien, text: o.text })) {
@@ -65,6 +60,10 @@ export async function mailMitMappe(o: {
   mailLinkOeffnen(mailLink(o.an, o.betreff, o.text));
   return 'anhangSelbst';
 }
+
+/** PC31: Was nie als Bewerbung zählt (WhatsApp, Dateien …), behandelt das Bewerben wie abgebrochen. */
+const alsGesendet = (w: ReturnType<typeof teilenWerten>): Gesendet =>
+  w === 'gesendet' ? 'gesendet' : w === 'unsicher' ? 'geoeffnet' : 'abgebrochen';
 
 /**
  * Öffnet das Mailprogramm über einen Mail-Link. Browsertests setzen `window.__heftaMailTest` als Ersatz
@@ -104,23 +103,30 @@ export async function mailOhneAnhang(o: {
 
 /**
  * Die Mappe teilen, ohne Text (Portal, Website). `ueber`: die App, die das Teilen-Blatt nennt (Zeile 8,
- * „Ziel beim Teilen“); leer, wenn das System es nicht sagt (Web) oder die App unbekannt ist.
+ * „Ziel beim Teilen“); leer, wenn das System es nicht sagt (Web) oder die App unbekannt ist. `wertung`:
+ * ob das als Bewerbung zählt (PC31).
  */
-export async function mappeTeilen(dateien: File[]): Promise<{ geteilt: boolean; ueber: string }> {
+export async function mappeTeilen(
+  dateien: File[],
+  weg: BewerbungsWeg,
+): Promise<{ wertung: ReturnType<typeof teilenWerten>; ueber: string }> {
   if (istApp()) {
     const { geteilt, kennung } = await appTeilenWohin(dateien);
-    return { geteilt, ueber: geteilt ? teilenZiel(kennung) : '' };
+    return {
+      wertung: teilenWerten(kennung, geteilt, weg),
+      ueber: geteilt ? teilenZiel(kennung) : '',
+    };
   }
   if (navigator.canShare?.({ files: dateien })) {
     try {
       await navigator.share({ files: dateien });
-      return { geteilt: true, ueber: '' };
+      return { wertung: teilenWerten(null, true, weg), ueber: '' };
     } catch {
-      return { geteilt: false, ueber: '' };
+      return { wertung: 'nichts', ueber: '' };
     }
   }
   sichern(dateien);
-  return { geteilt: true, ueber: '' };
+  return { wertung: teilenWerten(null, true, weg), ueber: '' };
 }
 
 export async function textKopieren(text: string): Promise<boolean> {

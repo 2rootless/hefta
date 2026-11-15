@@ -74,14 +74,13 @@ test.describe('Feinschliff', () => {
     await expect(page.getByRole('dialog', { name: /^Seite 1 von \d+$/ })).toBeVisible();
   });
 
-  test('Schrift und Kompakt gelten für den Haushalt und bleiben (AM5a, AM5b)', async ({ page }) => {
+  test('Die Schrift gilt für den Haushalt und bleibt (AM5a)', async ({ page }) => {
     await laden(page, '04-fertig', '/mappe/anpassen');
     await expect(page.getByRole('radio', { name: 'Archivo' })).toHaveAttribute(
       'aria-checked',
       'true',
     );
     await page.getByRole('radio', { name: 'Source Serif' }).click();
-    await page.getByRole('switch', { name: 'Kompakt: auf einer Seite' }).click();
     await page.getByRole('radio', { name: /^Schlicht/ }).click();
     await page.reload();
     await page.locator('main h1').first().waitFor();
@@ -89,50 +88,13 @@ test.describe('Feinschliff', () => {
       'aria-checked',
       'true',
     );
-    await expect(page.getByRole('switch', { name: 'Kompakt: auf einer Seite' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
   });
 
-  test('Die Fläche hinter „Wer einzieht“ ist für sich wählbar und bleibt beim Wechsel der Art (AM5c)', async ({
-    page,
-  }) => {
+  test('PC30: „Kompakt“ und „Fläche“ gibt es in „Mappe anpassen“ nicht mehr', async ({ page }) => {
     await laden(page, '04-fertig', '/mappe/anpassen');
-    const gruppe = page.getByRole('radiogroup', { name: 'Fläche hinter „Wer einzieht“' });
-    await expect(gruppe.getByRole('radio')).toHaveText([
-      'Personenfarbe',
-      'Akzentfarbe',
-      'Hellgrau',
-      'Keine',
-    ]);
-    await expect(gruppe.getByRole('radio', { name: 'Personenfarbe' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
-    await gruppe.getByRole('radio', { name: 'Keine' }).click();
-    await page.getByRole('radio', { name: /^Schlicht/ }).click();
-    await page.reload();
-    await page.locator('main h1').first().waitFor();
-    await expect(gruppe.getByRole('radio', { name: 'Keine' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
-  });
-
-  test('Ohne eigene Wahl folgt die Fläche der Art (AM5c)', async ({ page }) => {
-    await laden(page, '04-fertig', '/mappe/anpassen');
-    const gruppe = page.getByRole('radiogroup', { name: 'Fläche hinter „Wer einzieht“' });
-    await page.getByRole('radio', { name: /^Schlicht/ }).click();
-    await expect(gruppe.getByRole('radio', { name: 'Hellgrau' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
-    await page.getByRole('radio', { name: /^Eine Farbe/ }).click();
-    await expect(gruppe.getByRole('radio', { name: 'Akzentfarbe' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
+    await expect(page.getByRole('radio', { name: 'Source Serif' })).toBeVisible();
+    await expect(page.getByText(/Kompakt|Fläche hinter/)).toHaveCount(0);
+    await expect(page.getByRole('radiogroup', { name: /Fläche/ })).toHaveCount(0);
   });
 
   test('Die Frage nach der Zusage ist sichtbar, keine Pflicht, und die Antwort lässt sich entfernen', async ({

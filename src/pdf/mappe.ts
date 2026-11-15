@@ -1,5 +1,5 @@
 import { PERSONENFARBEN as FARBEN } from '../domain/personenfarben';
-import type { MappenAkzent, MappenAussehen, MappenFlaeche } from '../domain/modell';
+import type { MappenAkzent, MappenAussehen } from '../domain/modell';
 import fontkit from '@cantoo/fontkit';
 import { LineCapStyle, PDFDocument, rgb, type PDFFont, type PDFPage } from '@cantoo/pdf-lib';
 import { KLAMMER } from '../domain/logo';
@@ -56,42 +56,6 @@ export function druckTon(farbe: string): string {
       .toString(16)
       .padStart(2, '0');
   return `#${kanal((n >> 16) & 255, 0)}${kanal((n >> 8) & 255, 1)}${kanal(n & 255, 2)}`;
-}
-
-/** Feine Linie, wenn die Fläche „Keine“ ist. */
-export const FLAECHE_LINIE = '#d9cfc2';
-// B14: warmes Hellgrau der Leiste bei „Schlicht“ (mappe14.py, .db.schlicht .leiste).
-const HELLGRAU = '#f3efe8';
-
-function aufWeiss(farbe: string, anteil: number): string {
-  const n = Number.parseInt(farbe.replace('#', ''), 16);
-  const kanal = (wert: number) =>
-    Math.round(255 - anteil * (255 - wert))
-      .toString(16)
-      .padStart(2, '0');
-  return `#${kanal((n >> 16) & 255)}${kanal((n >> 8) & 255)}${kanal(n & 255)}`;
-}
-
-/** Ohne eigene Wahl folgt die Fläche der Art: So sieht „Schlicht“ weiter schlicht aus. */
-export function flaecheVon(aussehen: Pick<MappenAussehen, 'art' | 'flaeche'>): MappenFlaeche {
-  if (aussehen.flaeche) return aussehen.flaeche;
-  if (aussehen.art === 'personen') return 'personen';
-  return aussehen.art === 'einefarbe' ? 'akzent' : 'grau';
-}
-
-/**
- * Ton der Fläche hinter „Wer einzieht“ (mappe-feinschliff.md, § 4b), `null` bei „Keine“. Ganz hell: Im harten
- * Schwarzweiß fällt die Fläche weg, alles darauf bleibt.
- */
-export function flaechenTon(
-  flaeche: MappenFlaeche,
-  akzent: MappenAkzent | undefined,
-  personFarbe: string | undefined,
-): string | null {
-  if (flaeche === 'keine') return null;
-  if (flaeche === 'akzent') return aufWeiss(AKZENTE[akzent ?? 'tanne'], 0.1);
-  if (flaeche === 'personen' && personFarbe) return aufWeiss(personFarbe, 0.11);
-  return HELLGRAU;
 }
 
 /**

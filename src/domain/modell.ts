@@ -49,19 +49,19 @@ export interface Person extends Basis {
 export type MappenAkzent = 'tanne' | 'schiefer' | 'bordeaux' | 'graphit';
 export type MappenSchrift = 'archivo' | 'source_serif' | 'plex_sans';
 
-/** Die helle Fläche hinter „Wer einzieht“ (design/mappe-feinschliff.md, § 4b). */
+/** Die helle Fläche hinter „Wer einzieht“; entfällt (PC30), ältere Werte werden still ignoriert. */
 export type MappenFlaeche = 'personen' | 'akzent' | 'grau' | 'keine';
 
 /** Aussehen der PDF-Mappe (design/mappe-pdf.md, „Schlicht statt Kopfband“). */
 export interface MappenAussehen {
   art: 'schlicht' | 'einefarbe' | 'personen';
-  /** Bei „Eine Farbe“; bleibt beim Wechsel der Art, die Fläche kann sie weiter nutzen. */
+  /** Bei „Eine Farbe“; bleibt beim Wechsel der Art. */
   akzent?: MappenAkzent;
   /** Schrift der eigenen Seiten; fehlt sie, gilt Archivo (mappe-feinschliff.md, § 3). */
   schrift?: MappenSchrift;
-  /** Deckblatt bis 0,85 kleiner, wenn es so auf eine Seite passt (§ 4). */
+  /** Veraltet (PC30): Den Schalter „Kompakt“ gibt es nicht mehr; ein gespeicherter Wert wirkt nicht. */
   kompakt?: boolean;
-  /** Fehlt sie, folgt die Fläche der Art (`flaecheVon`). */
+  /** Veraltet (PC30): Die Wahl der Fläche gibt es nicht mehr; ein gespeicherter Wert wirkt nicht. */
   flaeche?: MappenFlaeche;
 }
 

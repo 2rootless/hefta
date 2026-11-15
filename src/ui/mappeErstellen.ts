@@ -64,7 +64,6 @@ export interface MappenErgebnis {
   unlesbar: UnlesbareDatei[];
   /** Fürs Schalterchen „Kompakt“; bei Einzeldateien leer. */
   deckSeiten?: number;
-  kompaktHilft?: boolean;
   deckMassstab?: number;
 }
 
@@ -358,7 +357,6 @@ export async function mappeErstellen(
     dateien: [datei],
     seiten: erg.seiten,
     deckSeiten: erg.deckSeiten,
-    kompaktHilft: erg.kompaktHilft,
     deckMassstab: erg.deckMassstab,
     groesse: datei.size,
     quellen: quellenIds,

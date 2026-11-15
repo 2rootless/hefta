@@ -1403,20 +1403,6 @@
         "plex_sans": "Plex Sans"
       },
       "schriftHinweis": "Alle drei kommen in der Mappe mit und sehen überall gleich aus. Aufbau und Leiste bleiben gleich: Daran erkennt man {app}.",
-      "flaeche": "Fläche hinter „Wer einzieht“",
-      "flaecheName": {
-        "personen": "Personenfarbe",
-        "akzent": "Akzentfarbe",
-        "grau": "Hellgrau",
-        "keine": "Keine"
-      },
-      "flaecheHinweis": "Die helle Fläche links auf dem Deckblatt. Die Schrift darauf bleibt dunkel; gedruckt in Schwarzweiß fällt die Fläche weg.",
-      "kompakt": "Kompakt: auf einer Seite",
-      "kompaktUnter": "Passt das Deckblatt nicht auf eine Seite, wird es kleiner, mit Schrift ab 8 Punkt.",
-      "kompaktHilft": "Zwei Seiten. Kompakt schafft es auf eine, mit Schrift ab 8 Punkt.",
-      "kompaktNein": "Zwei Seiten. Auch Kompakt schafft es nicht auf eine.",
-      "kompaktWirkt": "Passt jetzt auf eine Seite, mit Schrift ab 8 Punkt.",
-      "kompaktUnnoetig": "Passt schon auf eine Seite; Kompakt ändert nichts.",
       "titel": "Aussehen der Mappe",
       "laedt": "Vorschau wird erstellt …",
       "keineVorschau": "Gerade keine Vorschau. Die Wahl gilt trotzdem, die Mappe zeigt sie.",

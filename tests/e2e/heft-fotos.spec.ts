@@ -10,7 +10,10 @@ const PNG = Buffer.from(
   'base64',
 );
 
-test('Fotos im Heft: auswählen, groß ansehen, löschen und zurückholen', async ({ page }) => {
+test('Fotos im Heft: auswählen, groß ansehen, schließen, löschen und zurückholen', async ({
+  page,
+  browserName,
+}) => {
   await haushaltMitMax(page);
   await page.evaluate(
     () =>
@@ -54,6 +57,45 @@ test('Fotos im Heft: auswählen, groß ansehen, löschen und zurückholen', asyn
   await expect(page.getByRole('button', { name: /^Foto \d ansehen$/ })).toHaveCount(2);
   await page.reload();
   await expect(page.getByRole('button', { name: /^Foto \d ansehen$/ })).toHaveCount(2);
+
+  // PC31 (A2): „Schließen“ oben, 44 px, und nach unten wischen schließt; seitlich wischen nicht.
+  const blatt = page.getByRole('dialog', { name: 'Fotos' });
+  await page.getByRole('button', { name: 'Foto 1 ansehen' }).click();
+  const zu = blatt.getByRole('button', { name: 'Schließen' });
+  await expect(zu).toBeVisible();
+  const box = (await zu.boundingBox())!;
+  expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
+  expect(box.y).toBeLessThan(((await blatt.boundingBox())!.y ?? 0) + 60);
+  await zu.click();
+  await expect(blatt).toBeHidden();
+  if (browserName === 'chromium') {
+    const wischen = (dx: number, dy: number) =>
+      page.evaluate(
+        ({ dx, dy }) => {
+          const ziel = document.querySelector('dialog[open] .platz img')!;
+          const r = ziel.getBoundingClientRect();
+          const x = r.left + r.width / 2;
+          const y = r.top + r.height / 3;
+          const beruehrung = (cx: number, cy: number) =>
+            new Touch({ identifier: 1, target: ziel, clientX: cx, clientY: cy });
+          const senden = (art: string, liste: Touch[]) =>
+            ziel.dispatchEvent(
+              new TouchEvent(art, { touches: liste, changedTouches: liste, bubbles: true }),
+            );
+          senden('touchstart', [beruehrung(x, y)]);
+          for (let i = 1; i <= 6; i++)
+            senden('touchmove', [beruehrung(x + (dx * i) / 6, y + (dy * i) / 6)]);
+          ziel.dispatchEvent(new TouchEvent('touchend', { touches: [], bubbles: true }));
+        },
+        { dx, dy },
+      );
+    await page.getByRole('button', { name: 'Foto 1 ansehen' }).click();
+    await expect(blatt.locator('.platz img').first()).toBeVisible();
+    await wischen(160, 20);
+    await expect(blatt).toBeVisible();
+    await wischen(0, 140);
+    await expect(blatt).toBeHidden();
+  }
 
   await page.getByRole('button', { name: 'Foto 1 ansehen' }).click();
   await page.getByRole('button', { name: 'Foto löschen' }).click();

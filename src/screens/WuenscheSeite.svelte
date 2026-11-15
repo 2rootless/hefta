@@ -35,9 +35,13 @@
   const eur = (n: number) => `${new Intl.NumberFormat('de-DE').format(n)}${NB}€`;
   const zahlText = (n: number) =>
     new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }).format(n);
+  // C23 (PC31, Bilder aller Seiten): Tag und Monat brechen nie auseinander.
+  const fest = (s: string) => s.replace(/(\d\.)\s/g, '$1 ');
   const tag = (d: string) =>
-    new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short', year: 'numeric' }).format(
-      new Date(`${d}T12:00`),
+    fest(
+      new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short', year: 'numeric' }).format(
+        new Date(`${d}T12:00`),
+      ),
     );
 
   type Schluessel = 'warm' | 'zimmer' | 'flaeche' | 'weg' | 'einzug' | 'grenze';
@@ -167,8 +171,10 @@
     return null;
   });
   const tagOhneJahr = (d: string) =>
-    new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short' }).format(
-      new Date(`${d}T12:00`),
+    fest(
+      new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'short' }).format(
+        new Date(`${d}T12:00`),
+      ),
     );
 
   interface Zeile {

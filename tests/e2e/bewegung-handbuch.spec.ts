@@ -360,7 +360,7 @@ async function fotoAnHeft(page: Page) {
   );
 }
 
-test('PC21: Liste und Heft wechseln mit Foto nur per Blende, nichts fliegt, nichts verschiebt sich', async ({
+test('PC21: Liste → Heft mit Foto nur per Blende, nichts fliegt; PC31 (A1): zurück steht die Liste sofort', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -370,13 +370,8 @@ test('PC21: Liste und Heft wechseln mit Foto nur per Blende, nichts fliegt, nich
   await page.reload();
   const karte = page.locator('[data-heft-karte="h1"]');
   await expect(karte.locator('.daumen img')).toBeVisible();
-  for (const schritt of ['auf', 'zu'] as const) {
-    if (schritt === 'auf') await karte.click();
-    else
-      await page
-        .getByRole('link', { name: /Wohnungen/ })
-        .first()
-        .click();
+  {
+    await karte.click();
     await page.waitForFunction(() => !!document.querySelector('.flug-ebene'));
     const stand = await page.evaluate(() => {
       const alle = document.getAnimations();
@@ -406,5 +401,19 @@ test('PC21: Liste und Heft wechseln mit Foto nur per Blende, nichts fliegt, nich
       timeout: 3000,
     });
   }
+  // PC31 (A1): Zurück in die Liste keine Blende, kein Abbild; die Karte steht gleich ganz da.
+  await page
+    .getByRole('link', { name: /Wohnungen/ })
+    .first()
+    .click();
   await expect(karte).toBeVisible();
+  const zurueck = await page.evaluate(() => ({
+    ebene: document.querySelectorAll('.flug-ebene, .flug-abbild').length,
+    blende: document
+      .getAnimations()
+      .filter((a) =>
+        (a.effect as KeyframeEffect).getKeyframes().some((k) => Number(k.opacity) === 0),
+      ).length,
+  }));
+  expect(zurueck).toEqual({ ebene: 0, blende: 0 });
 });

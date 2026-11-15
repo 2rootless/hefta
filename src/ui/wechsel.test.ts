@@ -12,7 +12,12 @@ describe('Bewegung beim Wechsel (Design 12.11.)', () => {
 
   it('zurück, Abbrechen, Anderer Link: einheitlich zurück', () => {
     expect(wechselArt('/wohnung-neu/vorschau', '/wohnung-neu', 'zurueck')).toBe('zurueck');
-    expect(wechselArt('/heft/abc', '/wohnungen', 'zurueck')).toBe('zurueck');
+    expect(wechselArt('/wuensche', '/heft/abc', 'zurueck')).toBe('zurueck');
+    // PC31 (A1): zurück auf die Reiter-Wurzel „Wohnungen“ ohne Einblenden, wie PC29 bei „Mappe“.
+    expect(wechselArt('/heft/abc', '/wohnungen', 'zurueck')).toBe('keine');
+    expect(wechselArt('/wohnung-neu', '/wohnungen', 'zurueck')).toBe('keine');
+    // Gegenprobe: vorwärts auf die Wurzel blendet weiter.
+    expect(wechselArt('/einstellungen', '/wohnungen', 'vor')).toBe('einblenden');
   });
 
   it('Bildschirme von Version 1 und der erste Bildschirm blenden wie bisher', () => {

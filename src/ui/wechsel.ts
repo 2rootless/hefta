@@ -17,9 +17,13 @@ export type Wechsel =
   | 'einblenden'
   /**
    * PC29 (A2): Zurück auf den Reiter „Mappe“: Der letzte Stand steht sofort da, ohne den ganzen Bildschirm
-   * einzublenden. Was sich wirklich geändert hat, ändert sich an Ort und Stelle.
+   * einzublenden. Was sich wirklich geändert hat, ändert sich an Ort und Stelle. PC31 (A1): ebenso für
+   * alle Reiter-Wurzeln, also auch „Wohnungen“.
    */
   | 'keine';
+
+/** Die Wurzeln der Reiter „Wohnungen“ und „Mappe“ (PC29, PC31). */
+const REITER_WURZELN = new Set(['/', '/mappe-start', '/wohnungen']);
 
 const HEFTA_2 = /^\/(wohnungen|wohnung-neu|heft|wuensche)(\/|$)/;
 
@@ -28,7 +32,7 @@ export function wechselArt(
   nach: string,
   richtung: 'vor' | 'zurueck' | 'ersetzt' | null,
 ): Wechsel {
-  if (von && richtung === 'zurueck' && (nach === '/' || nach === '/mappe-start')) return 'keine';
+  if (von && richtung === 'zurueck' && REITER_WURZELN.has(nach)) return 'keine';
   if (!von || !(HEFTA_2.test(nach) || HEFTA_2.test(von))) return 'einblenden';
   if (richtung === 'zurueck') return 'zurueck';
   if (/^\/heft\/[\w-]+$/.test(nach)) return 'heft';

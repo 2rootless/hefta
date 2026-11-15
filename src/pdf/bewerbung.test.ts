@@ -13,9 +13,8 @@ import { readFileSync } from 'node:fs';
 import { APP_NAME, VERMIETER_ADRESSE, VERMIETER_DOMAIN } from '../app/name';
 import { describe, expect, it } from 'vitest';
 import { pdfSchriften, textJeSeite } from '../test/hilfen';
-import type { MappenFlaeche, Rolle } from '../domain/modell';
-import { bewerbungBauen, leistenTon, type BewerbungAuftrag, type MappenBlock } from './bewerbung';
-import { flaechenTon, flaecheVon } from './mappe';
+import type { MappenAussehen } from '../domain/modell';
+import { bewerbungBauen, type BewerbungAuftrag, type MappenBlock } from './bewerbung';
 
 // Prüfungen P1 bis P16, P18 und P19 aus design/mappe-pdf.md; P17 (Schwarzweiß) misst tests/e2e/pdfmappe.spec.ts.
 
@@ -482,14 +481,6 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       expect(eine.deckSeiten).toBe(1);
     });
 
-    it('Kompakt ändert am Briefbogen nichts mehr (DP30: ein Satz für alle Mappen)', async () => {
-      const an = await bewerbungBauen(
-        await auftrag({ aussehen: { art: 'personen', kompakt: true } }),
-      );
-      expect(an.kompaktHilft).toBe(false);
-      expect(an.deckMassstab).toBe(1);
-    });
-
     it.each([
       ['Source Serif', 'SourceSerif4'],
       ['Plex Sans', 'IBMPlexSans'],
@@ -834,51 +825,26 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       expect(deckOhne).not.toContain('Fassung');
     });
 
-    describe('Fläche hinter „Wer einzieht“ (AM5c)', () => {
-      const block = (farbe: string, rolleId: Rolle) => ({ person: { farbe, rolleId } });
-
-      it('folgt ohne eigene Wahl der Art, die eigene Wahl geht vor', () => {
-        expect(flaecheVon({ art: 'personen' })).toBe('personen');
-        expect(flaecheVon({ art: 'einefarbe' })).toBe('akzent');
-        expect(flaecheVon({ art: 'schlicht' })).toBe('grau');
-        expect(flaecheVon({ art: 'schlicht', flaeche: 'personen' })).toBe('personen');
-      });
-
-      it('Personenfarbe ist die der Hauptperson, gibt es keine, die der ersten', () => {
-        const aussehen = { art: 'personen' } as const;
-        const apricot = flaechenTon('personen', undefined, '#e9a970');
-        const gruen = flaechenTon('personen', undefined, '#b8e07c');
-        expect(apricot).not.toBe(gruen);
-        expect(
-          leistenTon(aussehen, [block('#e9a970', 'mitmieter'), block('#b8e07c', 'hauptmieter')]),
-        ).toBe(gruen);
-        expect(
-          leistenTon(aussehen, [block('#e9a970', 'mitmieter'), block('#b8e07c', 'mitmieter')]),
-        ).toBe(apricot);
-      });
-
-      it('Akzentfarbe, Hellgrau und Keine', () => {
-        expect(leistenTon({ art: 'einefarbe', akzent: 'bordeaux' }, [])).toBe('#f2eaeb');
-        expect(leistenTon({ art: 'personen', flaeche: 'akzent' }, [])).toBe('#eaefed');
-        expect(leistenTon({ art: 'personen', flaeche: 'grau' }, [])).toBe('#f3efe8');
-        expect(leistenTon({ art: 'personen', flaeche: 'keine' }, [])).toBeNull();
-      });
-
-      it.each(['personen', 'akzent', 'grau', 'keine'] satisfies MappenFlaeche[])(
-        '%s: Das Deckblatt bleibt, wie es ist (P11)',
-        async (flaeche) => {
-          const standard = await bewerbungBauen(
-            await auftrag({ hinweis: true, aussehen: { art: 'personen' } }),
-          );
-          const erg = await bewerbungBauen(
-            await auftrag({ hinweis: true, aussehen: { art: 'personen', flaeche } }),
-          );
-          const [deck] = await textJeSeite(erg.bytes);
-          expect(deck).toBe((await textJeSeite(standard.bytes))[0]);
-          expect(erg.deckSeiten).toBe(standard.deckSeiten);
-        },
-      );
-    });
+    it.each([
+      { flaeche: 'personen' },
+      { flaeche: 'akzent' },
+      { flaeche: 'grau' },
+      { flaeche: 'keine' },
+      { kompakt: true },
+    ] satisfies Partial<MappenAussehen>[])(
+      'PC30: alter Wert %o für „Fläche“ oder „Kompakt“ wirkt nicht',
+      async (alt) => {
+        const standard = await bewerbungBauen(
+          await auftrag({ hinweis: true, aussehen: { art: 'personen' } }),
+        );
+        const erg = await bewerbungBauen(
+          await auftrag({ hinweis: true, aussehen: { art: 'personen', ...alt } }),
+        );
+        expect(await textJeSeite(erg.bytes)).toEqual(await textJeSeite(standard.bytes));
+        expect(erg.deckSeiten).toBe(standard.deckSeiten);
+        expect(erg.deckMassstab).toBe(1);
+      },
+    );
 
     it('DP30: Ein Satz für alle Mappen, ohne Maßstab: kurz wie lang bei 1', async () => {
       const q = await quelle(['S']);

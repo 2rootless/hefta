@@ -10,6 +10,7 @@
     kopf,
     kreuz = false,
     titelFokus = false,
+    ueberallWischen = false,
     children,
   }: {
     offen: boolean;
@@ -19,6 +20,11 @@
     kreuz?: boolean;
     /** Beim Öffnen auf den Titel, damit Screenreader dort anfangen. */
     titelFokus?: boolean;
+    /**
+     * PC31 (A2): Nach unten wischen schließt überall im Blatt, nicht nur am Griff. Nur, solange das Blatt
+     * oben steht und die Geste vor allem senkrecht ist; seitliches Wischen bleibt dem Inhalt.
+     */
+    ueberallWischen?: boolean;
     children: Snippet;
   } = $props();
 
@@ -81,6 +87,35 @@
     if (dialog) dialog.style.transform = '';
     if (weg > 70) offen = false;
   }
+
+  // Wischen im ganzen Blatt (ueberallWischen): erst entscheiden, ob die Geste senkrecht ist.
+  let startX = 0;
+  let richtung: 'offen' | 'senkrecht' | 'seitlich' = 'offen';
+  function flaecheStart(e: TouchEvent) {
+    if (!ueberallWischen || e.touches.length !== 1) return;
+    start = e.touches[0]!.clientY;
+    startX = e.touches[0]!.clientX;
+    weg = 0;
+    richtung = 'offen';
+  }
+  function flaecheWischen(e: TouchEvent) {
+    if (!ueberallWischen || richtung === 'seitlich' || e.touches.length !== 1) return;
+    const dy = e.touches[0]!.clientY - start;
+    const dx = e.touches[0]!.clientX - startX;
+    if (richtung === 'offen') {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      richtung =
+        dy > 0 && dy > Math.abs(dx) && (dialog?.scrollTop ?? 0) <= 0 ? 'senkrecht' : 'seitlich';
+      if (richtung === 'seitlich') return;
+    }
+    weg = Math.max(0, dy);
+    if (dialog) dialog.style.transform = weg ? `translateY(${weg}px)` : '';
+  }
+  function flaecheEnde() {
+    if (!ueberallWischen || richtung !== 'senkrecht') return;
+    richtung = 'offen';
+    wischEnde();
+  }
 </script>
 
 <dialog
@@ -92,7 +127,14 @@
     if (e.target === dialog) offen = false;
   }}
 >
-  <div class="inhalt">
+  <div
+    class="inhalt"
+    role="presentation"
+    ontouchstart={flaecheStart}
+    ontouchmove={flaecheWischen}
+    ontouchend={flaecheEnde}
+    ontouchcancel={flaecheEnde}
+  >
     <div
       class="griff-flaeche"
       aria-hidden="true"

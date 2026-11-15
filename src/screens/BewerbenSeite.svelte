@@ -246,9 +246,10 @@
     meldung = '';
     const m = await mappeHolen();
     if (!m || !weg) return;
-    const r = await mappeTeilen(m.dateien);
-    if (!r.geteilt) return;
-    await beworbenMerken(weg, false, m, r.ueber);
+    const r = await mappeTeilen(m.dateien, weg);
+    // PC31: WhatsApp, Dateien, Drucken … zählen nie als Bewerbung; dann bleibt alles, wie es war.
+    if (r.wertung === 'nichts') return;
+    await beworbenMerken(weg, r.wertung === 'gesendet', m, r.ueber);
     zurueckGehen(`/heft/${id}`);
   }
 

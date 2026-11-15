@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { haushaltMitMax } from './einrichtung';
+import { hefteAnlegen } from './hefte-hilfen';
 
 // Zurück auf jeder Seite (Auftraggeber 13.11., docs/zurueck-pruefung-2026-11-13.md): Reiter sind Wurzeln,
 // jede andere Seite führt zur Seite darüber und nennt sie.
@@ -91,4 +92,101 @@ test('PC29 (A2): Zurück aus der Selbstauskunft: „Mappe“ steht sofort, nie l
   }
   // Davor nie ein leerer Bildschirm.
   for (const b of bilder.slice(0, ab)) expect(b.h1).not.toBe('');
+});
+
+// PC31 (A1): wie PC29, für die Reiter-Wurzel „Wohnungen“.
+const MUSTERHEFT = {
+  id: 'linden',
+  createdAt: '2026-11-10T12:00:00.000Z',
+  updatedAt: '2026-11-10T12:00:00.000Z',
+  haushaltId: null,
+  adresse: 'Lindenallee 3\n20259 Hamburg',
+  link: 'https://www.example.org/wohnung/3',
+  quelle: '',
+  inseratText: null,
+  kennung: 'k-linden',
+  ereignisse: {
+    beworben: null,
+    gefragtAm: null,
+    termin: null,
+    ergebnis: null,
+    loeschbitteAm: null,
+    nachgefasstAm: null,
+    abgelegtAm: null,
+  },
+  notiz: '',
+  einzug: '2027-01-01',
+  angaben: { titel: 'Altbau mit Garten', warm: 1240, zimmer: 3, flaeche: 74 },
+};
+
+/** Jedes Bild mitschreiben: Überschrift und die geringste Deckkraft auf dem Weg zur Überschrift. */
+async function bilderAn(page: Page) {
+  await page.evaluate(() => {
+    const w = window as unknown as { __bilder: { h1: string; o: number }[]; __an: boolean };
+    w.__bilder = [];
+    w.__an = true;
+    const bild = () => {
+      const h = document.querySelector('main h1');
+      let o = 1;
+      for (let x: Element | null = h; x; x = x.parentElement)
+        o = Math.min(o, Number(getComputedStyle(x).opacity));
+      w.__bilder.push({ h1: h?.textContent?.trim() ?? '', o });
+      if (w.__an) requestAnimationFrame(bild);
+    };
+    requestAnimationFrame(bild);
+  });
+}
+
+async function bilderAus(page: Page) {
+  await page.waitForTimeout(400);
+  return page.evaluate(() => {
+    const w = window as unknown as { __bilder: { h1: string; o: number }[]; __an: boolean };
+    w.__an = false;
+    return w.__bilder;
+  });
+}
+
+for (const wie of ['Wischgeste', 'Knopf Zurück'] as const)
+  test(`PC31 (A1): Zurück aus dem Heft per ${wie}: „Wohnungen“ steht sofort, nie leer, nie halb durchsichtig`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await haushaltMitMax(page);
+    await hefteAnlegen(page, [MUSTERHEFT]);
+    await page.goto('/#/wohnungen');
+    await page.reload();
+    // Die Überschrift der Liste ist die Begrüßung („Guten Morgen, Max“).
+    const titel = page.locator('main h1').first();
+    await expect(titel).toHaveText(/^Guten/);
+    const name = (await titel.textContent())!.trim();
+    await page.locator('main a[href="#/heft/linden"]').first().click();
+    await expect(
+      page.getByRole('heading', { level: 1, name: /Lindenallee 3|Altbau/ }),
+    ).toBeVisible();
+    await page.waitForTimeout(500);
+    await bilderAn(page);
+    if (wie === 'Wischgeste') await page.goBack();
+    else await page.locator('main a[href="#/wohnungen"]').first().click();
+    await expect(titel).toHaveText(name);
+    const bilder = await bilderAus(page);
+    const ab = bilder.findIndex((b) => b.h1 === name);
+    expect(ab).toBeGreaterThanOrEqual(0);
+    for (const b of bilder.slice(ab)) {
+      expect(b.h1).toBe(name);
+      expect(b.o).toBe(1);
+    }
+    for (const b of bilder.slice(0, ab)) expect(b.h1).not.toBe('');
+  });
+
+test('PC31 (A1), Gegenprobe: Vorwärts über den Reiter blendet „Wohnungen“ weiter ein', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await haushaltMitMax(page);
+  await expect(page.getByRole('heading', { level: 1, name: 'Deine Mappe' })).toBeVisible();
+  await bilderAn(page);
+  await reiter(page, 'Wohnungen').click();
+  await expect(page.locator('main h1').first()).toHaveText(/^Guten/);
+  const bilder = await bilderAus(page);
+  expect(bilder.some((b) => b.h1.startsWith('Guten') && b.o < 1)).toBe(true);
 });

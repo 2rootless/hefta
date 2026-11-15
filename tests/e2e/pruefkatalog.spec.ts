@@ -77,6 +77,8 @@ interface Bild {
   hefte?: () => object[];
   /** Andere Datei hinter allen Versionen des Szenarios statt der kleinen Beispiel-PDF. */
   pdf?: () => number[];
+  /** Nur für die Bilder aller Seiten (SEITEN_BILDER), nicht in den Prüfungen. */
+  nurBild?: true;
 }
 
 interface RuheStand {
@@ -475,8 +477,16 @@ const FAKTEN = (seite: Record<string, unknown>) => ({
   seiten: [0],
 });
 
+/**
+ * PC31, Abschnitt 4: Bilder aller Seiten fürs Design. SEITEN_BILDER=<Ordner> legt in Ansicht 390 (hell,
+ * Faktor 2) jede Seite als eigene Datei ab, benannt nach ihrem Weg, dazu `liste.json`. Die anderen
+ * Ansichten laufen dann nicht.
+ */
+const SEITEN_BILDER = process.env.SEITEN_BILDER || '';
+if (SEITEN_BILDER) test.use({ deviceScaleFactor: 2 });
+
 /** Bildschirmfotos und Kontaktbögen nur auf Wunsch: KATALOG_BILDER=1 (Auftraggeber 13.11.). */
-const BILDER_AN = process.env.KATALOG_BILDER === '1';
+const BILDER_AN = process.env.KATALOG_BILDER === '1' || !!SEITEN_BILDER;
 
 const BILDER: Bild[] = [
   // „Nachricht ans Inserat“ (Gruppe N) ist seit 13.11. entfernt: Das macht „Bewerben“ im Heft.
@@ -914,19 +924,6 @@ const BILDER: Bild[] = [
     },
   },
   {
-    id: 'AM5c-flaeche',
-    gruppe: 'X',
-    szenario: '04-fertig',
-    pfad: '/mappe/anpassen',
-    vorher: async (page) => {
-      await amVorschau(page);
-      await page
-        .getByRole('radiogroup', { name: 'Fläche hinter „Wer einzieht“' })
-        .getByRole('radio', { name: 'Keine' })
-        .click();
-    },
-  },
-  {
     id: 'AM-aus',
     gruppe: 'X',
     szenario: '04-fertig',
@@ -1269,6 +1266,104 @@ const BILDER: Bild[] = [
       await page.getByRole('button', { name: 'Eckdaten lesen' }).click();
       await page.getByRole('heading', { level: 1, name: 'Letzte Kontrolle' }).waitFor();
     },
+  },
+  // PC31: Seiten, die sonst kein Bildschirm des Katalogs zeigt; nur für die Bilder aller Seiten.
+  {
+    id: 'SB-wohnungen-leer',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/wohnungen',
+    nurBild: true,
+  },
+  {
+    id: 'SB-wohnungen-ohne-haushalt',
+    gruppe: 'H',
+    szenario: null,
+    pfad: '/wohnungen',
+    nurBild: true,
+  },
+  { id: 'SB-mappe-start', gruppe: 'H', szenario: null, pfad: '/mappe-start', nurBild: true },
+  {
+    id: 'SB-wohnung-neu',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/wohnung-neu',
+    hefte: katalogHefte,
+    nurBild: true,
+  },
+  {
+    id: 'SB-so-gehts',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/wohnung-neu/so-gehts',
+    nurBild: true,
+  },
+  {
+    id: 'SB-text-leer',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/wohnung-neu/text',
+    nurBild: true,
+  },
+  {
+    id: 'SB-wuensche-leer',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/wuensche',
+    nurBild: true,
+  },
+  {
+    id: 'SB-wuensche',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/wuensche',
+    vorher: katalogWuensche,
+    nurBild: true,
+  },
+  {
+    id: 'SB-netto',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/wuensche/netto',
+    vorher: katalogWuensche,
+    nurBild: true,
+  },
+  {
+    id: 'SB-merkmal',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/heft/kh-termin/merkmal',
+    hefte: katalogHefte,
+    nurBild: true,
+  },
+  {
+    id: 'SB-nachfassen',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/heft/kh-beworben/nachfassen',
+    hefte: katalogHefte,
+    nurBild: true,
+  },
+  {
+    id: 'SB-homescreen-rutsch',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/homescreen/rutsch',
+    nurBild: true,
+  },
+  {
+    id: 'SB-homescreen-einstellungen',
+    gruppe: 'H',
+    szenario: '01-standard',
+    pfad: '/homescreen/einstellungen',
+    nurBild: true,
+  },
+  {
+    id: 'SB-homescreen-einspielen',
+    gruppe: 'H',
+    szenario: null,
+    pfad: '/homescreen/einspielen',
+    nurBild: true,
   },
   { id: 'Z1-uebersicht', gruppe: 'Z', szenario: '18-zeit', pfad: '/' },
   {
@@ -2118,7 +2213,9 @@ test.describe('Prüfkatalog Stil C', () => {
 
   for (const ansicht of ANSICHTEN) {
     test(`alle Bildschirme in Ansicht ${ansicht.id}`, async ({ page }) => {
-      test.setTimeout(600_000);
+      test.skip(!!SEITEN_BILDER && ansicht.id !== '390', 'SEITEN_BILDER: nur Ansicht 390');
+      test.setTimeout(SEITEN_BILDER ? 1_200_000 : 600_000);
+      const seitenBilder: { id: string; weg: string; png: Buffer }[] = [];
       await page.clock.setFixedTime(HEUTE);
       await page.addInitScript(geraetNachstellen);
       await page.setViewportSize({ width: ansicht.breite, height: ansicht.hoehe });
@@ -2137,6 +2234,7 @@ test.describe('Prüfkatalog Stil C', () => {
       const nur = process.env.KATALOG_NUR?.split(',') ?? ansicht.nur;
       for (const bild of BILDER) {
         if (nur && !nur.some((n) => bild.id.includes(n))) continue;
+        if (bild.nurBild && !SEITEN_BILDER) continue;
         konsole.length = 0;
         await laden(page, bild);
         if (ansicht.schrift) {
@@ -2173,12 +2271,21 @@ test.describe('Prüfkatalog Stil C', () => {
         // vor Schritt 11. Geprüft wird jede Ansicht trotzdem.
         if (BILDER_AN) {
           // Ganzseitenbild: die feste Leiste ans Seitenende setzen (so sieht man es nach dem Scrollen).
-          await page.evaluate(() => {
+          await page.evaluate((SEITEN_BILDER_AN) => {
             document.body.style.position = 'relative';
             document
               .querySelectorAll<HTMLElement>('.leiste')
               .forEach((e) => (e.style.position = 'absolute'));
-          });
+            // PC31: auch die Reiter und die feste Fläche über ihnen (MappeStart), sonst stehen sie mitten
+            // im Ganzseitenbild.
+            if (SEITEN_BILDER_AN)
+              document.querySelectorAll<HTMLElement>('nav.tabs, .cta').forEach((e) => {
+                if (getComputedStyle(e).position === 'fixed') {
+                  e.style.position = 'absolute';
+                  e.dataset.warFest = '1';
+                }
+              });
+          }, !!SEITEN_BILDER);
           // Ein Vollbild-Dialog deckt nur den Bildschirm; ein Ganzseiten-Bild zeigte die Seite darunter.
           const vollbild = await page.evaluate(() => !!document.querySelector('dialog[open]'));
           // „Welches Datum?“ scrollt als Ganzes: im Bogen die ganze Seite zeigen, nicht nur den Anfang.
@@ -2204,11 +2311,18 @@ test.describe('Prüfkatalog Stil C', () => {
             await page.setViewportSize({ width: ansicht.breite, height: ansicht.hoehe });
           await page.evaluate(() => {
             document.body.style.position = '';
-            document
-              .querySelectorAll<HTMLElement>('.leiste')
-              .forEach((e) => (e.style.position = ''));
+            document.querySelectorAll<HTMLElement>('.leiste, [data-war-fest]').forEach((e) => {
+              e.style.position = '';
+              delete e.dataset.warFest;
+            });
           });
           bilder.push({ id: bild.id, gruppe: bild.gruppe, png: png.toString('base64') });
+          if (SEITEN_BILDER)
+            seitenBilder.push({
+              id: bild.id,
+              weg: await page.evaluate(() => location.hash.replace(/^#/, '') || '/'),
+              png,
+            });
         }
         if (bild.tastatur) {
           const c12 = await tastaturPruefen(page, ansicht);
@@ -2218,6 +2332,22 @@ test.describe('Prüfkatalog Stil C', () => {
         const echte = konsole.filter((z) => !z.includes('Prüfkatalog'));
         if (echte.length) fehler.c27 = echte.map((z) => z.slice(0, 160));
         if (Object.keys(fehler).length) befunde[bild.id] = fehler;
+      }
+
+      // PC31: jede Seite als eigene Datei, benannt nach ihrem Weg; mehrere Zustände eines Wegs mit Kennung.
+      if (SEITEN_BILDER) {
+        mkdirSync(SEITEN_BILDER, { recursive: true });
+        const name = (weg: string) =>
+          weg === '/' ? 'reiter-mappe' : weg.replace(/^\//, '').replace(/[^\w-]+/g, '_');
+        const zahl = new Map<string, number>();
+        for (const b of seitenBilder) zahl.set(name(b.weg), (zahl.get(name(b.weg)) ?? 0) + 1);
+        const liste = seitenBilder.map((b) => {
+          const n = name(b.weg);
+          const datei = `${zahl.get(n)! > 1 ? `${n}__${b.id}` : n}.png`;
+          writeFileSync(`${SEITEN_BILDER}/${datei}`, b.png);
+          return { datei, weg: b.weg, id: b.id };
+        });
+        writeFileSync(`${SEITEN_BILDER}/liste.json`, JSON.stringify(liste, null, 1));
       }
 
       // C6: Scrollhöhe notieren

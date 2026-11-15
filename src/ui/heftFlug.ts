@@ -117,7 +117,8 @@ export function landen(o: {
 }): Promise<void> {
   const f = wartend;
   wartend = null;
-  if (!f || f.nach !== o.nach) {
+  // PC31 (A1): Zurück in die Liste steht sie sofort da, ohne Blende (wie „Mappe“ in PC29).
+  if (!f || f.nach !== o.nach || o.nach === 'liste') {
     ebeneWeg(f);
     return Promise.resolve();
   }

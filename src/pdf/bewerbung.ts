@@ -29,7 +29,7 @@ import { ANHANG_NAME, anhangBauen, anhangBytes } from './anhang';
 import type { ExportModus } from '../domain/export';
 import type { Schritt } from '../domain/selbstauskunft';
 import type { Rolle, Tag } from '../domain/modell';
-import { A4, deckFarbe, FARBE, flaechenTon, flaecheVon, type Schriften } from './mappe';
+import { A4, deckFarbe, FARBE, type Schriften } from './mappe';
 import {
   selbstauskunftZeichnen,
   umbrechen,
@@ -175,9 +175,8 @@ export interface BewerbungErgebnis {
   unlesbar: UnlesbareDatei[];
   /** Maßstab des Deckblatts, für die Prüfung P23; ohne Deckblatt keiner. */
   deckMassstab?: number;
-  /** Wie viele Seiten das Deckblatt hat, und ob „Kompakt“ es auf eine bekäme (AM5b). */
+  /** Wie viele Seiten das Deckblatt hat. */
   deckSeiten?: number;
-  kompaktHilft?: boolean;
 }
 
 const MM = 72 / 25.4;
@@ -436,15 +435,6 @@ interface DeckLink {
   uri?: string;
 }
 
-/** Ton der Seitenleiste; Personenfarbe heißt die der Hauptperson, gibt es keine, die der ersten. */
-export function leistenTon(
-  aussehen: MappenAussehen,
-  bloecke: { person: Pick<MappenPerson, 'farbe' | 'rolleId'> }[],
-): string | null {
-  const person = bloecke.find((b) => b.person.rolleId === 'hauptmieter') ?? bloecke[0];
-  return flaechenTon(flaecheVon(aussehen), aussehen.akzent, person?.person.farbe);
-}
-
 // ---------- Briefbogen (DP30, Richtung B): Deckblatt und Selbstauskunft in einem Satz ----------
 
 /** Wie viele Verzeichniszeilen auf Seite 1 passen (DP30, Abschnitt 3). */
@@ -462,8 +452,8 @@ function deckblatt(
   eintraege: Eintrag[],
   s: S,
   seite: (n: number) => PDFPage | null,
-): { seiten: number; links: DeckLink[]; massstab: number; kompaktHilft: boolean } {
-  return { ...deckblattSetzen(a, eintraege, s, seite), massstab: 1, kompaktHilft: false };
+): { seiten: number; links: DeckLink[]; massstab: number } {
+  return { ...deckblattSetzen(a, eintraege, s, seite), massstab: 1 };
 }
 
 function deckblattSetzen(
@@ -967,17 +957,14 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
   const gesamt = seiten.length;
   let deckMassstab: number | undefined;
   let deckSeiten: number | undefined;
-  let kompaktHilft: boolean | undefined;
   if (a.deckblatt) {
     const {
       links,
       massstab,
       seiten: deckAnzahl,
-      kompaktHilft: hilft,
     } = deckblatt(a, eintraege, s, (n) => deckblaetter[n] ?? null);
     deckMassstab = massstab;
     deckSeiten = deckAnzahl;
-    kompaktHilft = hilft;
     for (const l of links) {
       const ziel = l.ziel ? seiten[l.ziel - 1] : undefined;
       if (!ziel && !l.uri) continue;
@@ -1107,6 +1094,5 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
     unlesbar: [...unlesbar.values()],
     deckMassstab,
     deckSeiten,
-    kompaktHilft,
   };
 }
