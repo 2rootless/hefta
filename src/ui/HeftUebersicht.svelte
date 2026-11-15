@@ -577,7 +577,8 @@
   }
 
   .w.tun {
-    color: var(--accent-text);
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
+    color: var(--ink);
   }
 
   .w.wartet {
@@ -610,8 +611,9 @@
   }
 
   .i b {
-    color: var(--accent-text);
-    font-weight: 650;
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
+    color: var(--ink);
+    font-weight: 600;
   }
 
   .tl {

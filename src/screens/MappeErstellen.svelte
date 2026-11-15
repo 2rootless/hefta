@@ -1029,15 +1029,21 @@
   }
 
   .deck-link {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
-    color: var(--accent-text);
+    color: var(--ink);
     font-size: calc(13 * var(--px));
     font-weight: 600;
     text-align: center;
     /* DP33 A7: ohne Unterstrich. */
     text-decoration: none;
+  }
+
+  /* DP35 R3: führt auf eine andere Seite. */
+  .deck-link::after {
+    content: '\00a0›';
   }
 
   .deck-mini img {

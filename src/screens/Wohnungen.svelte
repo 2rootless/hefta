@@ -162,6 +162,7 @@
 
 <style>
   .anleitung-kopf {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -170,10 +171,10 @@
     padding: 0 2px;
     border: 0;
     background: none;
-    color: var(--accent-text);
+    color: var(--ink);
     font: inherit;
     font-size: calc(15 * var(--px));
-    font-weight: 650;
+    font-weight: 600;
     cursor: pointer;
   }
 
@@ -261,12 +262,13 @@
   }
 
   .link {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: var(--tap-target);
     margin-top: 16px;
-    color: var(--accent-text);
+    color: var(--ink);
     font-weight: 600;
   }
 
@@ -300,6 +302,7 @@
   }
 
   .zeichen {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: inline-flex;
     flex: none;
     align-items: center;
@@ -308,7 +311,7 @@
     height: var(--tap-target);
     border-radius: 12px;
     background: var(--accent-soft);
-    color: var(--accent-text);
+    color: var(--ink);
   }
 
   .text {

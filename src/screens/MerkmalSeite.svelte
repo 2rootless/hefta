@@ -104,7 +104,13 @@
           void uebernehmen();
         }
       }}></textarea>
-    <p class="zz" class:zu-lang={zuLang} id="merkmal-zaehler" aria-live="polite">
+    <p
+      class="zz"
+      class:zu-lang={zuLang}
+      data-rot={zuLang ? 'grenze' : undefined}
+      id="merkmal-zaehler"
+      aria-live="polite"
+    >
       {#if zuLang}<span>{t('merkmal.zuLang')}</span>{/if}
       <span>{t('merkmal.zaehler', { n: wert.trim().length })}</span>
     </p>
@@ -228,14 +234,15 @@
   }
 
   .vorschlag button {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     flex: none;
     min-height: 44px;
     padding: 0 10px;
     border: 0;
     background: none;
-    color: var(--accent-text);
+    color: var(--ink);
     font: inherit;
-    font-weight: 650;
+    font-weight: 600;
     cursor: pointer;
   }
 
@@ -246,6 +253,7 @@
   }
 
   .leis {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -254,7 +262,7 @@
     margin-top: 6px;
     border: 0;
     background: none;
-    color: var(--accent-text);
+    color: var(--ink);
     font: inherit;
     font-size: calc(14 * var(--px));
     font-weight: 600;

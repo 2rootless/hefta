@@ -532,8 +532,11 @@
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
-    color: var(--accent-text);
+    /* DP35 R5: Link in Tinte, unterstrichen, Versatz 2 px. */
+    color: var(--ink);
     font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
     overflow-wrap: break-word;
   }
 

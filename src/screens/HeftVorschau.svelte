@@ -589,12 +589,18 @@
   }
 
   .wlink {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    color: var(--accent-text);
-    font-weight: 650;
+    color: var(--ink);
+    font-weight: 600;
     text-decoration: none;
+  }
+
+  /* DP35 R3: führt auf eine andere Seite. */
+  .wlink::after {
+    content: '\00a0›';
   }
 
   .punkte {
@@ -753,7 +759,8 @@
   }
 
   .ganz {
-    color: var(--accent-text);
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
+    color: var(--ink);
   }
 
   .zweit {

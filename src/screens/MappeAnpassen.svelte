@@ -560,6 +560,7 @@
 
 <style>
   .person-farbe {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     gap: 6px;
     display: inline-flex;
     align-items: center;
@@ -568,9 +569,9 @@
     border: 0;
     background: none;
     /* DP33 A7: Textaktion in Akzent, ohne Unterstrich. */
-    color: var(--accent-text);
+    color: var(--ink);
     font: inherit;
-    font-weight: 700;
+    font-weight: 600;
     text-decoration: none;
     cursor: pointer;
   }

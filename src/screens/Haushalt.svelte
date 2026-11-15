@@ -130,8 +130,12 @@
           ? situationText(m.person.lebenssituation, m.person.ausbildungArt)
           : ''}</span
       >
+      <!-- DP35 R2: kein Wort am Rand; die ganze Zeile öffnet die Person, mit Pfeil. -->
       <a class="aendern" href="#/person-aendern/{m.person.id}{suffix}"
-        >{t('allgemein.aendern')}<span class="visually-hidden"> {m.person.vorname}</span></a
+        ><span class="visually-hidden">{t('allgemein.aendern')} {m.person.vorname}</span><Symbol
+          name="weiter"
+          groesse={16}
+        /></a
       >
     </div>
   </div>
@@ -154,8 +158,12 @@
           : ''}</small
       >
     </span>
+    <!-- DP35 R2: kein Wort am Rand; die ganze Zeile öffnet die Person, mit Pfeil. -->
     <a class="aendern" href="#/person-aendern/{m.person.id}{suffix}"
-      >{t('allgemein.aendern')}<span class="visually-hidden"> {m.person.vorname}</span></a
+      ><span class="visually-hidden">{t('allgemein.aendern')} {m.person.vorname}</span><Symbol
+        name="weiter"
+        groesse={16}
+      /></a
     >
   </li>
 {/snippet}
@@ -350,7 +358,7 @@
                   <!-- E3d: eine einzige Frage nach drei Monaten, danach nie wieder. -->
                   <p class="drei-monate">{t('einrichtung.haushalt.dreiMonate')}</p>
                   <span class="aktionen">
-                    <a class="textlink" href="#/person-loeschen/{m.person.id}"
+                    <a class="textlink grau" href="#/person-loeschen/{m.person.id}"
                       >{t('einrichtung.haushalt.loeschen')}<span class="visually-hidden">
                         {m.person.vorname}</span
                       ></a
@@ -375,7 +383,7 @@
                     ></button
                   >
                   {#if !frage}
-                    <a class="textlink" href="#/person-loeschen/{m.person.id}"
+                    <a class="textlink grau" href="#/person-loeschen/{m.person.id}"
                       >{t('einrichtung.haushalt.ganzLoeschen')}<span class="visually-hidden">
                         {m.person.vorname}</span
                       ></a
@@ -565,15 +573,24 @@
     line-height: calc(17 * var(--px));
   }
 
+  /* DP35 R2: Pfeil (16 px, grau) statt „Ändern“; die Fläche des Links deckt die ganze Zeile. */
   .aendern {
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
-    /* DP33 A7: Textaktion in Akzent, ohne Unterstrich. */
-    color: var(--accent-text);
-    font-size: calc(15 * var(--px));
-    font-weight: 700;
+    color: var(--ink-quiet);
     text-decoration: none;
+  }
+
+  .aendern::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .karte,
+  .zeile {
+    position: relative;
   }
 
   .feld {

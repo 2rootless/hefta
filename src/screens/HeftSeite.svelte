@@ -778,12 +778,13 @@
   }
 
   .inserat {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: inline-flex;
     flex: none;
     align-items: center;
     min-height: 44px;
     margin-top: -8px;
-    color: var(--accent-text);
+    color: var(--ink);
     font-size: calc(14 * var(--px));
     font-weight: 500;
     text-decoration: none;
@@ -843,13 +844,19 @@
   }
 
   .mehr {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    color: var(--accent-text);
+    color: var(--ink);
     font-size: calc(14 * var(--px));
     font-weight: 600;
     text-decoration: none;
+  }
+
+  /* DP35 R3: führt auf eine andere Seite. */
+  .mehr::after {
+    content: '\00a0›';
   }
 
   .mf {
@@ -886,6 +893,7 @@
   }
 
   .leis {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -894,7 +902,7 @@
     padding: 0;
     border: 0;
     background: none;
-    color: var(--accent-text);
+    color: var(--ink);
     font: inherit;
     font-size: calc(14 * var(--px));
     font-weight: 600;

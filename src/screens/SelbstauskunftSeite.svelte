@@ -142,7 +142,7 @@
             >{t('selbstauskunft.pdfAnsehen')}</button
           >
         {/if}
-        <a class="textlink" href="#/selbstauskunft/{personId}/uebertragen"
+        <a class="textlink weiter" href="#/selbstauskunft/{personId}/uebertragen"
           >{t('uebertragen.titel')}</a
         >
       </div>

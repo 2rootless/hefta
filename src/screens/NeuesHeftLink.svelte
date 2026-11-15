@@ -262,8 +262,9 @@
   }
 
   .ablage p :global(svg) {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     flex: none;
-    color: var(--accent-text);
+    color: var(--ink);
   }
 
   .ablage p.ergebnis {
@@ -282,6 +283,7 @@
   }
 
   .selbst {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -290,7 +292,7 @@
     margin-top: 6px;
     border: 0;
     background: none;
-    color: var(--accent-text);
+    color: var(--ink);
     font: inherit;
     font-weight: 600;
     cursor: pointer;

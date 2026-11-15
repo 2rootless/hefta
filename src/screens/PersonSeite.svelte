@@ -397,7 +397,7 @@
         </div>
       </section>
       {#if rolle !== 'hauptmieter'}
-        <a class="textlink ganz" href="#/person-loeschen/{mitglied.person.id}"
+        <a class="textlink loeschen" href="#/person-loeschen/{mitglied.person.id}"
           >{t('personSeite.ganzLoeschenLink', { name: mitglied.person.vorname })}</a
         >
       {/if}
@@ -614,6 +614,8 @@
     border-radius: 20px;
     background: var(--surface);
     list-style: none;
+    /* DP35 G1: Felder und Pillen in der weißen Karte im Ton von „Notizen“. */
+    --weich: var(--weich-karte);
   }
 
   .oben {

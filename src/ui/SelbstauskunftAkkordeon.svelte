@@ -596,11 +596,11 @@
             >
           {/if}
         </span>
-        {#if teil.fertig}
-          <span class="aendern">{t('selbstauskunft.aendern')}</span>
-        {:else}
-          <span class="pfeil" aria-hidden="true"><Symbol name="weiter" groesse={20} /></span>
-        {/if}
+        <!-- DP35 R2: kein Wort am Rand; die ganze Zeile öffnet den Schritt, mit Pfeil. -->
+        {#if teil.fertig}<span class="visually-hidden">{t('selbstauskunft.aendern')}</span>{/if}
+        <span class="pfeil" class:fertig={teil.fertig} aria-hidden="true"
+          ><Symbol name="weiter" groesse={teil.fertig ? 16 : 20} /></span
+        >
       </button>
     {/if}
   {/each}
@@ -613,8 +613,8 @@
   }
 
   .teil {
-    /* In der weißen Karte ist die weiche Fläche der Grund (DP33 A4). */
-    --weich: var(--ground);
+    /* In der weißen Karte der Ton von „Notizen“ (DP33 A4, DP35 G1). */
+    --weich: var(--weich-karte);
     border-radius: 20px;
     background: var(--surface);
   }
@@ -773,14 +773,9 @@
     overflow-wrap: anywhere;
   }
 
-  .aendern {
-    flex-shrink: 0;
-    margin-left: auto;
-    /* DP33 A7: Textaktion in Akzent, ohne Unterstrich. */
-    color: var(--accent-text);
-    font-size: calc(15 * var(--px));
-    font-weight: 700;
-    text-decoration: none;
+  /* DP35 R2: Der Pfeil eines fertigen Schritts ist klein und grau. */
+  .pfeil.fertig {
+    color: var(--ink-quiet);
   }
 
   .pfeil {

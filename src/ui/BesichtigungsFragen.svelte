@@ -605,6 +605,7 @@
   .notieren,
   .antwort,
   .plus {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -613,7 +614,7 @@
     padding: 0;
     border: 0;
     background: none;
-    color: var(--accent-text);
+    color: var(--ink);
     font: inherit;
     font-size: calc(14 * var(--px));
     font-weight: 600;
@@ -738,11 +739,12 @@
 
   .leise-zeile button,
   .einblenden {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     min-height: 44px;
     padding: 0;
     border: 0;
     background: none;
-    color: var(--accent-text);
+    color: var(--ink);
     font: inherit;
     font-weight: 600;
     cursor: pointer;

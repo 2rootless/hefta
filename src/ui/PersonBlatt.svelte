@@ -201,7 +201,8 @@
   }
 
   .fehlt .tx small {
-    color: var(--accent-text);
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
+    color: var(--ink);
     font-weight: 600;
   }
 

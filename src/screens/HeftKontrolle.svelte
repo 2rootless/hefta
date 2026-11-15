@@ -679,12 +679,18 @@
   }
 
   .wlink {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    color: var(--accent-text);
-    font-weight: 650;
+    color: var(--ink);
+    font-weight: 600;
     text-decoration: none;
+  }
+
+  /* DP35 R3: führt auf eine andere Seite. */
+  .wlink::after {
+    content: '\00a0›';
   }
 
   /* Gruppen folgen mit `bw-hoch`, `mittel`, `ziel`, je `takt` versetzt; höchstens die ersten vier. */
@@ -806,11 +812,12 @@
   }
 
   .gelesen button {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     min-height: 44px;
     padding: 0;
     border: 0;
     background: none;
-    color: var(--accent-text);
+    color: var(--ink);
     font: inherit;
     font-weight: 600;
     cursor: pointer;

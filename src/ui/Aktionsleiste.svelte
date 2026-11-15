@@ -52,6 +52,8 @@
   // kommt zurück, sobald die Tastatur zu ist.
   let knapp = $state(false);
   $effect(() => {
+    let zeigerUnten = false;
+    let spaeter = false;
     const istFeld = (e: EventTarget | null) =>
       e instanceof HTMLElement && e.matches('input, textarea, select');
     const messen = () => {
@@ -60,19 +62,47 @@
       knapp = hoehe * (1 / zoom) < 240;
     };
     const rein = (e: FocusEvent) => {
+      // Ein Knopf, der beim Drücken den Fokus bekommt (Chromium), zählt erst nach dem Tipp (siehe `raus`).
+      if (zeigerUnten && !istFeld(e.target)) {
+        spaeter = true;
+        return;
+      }
       tippt = istFeld(e.target);
       messen();
     };
     // Ältere Browser melden das Verlassen auch, während Svelte ein Feld entfernt; dort darf sich kein
     // Zustand ändern, also einen Moment warten. Sonst bricht der Bildschirmwechsel mit einer Ausnahme ab,
     // und Screenreader sehen bis zum nächsten Wechsel nichts (gefunden im Test der Android-App).
-    const raus = () => queueMicrotask(() => (tippt = istFeld(document.activeElement)));
+    const raus = () => {
+      // DP35 G2: Verlässt man ein Feld, weil man etwas antippt, kommt der Hinweis erst nach dem Tipp
+      // zurück. Sonst wüchse die Leiste zwischen Drücken und Loslassen über das, was man antippt
+      // (die Rolle in „Person hinzufügen“), und der Tipp landete auf der Leiste.
+      if (zeigerUnten) {
+        spaeter = true;
+        return;
+      }
+      queueMicrotask(() => (tippt = istFeld(document.activeElement)));
+    };
+    const runter = () => (zeigerUnten = true);
+    const hoch = () => {
+      zeigerUnten = false;
+      if (!spaeter) return;
+      spaeter = false;
+      // Nach dem „click“, der auf das Loslassen folgt.
+      setTimeout(() => (tippt = istFeld(document.activeElement)), 0);
+    };
+    document.addEventListener('pointerdown', runter, true);
+    document.addEventListener('pointerup', hoch, true);
+    document.addEventListener('pointercancel', hoch, true);
     document.addEventListener('focusin', rein);
     document.addEventListener('focusout', raus);
     window.visualViewport?.addEventListener('resize', messen);
     tippt = istFeld(document.activeElement);
     messen();
     return () => {
+      document.removeEventListener('pointerdown', runter, true);
+      document.removeEventListener('pointerup', hoch, true);
+      document.removeEventListener('pointercancel', hoch, true);
       document.removeEventListener('focusin', rein);
       document.removeEventListener('focusout', raus);
       window.visualViewport?.removeEventListener('resize', messen);

@@ -25,6 +25,7 @@ export function pruefen() {
     c24: [] as string[],
     c25: [] as string[],
     c26: [] as string[],
+    c28: [] as string[],
     hoehe: 0,
   };
   const main = document.querySelector('main')!;
@@ -494,5 +495,26 @@ export function pruefen() {
       out.c11.push(`Wort „${wort}“`);
   }
   out.hoehe = Math.round(main.getBoundingClientRect().height);
+  // C28 (DP35, PC36): Rot (Akzent) steht nur für Zurück oben, Warnungen, Fehler, den Zähler über der Grenze
+  // und den gewählten Reiter unten (R1). Gesucht wird Text in der Akzentfarbe; zulässig ist er nur in
+  // `.zurueck`, in der Leiste der Reiter und an Stellen, die sich mit `data-rot` als Warnung ausweisen.
+  // Personenseite, Unterlage und Rutsch (`.stil-alt`) folgen erst mit der Abschluss-DP des Designs.
+  const rotProbe = document.createElement('span');
+  rotProbe.style.color = 'var(--accent-text)';
+  document.body.append(rotProbe);
+  const akzent = getComputedStyle(rotProbe).color;
+  rotProbe.remove();
+  const rotWurzel = document.querySelector('dialog[open]') ?? document.body;
+  for (const e of rotWurzel.querySelectorAll('*')) {
+    if (e.closest('svg, .stil-alt, .zurueck, nav.tabs, [data-rot], .visually-hidden')) continue;
+    const eigenerText = [...e.childNodes].some(
+      (k) => k.nodeType === 3 && (k.textContent ?? '').trim(),
+    );
+    if (!eigenerText || !sichtbar(e)) continue;
+    const r = e.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+    if (getComputedStyle(e).color === akzent)
+      out.c28.push((e.textContent ?? '').trim().slice(0, 40));
+  }
   return out;
 }

@@ -294,7 +294,13 @@
               >{t('wuensche.einkommenWert', { betrag: eur(netto) })}</b
             ></span
           >
-          <a class="link" href="#/wuensche/netto">{t('allgemein.aendern')}</a>
+          <!-- DP35 R2: kein Wort am Rand; die ganze Zeile öffnet das Einkommen, mit Pfeil. -->
+          <a class="zeile-link" href="#/wuensche/netto"
+            ><span class="visually-hidden">{t('allgemein.aendern')}</span><Symbol
+              name="weiter"
+              groesse={16}
+            /></a
+          >
         </div>
         <p class="klein">
           {ausSa.teile.length > 1 || ihr
@@ -531,14 +537,37 @@
     font-size: calc(13 * var(--px));
   }
 
+  /* DP35 R3: Aktion in Tinte; sie führt auf eine Seite, darum „›“. */
   .feld .link {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    color: var(--accent-text);
+    color: var(--ink);
     font-size: calc(14 * var(--px));
     font-weight: 600;
     text-decoration: none;
+  }
+
+  .feld .link::after {
+    content: '\00a0›';
+  }
+
+  /* DP35 R2: Pfeil (16 px, grau); die Fläche des Links deckt die ganze Zeile. */
+  .feld .aus {
+    position: relative;
+  }
+
+  .zeile-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--ink-quiet);
+  }
+
+  .zeile-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
   }
 
   .feld .aus {
@@ -586,8 +615,8 @@
   .feld .chip.halb {
     min-width: 44px;
     padding: 0 10px;
-    box-shadow: inset 0 0 0 1.5px var(--line-strong);
-    background: transparent;
+    /* DP35 G4: ohne Linie, weiche Fläche wie die anderen Zahlen (A5). */
+    background: var(--ground);
     color: var(--ink-muted);
     font-size: calc(15 * var(--px));
   }

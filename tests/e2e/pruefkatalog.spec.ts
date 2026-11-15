@@ -2178,7 +2178,7 @@ test.describe('Prüfkatalog Stil C', () => {
   });
 
   // Wie test_c23_25.py des Designs: je ein Fall ohne und mit Fehler.
-  test('C23 bis C26 finden ihren Fehler, und ohne ihn nichts', async ({ page }) => {
+  test('C23 bis C26 und C28 finden ihren Fehler, und ohne ihn nichts', async ({ page }) => {
     test.setTimeout(120_000);
     await page.clock.setFixedTime(HEUTE);
     await page.addInitScript(geraetNachstellen);
@@ -2188,7 +2188,13 @@ test.describe('Prüfkatalog Stil C', () => {
       BILDER.find((b) => b.id === '01-standard')!,
     );
     const sauber = await page.evaluate(pruefen);
-    expect([sauber.c23, sauber.c24, sauber.c25, sauber.c26]).toEqual([[], [], [], []]);
+    expect([sauber.c23, sauber.c24, sauber.c25, sauber.c26, sauber.c28]).toEqual([
+      [],
+      [],
+      [],
+      [],
+      [],
+    ]);
     await page.evaluate(() => {
       document.querySelector('main h1')!.textContent = 'Version vom 12. Juli';
       document.querySelector<HTMLElement>('.aufgaben')!.style.marginLeft = '-16px';
@@ -2204,7 +2210,21 @@ test.describe('Prüfkatalog Stil C', () => {
         document.querySelector('main')!.append(e);
       }
     });
+    // C28 (DP35): eine rote Aktion fällt auf; dieselbe Farbe mit `data-rot` (Warnung) nicht.
+    await page.evaluate(() => {
+      for (const [text, rot] of [
+        ['Wünsche festlegen', false],
+        ['Das Passwort passt nicht.', true],
+      ] as const) {
+        const e = document.createElement('a');
+        e.textContent = text;
+        e.style.color = 'var(--accent-text)';
+        if (rot) e.dataset.rot = 'fehler';
+        document.querySelector('main')!.append(e);
+      }
+    });
     const kaputt = await page.evaluate(pruefen);
+    expect(kaputt.c28).toEqual(['Wünsche festlegen']);
     expect(kaputt.c23).toEqual(['12. Juli']);
     expect(kaputt.c24.length).toBeGreaterThan(0);
     expect(kaputt.c25.length).toBeGreaterThan(0);

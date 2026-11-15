@@ -542,10 +542,11 @@
   }
 
   .kicker {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     margin: 4px 0 0;
-    color: var(--accent-text);
+    color: var(--ink);
     font-size: calc(12 * var(--px));
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0.07em;
     text-transform: uppercase;
   }
@@ -664,11 +665,12 @@
 
   .plus,
   .leise2 {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: inline-flex;
     align-items: center;
     min-height: 44px;
     padding: 0 6px;
-    color: var(--accent-text);
+    color: var(--ink);
     font-size: calc(14 * var(--px));
     font-weight: 600;
     text-decoration: none;
@@ -698,6 +700,7 @@
   }
 
   .leise {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -705,7 +708,7 @@
     min-height: 44px;
     border: 0;
     background: none;
-    color: var(--accent-text);
+    color: var(--ink);
     font: inherit;
     font-weight: 600;
     cursor: pointer;

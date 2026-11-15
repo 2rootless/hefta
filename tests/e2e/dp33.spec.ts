@@ -59,3 +59,33 @@ test('Fehler 3: „Heft anlegen“ in der letzten Kontrolle deckt am Ende nichts
   await expect(page.getByRole('heading', { level: 1, name: 'Letzte Kontrolle' })).toBeVisible();
   await knopfFrei(page, 'Heft anlegen');
 });
+
+test('DP35 G2: In „Person hinzufügen“ bleibt die gewählte Rolle gewählt und steht in Tinte', async ({
+  page,
+}) => {
+  await haushaltMitMax(page);
+  await page.goto('/#/person-neu/mitmieter');
+  await page.reload();
+  await page.getByLabel('Vorname', { exact: true }).fill('Олена');
+  await page.getByLabel('Nachname', { exact: true }).fill('Коваленко');
+  const rolle = page.getByRole('radio', { name: 'Mitmieterin' });
+  await rolle.click();
+  await expect(rolle).toHaveAttribute('aria-checked', 'true');
+  const farben = await rolle.evaluate((e) => {
+    const s = getComputedStyle(e);
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--action)';
+    probe.style.backgroundColor = 'var(--on-action)';
+    document.body.append(probe);
+    const p = getComputedStyle(probe);
+    const soll = { grund: p.color, schrift: p.backgroundColor };
+    probe.remove();
+    return { grund: s.backgroundColor, schrift: s.color, soll };
+  });
+  expect(farben.grund).toBe(farben.soll.grund);
+  expect(farben.schrift).toBe(farben.soll.schrift);
+  // Die anderen Rollen sind nicht gewählt und sehen anders aus.
+  const andere = page.getByRole('radio', { name: 'Mitmieter', exact: true });
+  await expect(andere).toHaveAttribute('aria-checked', 'false');
+  expect(await andere.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(farben.grund);
+});

@@ -94,12 +94,18 @@
     color: var(--ink-muted);
   }
   .ganz {
+    /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    font-weight: 700;
+    font-weight: 600;
     /* DP33 A7: Textaktion in Akzent, ohne Unterstrich. */
-    color: var(--accent-text);
+    color: var(--ink);
     text-decoration: none;
+  }
+
+  /* DP35 R3: führt auf eine andere Seite. */
+  .ganz::after {
+    content: '\00a0›';
   }
 </style>
