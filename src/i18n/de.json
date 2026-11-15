@@ -107,10 +107,10 @@
     "nichtMehr": "Nicht mehr fragen",
     "seite": {
       "titel": "Rückmeldung",
-      "vier": "Vier kurze Fragen",
+      "kurzeFragen": "{Zahl} kurze Fragen",
       "satz": {
-        "ihr": "Mit „Abschicken“ geht nur eure Antwort an uns, ohne Namen, ohne Kennung und ohne Daten aus {app}.",
-        "du": "Mit „Abschicken“ geht nur deine Antwort an uns, ohne Namen, ohne Kennung und ohne Daten aus {app}."
+        "ihr": "Mit „Abschicken“ geht nur eure Antwort an uns: ohne Namen und ohne Daten aus {app}.",
+        "du": "Mit „Abschicken“ geht nur deine Antwort an uns: ohne Namen und ohne Daten aus {app}."
       },
       "anderes": {
         "ihr": "Etwas anderes? Schreibt uns.",
@@ -432,7 +432,7 @@
     "cookiesText": "{app} setzt keine Cookies und bindet keine Dienste Dritter ein. {app} zählt nicht, was du in der App tust. Wir wissen nur, wie oft die App am Tag geladen wurde, ohne Kennung und ohne Verlauf.",
     "cookiesTextApp": "{app} setzt keine Cookies und bindet keine Dienste Dritter ein. {app} zählt nicht, was du in der App tust.",
     "rueckmeldungTitel": "Rückmeldung",
-    "rueckmeldungText": "In {app} kannst du vier feste Fragen zu {app} beantworten. Erst wenn du eine Antwort wählst und in der Rückfrage auf „Abschicken“ tippst, geht diese Antwort an uns, zum Beispiel „Frage: geholfen, Antwort: teils“. Freien Text nimmt die Rückmeldung nicht an. Wir speichern davon nur eine Zählung je Tag: wie oft an diesem Tag welche Antwort auf welche Frage gewählt wurde. Name, Kennung, Gerät, Plattform, Uhrzeit oder deine IP-Adresse speichern wir nicht. Daten aus {app}, etwa Angaben oder Unterlagen, gehen dabei nicht mit. Änderst du eine Antwort, wird die neue zusätzlich gezählt. Die frühere bleibt in der Zählung, weil wir sie niemandem zuordnen können. Damit {app} deine Antwort anzeigen kann, merkt es sich auf deinem Gerät, was du abgeschickt hast. Zweck: Wir möchten wissen, ob {app} bei der Bewerbung hilft, was als Nächstes kommen soll, was fehlt und wie Menschen von {app} erfahren. Rechtsgrundlage ist deine Einwilligung mit dem Tipp auf „Abschicken“ (Art. 6 Abs. 1 lit. a DSGVO). Sie ist freiwillig; ohne Rückmeldung funktioniert {app} genauso. Die Zählungen bewahren wir höchstens zwei Jahre auf. Der Empfang läuft bei Cloudflare. Die Zählungen speichern wir in einer Datenbank von Cloudflare, die nur in der Europäischen Union liegt. Beim Absenden verarbeitet Cloudflare deine IP-Adresse und technische Angaben der Verbindung, um die Antwort entgegenzunehmen und vor Angriffen zu schützen. Protokolle der Anfragen haben wir nicht eingeschaltet. Was Cloudflare dabei selbst und wie lange verarbeitet, regeln die Datenschutzbestimmungen von Cloudflare.",
+    "rueckmeldungText": "In {app} kannst du {zahl} feste Fragen zu {app} beantworten. Erst wenn du eine Antwort wählst und in der Rückfrage auf „Abschicken“ tippst, geht diese Antwort an uns, zum Beispiel „Frage: geholfen, Antwort: teils“. Freien Text nimmt die Rückmeldung nicht an. Wir speichern davon nur eine Zählung je Tag: wie oft an diesem Tag welche Antwort auf welche Frage gewählt wurde. Name, Kennung, Gerät, Plattform, Uhrzeit oder deine IP-Adresse speichern wir nicht. Daten aus {app}, etwa Angaben oder Unterlagen, gehen dabei nicht mit. Änderst du eine Antwort, wird die neue zusätzlich gezählt. Die frühere bleibt in der Zählung, weil wir sie niemandem zuordnen können. Damit {app} deine Antwort anzeigen kann, merkt es sich auf deinem Gerät, was du abgeschickt hast. Zweck: Wir möchten wissen, ob {app} bei der Bewerbung hilft, was als Nächstes kommen soll, was fehlt und wie Menschen von {app} erfahren. Rechtsgrundlage ist deine Einwilligung mit dem Tipp auf „Abschicken“ (Art. 6 Abs. 1 lit. a DSGVO). Sie ist freiwillig; ohne Rückmeldung funktioniert {app} genauso. Die Zählungen bewahren wir höchstens zwei Jahre auf. Der Empfang läuft bei Cloudflare. Die Zählungen speichern wir in einer Datenbank von Cloudflare, die nur in der Europäischen Union liegt. Beim Absenden verarbeitet Cloudflare deine IP-Adresse und technische Angaben der Verbindung, um die Antwort entgegenzunehmen und vor Angriffen zu schützen. Protokolle der Anfragen haben wir nicht eingeschaltet. Was Cloudflare dabei selbst und wie lange verarbeitet, regeln die Datenschutzbestimmungen von Cloudflare.",
     "rechteTitel": "Deine Rechte",
     "rechteText": "Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch sowie auf Beschwerde bei einer Datenschutz-Aufsichtsbehörde. Da deine Angaben nur auf deinem Gerät liegen, kannst du sie dort selbst einsehen, ändern, als Backup mitnehmen und mit „Alles löschen“ entfernen."
   },
@@ -1800,7 +1800,7 @@
     "nameKnopf": "Zu {name} verschieben",
     "nameHinzufuegen": "Ja, zu {name} hinzufügen",
     "nameFehltKurz": "Der Name {name} steht nicht darauf",
-    "nameFehltVor": "Auf dem Dokument findet {app} den Namen",
+    "nameFehltVor": "Auf dem Dokument findet {app} den Namen ",
     "nameFehltNach": " nicht. Ist es wirklich von {eigen}?",
     "nameFehltKnopf": "Ansehen",
     "vonFund": "Seite {n} von {gesamt}",
@@ -1952,6 +1952,8 @@
     "sub": "Das Merkmal steht in der Übersicht ganz oben, die Adresse darunter im Heft.",
     "feld": "Name",
     "zaehler": "{n} von 40",
+    "zuLang": "Etwas kürzer, dann passt er in die Übersicht.",
+    "einsetzen": "Einsetzen",
     "ausInserat": "Aus dem Inserat",
     "wiederherstellen": "Vorschlag von {app} wiederherstellen",
     "keinVorschlagIhr": "Das Inserat gibt kein Merkmal her, das sie von den anderen unterscheidet. Bis ihr eins eintragt, steht {oben} oben.",

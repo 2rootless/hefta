@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Symbol from './Symbol.svelte';
   // Prüfhinweis als Kasten (design/nachtraeglich-ordnen.md, PH2 bis PH4): eine Frage mit dem, was Hefta
   // gesehen hat, darunter die Lösung und „Passt so“. Sperrt nie etwas.
   import type { Pruefhinweis } from '../domain/pruefhinweise';
@@ -36,7 +37,7 @@
 </script>
 
 <div class="kasten" role="group" aria-label={t('pruef.bitteLabel')}>
-  <span class="ic" aria-hidden="true">?</span>
+  <span class="ic" aria-hidden="true"><Symbol name="info" groesse={20} /></span>
   <p>
     {#each a.satz as teil, i (i)}{#if teil.fett}<b>{teil.text}</b>{:else}{teil.text}{/if}{/each}
   </p>
@@ -68,8 +69,8 @@
     flex-wrap: wrap;
     align-items: flex-start;
     gap: 0 12px;
-    padding: 14px 16px;
-    border: 2px solid var(--ink);
+    /* DP33 A1: weiche Fläche ohne Linie, innen 16. */
+    padding: 16px;
     border-radius: 18px;
     background: var(--surface);
     font-size: calc(15 * var(--px));
@@ -80,14 +81,9 @@
     display: grid;
     flex-shrink: 0;
     place-items: center;
-    width: 22px;
-    height: 22px;
-    margin-top: 1px;
-    border-radius: 50%;
-    background: var(--action);
-    color: var(--on-action);
-    font-size: 14px;
-    font-weight: 800;
+    width: 20px;
+    height: 21px;
+    color: var(--ink);
   }
 
   p {
@@ -103,7 +99,7 @@
     align-items: center;
     gap: 4px 16px;
     margin-top: 10px;
-    padding-left: 34px;
+    padding-left: 32px;
   }
 
   @media (max-width: 359px) {

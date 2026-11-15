@@ -2280,8 +2280,11 @@ test.describe('Prüfkatalog Stil C', () => {
             // im Ganzseitenbild.
             if (SEITEN_BILDER_AN)
               document.querySelectorAll<HTMLElement>('nav.tabs, .cta').forEach((e) => {
-                if (getComputedStyle(e).position === 'fixed') {
-                  e.style.position = 'absolute';
+                const lage = getComputedStyle(e).position;
+                // PC34 (DP33, Fehler 3): Eine klebende Knopfzeile steht im Ganzseitenbild an ihrem Platz
+                // im Fluss, wie am Ende der Seite; sonst klebte sie, wo das Fenster endete.
+                if (lage === 'fixed' || lage === 'sticky') {
+                  e.style.position = lage === 'fixed' ? 'absolute' : 'static';
                   e.dataset.warFest = '1';
                 }
               });

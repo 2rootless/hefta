@@ -42,7 +42,8 @@
     gap: 6px;
     min-height: var(--tap-target);
     padding-right: var(--space-2);
-    color: var(--on-zurueck, var(--ink));
+    /* DP33 A7: überall in Akzent, wie im Heft; Seiten, die noch eine Runde bekommen, setzen Tinte. */
+    color: var(--on-zurueck, var(--accent-text));
     font-size: calc(15 * var(--px));
     font-weight: 700;
     text-decoration: none;

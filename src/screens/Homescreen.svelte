@@ -88,7 +88,9 @@
         <p class="vermieter">
           <span class="zeile">{t('ersterStart.vermieterFrage')}</span>
           {t('ersterStart.vermieterVor')}
-          <a href={VERMIETER_ADRESSE}>{VERMIETER_DOMAIN}</a>{t('ersterStart.vermieterNach')}
+          <a class="link-weit" href={VERMIETER_ADRESSE}>{VERMIETER_DOMAIN}</a>{t(
+            'ersterStart.vermieterNach',
+          )}
         </p>
       {/if}
     {/snippet}

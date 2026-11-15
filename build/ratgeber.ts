@@ -2,6 +2,7 @@ import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { APP_ADRESSE, APP_NAME, VERMIETER_ADRESSE } from '../src/app/name.ts';
 import { fundstelle, mitName, RATGEBER, type Stimme } from '../src/domain/ratgeber.ts';
+import { FRAGE_REIHE } from '../src/rueckmeldung/fragen.ts';
 
 // Die Ratgeberseite (design/ratgeber.md, RG1 und RG2): beim Bau aus data/ratgeber.de.json erzeugt, als fertiges
 // HTML. Kein Skript, keine Zählung, nichts von fremden Hosts; Links auf die Quellen öffnet nur, wer sie antippt.
@@ -107,6 +108,14 @@ export function ratgeberHtml(stimme: Stimme): string {
   );
 }
 
+/** Die Zahl der Rückmeldefragen als Wort („vier“), aus `FRAGE_REIHE` wie in der App (DP33, Fehler 5). */
+function fragenZahlwort(): string {
+  const de = JSON.parse(readFileSync(join(wurzel, 'src/i18n/de.json'), 'utf8')) as {
+    zahlwoerter: string[];
+  };
+  return de.zahlwoerter[FRAGE_REIHE.length] ?? String(FRAGE_REIHE.length);
+}
+
 /** Die Datenschutzerklärung als eigene Seite: Sie läuft ohne App, und ihre Sprungmarken funktionieren. */
 export const DATENSCHUTZ_PFAD = 'datenschutz';
 
@@ -126,7 +135,13 @@ export function datenschutzHtml(stimme: Stimme): string {
   const block =
     `<section class="ds-zusatz" aria-label="${esc(zusatz.titel)}"><h2>${esc(zusatz.titel)}</h2>` +
     `<p>${esc(zusatz.einleitung)}</p><p class="ds-stand">${esc(zusatz.stand)}</p>` +
-    zusatz.abschnitte.map((a) => `<h3>${esc(a.titel)}</h3><p>${esc(a.text)}</p>`).join('') +
+    zusatz.abschnitte
+      // DP33, Fehler 5: Die Zahl der Fragen kommt aus derselben Quelle wie in der App.
+      .map(
+        (a) =>
+          `<h3>${esc(a.titel)}</h3><p>${esc(a.text.replaceAll('{fragen}', fragenZahlwort()))}</p>`,
+      )
+      .join('') +
     '</section>';
   // Die Ergänzung steht zwischen Überschrift und Generatortext; dessen Wortlaut bleibt, wie er ist.
   const ende = datenschutzText().indexOf('</h1>') + '</h1>'.length;

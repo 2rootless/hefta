@@ -49,9 +49,22 @@
     flaeche: null,
   };
 
+  // DP33 5.2: Das Feld wächst bis drei Zeilen; über 40 Zeichen sagt der Zähler es, Hefta kürzt nicht.
+  const zuLang = $derived(wert.trim().length > LAENGE);
+  let feld = $state<HTMLTextAreaElement | null>(null);
+  $effect(() => {
+    void wert;
+    if (!feld) return;
+    feld.style.height = 'auto';
+    const zeile = parseFloat(getComputedStyle(feld).lineHeight) || 24;
+    const rand = feld.offsetHeight - feld.clientHeight;
+    const innen = parseFloat(getComputedStyle(feld).paddingTop) * 2;
+    feld.style.height = `${Math.min(feld.scrollHeight, zeile * 3 + innen) + rand}px`;
+  });
+
   async function uebernehmen() {
-    if (!heft) return;
-    const w = wert.trim().slice(0, LAENGE);
+    if (!heft || zuLang) return;
+    const w = wert.trim();
     // Gleich dem Vorschlag: kein eigenes Merkmal, damit ein besserer Vorschlag später greift.
     const merkmal = w && w !== vorschlag ? w : null;
     await heftAendern(await db(), heft.id, { angaben: { ...(heft.angaben ?? LEER), merkmal } });
@@ -75,27 +88,32 @@
     <h1 class="h2">{t(ihr ? 'merkmal.titelIhr' : 'merkmal.titelDu')}</h1>
     <p class="sub">{t('merkmal.sub')}</p>
 
-    <div class="feld">
-      <label class="visually-hidden" for="merkmal">{t('merkmal.feld')}</label>
-      <input
-        id="merkmal"
-        maxlength={LAENGE}
-        autocomplete="off"
-        placeholder={ohneMerkmal?.text ?? ''}
-        bind:value={wert}
-      />
-      <small class="zz" aria-live="polite">{t('merkmal.zaehler', { n: wert.length })}</small>
-    </div>
+    <label class="visually-hidden" for="merkmal">{t('merkmal.feld')}</label>
+    <textarea
+      id="merkmal"
+      class="feld"
+      rows="1"
+      autocomplete="off"
+      placeholder={ohneMerkmal?.text ?? ''}
+      bind:this={feld}
+      bind:value={wert}
+      onkeydown={(e) => {
+        // Ein Name hat keine Zeilen: Eingabe übernimmt.
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          void uebernehmen();
+        }
+      }}></textarea>
+    <p class="zz" class:zu-lang={zuLang} id="merkmal-zaehler" aria-live="polite">
+      {#if zuLang}<span>{t('merkmal.zuLang')}</span>{/if}
+      <span>{t('merkmal.zaehler', { n: wert.trim().length })}</span>
+    </p>
 
     {#if vorschlag}
       <h2 class="h3">{t('merkmal.ausInserat')}</h2>
-      <div class="wege">
-        <button
-          class="chip"
-          class:on={wert.trim() === vorschlag}
-          type="button"
-          onclick={() => (wert = vorschlag)}>{vorschlag}</button
-        >
+      <div class="vorschlag">
+        <span>{vorschlag}</span>
+        <button type="button" onclick={() => (wert = vorschlag)}>{t('merkmal.einsetzen')}</button>
       </div>
       {#if heft.angaben?.merkmal}
         <button class="leis" type="button" onclick={() => (wert = vorschlag)}
@@ -118,7 +136,11 @@
     {/if}
 
     <div class="cta">
-      <Hauptbutton text={t('merkmal.uebernehmen')} onclick={uebernehmen} />
+      <Hauptbutton
+        text={t('merkmal.uebernehmen')}
+        onclick={uebernehmen}
+        grundBei={zuLang ? 'merkmal-zaehler' : undefined}
+      />
     </div>
   {/if}
 </main>
@@ -148,71 +170,79 @@
     color: var(--ink-muted);
   }
 
+  /* DP33 A4 und 5.2: weiche Fläche ohne Linie wie „Notizen“; Fokus 2 px Tinte innen. */
   .feld {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
     min-height: 52px;
-    padding: 0 14px;
-    border: 1px solid var(--line);
+    padding: 13px 14px;
+    border: 0;
     border-radius: 14px;
     background: var(--surface);
-  }
-
-  .feld:focus-within {
-    outline: 2px solid var(--focus);
-    outline-offset: 2px;
-  }
-
-  .feld input {
-    flex: 1;
-    min-width: 0;
-    padding: 12px 0;
-    border: 0;
-    outline: 0;
-    background: none;
     color: var(--ink);
     font: inherit;
     font-weight: 600;
+    line-height: 1.4;
+    resize: none;
+    overflow-y: auto;
+  }
+
+  .feld:focus {
+    outline: 0;
+    box-shadow: inset 0 0 0 2px var(--ink);
   }
 
   .zz {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 2px 10px;
+    margin: 6px 2px 0;
     color: var(--ink-quiet);
     font-size: calc(12 * var(--px));
-    white-space: nowrap;
+    text-align: right;
+  }
+
+  .zz.zu-lang {
+    color: var(--accent-text);
+  }
+
+  /* „Aus dem Inserat“: eine Zeile auf weicher Fläche, der Titel bricht um, rechts „Einsetzen“. */
+  .vorschlag {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 6px 6px 6px 14px;
+    border-radius: 14px;
+    background: var(--surface);
+    margin-bottom: 6px;
+  }
+
+  .vorschlag span {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-weight: 600;
+  }
+
+  .vorschlag button {
+    flex: none;
+    min-height: 44px;
+    padding: 0 10px;
+    border: 0;
+    background: none;
+    color: var(--accent-text);
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
   }
 
   .h3 {
     margin: 22px 0 8px;
     font-size: calc(16 * var(--px));
     font-weight: 650;
-  }
-
-  .wege {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    padding: 0 14px;
-    border: 1.5px solid var(--line-strong);
-    border-radius: var(--radius-full);
-    background: none;
-    color: var(--ink);
-    font: inherit;
-    font-size: calc(14 * var(--px));
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .chip.on {
-    border-color: var(--ink);
-    background: var(--surface);
   }
 
   .leis {

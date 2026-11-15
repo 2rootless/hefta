@@ -157,11 +157,17 @@ test('Fokus: nach einem Seitenwechsel auf dem Titel, sichtbarer Ring, Felder beh
 
   if (browserName === 'chromium') {
     await page.keyboard.press('Tab');
+    // DP33 A4: Felder zeigen den Fokus als 2 px Tinte innen; alles andere den Ring.
     const ring = await page.evaluate(() => {
-      const stil = getComputedStyle(document.activeElement!);
-      return `${stil.outlineWidth} ${stil.outlineOffset}`;
+      const e = document.activeElement!;
+      const stil = getComputedStyle(e);
+      return e.matches('.eingabe input')
+        ? stil.boxShadow.includes('inset') && stil.boxShadow.includes(' 0px 0px 0px 2px')
+          ? 'innen 2px'
+          : stil.boxShadow
+        : `${stil.outlineWidth} ${stil.outlineOffset}`;
     });
-    expect(ring).toBe('3px 2px');
+    expect(['innen 2px', '3px 2px']).toContain(ring);
   }
 });
 

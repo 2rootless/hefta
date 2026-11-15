@@ -613,6 +613,8 @@
   }
 
   .teil {
+    /* In der weißen Karte ist die weiche Fläche der Grund (DP33 A4). */
+    --weich: var(--ground);
     border-radius: 20px;
     background: var(--surface);
   }
@@ -620,8 +622,8 @@
   .offen {
     display: grid;
     gap: var(--space-3);
-    padding: 14px 16px 16px;
-    border: 2px solid var(--ink);
+    padding: 16px;
+    /* DP33 A3: Der offene Schritt bleibt Karte, ohne Linie. */
     scroll-margin: 16px 0 120px;
   }
 
@@ -774,10 +776,11 @@
   .aendern {
     flex-shrink: 0;
     margin-left: auto;
+    /* DP33 A7: Textaktion in Akzent, ohne Unterstrich. */
+    color: var(--accent-text);
     font-size: calc(15 * var(--px));
     font-weight: 700;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    text-decoration: none;
   }
 
   .pfeil {
@@ -803,13 +806,21 @@
   }
 
   textarea {
-    padding: 10px 14px;
-    border: 1.5px solid var(--control-border);
-    background: var(--surface);
+    padding: 12px 14px;
+    /* DP33 A4: weiche Fläche ohne Linie. */
+    border: 0;
+    border-radius: var(--radius-slot);
+    background: var(--weich);
     color: var(--ink);
     font: inherit;
     font-size: calc(16 * var(--px));
     resize: vertical;
+  }
+
+  /* DP33 A4: Fokus 2 px Tinte innen. */
+  textarea:focus-visible {
+    outline: 0;
+    box-shadow: inset 0 0 0 2px var(--ink);
   }
 
   .euro {

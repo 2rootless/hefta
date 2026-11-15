@@ -129,10 +129,11 @@
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
-    padding: 0 12px;
+    padding: 0 14px;
     border-radius: 22px;
-    border: 1.5px solid var(--ink);
-    background: none;
+    /* DP33 A5: weiche Fläche ohne Linie. */
+    border: 0;
+    background: var(--weich);
     color: var(--ink);
     font: inherit;
     font-size: calc(14 * var(--px));

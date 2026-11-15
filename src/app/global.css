@@ -103,7 +103,20 @@ textarea {
 }
 
 /* Wiederkehrende Textstile aus design/tokens.json (Gruppe „App“). */
+/* DP33 A7: Unterseiten tragen den Kopf aus dem Heft (wie `.h2`); die breite Schrift steht nur auf
+   Hauptseiten und auf Seiten, die noch eine eigene Runde bekommen (`.display-breit`). */
 .display {
+  margin: 8px 0 6px;
+  font-size: calc(25 * var(--px));
+  font-weight: 700;
+  font-stretch: 108%;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.display-breit {
   margin: 0;
   font-size: calc(34 * var(--px));
   line-height: calc(36 * var(--px));
@@ -148,11 +161,11 @@ textarea {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--ink);
+  /* DP33 A7: in Akzent, ohne Unterstrich, wie im Heft. */
+  color: var(--accent-text);
   font-size: calc(15 * var(--px));
   font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -184,11 +197,31 @@ textarea {
   min-width: 0;
   min-height: var(--slot-height);
   padding: 0 var(--space-4);
-  border: 1.5px solid var(--control-border);
+  /* DP33 A4: weiche Fläche ohne Linie, wie „Notizen“ im Heft. */
+  border: 0;
   border-radius: var(--radius-slot);
-  background: var(--surface);
+  background: var(--weich);
   font-size: calc(17 * var(--px));
   font-weight: 400;
+}
+
+/* DP33 A4: Fokus als 2 px Tinte innen, der Radius bleibt. Gilt für die Felder mit weicher Fläche. */
+.eingabe input:focus-visible,
+.feld-weich:focus-visible {
+  outline: 0;
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+/* Die weiche Fläche: auf dem Grund der Seite die Fläche der Karten, in einer Karte der Grund. */
+:root {
+  --weich: var(--surface);
+}
+
+.gruppe,
+.zeilen,
+.karte-weich,
+dialog .zeilen {
+  --weich: var(--ground);
 }
 
 /* Safari gibt Datums- und Monatsfeldern eine eigene Mindestbreite: Sie ragten rechts aus dem Blatt und
@@ -222,14 +255,15 @@ input[type='month']::-webkit-date-and-time-value {
   border: 0;
 }
 
+/* DP33 A5: wie „Befristung“ in den Wünschen: nicht gewählt weiche Fläche ohne Linie, gewählt Tinte. */
 .chip {
   display: inline-flex;
   align-items: center;
   min-height: var(--tap-target);
   padding: 0 var(--space-5);
-  border: 2px solid var(--control-border);
+  border: 0;
   border-radius: var(--radius-full);
-  background: none;
+  background: var(--weich);
   color: var(--ink);
   font-size: calc(16 * var(--px));
   font-weight: 700;
@@ -238,9 +272,8 @@ input[type='month']::-webkit-date-and-time-value {
 
 .chip[aria-pressed='true'],
 .chip[aria-checked='true'] {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: var(--ground);
+  background: var(--action);
+  color: var(--on-action);
 }
 
 /* Stil C: Abschnitt mit Überschrift über weißen Gruppen (design/mappe-erstellen-einstellungen.md). */
@@ -662,4 +695,37 @@ a.listenzeile {
 .urteil.offen::before {
   border-radius: 50%;
   box-shadow: inset 0 0 0 1.5px currentcolor;
+}
+
+/* DP33, Abschnitt 5.1: Ein Link im Satz („vermieter.hefta.de“) bekommt eine Tippfläche von 44 px Höhe,
+   ohne dass sich die Zeile ändert. Innenabstand oben und unten; bei einem Inline-Element verschiebt er
+   nichts, vergrößert aber die Fläche, die einen Tipp annimmt. */
+a.link-weit {
+  /* Die Fläche eines Inline-Elements ist die Höhe der Schrift (etwa 1,1 em) plus Innenabstand. */
+  padding-block: calc((var(--tap-target) - 1.1em) / 2 + 1px);
+}
+
+/* PC34: Personenseite, Unterlage und Rutsch bekommen noch eine eigene Runde (DP33, Abschnitt 2). Bis dahin
+   gelten dort die bisherigen Stile für Textlinks, Felder und Wahlpillen. */
+.stil-alt .textlink {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.stil-alt .eingabe input {
+  border: 1.5px solid var(--control-border);
+  background: var(--surface);
+}
+
+.stil-alt .chip {
+  border: 2px solid var(--control-border);
+  background: none;
+}
+
+.stil-alt .chip[aria-pressed='true'],
+.stil-alt .chip[aria-checked='true'] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--ground);
 }

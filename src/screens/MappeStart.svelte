@@ -109,7 +109,8 @@
 
 {#snippet vermieter()}
   <p class="verm">
-    {t('mappeStart.vermieter')} <a href={VERMIETER_ADRESSE}>{VERMIETER_DOMAIN}</a>.
+    {t('mappeStart.vermieter')}
+    <a class="link-weit" href={VERMIETER_ADRESSE}>{VERMIETER_DOMAIN}</a>.
   </p>
 {/snippet}
 

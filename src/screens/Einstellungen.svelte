@@ -540,10 +540,11 @@
   .kopieren {
     flex: none;
     min-height: var(--tap-target);
-    padding: 0 12px;
-    border: 1px solid var(--control-border);
+    padding: 0 14px;
+    /* DP33 A5: weiche Fläche ohne Linie. */
+    border: 0;
     border-radius: var(--radius-full);
-    background: var(--surface);
+    background: var(--weich);
     color: var(--ink);
     font: inherit;
     font-weight: 600;

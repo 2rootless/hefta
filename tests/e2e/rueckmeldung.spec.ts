@@ -830,11 +830,12 @@ test('Monat passt nicht: Die Seite der Serie sagt, welcher Monat; die Seite des 
   await versionenPatchen(page, '-0-gehaltsnachweis', FAKTEN({ monat: '2025-03' }));
   const kasten = page.getByRole('group', { name: 'Bitte prüfen' });
   await expect(kasten).toContainText(
-    /^\?\s*Bei .+ 2026 steht auf der Seite „März 2025“\. Gehört sie zu März 2025\?/,
+    // DP33 A1: Das Zeichen ist jetzt eins aus B11, kein „?“ mehr im Text.
+    /^\s*Bei .+ 2026 steht auf der Seite „März 2025“\. Gehört sie zu März 2025\?/,
   );
   const titel = (await kasten.locator('b').first().innerText()).trim();
   await page.getByRole('link', { name: new RegExp(`^${titel}`) }).click();
-  await expect(kasten).toContainText(/^\?\s*Auf der Seite steht „März 2025“\./);
+  await expect(kasten).toContainText(/^\s*Auf der Seite steht „März 2025“\./);
   await kasten.getByRole('button', { name: /^Nach März/ }).click();
   await expect(page.getByText('Passt jetzt.')).toBeVisible();
 });

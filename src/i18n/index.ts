@@ -37,17 +37,24 @@ function nachschlagen(schluessel: string): unknown {
 }
 
 function einsetzen(text: string, werte: Werte): string {
-  return text.replace(/\{(\w+)\}/g, (_, name: string) => {
-    if (name === 'app') return APP_NAME;
-    // Zahlen im Satz bis zwölf als Wort (Prüfkatalog T6): {wort} „drei“, {Wort} am Satzanfang „Drei“.
-    if (name === 'wort' || name === 'Wort') {
-      const wort = zahlwort(Number(werte.anzahl ?? 0));
-      return name === 'Wort' ? wort.charAt(0).toUpperCase() + wort.slice(1) : wort;
-    }
-    const wert = werte[name];
-    if (wert === undefined) return `{${name}}`;
-    return typeof wert === 'number' ? zahlen.format(wert) : wert;
+  // DP33, Fehler 2: Endet ein eingesetzter Wert auf einen Punkt („12. Okt.“) und folgt im Satz ein Punkt,
+  // steht nur einer da.
+  return text.replace(/\{(\w+)\}(\.?)/g, (_, name: string, punkt: string) => {
+    const aus = wertVon(name, werte);
+    return punkt && aus.endsWith('.') ? aus : aus + punkt;
   });
+}
+
+function wertVon(name: string, werte: Werte): string {
+  if (name === 'app') return APP_NAME;
+  // Zahlen im Satz bis zwölf als Wort (Prüfkatalog T6): {wort} „drei“, {Wort} am Satzanfang „Drei“.
+  if (name === 'wort' || name === 'Wort') {
+    const wort = zahlwort(Number(werte.anzahl ?? 0));
+    return name === 'Wort' ? wort.charAt(0).toUpperCase() + wort.slice(1) : wort;
+  }
+  const wert = werte[name];
+  if (wert === undefined) return `{${name}}`;
+  return typeof wert === 'number' ? zahlen.format(wert) : wert;
 }
 
 function text(schluessel: TextSchluessel, werte: Werte, an: Anrede): string {

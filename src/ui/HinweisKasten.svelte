@@ -24,7 +24,7 @@
 
 {#if art}
   <div class="kasten" class:stark={art !== 'version'} role="status">
-    <span class="ic" aria-hidden="true">{art === 'version' ? 'i' : '!'}</span>
+    <span class="ic" aria-hidden="true"><Symbol name="info" groesse={20} /></span>
     <div class="tx">
       {#if art !== 'speicher'}
         <button
@@ -59,28 +59,25 @@
     align-items: flex-start;
     gap: 12px;
     margin: 14px var(--space-4) 0;
-    padding: 12px 8px 4px 14px;
+    padding: 16px 8px 6px 16px;
     border-radius: 18px;
     background: var(--surface);
     font-size: calc(15 * var(--px));
     line-height: calc(21 * var(--px));
   }
 
-  .stark {
-    border: 2px solid var(--ink);
-  }
-
+  /* DP33 A1: ohne Linie; das Zeichen aus B11 links, bei einer Warnung in Akzent. */
   .ic {
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    width: 22px;
-    height: 22px;
-    margin-top: 1px;
-    border: 2px solid var(--ink);
-    border-radius: 50%;
-    font-size: calc(13 * var(--px));
-    font-weight: 800;
+    width: 20px;
+    height: 21px;
+    color: var(--ink);
+  }
+
+  .stark .ic {
+    color: var(--accent-text);
   }
 
   .tx {

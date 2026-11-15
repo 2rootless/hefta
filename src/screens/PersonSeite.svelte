@@ -430,6 +430,7 @@
       </section>
       <div class="neu">
         <Eintragen
+          zeile
           unterlage={t('personSeite.neuAnlegen')}
           grund={t('personSeite.neuAnlegenHinweis')}
           onclick={() => (schritt = 'formular')}
@@ -528,7 +529,8 @@
     align-items: center;
     gap: 4px;
     min-height: var(--tap-target);
-    color: var(--ink);
+    /* DP33 A7: Zurück in Akzent, wie im Heft. */
+    color: var(--accent-text);
     font-size: calc(15 * var(--px));
     font-weight: 700;
     text-decoration: none;

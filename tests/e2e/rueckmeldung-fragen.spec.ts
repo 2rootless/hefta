@@ -160,19 +160,25 @@ test('Seite hefta.de/rueckmeldung/ für Links von außen: Vorwahl, Abschicken, D
   const angekommen = await empfang(page);
   await page.goto('/rueckmeldung/?f=geholfen&a=teils');
   await expect(
-    page.getByRole('group', { name: 'Hat dir Hefta bei der Bewerbung geholfen?' }),
+    page.getByRole('group', { name: 'Hat euch Hefta bei der Bewerbung geholfen?' }),
   ).toBeVisible();
-  await expect(page.getByRole('group', { name: 'Wie hast du von Hefta erfahren?' })).toBeHidden();
+  await expect(page.getByRole('group', { name: 'Wie habt ihr von Hefta erfahren?' })).toBeHidden();
   await expect(page.getByRole('radio', { name: 'Teils' })).toBeChecked();
   await page.getByRole('button', { name: 'Abschicken' }).click();
   await expect(page.getByRole('heading', { name: 'Danke. Angekommen.' })).toBeVisible();
-  await expect(page.getByText('Deine Antwort: Teils')).toBeVisible();
+  await expect(page.getByText('Eure Antwort: Teils')).toBeVisible();
   expect(JSON.parse(angekommen[0]!.postData()!)).toEqual({ f: 'geholfen', a: 'teils' });
 
   // Ohne Vorwahl: alle vier Fragen, „Abschicken“ erst nach einer Wahl.
   await page.goto('/rueckmeldung/');
   await expect(page.getByRole('heading', { level: 1, name: 'Vier kurze Fragen' })).toBeVisible();
   await expect(page.getByRole('group')).toHaveCount(4);
+  // DP32: „ihr“ und ohne „Kennung“.
+  await expect(
+    page.getByText(
+      'Mit „Abschicken“ geht nur eure Antwort an uns: ohne Namen und ohne Daten aus Hefta.',
+    ),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Abschicken' })).toBeDisabled();
   await page.getByRole('radio', { name: 'Suche im Netz' }).check();
   await expect(page.getByRole('button', { name: 'Abschicken' })).toBeEnabled();

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { anrede } from '../i18n/anrede.svelte';
   // Seite einer Unterlage (design/unterlage-warum-haushalt.md, UL1 bis UL3, UL5, UL6): was in der Mappe
   // ist, ob etwas zu tun ist, ältere Versionen, Notiz. Das Datum lässt sich hier nachtragen.
   import { daten, db, neuLaden } from '../app/daten.svelte';
@@ -94,7 +95,7 @@
     pruefhinweise(haushaltStaende(daten.ansicht)).get(`${personId}/${typId}`) ?? null,
   );
 
-  const warum = $derived(u ? warumInhalt(u.typ) : null);
+  const warum = $derived(u ? warumInhalt(u.typ, anrede.wert) : null);
   const pruefcode = $derived(u ? pruefcodeStand(u) : null);
   const hinweis = $derived(
     u?.veraltet && u.versionen.length
@@ -240,7 +241,7 @@
   </li>
 {/snippet}
 
-<main class="seite farbe-{stand?.farbe ?? 1}">
+<main class="seite stil-alt farbe-{stand?.farbe ?? 1}">
   <div class="kopf">
     <Zurueck href="#/person/{personId}" text={name || t('allgemein.zurueck')} />
   </div>
@@ -451,6 +452,8 @@
   }
 
   .kopf {
+    /* DP33: Diese Seite bekommt noch eine eigene Runde; bis dahin bleibt Zurück in Tinte. */
+    --on-zurueck: var(--ink);
     display: flex;
     align-items: center;
     min-height: var(--tap-target);

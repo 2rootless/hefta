@@ -183,6 +183,7 @@
 {#snippet mitmieterFeld()}
   {#if vertrag.length <= 1}
     <Eintragen
+      zeile
       unterlage={t('einrichtung.haushalt.mitmieter')}
       grund={t('einrichtung.haushalt.mitmieterHinweis')}
       gross
@@ -190,6 +191,7 @@
     />
   {:else}
     <Eintragen
+      zeile
       unterlage={t('einrichtung.haushalt.weiterePerson')}
       grund={t('einrichtung.haushalt.weiterePersonHinweis')}
       href="#/person-neu/mitmieter{suffix}"
@@ -199,6 +201,7 @@
 
 {#snippet buergeFeld()}
   <Eintragen
+    zeile
     unterlage={buergen.length
       ? t('einrichtung.haushalt.buergeWeiterer')
       : t('einrichtung.haushalt.buerge')}
@@ -452,7 +455,8 @@
     align-items: center;
     gap: 4px;
     min-height: var(--tap-target);
-    color: var(--ink);
+    /* DP33 A7: Zurück in Akzent, wie im Heft. */
+    color: var(--accent-text);
     font-size: calc(15 * var(--px));
     font-weight: 700;
     text-decoration: none;
@@ -538,12 +542,15 @@
 
   .etikett {
     align-self: center;
-    padding: 0 8px;
-    border: 1.5px solid currentColor;
+    /* DP33 A6: 12 px grau auf weicher Fläche, ohne Linie. */
+    padding: 1px 8px;
     border-radius: 10px;
+    /* Die weiche Fläche steht hier in einer Karte: der Ton der Spur, auf Weiß wie auf dem Grund sichtbar. */
+    background: var(--track);
+    color: var(--ink-muted);
     font-size: calc(12 * var(--px));
     line-height: calc(17 * var(--px));
-    font-weight: 700;
+    font-weight: 650;
   }
 
   .unterzeile {
@@ -562,11 +569,11 @@
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
-    color: inherit;
+    /* DP33 A7: Textaktion in Akzent, ohne Unterstrich. */
+    color: var(--accent-text);
     font-size: calc(15 * var(--px));
     font-weight: 700;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    text-decoration: none;
   }
 
   .feld {

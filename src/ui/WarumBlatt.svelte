@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { anrede } from '../i18n/anrede.svelte';
   // „Warum?“-Blatt (design/unterlage-warum-haushalt.md, WB1 bis WB3): drei feste Abschnitte, Quelle
   // und Stand unten, keine Preise. Die Texte stehen im Regelkatalog.
   import { warumInhalt, type Dokumenttyp } from '../domain/regelkatalog';
@@ -18,7 +19,7 @@
     zurueck?: HTMLElement | null;
   } = $props();
 
-  const inhalt = $derived(warumInhalt(typ));
+  const inhalt = $derived(warumInhalt(typ, anrede.wert));
 
   let warOffen = false;
   $effect(() => {
@@ -71,12 +72,15 @@
   .etikett {
     justify-self: start;
     margin-top: calc(-1 * var(--space-3));
-    padding: 0 8px;
-    border: 1.5px solid var(--ink);
+    /* DP33 A6: 12 px grau auf weicher Fläche, ohne Linie. */
+    padding: 1px 8px;
     border-radius: 10px;
+    /* Die weiche Fläche steht hier in einer Karte: der Ton der Spur, auf Weiß wie auf dem Grund sichtbar. */
+    background: var(--track);
+    color: var(--ink-muted);
     font-size: calc(12 * var(--px));
     line-height: calc(17 * var(--px));
-    font-weight: 700;
+    font-weight: 650;
   }
 
   h3 {

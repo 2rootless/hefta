@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { FRAGE_REIHE } from '../rueckmeldung/fragen';
   // Impressum aus dem Generator; die Angaben zum Datenschutz sind ein Entwurf aus
   // docs/entwurf-impressum-datenschutz.md, die ganze Erklärung steht auf /datenschutz/.
   import { impressumHtml } from '../app/impressum';
-  import { t } from '../i18n';
+  import { t, zahlwort } from '../i18n';
   import { passend, TITEL } from '../ui/passend';
   import Zurueck from '../ui/Zurueck.svelte';
   import { istApp } from '../app/plattform';
@@ -41,7 +42,7 @@
   <p>{t(app ? 'rechtliches.cookiesTextApp' : 'rechtliches.cookiesText')}</p>
   <!-- E54, E57: freigegeben in Nachricht 10.11. t, nicht rechtlich geprüft. -->
   <h3>{t('rechtliches.rueckmeldungTitel')}</h3>
-  <p>{t('rechtliches.rueckmeldungText')}</p>
+  <p>{t('rechtliches.rueckmeldungText', { zahl: zahlwort(FRAGE_REIHE.length) })}</p>
   <h3>{t('rechtliches.rechteTitel')}</h3>
   <p>{t('rechtliches.rechteText')}</p>
   <p><a class="ganz" href="/datenschutz/">{t('rechtliches.ganzeErklaerung')}</a></p>
@@ -97,8 +98,8 @@
     align-items: center;
     min-height: 44px;
     font-weight: 700;
-    color: inherit;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    /* DP33 A7: Textaktion in Akzent, ohne Unterstrich. */
+    color: var(--accent-text);
+    text-decoration: none;
   }
 </style>

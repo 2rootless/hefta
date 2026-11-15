@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { impressumHtml } from '../src/app/impressum';
+import { FRAGE_REIHE } from '../src/rueckmeldung/fragen';
 import { DATENSCHUTZ_PFAD, datenschutzHtml, datenschutzText } from './ratgeber';
 
 // Der Text kommt aus dem Datenschutz-Generator (Gratisfassung, erzeugt am 5.11.2026, am 6.11.2026 neu erzeugt ohne den
@@ -55,6 +56,12 @@ describe('Datenschutzerklärung', () => {
       expect(html.indexOf('Cloudflare')).toBeLessThan(html.indexOf('Präambel'));
       // Vom Auftraggeber am 6.11.2026 freigegeben: kein Vermerk „Entwurf“ mehr.
       expect(html).not.toContain('Entwurf');
+    });
+
+    it('DP33, Fehler 5: die Zahl der Fragen aus FRAGE_REIHE, als Wort', () => {
+      expect(FRAGE_REIHE).toHaveLength(4);
+      expect(html).toContain('vier feste Fragen');
+      expect(html).not.toContain('{fragen}');
     });
 
     it('ist statisch und seit der Veröffentlichung für Suchmaschinen freigegeben', () => {

@@ -567,11 +567,11 @@
     padding: 0;
     border: 0;
     background: none;
-    color: var(--ink);
+    /* DP33 A7: Textaktion in Akzent, ohne Unterstrich. */
+    color: var(--accent-text);
     font: inherit;
     font-weight: 700;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    text-decoration: none;
     cursor: pointer;
   }
 
@@ -625,16 +625,18 @@
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
-    padding: 0 14px;
+    padding: 0 16px;
+    /* DP33 A5: wie „Befristung“: nicht gewählt weiche Fläche, gewählt Tinte, 44 hoch. */
+    border: 0;
     border-radius: 22px;
-    border: 1.5px solid var(--ink-muted);
     background: var(--surface);
     color: var(--ink);
     font-size: calc(15 * var(--px));
     white-space: nowrap;
   }
   .chip[aria-checked='true'] {
-    border: 2.5px solid var(--ink);
+    background: var(--action);
+    color: var(--on-action);
     font-weight: 700;
   }
   /* Jeder Chip in einer Schrift seiner Art; die PDF-Schriften selbst lädt die App nur fürs PDF. */
@@ -661,8 +663,9 @@
     align-items: center;
     gap: 8px;
     min-height: var(--tap-target);
-    padding: 0 14px 0 8px;
-    border: 1.5px solid var(--control-border);
+    padding: 0 14px 0 10px;
+    /* DP33 A5: ohne Linie; gewählt in Tinte. */
+    border: 0;
     border-radius: 22px;
     background: var(--surface);
     color: var(--ink);
@@ -673,7 +676,8 @@
   }
 
   .akzent[aria-checked='true'] {
-    border: 2.5px solid var(--ink);
+    background: var(--action);
+    color: var(--on-action);
   }
 
   .akzent i {
@@ -717,12 +721,15 @@
   }
 
   .etikett {
-    padding: 0 7px;
-    border: 1.5px solid currentColor;
+    /* DP33 A6: 12 px grau auf weicher Fläche, ohne Linie. */
+    padding: 1px 8px;
     border-radius: 10px;
-    font-size: calc(11 * var(--px));
-    line-height: calc(16 * var(--px));
-    font-weight: 700;
+    /* Die weiche Fläche steht hier in einer Karte: der Ton der Spur, auf Weiß wie auf dem Grund sichtbar. */
+    background: var(--track);
+    color: var(--ink-muted);
+    font-size: calc(12 * var(--px));
+    line-height: calc(17 * var(--px));
+    font-weight: 650;
   }
 
   .modus {
@@ -730,17 +737,14 @@
     align-items: flex-start;
     gap: 12px;
     width: 100%;
-    padding: 14px 16px;
-    border: 2px solid transparent;
+    padding: 16px;
+    /* DP33 A3: Die Auswahl zeigt allein der Punkt; alle Karten gleich. */
+    border: 0;
     border-radius: 18px;
     background: var(--surface);
     color: var(--ink);
     text-align: left;
     cursor: pointer;
-  }
-
-  .modus.an {
-    border-color: var(--ink);
   }
 
   .punkt {
@@ -818,14 +822,14 @@
     gap: 4px;
     min-height: 48px;
     padding: 0 14px;
-    border: 1.5px solid var(--control-border);
+    /* DP33 A4: weiche Fläche ohne Linie; Fokus 2 px Tinte innen. */
+    border: 0;
     border-radius: 14px;
     background: var(--surface);
   }
 
   .name:focus-within {
-    outline: 2px solid var(--focus);
-    outline-offset: 2px;
+    box-shadow: inset 0 0 0 2px var(--ink);
   }
 
   .name input {

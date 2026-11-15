@@ -629,7 +629,9 @@
         <!-- Alles, was man vor dem Senden wissen sollte, an einer Stelle. Die Größe ist die letzte Zeile. -->
         <section class="karte vorher" aria-label={t('mappe.vorherLabel')}>
           <div class="vorher-kopf">
-            <span class="ic" aria-hidden="true">{unlesbar.length ? '!' : '?'}</span>
+            <span class="ic" class:warnung={unlesbar.length > 0} aria-hidden="true"
+              ><Symbol name="info" groesse={20} /></span
+            >
             <p role="status">
               <b
                 >{unlesbar.length
@@ -845,7 +847,7 @@
         {#each liste as h, i (i)}
           {#if h.art === 'ohneBonitaet'}
             <div class="notiz">
-              <span class="ic" aria-hidden="true">!</span>
+              <span class="ic" aria-hidden="true"><Symbol name="info" groesse={20} /></span>
               <div>
                 <p>{t('mappe.ohneBonitaet')}</p>
                 <button type="button" class="textlink" onclick={bonitaetDazu}
@@ -861,7 +863,7 @@
             </div>
           {:else if h.art === 'zusageOffen'}
             <div class="notiz">
-              <span class="ic" aria-hidden="true">!</span>
+              <span class="ic" aria-hidden="true"><Symbol name="info" groesse={20} /></span>
               <div>
                 <p>{t('mappe.zusageOffen', { namen: h.namen.join(', ') })}</p>
               </div>
@@ -1034,6 +1036,8 @@
     font-size: calc(13 * var(--px));
     font-weight: 600;
     text-align: center;
+    /* DP33 A7: ohne Unterstrich. */
+    text-decoration: none;
   }
 
   .deck-mini img {
@@ -1416,8 +1420,9 @@
     color: var(--ink-muted);
   }
 
+  /* DP33 A1: weiche Fläche ohne Linie, innen 16. */
   .vorher {
-    border: 2px solid var(--ink);
+    padding: 16px;
     box-shadow: none;
   }
 
@@ -1447,16 +1452,19 @@
     color: var(--ink-muted);
   }
 
+  /* DP33 A1: Zeichen aus B11, 20 px; bei einer Warnung in Akzent. */
   .ic {
     display: grid;
     flex-shrink: 0;
     place-items: center;
-    width: 24px;
-    height: 24px;
-    border: 2px solid var(--ink);
-    border-radius: 50%;
-    font-size: calc(13 * var(--px));
-    font-weight: 800;
+    width: 20px;
+    height: 21px;
+    color: var(--ink);
+  }
+
+  .ic.warnung,
+  .notiz .ic {
+    color: var(--accent-text);
   }
 
   .vorher ul {
@@ -1617,7 +1625,7 @@
     align-items: flex-start;
     gap: 10px;
     margin-top: 12px;
-    padding: 12px 14px 4px;
+    padding: 16px 16px 6px;
     border-radius: 16px;
     background: var(--surface);
     font-size: calc(14 * var(--px));
@@ -1671,13 +1679,20 @@
   }
 
   textarea {
-    padding: 10px 14px;
-    border: 1.5px solid var(--control-border);
+    padding: 12px 14px;
+    /* DP33 A4: weiche Fläche ohne Linie. */
+    border: 0;
     border-radius: 14px;
-    background: var(--surface);
+    background: var(--weich);
     color: var(--ink);
     font: inherit;
     font-size: calc(16 * var(--px));
+  }
+
+  /* DP33 A4: Fokus 2 px Tinte innen. */
+  textarea:focus-visible {
+    outline: 0;
+    box-shadow: inset 0 0 0 2px var(--ink);
   }
 
   .knopf {

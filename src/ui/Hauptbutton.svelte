@@ -5,19 +5,25 @@
     text: string;
     onclick?: () => void;
     grund?: string;
+    /**
+     * Deaktiviert, wobei der Grund schon an anderer Stelle steht (etwa am Zähler eines Felds, DP33 5.2):
+     * die Kennung dieses Texts. Er wird nicht wiederholt.
+     */
+    grundBei?: string;
   }
-  let { text, onclick, grund }: Props = $props();
+  let { text, onclick, grund, grundBei }: Props = $props();
+  const aus = $derived(!!grund || !!grundBei);
   const grundId = $props.id();
 </script>
 
 <div class="hauptbutton">
   <button
     type="button"
-    class:deaktiviert={!!grund}
-    aria-disabled={grund ? 'true' : undefined}
-    aria-describedby={grund ? grundId : undefined}
+    class:deaktiviert={aus}
+    aria-disabled={aus ? 'true' : undefined}
+    aria-describedby={grund ? grundId : grundBei}
     onclick={() => {
-      if (!grund) onclick?.();
+      if (!aus) onclick?.();
     }}
   >
     {text}

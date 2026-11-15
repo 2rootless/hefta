@@ -127,7 +127,7 @@
   </li>
 {/snippet}
 
-<main class="seite farbe-{stand?.farbe ?? 1}">
+<main class="seite stil-alt farbe-{stand?.farbe ?? 1}">
   <div class="kopf">
     <Zurueck href="#/" text={t('tabs.mappe')} />
     {#if stand}
@@ -246,6 +246,8 @@
   }
 
   .kopf {
+    /* DP33: Diese Seite bekommt noch eine eigene Runde; bis dahin bleibt Zurück in Tinte. */
+    --on-zurueck: var(--ink);
     display: flex;
     justify-content: space-between;
     align-items: center;

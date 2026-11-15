@@ -280,13 +280,20 @@
     width: 100%;
     min-height: 48px;
     padding: 0 40px 0 14px;
-    border: 1.5px solid var(--control-border);
+    /* DP33 A4: weiche Fläche ohne Linie. */
+    border: 0;
     border-radius: 14px;
-    background: var(--surface);
+    background: var(--weich);
     color: var(--ink);
     font-size: calc(16 * var(--px));
     font-weight: 600;
     appearance: none;
+  }
+
+  /* DP33 A4: Fokus 2 px Tinte innen. */
+  select:focus-visible {
+    outline: 0;
+    box-shadow: inset 0 0 0 2px var(--ink);
   }
 
   .auswahl::after {

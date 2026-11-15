@@ -17,8 +17,8 @@ const de = JSON.parse(readFileSync(join(wurzel, 'src/i18n/de.json'), 'utf8')) as
 const rm = de.rueckmeldung as Baum;
 const text = (pfad: string): string => {
   let wert = pfad.split('.').reduce<string | Baum>((k, s) => (k as Baum)[s]!, rm);
-  // Paar „ihr“/„du“ (B28b): Die Seite spricht wie bisher eine Person an, die den Link bekam.
-  if (typeof wert === 'object' && 'du' in wert) wert = wert.du!;
+  // Paar „ihr“/„du“ (B28b): Die Seite spricht wie die übrige Website mit „ihr“ an (DP32).
+  if (typeof wert === 'object' && 'ihr' in wert) wert = wert.ihr!;
   return (wert as string).replaceAll('{app}', APP_NAME);
 };
 const esc = (t: string) =>
@@ -39,6 +39,18 @@ const CSP = [
   "base-uri 'none'",
   "form-action 'none'",
 ].join('; ');
+
+/** „{Zahl} kurze Fragen“, die Zahl als Wort aus `FRAGE_REIHE`, derselben Quelle wie in der App (DP32, DP33). */
+export function kurzeFragen(): string {
+  const wort = fragenZahlwort();
+  return text('seite.kurzeFragen').replace('{Zahl}', wort.charAt(0).toUpperCase() + wort.slice(1));
+}
+
+/** Die Zahl der Fragen als Wort („vier“). */
+export function fragenZahlwort(): string {
+  const n = FRAGE_REIHE.length;
+  return (de.zahlwoerter as unknown as string[])[n] ?? String(n);
+}
 
 export function rueckmeldungHtml(): string {
   const mail = `mailto:${ADRESSE}?subject=${encodeURIComponent(text('betreffAnderes'))}`;
@@ -72,7 +84,7 @@ export function rueckmeldungHtml(): string {
     `<body><div class="s"><header class="vs-top"><a class="vs-brand" href="/">` +
     `<img class="vs-logo" src="/${RATGEBER_ORDNER}/logo.svg" alt="" /><span>${esc(APP_NAME.toLowerCase())}</span></a>` +
     `<span class="vs-tr rm-leise">${esc(text('seite.titel'))}</span></header>` +
-    `<main class="rm"><form id="rm" novalidate><h1 class="vs-h1" id="rm-titel">${esc(text('seite.vier'))}</h1>` +
+    `<main class="rm"><form id="rm" novalidate><h1 class="vs-h1" id="rm-titel">${esc(kurzeFragen())}</h1>` +
     `${fragen}<p class="vs-sub">${esc(text('seite.satz'))}</p>` +
     `<p class="rm-aus vs-sub" role="status" hidden>${esc(text('aus'))}</p>` +
     `<button class="vs-btn" type="submit" disabled>${esc(text('abschicken'))}</button></form>` +

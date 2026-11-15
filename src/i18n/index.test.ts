@@ -44,6 +44,22 @@ describe('i18n', () => {
   });
 });
 
+describe('DP33, Fehler 1 und 2', () => {
+  it('kein doppelter Punkt, wenn der Wert auf einen Punkt endet', () => {
+    expect(t('stand.nachgefragt.satz' as never, { datum: '12. Okt.' })).toBe(
+      'Beworben am 12. Okt. Jetzt ist wieder der Vermieter dran.',
+    );
+    expect(t('stand.nachgefragt.satz' as never, { datum: '12. Oktober' })).toBe(
+      'Beworben am 12. Oktober. Jetzt ist wieder der Vermieter dran.',
+    );
+  });
+
+  it('vor dem fetten Namen steht ein Leerzeichen', () => {
+    for (const k of ['pruef.nameFehltVor', 'pruef.aufDemDokument', 'pruef.aufDerSeite'])
+      expect(t(k as never)).toMatch(/ $/);
+  });
+});
+
 describe('Monate und Tage', () => {
   it('nennt Monate ohne Jahr im laufenden Jahr, sonst mit', async () => {
     const { monatName, tagText } = await import('./index');

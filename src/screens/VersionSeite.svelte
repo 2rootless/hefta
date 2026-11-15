@@ -91,7 +91,7 @@
   const wegdamit = einmal(wegdamitRoh);
 </script>
 
-<main class="seite">
+<main class="seite stil-alt">
   <div class="kopf">
     <Zurueck href="#{basis}" text={u ? listenText(u.typ) : t('allgemein.zurueck')} />
   </div>
@@ -100,7 +100,7 @@
     <p class="leer">{t('person.nichtGefunden')}</p>
   {:else}
     <div class="titelblock">
-      <h1 class="display frage">{versionTitel(v)}</h1>
+      <h1 class="display-breit frage">{versionTitel(v)}</h1>
       <p class="lead">
         {inMappe ? t('unterlage.versionMappe') : t('unterlage.versionNichtMappe')}
       </p>
@@ -158,6 +158,8 @@
   }
 
   .kopf {
+    /* DP33: Diese Seite bekommt noch eine eigene Runde; bis dahin bleibt Zurück in Tinte. */
+    --on-zurueck: var(--ink);
     display: flex;
     align-items: center;
     min-height: var(--tap-target);

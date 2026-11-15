@@ -75,6 +75,10 @@ export interface Dokumenttyp {
   warumErlaubt?: string;
   warumUeblich?: string;
   warumGutZuWissen?: string[];
+  /** DP33, Fehler 4: dieselben Texte mit „ihr“; fehlt eine, gilt die Fassung oben (sie sagt kein „du“). */
+  warumErlaubtIhr?: string;
+  warumUeblichIhr?: string;
+  warumGutZuWissenIhr?: string[];
   /** Kein Vermieter kann das verlangen: im Blatt keine Marken für die Schritte. */
   nieVerlangbar?: boolean;
   /** Geht bei „Marktüblich“ mit, sobald hochgeladen; das Etikett bleibt, darum gilt es nie als fehlend. */
@@ -314,7 +318,8 @@ export interface WarumInhalt {
 
 const MONAT_JAHR = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' });
 
-export function warumInhalt(typ: Dokumenttyp): WarumInhalt | null {
+/** Inhalt des Warum-Blatts; die Anrede folgt dem Haushalt (allein „du“, sonst „ihr“, DP33). */
+export function warumInhalt(typ: Dokumenttyp, an: 'ihr' | 'du' = 'du'): WarumInhalt | null {
   if (!typ.warumErlaubt || !typ.warumUeblich) return null;
   const ab = katalog.schritte.findIndex((s) => s.id === typ.schritt);
   const g = katalog.grundlage[0]!;
@@ -322,9 +327,9 @@ export function warumInhalt(typ: Dokumenttyp): WarumInhalt | null {
   return {
     titel: listenText(typ),
     etikett: etikettText(typ.etikett),
-    erlaubt: typ.warumErlaubt,
-    ueblich: typ.warumUeblich,
-    gutZuWissen: typ.warumGutZuWissen ?? [],
+    erlaubt: (an === 'ihr' && typ.warumErlaubtIhr) || typ.warumErlaubt,
+    ueblich: (an === 'ihr' && typ.warumUeblichIhr) || typ.warumUeblich,
+    gutZuWissen: (an === 'ihr' && typ.warumGutZuWissenIhr) || typ.warumGutZuWissen || [],
     schritte:
       ab < 0 || typ.nieVerlangbar
         ? []

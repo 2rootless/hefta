@@ -285,17 +285,14 @@
     align-items: flex-start;
     gap: 12px;
     width: 100%;
-    padding: 14px 16px;
-    border: 2px solid transparent;
+    padding: 16px;
+    /* DP33 A3: Die Auswahl zeigt allein der Punkt; alle Karten gleich. */
+    border: 0;
     border-radius: 18px;
     background: var(--surface);
     color: var(--ink);
     text-align: left;
     cursor: pointer;
-  }
-
-  .wahlkarte.an {
-    border-color: var(--ink);
   }
 
   .punkt {

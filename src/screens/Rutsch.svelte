@@ -48,7 +48,7 @@
   import Notiz from '../ui/Notiz.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import { alterGrenze, tagKurz } from '../ui/texte';
-  import { passend, TITEL } from '../ui/passend';
+  import { passend, TITEL_BREIT } from '../ui/passend';
   import Zurueck from '../ui/Zurueck.svelte';
 
   const staende = $derived<PersonStand[]>(
@@ -485,11 +485,11 @@
   {/if}
 {/snippet}
 
-<main class="seite">
+<main class="seite stil-alt">
   {#if phase === 'start'}
     <div class="kopf"><Zurueck href="#{heim}" text={heimName} /></div>
     <div class="titelblock">
-      <h1 use:passend={TITEL} class="display frage">{t('rutsch.startTitel')}</h1>
+      <h1 use:passend={TITEL_BREIT} class="display-breit frage">{t('rutsch.startTitel')}</h1>
       {#if stand.liste.length}
         <p class="lead">
           {t('rutsch.startLead', { anzahl: stand.liste.length })}
@@ -526,7 +526,7 @@
   {:else if phase === 'ende'}
     <div class="kopf"><Zurueck href="#{heim}" text={heimName} /></div>
     <div class="titelblock">
-      <h1 use:passend={TITEL} class="display frage">{endeTitel}</h1>
+      <h1 use:passend={TITEL_BREIT} class="display-breit frage">{endeTitel}</h1>
       <p class="lead">{endeLead}</p>
     </div>
     <BandQuer {steine} beschriftung={endeTitel} {springen} {stellen} />
@@ -789,6 +789,8 @@
   }
 
   .kopf {
+    /* DP33: Diese Seite bekommt noch eine eigene Runde; bis dahin bleibt Zurück in Tinte. */
+    --on-zurueck: var(--ink);
     display: flex;
     justify-content: space-between;
     align-items: center;

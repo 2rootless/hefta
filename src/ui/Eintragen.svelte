@@ -14,6 +14,7 @@
     ansage,
     gross = false,
     pruefen = false,
+    zeile = false,
   }: {
     unterlage: string;
     grund: string;
@@ -25,6 +26,11 @@
     gross?: boolean;
     /** Prüfhinweis (PH1): „?“ und fester Rahmen statt Plus und gestrichelt. */
     pruefen?: boolean;
+    /**
+     * DP33 A2: als Zeile auf weicher Fläche, 52 hoch, Plus aus B11 in Tinte, ohne Rahmen (Haushalt, Person
+     * hinzufügen). Die gestrichelte Fassung bleibt, bis die Personenseite entschieden ist.
+     */
+    zeile?: boolean;
   } = $props();
 </script>
 
@@ -37,7 +43,7 @@
     >
   {/if}
   <span class="plus" aria-hidden={ansage ? 'true' : undefined}
-    >{#if pruefen}?{:else}<Symbol name="plus" groesse={16} />{/if}</span
+    >{#if pruefen}?{:else}<Symbol name="plus" groesse={zeile ? 20 : 16} />{/if}</span
   >
   <span class="text" aria-hidden={ansage ? 'true' : undefined}>
     <b
@@ -50,9 +56,9 @@
 {/snippet}
 
 {#if href}
-  <a class="eintragen" class:gross class:pruefen {href}>{@render innen()}</a>
+  <a class="eintragen" class:gross class:pruefen class:zeile {href}>{@render innen()}</a>
 {:else}
-  <button type="button" class="eintragen" class:gross class:pruefen {onclick}
+  <button type="button" class="eintragen" class:gross class:pruefen class:zeile {onclick}
     >{@render innen()}</button
   >
 {/if}
@@ -142,6 +148,29 @@
   .gross small {
     font-size: calc(13 * var(--px));
     line-height: calc(16 * var(--px));
+  }
+
+  /* DP33 A2: Zeile auf weicher Fläche ohne Rahmen; Plus in Tinte, Titel, darunter grau die Unterzeile. */
+  .zeile,
+  .zeile.gross {
+    gap: 12px;
+    min-height: 52px;
+    padding: 8px 14px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--weich);
+    color: var(--ink);
+  }
+
+  .zeile .plus {
+    width: 20px;
+    height: 20px;
+    background: none;
+    color: var(--ink);
+  }
+
+  .zeile small {
+    color: var(--ink-muted);
   }
 
   /* Sehr schmal (320 px mit großer Schrift): Das Plus bleibt, nur kleiner. Es sagt „hier tippen“. */

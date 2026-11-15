@@ -360,7 +360,8 @@
     padding: 0 6px 0 0;
     border: 0;
     background: none;
-    color: var(--ink);
+    /* DP33 A7: Zurück in Akzent, wie im Heft. */
+    color: var(--accent-text);
     font-size: calc(16 * var(--px));
     font-weight: 700;
     cursor: pointer;

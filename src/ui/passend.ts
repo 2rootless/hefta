@@ -2,8 +2,11 @@
 // Für Begrüßung (einzeilig), Titel und Namen (dürfen umbrechen, aber nie mitten im Wort).
 // Passt auch die kleinste Stufe nicht (320 px mit Text 130 %): lieber umbrechen als abschneiden.
 
-/** Stufen für große Titel, wie die Begrüßung. */
-export const TITEL = ['34px/36px', '28px/30px', '24px/28px', '21px/25px'];
+/** Stufen für Titel der Unterseiten: der Kopf aus dem Heft (DP33 A7), 25 px wie `.h2`. */
+export const TITEL = ['25px/28px', '23px/26px', '20px/23px', '18px/21px'];
+
+/** Stufen für große Titel in der breiten Schrift: nur Hauptseiten und Seiten mit eigener Runde (DP33 A7). */
+export const TITEL_BREIT = ['34px/36px', '28px/30px', '24px/28px', '21px/25px'];
 
 /** „34px“ in der Einheit der großen Schrift (design/stil-c.md). */
 const schriftmass = (wert: string) => `calc(${parseFloat(wert)} * var(--px))`;

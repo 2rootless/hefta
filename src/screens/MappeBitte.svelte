@@ -123,14 +123,21 @@
     width: 100%;
     min-height: 112px;
     padding: 12px 14px;
-    border: 2px solid var(--ink);
+    /* DP33 A4: weiche Fläche ohne Linie. */
+    border: 0;
     border-radius: 14px;
-    background: var(--surface);
+    background: var(--weich);
     color: var(--ink);
     font: inherit;
     font-size: calc(17 * var(--px));
     line-height: calc(24 * var(--px));
     resize: none;
+  }
+
+  /* DP33 A4: Fokus 2 px Tinte innen. */
+  textarea:focus-visible {
+    outline: 0;
+    box-shadow: inset 0 0 0 2px var(--ink);
   }
 
   .unter {
