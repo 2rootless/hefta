@@ -921,12 +921,13 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       expect(mit.seiten).toBe(ohne.seiten);
     });
 
-    it('P25: Geht „Was beiliegt“ weiter, steht die Bitte dort am Ende', async () => {
+    it('PC32 (DP32 F1): Die Bitte steht unten links über „Erstellt mit Hefta“, nur auf Seite 1', async () => {
       const q = await quelle(['S']);
       const bitte = 'Falls die Wohnung an jemand anderen geht, löschen Sie diese Unterlagen bitte.';
       const e = await bewerbungBauen(
         await auftrag({
           bitte,
+          hinweis: true,
           bloecke: ['Max', 'Lea', 'Tom', 'Anna', 'Ben'].map((vorname) => ({
             person: { ...lea, name: `${vorname} Mustermann` },
             teile: Array.from({ length: 6 }, (_, i) => ({
@@ -936,9 +937,35 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
           })),
         }),
       );
-      const texte = await textJeSeite(e.bytes);
-      expect(texte[0]!.replace(/\s+/g, ' ')).not.toContain(bitte);
-      expect(texte[1]!.replace(/\s+/g, ' ')).toContain(bitte);
+      expect(e.deckSeiten).toBe(2);
+      const texte = (await textJeSeite(e.bytes)).map((x) => x.replace(/\s+/g, ' '));
+      expect(texte[0]).toContain(`${bitte} Erstellt mit Hefta`);
+      expect(texte[1]).not.toContain(bitte);
+    });
+
+    it('PC32 (DP32 F1): Die Bitte zählt wie eine Verzeichniszeile (Mappe 6)', async () => {
+      const q = await quelle(['S']);
+      const bitte = 'Bitte löschen Sie unsere Unterlagen, wenn es nicht klappt.';
+      // Zwei Personen mit je sieben Unterlagen: genau 16 Zeilen, das passt ohne Bitte auf Seite 1.
+      const auf = (mit: boolean) =>
+        auftrag({
+          ...(mit ? { bitte } : {}),
+          bloecke: ['Max', 'Lea'].map((vorname) => ({
+            person: { ...lea, name: `${vorname} Mustermann` },
+            teile: Array.from({ length: 7 }, (_, i) => ({
+              abschnitt: `Unterlage ${i + 1}`,
+              quellen: [{ daten: q }],
+            })),
+          })),
+        });
+      expect((await bewerbungBauen(await auf(false))).deckSeiten).toBe(1);
+      const mit = await bewerbungBauen(await auf(true));
+      expect(mit.deckSeiten).toBe(2);
+      const [eins, zwei] = (await textJeSeite(mit.bytes)).map((x) => x.replace(/\s+/g, ' '));
+      expect(eins).toContain(bitte);
+      expect(eins).toContain('Max Mustermann');
+      expect(zwei).toContain('Lea Mustermann');
+      expect(zwei).not.toContain(bitte);
     });
 
     it('E25: drei Gruppen, oben die Kurzform, keine Summe über die Gruppen', async () => {

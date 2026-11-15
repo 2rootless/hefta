@@ -516,8 +516,8 @@ test('PC25 B7: „Was hinausging“ korrigieren und löschen; der Stand bleibt',
 
   // Korrigieren: Weg und Empfänger
   await spur.getByRole('button', { name: /Mail an kraus@example.com\. Ändern/ }).click();
-  await spur.getByRole('radio', { name: 'Portal' }).click();
-  await spur.getByRole('textbox', { name: 'An wen' }).fill('ImmoScout24');
+  await spur.getByRole('radio', { name: 'Über das Portal' }).click();
+  await spur.getByRole('textbox', { name: 'An', exact: true }).fill('ImmoScout24');
   await spur.getByRole('button', { name: 'Übernehmen' }).click();
   await expect(spur).toContainText('Über ImmoScout24');
 

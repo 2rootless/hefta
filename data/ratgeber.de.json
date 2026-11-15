@@ -66,7 +66,7 @@
       },
       "vor": [
         { "text": "Ein Nachweis über das Einkommen: Lohn- oder Gehaltsabrechnung, Kontoauszüge oder Einkommen­steuer­bescheid, „jeweils unter Schwärzung der nicht erforderlichen Angaben“.", "fund": "C.2" },
-        { "text": "Ein Bonitätsnachweis, den die Bewerber selbst bei einer Auskunftei holen und der nur das Nötige enthält. Die Orientierungshilfe nennt kein Produkt; ein Beispiel von {app} ist der SCHUFA-BonitätsCheck.", "fund": "C.3" },
+        { "text": "Ein Bonitätsnachweis, den die Bewerber selbst bei einer Auskunftei holen und der nur das Nötige enthält. Die Orientierungshilfe nennt kein Produkt; {app} nennt als Beispiel den SCHUFA-BonitätsCheck.", "fund": "C.3" },
         { "text": "Übernimmt eine öffentliche Stelle die Miete vollständig: ein Nachweis darüber.", "fund": "C.5" },
         { "text": "Die Fragen nach Mietrückständen: zwei Monate nacheinander mit mehr als einer Monatsmiete, oder über mehr als zwei Monate mindestens zwei Monatsmieten.", "fund": "C.1" },
         { "text": "Ob das letzte Mietverhältnis „wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags rechtswirksam“ gekündigt oder eine solche Pflichtverletzung „rechtskräftig festgestellt“ wurde, mit Gelegenheit, Gründe zu nennen.", "fund": "Musterbogen C" }

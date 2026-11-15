@@ -437,10 +437,13 @@ interface DeckLink {
 
 // ---------- Briefbogen (DP30, Richtung B): Deckblatt und Selbstauskunft in einem Satz ----------
 
-/** Wie viele Verzeichniszeilen auf Seite 1 passen (DP30, Abschnitt 3). */
-function verzeichnisPlatz(a: BewerbungAuftrag): number {
+/**
+ * Wie viele Verzeichniszeilen auf Seite 1 passen (DP30, Abschnitt 3). Jede Zeile der Löschbitte unten links
+ * zählt wie eine Verzeichniszeile (PC32, DP32 F1).
+ */
+function verzeichnisPlatz(a: BewerbungAuftrag, bitteZeilen: number): number {
   const oben = a.bloecke.length + a.mitziehende.length;
-  return VERZEICHNIS_ZEILEN - 2 * Math.max(0, oben - 5);
+  return VERZEICHNIS_ZEILEN - 2 * Math.max(0, oben - 5) - bitteZeilen;
 }
 
 /**
@@ -633,9 +636,19 @@ function deckblattSetzen(
   }
   y = Math.min(...spaltenUnten);
 
+  // Die Löschbitte (PC32, DP32 F1): unten links direkt über „Erstellt mit Hefta“, 8 pt grau, ohne Etikett,
+  // nur auf Seite 1.
+  const bitte = a.bitte?.trim();
+  const bitteZeilen = bitte ? umbrechen(zeichenbar(bitte, s), s.regular, 8, breite) : [];
+  const fussZeilen = a.hinweis ? 4 : 0;
   // 5. „Was beiliegt“: je Person der Name mit Zeichen, darunter eine Zeile je Unterlage.
-  // Untere Grenze des Verzeichnisses: über „Erstellt mit Hefta“ (Seite 1) oder über der Fußzeile.
-  const grenze = () => FUSS_LINIE + 6 * MM + (n === 0 && a.hinweis ? 4 * 8 * 1.35 + 4 * MM : 0);
+  // Untere Grenze des Verzeichnisses: über „Erstellt mit Hefta“ und der Bitte (Seite 1) oder über der Fußzeile.
+  const grenze = () =>
+    FUSS_LINIE +
+    6 * MM +
+    (n === 0 && fussZeilen + bitteZeilen.length
+      ? (fussZeilen + bitteZeilen.length) * 8 * 1.35 + 4 * MM
+      : 0);
   let blockJetzt: MappenBlock | null = null;
   const zeile = (e: Eintrag) => {
     // Nur wenn eine einzelne Person mehr Unterlagen hat, als auf eine Seite passen, wird sie geteilt;
@@ -725,7 +738,7 @@ function deckblattSetzen(
     // Zeilen je Person (Name plus Unterlagen); eine Person wird nie geteilt (DP30, Abschnitt 3).
     const reihe = [...vertrag, ...buergen].filter((b) => eintraege.some((e) => e.block === b));
     const zeilenVon = (b: MappenBlock) => 1 + eintraege.filter((e) => e.block === b).length;
-    let platz = verzeichnisPlatz(a);
+    let platz = verzeichnisPlatz(a, bitteZeilen.length);
     let belegt = 0;
     for (const b of reihe) {
       const erste = b === buergen.find((x) => reihe.includes(x));
@@ -745,21 +758,24 @@ function deckblattSetzen(
       belegt += zeilenVon(b);
     }
   }
-  // Die Bitte der Bewerber: unter der letzten Unterlage, ohne Überschrift, grau (bitte-zum-loeschen.md).
-  const bitte = a.bitte?.trim();
-  if (bitte) {
-    y -= 5 * MM;
-    for (const z of umbrechen(zeichenbar(bitte, s), s.regular, 9.5, breite)) {
-      y -= 9.5 * 1.35;
-      text(z, x0, y, 9.5, s.regular, GRAU);
-    }
-  }
-  // 7. Unten links, nur auf Seite 1: Fassung, „Erstellt mit Hefta“ und die Lesehilfe als Text.
+  // 7. Unten links, nur auf Seite 1: Fassung, die Bitte, „Erstellt mit Hefta“ und die Lesehilfe als Text.
   const erste = seite(0);
+  if (!a.hinweis && erste && bitteZeilen.length) {
+    const unten = FUSS_LINIE + 6 * MM;
+    bitteZeilen.forEach((t, i) => {
+      const yy = unten + (bitteZeilen.length - 1 - i) * 8 * 1.35;
+      schreiben(erste, t, s, { x: x0, y: yy, size: 8, font: s.regular, color: GRAU });
+    });
+  }
   if (a.hinweis && erste) {
     const unten = FUSS_LINIE + 6 * MM;
     const lesehilfe = `Lesehilfe: ${VERMIETER_DOMAIN}`;
-    const zeilen = [...(a.fassung ? [a.fassung] : []), `Erstellt mit ${APP_NAME}`, lesehilfe];
+    const zeilen = [
+      ...(a.fassung ? [a.fassung] : []),
+      ...bitteZeilen,
+      `Erstellt mit ${APP_NAME}`,
+      lesehilfe,
+    ];
     zeilen.forEach((t, i) => {
       const yy = unten + (zeilen.length - 1 - i) * 8 * 1.35;
       schreiben(erste, t, s, { x: x0, y: yy, size: 8, font: s.regular, color: GRAU });
