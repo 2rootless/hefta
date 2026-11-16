@@ -180,12 +180,10 @@ export async function mappeErstellen(
               {
                 rolleText: rollenText(block.person.rolle, block.person.bezeichnung),
                 antwortenImmer: auskunftAntwortenImmer(e),
-                zusageText: e.mietrueckstaendeNachZusage
-                  ? nachZusageSatz(
-                      ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge')
-                        .length <= 1,
-                    )
-                  : undefined,
+                // PC65: Unbeantwortet steht immer „Beantworte ich nach der Zusage“ bzw. „… wir …“.
+                zusageText: nachZusageSatz(
+                  ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length <= 1,
+                ),
                 buergschaftDabei: block.teile.some(
                   (x) => x.stand.typ.id === 'buergschaftserklaerung',
                 ),

@@ -251,10 +251,9 @@ export function einzelDateiname(
  * Nur „Datensparsam“ (Version 1) und der Schalter für Mietrückstände (E49) halten eine Antwort zurück, bis
  * ihr Schritt erreicht ist. Sonst steht jede gegebene Antwort in der Selbstauskunft.
  */
-export function auskunftAntwortenImmer(
-  e: Pick<ExportEinstellungen, 'modus' | 'mietrueckstaendeNachZusage'>,
-): boolean {
-  return e.modus !== 'datensparsam' && !e.mietrueckstaendeNachZusage;
+export function auskunftAntwortenImmer(e: Pick<ExportEinstellungen, 'modus'>): boolean {
+  // PC65: Den Schalter „Mietrückstände erst nach der Zusage beantworten“ ersetzt die Wahl an der Frage.
+  return e.modus !== 'datensparsam';
 }
 
 export function auskunftsSchritt(e: ExportEinstellungen): Schritt {
@@ -284,7 +283,6 @@ export function datensparsamUmstellen(
     ...e,
     modus: 'eigene_auswahl',
     auswahl,
-    mietrueckstaendeNachZusage: e.schritt !== 'zusage',
   };
 }
 

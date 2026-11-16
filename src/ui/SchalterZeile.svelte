@@ -54,6 +54,13 @@
     cursor: pointer;
   }
 
+  /* PC66 (W22): In einer Karte (.zeilen, etwa Einstellungen) denselben Innenabstand wie die anderen Zeilen
+     (.listenzeile, 16 px links und rechts). Sonst stießen Text und Schalter an die Kante der Karte. */
+  :global(.zeilen) .zeile {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
   .tx {
     display: grid;
     flex: 1;

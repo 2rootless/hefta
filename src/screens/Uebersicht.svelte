@@ -43,6 +43,7 @@
   import MappeStart from './MappeStart.svelte';
   import { naechsterText } from '../ui/texte';
   import Wohnungen from './Wohnungen.svelte';
+  import { mietFrageOffen } from '../domain/mietFrage';
 
   onMount(() => void speicherPruefen());
 
@@ -113,7 +114,9 @@
 
   // Nachname freiwillig beim Anlegen (E96, 3), fehlt er, ist er ein eigener Punkt im Kasten.
   const ohneNachname = $derived([...vertrag, ...buergen].filter((s) => !s.person.nachname.trim()));
-  const offen = $derived(offeneDinge(staende) + ohneNachname.length);
+  // PC65: Nach einer Zusage ist die Frage nach Mietrückständen offen, solange die Antwort fehlt.
+  const mietOffen = $derived(vertrag.filter((s) => mietFrageOffen(s.person, s.rolle, daten.hefte)));
+  const offen = $derived(offeneDinge(staende) + ohneNachname.length + mietOffen.length);
   // Schwelle (Auftraggeber 13.11.): Oben höchstens drei Aufgaben; der Rest steht ohnehin unten bei den
   // Personen. Frisch angelegt wären es sonst zehn und mehr, oben und unten doppelt.
   const OBEN = 3;
@@ -323,6 +326,24 @@
                       })}</b
                     >
                     <small>{t('uebersicht.nachnameWozu')}</small>
+                  </span>
+                  <Symbol name="weiter" groesse={16} />
+                </a>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+        {#if mietOffen.length}
+          <ul class="namen miet-offen">
+            {#each mietOffen as s (s.person.id)}
+              <li>
+                <a class="aufgabe" href="#/selbstauskunft/{s.person.id}">
+                  <span class="sym" aria-hidden="true"
+                    ><Symbol name="selbstauskunft" groesse={20} /></span
+                  >
+                  <span class="tx">
+                    <b>{t('stand.zusage.mietrueck')}</b>
+                    <small>{fuerText(s, t('stand.zusage.mietrueckUnter'))}</small>
                   </span>
                   <Symbol name="weiter" groesse={16} />
                 </a>

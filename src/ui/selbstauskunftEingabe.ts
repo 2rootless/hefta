@@ -73,6 +73,7 @@ export function angabenAus(e: SelbstauskunftEingabe): Partial<Person> {
       insolvenz: e.sa.insolvenz,
       raeumungstitel: e.sa.raeumungstitel,
       mietrueckstaende: e.sa.mietrueckstaende,
+      mietrueckstaendeSpaeter: e.sa.mietrueckstaende === null && !!e.sa.mietrueckstaendeSpaeter,
       stellungnahme: erklaerung('mietrueckstaende'),
       erklaerungInsolvenz: erklaerung('insolvenz'),
       erklaerungRaeumungstitel: erklaerung('raeumungstitel'),

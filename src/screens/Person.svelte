@@ -22,6 +22,7 @@
     type UnterlagenStand,
   } from '../domain/regelkatalog';
   import { t } from '../i18n';
+  import { mietFrageOffen } from '../domain/mietFrage';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
   import Haarlinie, { type HaarStueck } from '../ui/Haarlinie.svelte';
   import { passend } from '../ui/passend';
@@ -191,6 +192,19 @@
       {#each stand.pfad as u (u.typ.id)}
         {@render zeile(u)}
       {/each}
+      {#if mietFrageOffen(stand.person, stand.rolle, daten.hefte)}
+        <!-- PC65: Nach einer Zusage steht die offene Frage bei den offenen Dingen, nicht in Rot (W5). -->
+        <li class="miet-offen">
+          <a class="zeile" href="#/selbstauskunft/{id}">
+            <span class="zeichen"><Symbol name="selbstauskunft" groesse={20} /></span>
+            <span class="tx">
+              <b>{t('stand.zusage.mietrueck')}</b>
+              <small class="offen">{t('stand.zusage.mietrueckUnter')}</small>
+            </span>
+            <span class="pfeil"><Symbol name="weiter" groesse={16} /></span>
+          </a>
+        </li>
+      {/if}
     </ul>
 
     {#if weitere.length || stand.nichtMehrNoetig.length}

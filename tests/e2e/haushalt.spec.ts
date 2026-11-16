@@ -67,7 +67,8 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await expect(page.getByText(/^Noch 5 Teile\./)).toBeVisible();
   // Akkordeon (A1): Teil 1 ist offen, die anderen tippt man an.
   await page.getByLabel('E-Mail').fill('max@example.org');
-  await page.getByRole('button', { name: /^Einkommen Pflicht/ }).click();
+  // PC65 (W32): „Wird fast immer gefragt“ statt „Pflicht“.
+  await page.getByRole('button', { name: /^Einkommen Wird fast immer gefragt/ }).click();
   await page.getByRole('textbox', { name: 'Netto im Monat' }).fill('2800');
   await page.getByRole('radio', { name: 'Mindestens' }).click();
   await page.getByRole('button', { name: /^Fragen, die Vermieter stellen dürfen Zweimal/ }).click();

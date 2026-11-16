@@ -241,9 +241,9 @@
       "mehrzahl": true,
       "nieVerlangbar": true,
       "marktueblichWennHochgeladen": true,
-      "warumErlaubt": "Verlangen kann sie kein Vermieter: Dein bisheriger Vermieter muss keine Bescheinigung ausstellen.", "warumErlaubtIhr": "Verlangen kann sie kein Vermieter: Der bisherige Vermieter muss keine Bescheinigung ausstellen.",
+      "warumErlaubt": "Viele Vermieter fragen, ob die Miete bisher pünktlich gezahlt wurde. Eine Bestätigung deines jetzigen Vermieters hilft. Er muss sie aber nicht ausstellen.", "warumErlaubtIhr": "Viele Vermieter fragen, ob die Miete bisher pünktlich gezahlt wurde. Eine Bestätigung eures jetzigen Vermieters hilft. Er muss sie aber nicht ausstellen.",
       "warumUeblich": "Freiwillig mitgeschickt, machen sie oft einen guten Eindruck.",
-      "warumGutZuWissen": ["Statt einer Bescheinigung gehen auch Kontoauszüge mit den Mietzahlungen der letzten drei bis sechs Monate. Andere Buchungen darfst du unkenntlich machen.", "Hast du sie hochgeladen, gehen sie bei „Marktüblich“ mit. Hast du keine, fehlt auch nichts."], "warumGutZuWissenIhr": ["Statt einer Bescheinigung gehen auch Kontoauszüge mit den Mietzahlungen der letzten drei bis sechs Monate. Andere Buchungen dürft ihr unkenntlich machen.", "Habt ihr sie hochgeladen, gehen sie bei „Marktüblich“ mit. Habt ihr keine, fehlt auch nichts."],
+      "warumGutZuWissen": ["Kontoauszüge mit den Mietzahlungen der letzten drei bis sechs Monate zeigen dasselbe. Andere Buchungen kannst du unkenntlich machen.", "Hast du sie hochgeladen, gehen sie bei „Marktüblich“ mit. Hast du keine, fehlt auch nichts."], "warumGutZuWissenIhr": ["Kontoauszüge mit den Mietzahlungen der letzten drei bis sechs Monate zeigen dasselbe. Andere Buchungen könnt ihr unkenntlich machen.", "Habt ihr sie hochgeladen, gehen sie bei „Marktüblich“ mit. Habt ihr keine, fehlt auch nichts."],
       "hilfe": "Bescheinigung vom jetzigen Vermieter oder Kontoauszüge mit der Miete.",
       "kurz": "Vom jetzigen Vermieter",
       "text": "Mietschulden­freiheit oder Mietzahlungs­nachweis",
@@ -357,7 +357,7 @@
     {"id": "haustiere", "text": "Haustiere (ohne Kleintiere in Käfigen)", "schritt": "will_wohnung", "pdfText": "Haustiere", "nichtFuer": ["buerge"]},
     {"id": "insolvenz", "text": "Laufendes Insolvenzverfahren", "schritt": "will_wohnung", "pdfText": "Laufendes Insolvenzverfahren"},
     {"id": "raeumungstitel", "text": "Räumungstitel in den letzten 5 Jahren", "schritt": "will_wohnung", "pdfText": "Räumungstitel in den letzten fünf Jahren"},
-    {"id": "mietrueckstaende", "text": "Erhebliche Mietrückstände oder Kündigung wegen Pflichtverletzung, mit Möglichkeit zur Stellungnahme", "schritt": "zusage", "pdfText": "Mietrückstände von mehr als einer Monatsmiete in zwei Monaten nacheinander oder von zwei Monatsmieten, oder Kündigung wegen Pflichtverletzung"}
+    {"id": "mietrueckstaende", "text": "Erhebliche Mietrückstände oder Kündigung wegen Pflichtverletzung, mit Möglichkeit zur Stellungnahme", "schritt": "zusage", "pdfText": "Mietrückstände in zwei aufeinanderfolgenden Monaten von mehr als einer Monatsmiete oder über mehr als zwei Monate von insgesamt zwei Monatsmieten; Kündigung wegen einer erheblichen Verletzung des Mietvertrags"}
   ],
 
   "nieAbfragen": [

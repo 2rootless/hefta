@@ -293,10 +293,11 @@ describe('E49: „Datensparsam“ wird „Eigene Auswahl“ mit gleichem Inhalt'
     schritt,
   });
 
-  it('„Ich will die Wohnung“: Selbstauskunft und WBS an, Nachweise für den Vertrag aus, Schalter an', () => {
+  it('„Ich will die Wohnung“: Selbstauskunft und WBS an, Nachweise für den Vertrag aus', () => {
     const e = datensparsamUmstellen(mit('will_wohnung'), ['max', 'lea'], typen);
     expect(e.modus).toBe('eigene_auswahl');
-    expect(e.mietrueckstaendeNachZusage).toBe(true);
+    // PC65: Den Schalter gibt es nicht mehr; die Wahl steht an der Frage.
+    expect(e.mietrueckstaendeNachZusage).toBeUndefined();
     for (const p of ['max', 'lea']) {
       expect(e.auswahl[`${p}:selbstauskunft`]).toBe(true);
       expect(e.auswahl[`${p}:wbs`]).toBe(true);
@@ -305,24 +306,26 @@ describe('E49: „Datensparsam“ wird „Eigene Auswahl“ mit gleichem Inhalt'
       expect(e.auswahl[`${p}:mietzahlung`]).toBe(false);
       expect(e.auswahl[`${p}:ausweiskopie`]).toBe(false);
     }
-    // Die Antwort zu Mietrückständen bleibt draußen, wie vorher.
-    expect(auskunftAntwortenImmer(e)).toBe(false);
+    // PC65: Eine gegebene Antwort steht in der Mappe; wer sie nicht geben will, wählt an der Frage
+    // „Nach der Zusage beantworten“ (dann „Beantworte ich nach der Zusage“).
+    expect(auskunftAntwortenImmer(e)).toBe(true);
   });
 
-  it('„Zur Besichtigung“: nichts aus dem Mietwunsch, Schalter an', () => {
+  it('„Zur Besichtigung“: nichts aus dem Mietwunsch', () => {
     const e = datensparsamUmstellen(mit('besichtigung'), ['max'], typen);
     expect(e.auswahl['max:selbstauskunft']).toBe(false);
     expect(e.auswahl['max:bonitaet']).toBe(false);
-    expect(e.mietrueckstaendeNachZusage).toBe(true);
+    // PC65: Den Schalter gibt es nicht mehr; die Wahl steht an der Frage.
+    expect(e.mietrueckstaendeNachZusage).toBeUndefined();
   });
 
-  it('„Nach der Zusage“: alle üblichen an, Schalter aus, Antworten immer', () => {
+  it('„Nach der Zusage“: alle üblichen an, Antworten immer', () => {
     const e = datensparsamUmstellen(mit('zusage'), ['max'], typen);
     expect(e.auswahl['max:gehaltsnachweis']).toBe(true);
     expect(e.auswahl['max:bonitaet']).toBe(true);
     // „Kann helfen“ ging auch bei „Datensparsam“ nie mit.
     expect(e.auswahl['max:mietzahlung']).toBe(false);
-    expect(e.mietrueckstaendeNachZusage).toBe(false);
+    expect(e.mietrueckstaendeNachZusage).toBeUndefined();
     expect(auskunftAntwortenImmer(e)).toBe(true);
   });
 
@@ -331,9 +334,13 @@ describe('E49: „Datensparsam“ wird „Eigene Auswahl“ mit gleichem Inhalt'
     expect(datensparsamUmstellen(e, ['max'], typen)).toBe(e);
   });
 
-  it('der Schalter allein hält die Antwort zurück, auch in „Eigene Auswahl“', () => {
+  it('PC65: Nur „Datensparsam“ hält eine gegebene Antwort zurück, kein Schalter mehr', () => {
     const e = { ...standardEinstellungen(), modus: 'eigene_auswahl' as const };
     expect(auskunftAntwortenImmer(e)).toBe(true);
-    expect(auskunftAntwortenImmer({ ...e, mietrueckstaendeNachZusage: true })).toBe(false);
+    // Auch ein alter, gespeicherter Schalter hält nichts mehr zurück.
+    expect(auskunftAntwortenImmer({ ...e, mietrueckstaendeNachZusage: true } as typeof e)).toBe(
+      true,
+    );
+    expect(auskunftAntwortenImmer({ ...e, modus: 'datensparsam' })).toBe(false);
   });
 });

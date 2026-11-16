@@ -170,6 +170,7 @@
 
   function zusageAntwortEntfernen() {
     eingabe.sa.mietrueckstaende = null;
+    eingabe.sa.mietrueckstaendeSpaeter = false;
     eingabe.sa[ERKLAERUNG.mietrueckstaende] = '';
   }
 
@@ -280,7 +281,12 @@
   }
 </script>
 
-{#snippet jaNein(wert: JaNein, setzen: (w: JaNein) => void, beschriftung: string)}
+{#snippet jaNein(
+  wert: JaNein,
+  setzen: (w: JaNein) => void,
+  beschriftung: string,
+  mitSpaeter = false,
+)}
   <div class="jn" role="radiogroup" aria-label={beschriftung}>
     {#each ['ja', 'nein'] as const as w (w)}
       <button
@@ -291,6 +297,20 @@
         onclick={() => setzen(w)}>{t(`selbstauskunft.${w}`)}</button
       >
     {/each}
+    {#if mitSpaeter}
+      <!-- PC65: gleichrangig mit Ja und Nein, nichts vorgewählt. -->
+      <button
+        type="button"
+        class="chip lang"
+        role="radio"
+        aria-checked={wert === null && !!eingabe.sa.mietrueckstaendeSpaeter}
+        onclick={() => {
+          eingabe.sa.mietrueckstaende = null;
+          eingabe.sa[ERKLAERUNG.mietrueckstaende] = '';
+          eingabe.sa.mietrueckstaendeSpaeter = true;
+        }}>{t('selbstauskunft.nachZusage')}</button
+      >
+    {/if}
   </div>
 {/snippet}
 
@@ -298,6 +318,8 @@
   <div class="frage">
     <b>{frage(f)}</b>
     {#if f === 'mietrueckstaende'}
+      <!-- PC65: Hefta sagt, was gilt, und lässt die Wahl (W32, W25); kein „Erst beantworten …“. -->
+      <small>{t('selbstauskunft.mietGemeint')}</small>
       <small>
         {#if eingabe.sa.mietrueckstaende !== null}
           {t('selbstauskunft.zusageBeantwortet')}
@@ -313,10 +335,14 @@
       (w) =>
         antworten(
           teilId,
-          () => (eingabe.sa[f] = w),
+          () => {
+            eingabe.sa[f] = w;
+            if (f === 'mietrueckstaende') eingabe.sa.mietrueckstaendeSpaeter = false;
+          },
           () => w === 'ja' && !eingabe.sa[ERKLAERUNG[f]]?.trim(),
         ),
       frage(f),
+      f === 'mietrueckstaende',
     )}
     {#if eingabe.sa[f] === 'ja'}
       <label class="eingabe">
@@ -847,6 +873,17 @@
     min-width: 76px;
     padding: 0 14px;
     font-size: calc(15 * var(--px));
+  }
+
+  /* PC65: „Nach der Zusage beantworten“ passt bei 320 px mit 130 % nicht in eine Zeile. Wie die langen
+     Antworten der Rückmeldung (B19 Fassung 4) darf es umbrechen, dann stark gerundet statt ganz rund. */
+  .jn .chip.lang {
+    min-height: var(--tap-target);
+    height: auto;
+    padding: 8px 14px;
+    border-radius: 14px;
+    text-align: left;
+    white-space: normal;
   }
 
   .frage {

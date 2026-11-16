@@ -24,7 +24,7 @@
   import { aussehenSetzen, aussehenWahl, type Aussehen } from '../app/theme';
   import { dauer } from '../ui/bewegung';
   import { herkunftsReiter } from '../ui/herkunft.svelte';
-  import { erinnerungenMoeglich, mitteilungen } from '../app/erinnerungen.svelte';
+  import { erinnerungenZeigen, mitteilungen } from '../app/erinnerungen.svelte';
   import { einstellungenAendern } from '../storage/speicher';
   import { stillLaden } from '../app/daten.svelte';
   import SchalterZeile from '../ui/SchalterZeile.svelte';
@@ -230,7 +230,7 @@
     </ul>
   </section>
 
-  {#if erinnerungenMoeglich()}
+  {#if erinnerungenZeigen()}
     <!-- Zeile 9, B21: zwei Schalter; beide sind an, bis man sie ausschaltet. -->
     <section class="abschnitt" aria-labelledby="g-erinnerungen">
       <h2 id="g-erinnerungen">{t('einstellungen.erinnerungen')}</h2>

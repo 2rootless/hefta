@@ -384,9 +384,11 @@ export function pruefen() {
   });
   // C18 seit 3.11. auch für Nebenknöpfe: Sie bleiben einzeilig.
   // Ausnahme: Antworten der Rückmeldung dürfen zweizeilig sein (B19 Fassung 4, Abschnitt 2: lange Antworten
-  // brechen um, darum stark gerundet statt ganz rund).
+  // brechen um, darum stark gerundet statt ganz rund). Ebenso „Nach der Zusage beantworten“ (PC65, `.lang`).
   document
-    .querySelectorAll('main .chip:not(.rueckmeldung .chip), dialog[open] .chip, main .knopf')
+    .querySelectorAll(
+      'main .chip:not(.rueckmeldung .chip):not(.lang), dialog[open] .chip, main .knopf',
+    )
     .forEach((b) => {
       // Zeilen mit eigenem Aufbau (Name und Stand, Frage und Antwort) sind keine Knöpfe im Sinn von C18.
       if (schrift >= 1.5 || !sichtbar(b) || b.querySelector(':scope > :not(svg)')) return;

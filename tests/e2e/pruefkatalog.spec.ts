@@ -822,9 +822,10 @@ const BILDER: Bild[] = [
     szenario: '04-fertig',
     pfad: '/mappe',
     vorher: async (page) => {
-      // E49: Statt „Datensparsam“ die Eigene Auswahl mit dem Schalter für Mietrückstände.
+      // E49: Statt „Datensparsam“ die Eigene Auswahl. PC65: Den Schalter für Mietrückstände gibt es nicht
+      // mehr; die Wahl steht an der Frage in der Selbstauskunft.
       await page.getByRole('button', { name: /^Eigene Auswahl/ }).click();
-      await page.getByRole('switch', { name: /^Mietrückstände erst nach der Zusage/ }).click();
+      await expect(page.getByRole('switch', { name: /^Mietrückstände/ })).toHaveCount(0);
       await vorschau(page);
     },
   },

@@ -44,7 +44,6 @@
   import Sheet from '../ui/Sheet.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import WerIstDabeiAuswahl from '../ui/WerIstDabeiAuswahl.svelte';
-  import SchalterZeile from '../ui/SchalterZeile.svelte';
   import WarumBlatt from '../ui/WarumBlatt.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
   import { staendeAus, zeichenFunde } from '../ui/mappeDaten';
@@ -783,17 +782,6 @@
           </ul>
         {/if}
         {#if e.modus === 'eigene_auswahl'}
-          <!-- E49 (B17a): gilt für alle Selbstauskünfte der Mappe; die ganze Zeile schaltet. -->
-          <div class="miet">
-            <SchalterZeile
-              an={!!e.mietrueckstaendeNachZusage}
-              titel={t('mappe.mietSchalter')}
-              text="{t(allein ? 'mappe.mietSatzDu' : 'mappe.mietSatzIhr')} {t(
-                allein ? 'mappe.mietSatz2Du' : 'mappe.mietSatz2Ihr',
-              )}"
-              onclick={() => (e.mietrueckstaendeNachZusage = !e.mietrueckstaendeNachZusage)}
-            />
-          </div>
           <!-- Je Person aufklappbar, immer nur eine offen; „meist unnötig“ gesammelt am Ende. -->
           {#each dabei as s (s.person.id)}
             {@const zeilen = auswahlListe(s)}
@@ -1244,15 +1232,16 @@
     font-size: calc(13 * var(--px));
     line-height: calc(18 * var(--px));
   }
-  /* B23: „Eigene Auswahl“ als umrandete Zeile; gewählt mit kräftigerem Rand. */
-  .eigene {
+  /* B23: „Eigene Auswahl“ als umrandete Zeile; gewählt mit kräftigerem Rand. PC66: mit `.linie` davor, sonst
+     setzte die spätere Regel `.linie` Innenabstand und Rand zurück, und der Text stieß an die Kante. */
+  .linie.eigene {
     padding: 8px 14px;
     border: 1px solid var(--line);
     border-radius: 16px;
     background: var(--surface);
   }
 
-  .eigene[aria-current='true'] {
+  .linie.eigene[aria-current='true'] {
     border-color: var(--ink);
   }
   .deck {
@@ -1348,11 +1337,6 @@
     border-radius: 50%;
     background: var(--action);
     color: var(--on-action);
-  }
-
-  .miet {
-    margin-top: 12px;
-    border-top: 1px solid var(--line);
   }
 
   .linie {

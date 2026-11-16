@@ -16,6 +16,18 @@ export function erinnerungenMoeglich(): boolean {
   return istApp();
 }
 
+/**
+ * Zeigen die Einstellungen die Schalter für Erinnerungen? In der App immer. Browsertests schalten den
+ * Abschnitt mit `__heftaErinnerungenTest` an, um sein Aussehen zu prüfen (wie `__heftaEmpfangTest`); geplant
+ * wird dabei nichts, das prüft weiter `erinnerungenMoeglich`.
+ */
+export function erinnerungenZeigen(): boolean {
+  return (
+    erinnerungenMoeglich() ||
+    (globalThis as { __heftaErinnerungenTest?: boolean }).__heftaErinnerungenTest === true
+  );
+}
+
 const MONATE = new Intl.DateTimeFormat('de-DE', { month: 'long' });
 
 function wortlaut(

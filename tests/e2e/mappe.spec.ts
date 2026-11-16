@@ -118,16 +118,9 @@ test('Mappe erstellen: Vorschau, Modi, Bürgin abwählen, Adresse, Download', as
     })
     .toBeLessThan(marktSeiten);
 
-  // E49 (B17a): In „Eigene Auswahl“ hält ein Schalter die Antwort zu Mietrückständen bis zur Zusage zurück.
+  // PC65: In „Eigene Auswahl“ gibt es keinen Schalter für Mietrückstände mehr; die Wahl steht an der Frage.
   await page.getByRole('button', { name: /^Eigene Auswahl/ }).click();
-  const miet = page.getByRole('switch', {
-    name: /^Mietrückstände erst nach der Zusage beantworten/,
-  });
-  await expect(miet).toHaveAttribute('aria-checked', 'false');
-  await miet.click();
-  await expect(miet).toHaveAttribute('aria-checked', 'true');
-  await expect(page.getByText(/„Beantworten wir nach der Zusage“/)).toBeVisible();
-  await miet.click();
+  await expect(page.getByRole('switch', { name: /^Mietrückstände/ })).toHaveCount(0);
   await page.getByRole('radio', { name: /^Nur das Übliche/ }).click();
 
   // Adresse eintragen (seit B23 über die große Ansicht des Deckblatts): Deckblatt und Dateiname.

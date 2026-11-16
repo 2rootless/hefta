@@ -285,7 +285,8 @@
 
   /** Wartet eine Frage bis zur Zusage (Mietrückstände, E49)? Dann führt „Noch offen“ zur Selbstauskunft. */
   const mietrueckZiel = $derived.by(() => {
-    if (!heft?.export?.mietrueckstaendeNachZusage) return null;
+    // PC65: hing am Schalter in „Eigene Auswahl“ und erschien darum fast nie. Offen ist die Frage, solange
+    // eine Person im Mietvertrag sie nicht beantwortet hat (auch „Nach der Zusage beantworten“).
     const m = daten.ansicht?.mitglieder.find(
       (x) =>
         x.zugehoerigkeit.rolle !== 'buerge' &&

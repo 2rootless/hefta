@@ -18,6 +18,11 @@ export interface Selbstauskunft {
   insolvenz: JaNein;
   raeumungstitel: JaNein;
   mietrueckstaende: JaNein;
+  /**
+   * PC65: „Nach der Zusage beantworten“ gewählt. Gleichrangig mit Ja und Nein, keine Wahl ist vorgegeben.
+   * In der Mappe steht dann wie bei einer unbeantworteten Frage „Beantworte ich nach der Zusage“.
+   */
+  mietrueckstaendeSpaeter?: boolean;
   /** Freiwillige Erklärung zu einem Ja bei den Mietrückständen. */
   stellungnahme: string;
   /** Dasselbe bei Insolvenz und Räumungstitel (Entwurf A3); fehlt in älteren Daten. */

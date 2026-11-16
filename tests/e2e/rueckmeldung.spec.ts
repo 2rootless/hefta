@@ -373,7 +373,10 @@ test('Serie, zu alt, „Meist unnötig“: Satz und Hauptaktion passen (UL2, UL5
   await laden(page, '25-unterlage-seiten', '/unterlage/p-25-unterlage-seiten-0/mietzahlung');
   await page.getByRole('button', { name: 'Warum?' }).click();
   const miete = page.getByRole('dialog', { name: /Miet.?zahlungen/ });
-  await expect(miete.getByText(/Verlangen kann sie kein Vermieter/)).toBeVisible();
+  // PC65 (W32): Empfehlung statt Regel.
+  await expect(
+    miete.getByText(/Viele Vermieter fragen, ob die Miete bisher pünktlich gezahlt wurde/),
+  ).toBeVisible();
   await expect(miete.getByRole('listitem')).toHaveCount(0);
 });
 

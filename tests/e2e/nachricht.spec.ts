@@ -108,7 +108,10 @@ test.describe('Feinschliff', () => {
     await expect(page.getByRole('heading', { name: 'Nach der Zusage' })).toBeVisible();
     await expect(page.getByText(/^Die Antwort steht ab jetzt in der Mappe/)).toBeVisible();
     await page.getByRole('button', { name: 'Antwort entfernen' }).click();
-    await expect(page.getByText(/^Erst beantworten, wenn der Vermieter/)).toBeVisible();
+    // PC65: keine Anweisung mehr, sondern was gilt, und die Wahl.
+    await expect(
+      page.getByText(/^Nach der Orientierungshilfe der Datenschutzkonferenz/),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Antwort entfernen' })).toBeHidden();
   });
 
