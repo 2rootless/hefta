@@ -6,6 +6,7 @@ import Network
 import UIKit
 import UniformTypeIdentifiers
 import UserNotifications
+import Vision
 import WebKit
 
 /// Eigene Gerätefunktionen der App: PDFs von anderen Apps empfangen und Dateien über den
@@ -863,4 +864,60 @@ final class SeitenFenster: UIViewController {
     }
 
     @objc private func fertigGetippt() { dismiss(animated: true) }
+}
+
+/// Nur im Probe-Bau (PC75, PC68 Abschnitt 4): die Texterkennung des iPhones (Vision) für die Probeseite.
+/// Liest ein Bild, das die Seite als Daten-Adresse schickt, ganz auf dem Gerät. Nichts geht hinaus.
+@objc(HeftaProbePlugin)
+public class HeftaProbePlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "HeftaProbePlugin"
+    public let jsName = "HeftaProbe"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "texterkennung", returnType: CAPPluginReturnPromise)
+    ]
+
+    /// Stufe „genau“, Deutsch. `korrektur`: mit Sprachkorrektur (Text) oder ohne (Zeilen unten).
+    /// Antwort: Zeilen von oben nach unten, je mit Sicherheit (0 bis 1), dazu die Zeit in Millisekunden.
+    @objc func texterkennung(_ call: CAPPluginCall) {
+        guard let adresse = call.getString("bild"),
+              let komma = adresse.firstIndex(of: ","),
+              let daten = Data(base64Encoded: String(adresse[adresse.index(after: komma)...])),
+              let bild = UIImage(data: daten)?.cgImage else {
+            call.reject("Bild fehlt")
+            return
+        }
+        let korrektur = call.getBool("korrektur") ?? true
+        DispatchQueue.global(qos: .userInitiated).async {
+            let start = Date()
+            let anfrage = VNRecognizeTextRequest()
+            anfrage.recognitionLevel = .accurate
+            anfrage.recognitionLanguages = ["de-DE"]
+            anfrage.usesLanguageCorrection = korrektur
+            if #available(iOS 16.0, *) {
+                anfrage.revision = VNRecognizeTextRequestRevision3
+            }
+            let auftrag = VNImageRequestHandler(cgImage: bild, orientation: .up, options: [:])
+            do {
+                try auftrag.perform([anfrage])
+            } catch {
+                call.reject("Vision: \(error.localizedDescription)")
+                return
+            }
+            let gefunden = (anfrage.results ?? []).compactMap { b -> (CGRect, VNRecognizedText)? in
+                guard let k = b.topCandidates(1).first else { return nil }
+                return (b.boundingBox, k)
+            }
+            // Vision rechnet von unten links: oben zuerst, in einer Zeile von links nach rechts.
+            let sortiert = gefunden.sorted { a, b in
+                abs(a.0.midY - b.0.midY) > 0.01 ? a.0.midY > b.0.midY : a.0.minX < b.0.minX
+            }
+            let zeilen: [[String: Any]] = sortiert.map { _, k in
+                ["text": k.string, "sicherheit": Double(k.confidence)]
+            }
+            call.resolve([
+                "zeilen": zeilen,
+                "ms": Int(Date().timeIntervalSince(start) * 1000)
+            ])
+        }
+    }
 }

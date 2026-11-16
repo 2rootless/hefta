@@ -63,6 +63,8 @@
     '/einstellungen/einspielen': () => import('../screens/BackupEinspielen.svelte'),
     '/einstellungen/rechtliches': () => import('../screens/Rechtliches.svelte'),
     '/einstellungen/loeschen': () => import('../screens/AllesLoeschen.svelte'),
+    // Nur auf dem Zweig probe-vision (PC75): die Probeseite Vision gegen Tesseract.
+    '/einstellungen/probe': () => import('../screens/ProbeVision.svelte'),
   } as const;
   const einstellungsSeite = $derived(
     einstellungen[route.pfad as keyof typeof einstellungen] as

@@ -36,6 +36,8 @@ class MainViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
         bridge?.registerPluginInstance(HeftaNativPlugin())
         bridge?.registerPluginInstance(HeftaInseratPlugin())
+        // Nur im Probe-Bau (PC75): Texterkennung des iPhones für die Probeseite.
+        bridge?.registerPluginInstance(HeftaProbePlugin())
         // Vom linken Rand wischen geht zurück, wie in anderen Apps. Hefta führt jeden Bildschirm als
         // Eintrag im Verlauf (#/…), darum kennt die Ansicht den Weg zurück.
         webView?.allowsBackForwardNavigationGestures = true

@@ -141,6 +141,19 @@
     {#if meldung}<p class="meldung" role="status">{meldung}</p>{/if}
   </div>
 
+  <!-- Nur auf dem Zweig probe-vision (PC75): der Eingang zur Probeseite, ganz oben. -->
+  <section class="abschnitt" aria-label={t('probe.eingang')}>
+    <ul class="zeilen">
+      <li>
+        <a class="listenzeile" href="#/einstellungen/probe">
+          <span class="tx"><b>{t('probe.eingang')}</b><small>{t('probe.eingangKlein')}</small></span
+          >
+          {@render pfeil()}
+        </a>
+      </li>
+    </ul>
+  </section>
+
   <section class="abschnitt" aria-labelledby="g-sicherung">
     <h2 id="g-sicherung">{t('einstellungen.sicherung')}</h2>
     <ul class="zeilen">

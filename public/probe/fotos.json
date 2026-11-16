@@ -1,0 +1,1277 @@
+[
+ {
+  "datei": "ausweis-hinten-alles.jpg",
+  "papier": "ausweis-hinten",
+  "variante": "alles",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-consolas-gerade.jpg",
+  "papier": "ausweis-hinten-consolas",
+  "variante": "gerade",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-consolas-scan.jpg",
+  "papier": "ausweis-hinten-consolas",
+  "variante": "scan",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-consolas-schatten.jpg",
+  "papier": "ausweis-hinten-consolas",
+  "variante": "schatten",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-dunkel.jpg",
+  "papier": "ausweis-hinten",
+  "variante": "dunkel",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-gerade.jpg",
+  "papier": "ausweis-hinten",
+  "variante": "gerade",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-ocrb-alles.jpg",
+  "papier": "ausweis-hinten-ocrb",
+  "variante": "alles",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-ocrb-dunkel.jpg",
+  "papier": "ausweis-hinten-ocrb",
+  "variante": "dunkel",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-ocrb-gerade.jpg",
+  "papier": "ausweis-hinten-ocrb",
+  "variante": "gerade",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-ocrb-scan.jpg",
+  "papier": "ausweis-hinten-ocrb",
+  "variante": "scan",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-ocrb-schatten.jpg",
+  "papier": "ausweis-hinten-ocrb",
+  "variante": "schatten",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-ocrb-schief.jpg",
+  "papier": "ausweis-hinten-ocrb",
+  "variante": "schief",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-ocrb-unscharf.jpg",
+  "papier": "ausweis-hinten-ocrb",
+  "variante": "unscharf",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-scan.jpg",
+  "papier": "ausweis-hinten",
+  "variante": "scan",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-schatten.jpg",
+  "papier": "ausweis-hinten",
+  "variante": "schatten",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-schief.jpg",
+  "papier": "ausweis-hinten",
+  "variante": "schief",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-hinten-unscharf.jpg",
+  "papier": "ausweis-hinten",
+  "variante": "unscharf",
+  "soll": {
+   "auge": "grün",
+   "groesse": "168 cm",
+   "anschrift": "Musterweg 7, 12345 Musterstadt"
+  },
+  "mrz": [
+   "IDX<<MUSTER0A15<<<<<<<<<<<<<<<",
+   "9503124<3108011D<<<<<<<<<<<<<0",
+   "MUSTERMANN<<LEA<<<<<<<<<<<<<<<"
+  ]
+ },
+ {
+  "datei": "ausweis-vorne-alles.jpg",
+  "papier": "ausweis-vorne",
+  "variante": "alles",
+  "soll": {
+   "nummer": "MUSTER0A1",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "deutsch",
+   "gueltig": "01.08.2031",
+   "zugang": "123456"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "ausweis-vorne-dunkel.jpg",
+  "papier": "ausweis-vorne",
+  "variante": "dunkel",
+  "soll": {
+   "nummer": "MUSTER0A1",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "deutsch",
+   "gueltig": "01.08.2031",
+   "zugang": "123456"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "ausweis-vorne-gerade.jpg",
+  "papier": "ausweis-vorne",
+  "variante": "gerade",
+  "soll": {
+   "nummer": "MUSTER0A1",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "deutsch",
+   "gueltig": "01.08.2031",
+   "zugang": "123456"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "ausweis-vorne-scan.jpg",
+  "papier": "ausweis-vorne",
+  "variante": "scan",
+  "soll": {
+   "nummer": "MUSTER0A1",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "deutsch",
+   "gueltig": "01.08.2031",
+   "zugang": "123456"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "ausweis-vorne-schatten.jpg",
+  "papier": "ausweis-vorne",
+  "variante": "schatten",
+  "soll": {
+   "nummer": "MUSTER0A1",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "deutsch",
+   "gueltig": "01.08.2031",
+   "zugang": "123456"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "ausweis-vorne-schief.jpg",
+  "papier": "ausweis-vorne",
+  "variante": "schief",
+  "soll": {
+   "nummer": "MUSTER0A1",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "deutsch",
+   "gueltig": "01.08.2031",
+   "zugang": "123456"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "ausweis-vorne-spiegelt.jpg",
+  "papier": "ausweis-vorne",
+  "variante": "spiegelt",
+  "soll": {
+   "nummer": "MUSTER0A1",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "deutsch",
+   "gueltig": "01.08.2031",
+   "zugang": "123456"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "ausweis-vorne-unscharf.jpg",
+  "papier": "ausweis-vorne",
+  "variante": "unscharf",
+  "soll": {
+   "nummer": "MUSTER0A1",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "deutsch",
+   "gueltig": "01.08.2031",
+   "zugang": "123456"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "gehalt-alles.jpg",
+  "papier": "gehalt",
+  "variante": "alles",
+  "soll": {
+   "sid": "12 345 678 901",
+   "stkl": "1",
+   "sv": "12 010190 M 001",
+   "konf": "rk",
+   "br-gehalt": "4.500,00",
+   "br-gesamt": "4.500,00",
+   "br-steuer": "4.500,00",
+   "br-kv": "4.500,00",
+   "br-rv": "4.500,00",
+   "ab-lst": "646,53",
+   "ab-kist": "51,72",
+   "ab-kv": "393,75",
+   "ab-pv": "81,00",
+   "ab-rv": "418,50",
+   "ab-av": "58,50",
+   "ab-summe": "1.650,00",
+   "netto": "2.850,00",
+   "jw-brutto": "45.000,00",
+   "jw-lst": "6.465,30",
+   "jw-kist": "517,20",
+   "jw-sv": "9.517,50",
+   "iban": "DE00 1234 5678 9012 3456 78",
+   "auszahlung": "2.850,00"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "gehalt-dunkel.jpg",
+  "papier": "gehalt",
+  "variante": "dunkel",
+  "soll": {
+   "sid": "12 345 678 901",
+   "stkl": "1",
+   "sv": "12 010190 M 001",
+   "konf": "rk",
+   "br-gehalt": "4.500,00",
+   "br-gesamt": "4.500,00",
+   "br-steuer": "4.500,00",
+   "br-kv": "4.500,00",
+   "br-rv": "4.500,00",
+   "ab-lst": "646,53",
+   "ab-kist": "51,72",
+   "ab-kv": "393,75",
+   "ab-pv": "81,00",
+   "ab-rv": "418,50",
+   "ab-av": "58,50",
+   "ab-summe": "1.650,00",
+   "netto": "2.850,00",
+   "jw-brutto": "45.000,00",
+   "jw-lst": "6.465,30",
+   "jw-kist": "517,20",
+   "jw-sv": "9.517,50",
+   "iban": "DE00 1234 5678 9012 3456 78",
+   "auszahlung": "2.850,00"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "gehalt-fern.jpg",
+  "papier": "gehalt",
+  "variante": "fern",
+  "soll": {
+   "sid": "12 345 678 901",
+   "stkl": "1",
+   "sv": "12 010190 M 001",
+   "konf": "rk",
+   "br-gehalt": "4.500,00",
+   "br-gesamt": "4.500,00",
+   "br-steuer": "4.500,00",
+   "br-kv": "4.500,00",
+   "br-rv": "4.500,00",
+   "ab-lst": "646,53",
+   "ab-kist": "51,72",
+   "ab-kv": "393,75",
+   "ab-pv": "81,00",
+   "ab-rv": "418,50",
+   "ab-av": "58,50",
+   "ab-summe": "1.650,00",
+   "netto": "2.850,00",
+   "jw-brutto": "45.000,00",
+   "jw-lst": "6.465,30",
+   "jw-kist": "517,20",
+   "jw-sv": "9.517,50",
+   "iban": "DE00 1234 5678 9012 3456 78",
+   "auszahlung": "2.850,00"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "gehalt-gerade.jpg",
+  "papier": "gehalt",
+  "variante": "gerade",
+  "soll": {
+   "sid": "12 345 678 901",
+   "stkl": "1",
+   "sv": "12 010190 M 001",
+   "konf": "rk",
+   "br-gehalt": "4.500,00",
+   "br-gesamt": "4.500,00",
+   "br-steuer": "4.500,00",
+   "br-kv": "4.500,00",
+   "br-rv": "4.500,00",
+   "ab-lst": "646,53",
+   "ab-kist": "51,72",
+   "ab-kv": "393,75",
+   "ab-pv": "81,00",
+   "ab-rv": "418,50",
+   "ab-av": "58,50",
+   "ab-summe": "1.650,00",
+   "netto": "2.850,00",
+   "jw-brutto": "45.000,00",
+   "jw-lst": "6.465,30",
+   "jw-kist": "517,20",
+   "jw-sv": "9.517,50",
+   "iban": "DE00 1234 5678 9012 3456 78",
+   "auszahlung": "2.850,00"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "gehalt-scan.jpg",
+  "papier": "gehalt",
+  "variante": "scan",
+  "soll": {
+   "sid": "12 345 678 901",
+   "stkl": "1",
+   "sv": "12 010190 M 001",
+   "konf": "rk",
+   "br-gehalt": "4.500,00",
+   "br-gesamt": "4.500,00",
+   "br-steuer": "4.500,00",
+   "br-kv": "4.500,00",
+   "br-rv": "4.500,00",
+   "ab-lst": "646,53",
+   "ab-kist": "51,72",
+   "ab-kv": "393,75",
+   "ab-pv": "81,00",
+   "ab-rv": "418,50",
+   "ab-av": "58,50",
+   "ab-summe": "1.650,00",
+   "netto": "2.850,00",
+   "jw-brutto": "45.000,00",
+   "jw-lst": "6.465,30",
+   "jw-kist": "517,20",
+   "jw-sv": "9.517,50",
+   "iban": "DE00 1234 5678 9012 3456 78",
+   "auszahlung": "2.850,00"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "gehalt-schatten.jpg",
+  "papier": "gehalt",
+  "variante": "schatten",
+  "soll": {
+   "sid": "12 345 678 901",
+   "stkl": "1",
+   "sv": "12 010190 M 001",
+   "konf": "rk",
+   "br-gehalt": "4.500,00",
+   "br-gesamt": "4.500,00",
+   "br-steuer": "4.500,00",
+   "br-kv": "4.500,00",
+   "br-rv": "4.500,00",
+   "ab-lst": "646,53",
+   "ab-kist": "51,72",
+   "ab-kv": "393,75",
+   "ab-pv": "81,00",
+   "ab-rv": "418,50",
+   "ab-av": "58,50",
+   "ab-summe": "1.650,00",
+   "netto": "2.850,00",
+   "jw-brutto": "45.000,00",
+   "jw-lst": "6.465,30",
+   "jw-kist": "517,20",
+   "jw-sv": "9.517,50",
+   "iban": "DE00 1234 5678 9012 3456 78",
+   "auszahlung": "2.850,00"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "gehalt-schief.jpg",
+  "papier": "gehalt",
+  "variante": "schief",
+  "soll": {
+   "sid": "12 345 678 901",
+   "stkl": "1",
+   "sv": "12 010190 M 001",
+   "konf": "rk",
+   "br-gehalt": "4.500,00",
+   "br-gesamt": "4.500,00",
+   "br-steuer": "4.500,00",
+   "br-kv": "4.500,00",
+   "br-rv": "4.500,00",
+   "ab-lst": "646,53",
+   "ab-kist": "51,72",
+   "ab-kv": "393,75",
+   "ab-pv": "81,00",
+   "ab-rv": "418,50",
+   "ab-av": "58,50",
+   "ab-summe": "1.650,00",
+   "netto": "2.850,00",
+   "jw-brutto": "45.000,00",
+   "jw-lst": "6.465,30",
+   "jw-kist": "517,20",
+   "jw-sv": "9.517,50",
+   "iban": "DE00 1234 5678 9012 3456 78",
+   "auszahlung": "2.850,00"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "gehalt-times-alles.jpg",
+  "papier": "gehalt-times",
+  "variante": "alles",
+  "soll": {
+   "sid": "12 345 678 901",
+   "stkl": "1",
+   "sv": "12 010190 M 001",
+   "konf": "rk",
+   "br-gehalt": "4.500,00",
+   "br-gesamt": "4.500,00",
+   "br-steuer": "4.500,00",
+   "br-kv": "4.500,00",
+   "br-rv": "4.500,00",
+   "ab-lst": "646,53",
+   "ab-kist": "51,72",
+   "ab-kv": "393,75",
+   "ab-pv": "81,00",
+   "ab-rv": "418,50",
+   "ab-av": "58,50",
+   "ab-summe": "1.650,00",
+   "netto": "2.850,00",
+   "jw-brutto": "45.000,00",
+   "jw-lst": "6.465,30",
+   "jw-kist": "517,20",
+   "jw-sv": "9.517,50",
+   "iban": "DE00 1234 5678 9012 3456 78",
+   "auszahlung": "2.850,00"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "gehalt-times-gerade.jpg",
+  "papier": "gehalt-times",
+  "variante": "gerade",
+  "soll": {
+   "sid": "12 345 678 901",
+   "stkl": "1",
+   "sv": "12 010190 M 001",
+   "konf": "rk",
+   "br-gehalt": "4.500,00",
+   "br-gesamt": "4.500,00",
+   "br-steuer": "4.500,00",
+   "br-kv": "4.500,00",
+   "br-rv": "4.500,00",
+   "ab-lst": "646,53",
+   "ab-kist": "51,72",
+   "ab-kv": "393,75",
+   "ab-pv": "81,00",
+   "ab-rv": "418,50",
+   "ab-av": "58,50",
+   "ab-summe": "1.650,00",
+   "netto": "2.850,00",
+   "jw-brutto": "45.000,00",
+   "jw-lst": "6.465,30",
+   "jw-kist": "517,20",
+   "jw-sv": "9.517,50",
+   "iban": "DE00 1234 5678 9012 3456 78",
+   "auszahlung": "2.850,00"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "gehalt-times-scan.jpg",
+  "papier": "gehalt-times",
+  "variante": "scan",
+  "soll": {
+   "sid": "12 345 678 901",
+   "stkl": "1",
+   "sv": "12 010190 M 001",
+   "konf": "rk",
+   "br-gehalt": "4.500,00",
+   "br-gesamt": "4.500,00",
+   "br-steuer": "4.500,00",
+   "br-kv": "4.500,00",
+   "br-rv": "4.500,00",
+   "ab-lst": "646,53",
+   "ab-kist": "51,72",
+   "ab-kv": "393,75",
+   "ab-pv": "81,00",
+   "ab-rv": "418,50",
+   "ab-av": "58,50",
+   "ab-summe": "1.650,00",
+   "netto": "2.850,00",
+   "jw-brutto": "45.000,00",
+   "jw-lst": "6.465,30",
+   "jw-kist": "517,20",
+   "jw-sv": "9.517,50",
+   "iban": "DE00 1234 5678 9012 3456 78",
+   "auszahlung": "2.850,00"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "gehalt-times-schatten.jpg",
+  "papier": "gehalt-times",
+  "variante": "schatten",
+  "soll": {
+   "sid": "12 345 678 901",
+   "stkl": "1",
+   "sv": "12 010190 M 001",
+   "konf": "rk",
+   "br-gehalt": "4.500,00",
+   "br-gesamt": "4.500,00",
+   "br-steuer": "4.500,00",
+   "br-kv": "4.500,00",
+   "br-rv": "4.500,00",
+   "ab-lst": "646,53",
+   "ab-kist": "51,72",
+   "ab-kv": "393,75",
+   "ab-pv": "81,00",
+   "ab-rv": "418,50",
+   "ab-av": "58,50",
+   "ab-summe": "1.650,00",
+   "netto": "2.850,00",
+   "jw-brutto": "45.000,00",
+   "jw-lst": "6.465,30",
+   "jw-kist": "517,20",
+   "jw-sv": "9.517,50",
+   "iban": "DE00 1234 5678 9012 3456 78",
+   "auszahlung": "2.850,00"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "gehalt-unscharf.jpg",
+  "papier": "gehalt",
+  "variante": "unscharf",
+  "soll": {
+   "sid": "12 345 678 901",
+   "stkl": "1",
+   "sv": "12 010190 M 001",
+   "konf": "rk",
+   "br-gehalt": "4.500,00",
+   "br-gesamt": "4.500,00",
+   "br-steuer": "4.500,00",
+   "br-kv": "4.500,00",
+   "br-rv": "4.500,00",
+   "ab-lst": "646,53",
+   "ab-kist": "51,72",
+   "ab-kv": "393,75",
+   "ab-pv": "81,00",
+   "ab-rv": "418,50",
+   "ab-av": "58,50",
+   "ab-summe": "1.650,00",
+   "netto": "2.850,00",
+   "jw-brutto": "45.000,00",
+   "jw-lst": "6.465,30",
+   "jw-kist": "517,20",
+   "jw-sv": "9.517,50",
+   "iban": "DE00 1234 5678 9012 3456 78",
+   "auszahlung": "2.850,00"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "konto-alles.jpg",
+  "papier": "konto",
+  "variante": "alles",
+  "soll": {
+   "inhaber": "Lea Mustermann",
+   "iban": "DE00 9876 5432 1098 7654 32",
+   "zeitraum": "01.10.2026 bis 01.11.2026",
+   "b0-datum": "01.10.",
+   "b0-text": "Miete Oktober, Vermietung Muster KG",
+   "b0-betrag": "−820,00",
+   "b1-datum": "02.10.",
+   "b1-text": "Supermarkt Musterstadt",
+   "b1-betrag": "−54,20",
+   "b2-datum": "05.10.",
+   "b2-text": "Gehalt Oktober, Kita Musterwiese",
+   "b2-betrag": "+1.980,00",
+   "b3-datum": "07.10.",
+   "b3-text": "Apotheke am Markt",
+   "b3-betrag": "−12,90",
+   "b4-datum": "12.10.",
+   "b4-text": "Musikabo",
+   "b4-betrag": "−9,99",
+   "b5-datum": "15.10.",
+   "b5-text": "Spende Tierheim",
+   "b5-betrag": "−20,00",
+   "b6-datum": "22.10.",
+   "b6-text": "Nachzahlung, Kita Musterwiese",
+   "b6-betrag": "+120,00",
+   "b7-datum": "28.10.",
+   "b7-text": "Barabhebung",
+   "b7-betrag": "−100,00",
+   "b8-datum": "01.11.",
+   "b8-text": "Miete November, Vermietung Muster KG",
+   "b8-betrag": "−820,00",
+   "kontostand": "+2.317,45"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "konto-dunkel.jpg",
+  "papier": "konto",
+  "variante": "dunkel",
+  "soll": {
+   "inhaber": "Lea Mustermann",
+   "iban": "DE00 9876 5432 1098 7654 32",
+   "zeitraum": "01.10.2026 bis 01.11.2026",
+   "b0-datum": "01.10.",
+   "b0-text": "Miete Oktober, Vermietung Muster KG",
+   "b0-betrag": "−820,00",
+   "b1-datum": "02.10.",
+   "b1-text": "Supermarkt Musterstadt",
+   "b1-betrag": "−54,20",
+   "b2-datum": "05.10.",
+   "b2-text": "Gehalt Oktober, Kita Musterwiese",
+   "b2-betrag": "+1.980,00",
+   "b3-datum": "07.10.",
+   "b3-text": "Apotheke am Markt",
+   "b3-betrag": "−12,90",
+   "b4-datum": "12.10.",
+   "b4-text": "Musikabo",
+   "b4-betrag": "−9,99",
+   "b5-datum": "15.10.",
+   "b5-text": "Spende Tierheim",
+   "b5-betrag": "−20,00",
+   "b6-datum": "22.10.",
+   "b6-text": "Nachzahlung, Kita Musterwiese",
+   "b6-betrag": "+120,00",
+   "b7-datum": "28.10.",
+   "b7-text": "Barabhebung",
+   "b7-betrag": "−100,00",
+   "b8-datum": "01.11.",
+   "b8-text": "Miete November, Vermietung Muster KG",
+   "b8-betrag": "−820,00",
+   "kontostand": "+2.317,45"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "konto-fern.jpg",
+  "papier": "konto",
+  "variante": "fern",
+  "soll": {
+   "inhaber": "Lea Mustermann",
+   "iban": "DE00 9876 5432 1098 7654 32",
+   "zeitraum": "01.10.2026 bis 01.11.2026",
+   "b0-datum": "01.10.",
+   "b0-text": "Miete Oktober, Vermietung Muster KG",
+   "b0-betrag": "−820,00",
+   "b1-datum": "02.10.",
+   "b1-text": "Supermarkt Musterstadt",
+   "b1-betrag": "−54,20",
+   "b2-datum": "05.10.",
+   "b2-text": "Gehalt Oktober, Kita Musterwiese",
+   "b2-betrag": "+1.980,00",
+   "b3-datum": "07.10.",
+   "b3-text": "Apotheke am Markt",
+   "b3-betrag": "−12,90",
+   "b4-datum": "12.10.",
+   "b4-text": "Musikabo",
+   "b4-betrag": "−9,99",
+   "b5-datum": "15.10.",
+   "b5-text": "Spende Tierheim",
+   "b5-betrag": "−20,00",
+   "b6-datum": "22.10.",
+   "b6-text": "Nachzahlung, Kita Musterwiese",
+   "b6-betrag": "+120,00",
+   "b7-datum": "28.10.",
+   "b7-text": "Barabhebung",
+   "b7-betrag": "−100,00",
+   "b8-datum": "01.11.",
+   "b8-text": "Miete November, Vermietung Muster KG",
+   "b8-betrag": "−820,00",
+   "kontostand": "+2.317,45"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "konto-gerade.jpg",
+  "papier": "konto",
+  "variante": "gerade",
+  "soll": {
+   "inhaber": "Lea Mustermann",
+   "iban": "DE00 9876 5432 1098 7654 32",
+   "zeitraum": "01.10.2026 bis 01.11.2026",
+   "b0-datum": "01.10.",
+   "b0-text": "Miete Oktober, Vermietung Muster KG",
+   "b0-betrag": "−820,00",
+   "b1-datum": "02.10.",
+   "b1-text": "Supermarkt Musterstadt",
+   "b1-betrag": "−54,20",
+   "b2-datum": "05.10.",
+   "b2-text": "Gehalt Oktober, Kita Musterwiese",
+   "b2-betrag": "+1.980,00",
+   "b3-datum": "07.10.",
+   "b3-text": "Apotheke am Markt",
+   "b3-betrag": "−12,90",
+   "b4-datum": "12.10.",
+   "b4-text": "Musikabo",
+   "b4-betrag": "−9,99",
+   "b5-datum": "15.10.",
+   "b5-text": "Spende Tierheim",
+   "b5-betrag": "−20,00",
+   "b6-datum": "22.10.",
+   "b6-text": "Nachzahlung, Kita Musterwiese",
+   "b6-betrag": "+120,00",
+   "b7-datum": "28.10.",
+   "b7-text": "Barabhebung",
+   "b7-betrag": "−100,00",
+   "b8-datum": "01.11.",
+   "b8-text": "Miete November, Vermietung Muster KG",
+   "b8-betrag": "−820,00",
+   "kontostand": "+2.317,45"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "konto-scan.jpg",
+  "papier": "konto",
+  "variante": "scan",
+  "soll": {
+   "inhaber": "Lea Mustermann",
+   "iban": "DE00 9876 5432 1098 7654 32",
+   "zeitraum": "01.10.2026 bis 01.11.2026",
+   "b0-datum": "01.10.",
+   "b0-text": "Miete Oktober, Vermietung Muster KG",
+   "b0-betrag": "−820,00",
+   "b1-datum": "02.10.",
+   "b1-text": "Supermarkt Musterstadt",
+   "b1-betrag": "−54,20",
+   "b2-datum": "05.10.",
+   "b2-text": "Gehalt Oktober, Kita Musterwiese",
+   "b2-betrag": "+1.980,00",
+   "b3-datum": "07.10.",
+   "b3-text": "Apotheke am Markt",
+   "b3-betrag": "−12,90",
+   "b4-datum": "12.10.",
+   "b4-text": "Musikabo",
+   "b4-betrag": "−9,99",
+   "b5-datum": "15.10.",
+   "b5-text": "Spende Tierheim",
+   "b5-betrag": "−20,00",
+   "b6-datum": "22.10.",
+   "b6-text": "Nachzahlung, Kita Musterwiese",
+   "b6-betrag": "+120,00",
+   "b7-datum": "28.10.",
+   "b7-text": "Barabhebung",
+   "b7-betrag": "−100,00",
+   "b8-datum": "01.11.",
+   "b8-text": "Miete November, Vermietung Muster KG",
+   "b8-betrag": "−820,00",
+   "kontostand": "+2.317,45"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "konto-schatten.jpg",
+  "papier": "konto",
+  "variante": "schatten",
+  "soll": {
+   "inhaber": "Lea Mustermann",
+   "iban": "DE00 9876 5432 1098 7654 32",
+   "zeitraum": "01.10.2026 bis 01.11.2026",
+   "b0-datum": "01.10.",
+   "b0-text": "Miete Oktober, Vermietung Muster KG",
+   "b0-betrag": "−820,00",
+   "b1-datum": "02.10.",
+   "b1-text": "Supermarkt Musterstadt",
+   "b1-betrag": "−54,20",
+   "b2-datum": "05.10.",
+   "b2-text": "Gehalt Oktober, Kita Musterwiese",
+   "b2-betrag": "+1.980,00",
+   "b3-datum": "07.10.",
+   "b3-text": "Apotheke am Markt",
+   "b3-betrag": "−12,90",
+   "b4-datum": "12.10.",
+   "b4-text": "Musikabo",
+   "b4-betrag": "−9,99",
+   "b5-datum": "15.10.",
+   "b5-text": "Spende Tierheim",
+   "b5-betrag": "−20,00",
+   "b6-datum": "22.10.",
+   "b6-text": "Nachzahlung, Kita Musterwiese",
+   "b6-betrag": "+120,00",
+   "b7-datum": "28.10.",
+   "b7-text": "Barabhebung",
+   "b7-betrag": "−100,00",
+   "b8-datum": "01.11.",
+   "b8-text": "Miete November, Vermietung Muster KG",
+   "b8-betrag": "−820,00",
+   "kontostand": "+2.317,45"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "konto-schief.jpg",
+  "papier": "konto",
+  "variante": "schief",
+  "soll": {
+   "inhaber": "Lea Mustermann",
+   "iban": "DE00 9876 5432 1098 7654 32",
+   "zeitraum": "01.10.2026 bis 01.11.2026",
+   "b0-datum": "01.10.",
+   "b0-text": "Miete Oktober, Vermietung Muster KG",
+   "b0-betrag": "−820,00",
+   "b1-datum": "02.10.",
+   "b1-text": "Supermarkt Musterstadt",
+   "b1-betrag": "−54,20",
+   "b2-datum": "05.10.",
+   "b2-text": "Gehalt Oktober, Kita Musterwiese",
+   "b2-betrag": "+1.980,00",
+   "b3-datum": "07.10.",
+   "b3-text": "Apotheke am Markt",
+   "b3-betrag": "−12,90",
+   "b4-datum": "12.10.",
+   "b4-text": "Musikabo",
+   "b4-betrag": "−9,99",
+   "b5-datum": "15.10.",
+   "b5-text": "Spende Tierheim",
+   "b5-betrag": "−20,00",
+   "b6-datum": "22.10.",
+   "b6-text": "Nachzahlung, Kita Musterwiese",
+   "b6-betrag": "+120,00",
+   "b7-datum": "28.10.",
+   "b7-text": "Barabhebung",
+   "b7-betrag": "−100,00",
+   "b8-datum": "01.11.",
+   "b8-text": "Miete November, Vermietung Muster KG",
+   "b8-betrag": "−820,00",
+   "kontostand": "+2.317,45"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "konto-unscharf.jpg",
+  "papier": "konto",
+  "variante": "unscharf",
+  "soll": {
+   "inhaber": "Lea Mustermann",
+   "iban": "DE00 9876 5432 1098 7654 32",
+   "zeitraum": "01.10.2026 bis 01.11.2026",
+   "b0-datum": "01.10.",
+   "b0-text": "Miete Oktober, Vermietung Muster KG",
+   "b0-betrag": "−820,00",
+   "b1-datum": "02.10.",
+   "b1-text": "Supermarkt Musterstadt",
+   "b1-betrag": "−54,20",
+   "b2-datum": "05.10.",
+   "b2-text": "Gehalt Oktober, Kita Musterwiese",
+   "b2-betrag": "+1.980,00",
+   "b3-datum": "07.10.",
+   "b3-text": "Apotheke am Markt",
+   "b3-betrag": "−12,90",
+   "b4-datum": "12.10.",
+   "b4-text": "Musikabo",
+   "b4-betrag": "−9,99",
+   "b5-datum": "15.10.",
+   "b5-text": "Spende Tierheim",
+   "b5-betrag": "−20,00",
+   "b6-datum": "22.10.",
+   "b6-text": "Nachzahlung, Kita Musterwiese",
+   "b6-betrag": "+120,00",
+   "b7-datum": "28.10.",
+   "b7-text": "Barabhebung",
+   "b7-betrag": "−100,00",
+   "b8-datum": "01.11.",
+   "b8-text": "Miete November, Vermietung Muster KG",
+   "b8-betrag": "−820,00",
+   "kontostand": "+2.317,45"
+  },
+  "mrz": null
+ },
+ {
+  "datei": "pass-alles.jpg",
+  "papier": "pass",
+  "variante": "alles",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ },
+ {
+  "datei": "pass-dunkel.jpg",
+  "papier": "pass",
+  "variante": "dunkel",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ },
+ {
+  "datei": "pass-gerade.jpg",
+  "papier": "pass",
+  "variante": "gerade",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ },
+ {
+  "datei": "pass-ocrb-alles.jpg",
+  "papier": "pass-ocrb",
+  "variante": "alles",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ },
+ {
+  "datei": "pass-ocrb-dunkel.jpg",
+  "papier": "pass-ocrb",
+  "variante": "dunkel",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ },
+ {
+  "datei": "pass-ocrb-gerade.jpg",
+  "papier": "pass-ocrb",
+  "variante": "gerade",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ },
+ {
+  "datei": "pass-ocrb-scan.jpg",
+  "papier": "pass-ocrb",
+  "variante": "scan",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ },
+ {
+  "datei": "pass-ocrb-schatten.jpg",
+  "papier": "pass-ocrb",
+  "variante": "schatten",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ },
+ {
+  "datei": "pass-ocrb-schief.jpg",
+  "papier": "pass-ocrb",
+  "variante": "schief",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ },
+ {
+  "datei": "pass-ocrb-unscharf.jpg",
+  "papier": "pass-ocrb",
+  "variante": "unscharf",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ },
+ {
+  "datei": "pass-scan.jpg",
+  "papier": "pass",
+  "variante": "scan",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ },
+ {
+  "datei": "pass-schatten.jpg",
+  "papier": "pass",
+  "variante": "schatten",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ },
+ {
+  "datei": "pass-schief.jpg",
+  "papier": "pass",
+  "variante": "schief",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ },
+ {
+  "datei": "pass-unscharf.jpg",
+  "papier": "pass",
+  "variante": "unscharf",
+  "soll": {
+   "nummer": "MUSTER0P2",
+   "geburt": "12.03.1995",
+   "ort": "Musterstadt",
+   "staat": "utopisch",
+   "gueltig": "01.08.2031"
+  },
+  "mrz": [
+   "P<UTOMUSTERMANN<<LEA<<<<<<<<<<<<<<<<<<<<<<<<",
+   "MUSTER0P21UTO9503124F3108011<<<<<<<<<<<<<<08"
+  ]
+ }
+]

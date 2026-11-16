@@ -15,6 +15,8 @@ export default ts.config(
       'playwright-report/',
       'ios/',
       'android/',
+      // Nur auf dem Zweig probe-vision (PC75): Tesseract als fertige Dateien, nicht unser Code.
+      'public/probe/',
     ],
   },
   js.configs.recommended,

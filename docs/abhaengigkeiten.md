@@ -17,6 +17,17 @@ Jede Bibliothek braucht einen Grund, aktive Pflege und eine passende Lizenz (MIT
 
 Dazu, ohne npm: **Archivo statische Schnitte** in `src/pdf/fonts/` (Regular, Bold, ExtraBold Wide), einmalig erzeugt mit `scripts/make-pdf-fonts.py` aus `google/fonts/ofl/archivo/Archivo[wdth,wght].ttf`, Lizenz OFL-1.1 (`src/pdf/fonts/OFL.txt`).
 
+## Nur im Probe-Bau `probe-vision` (PC75, nie im Release)
+
+| Paket | Version | Lizenz | Wofür |
+| --- | --- | --- | --- |
+| tesseract.js | 7.0.0 | Apache-2.0 | Messung Vision gegen Tesseract am iPhone (PC68, Abschnitt 4). Als Dateien in `public/probe/ocr/`, nicht über npm; geladen nach dem Ja des Auftraggebers zu CP40. |
+| tesseract.js-core | 7.0.0 | Apache-2.0 | Kern von Tesseract als WebAssembly, nur die LSTM-Fassungen. |
+| deu.traineddata | aus tessdata_fast | Apache-2.0 | Deutsches Sprachmodell für Tesseract. |
+| ocrb_int.traineddata | Stand April 2019 (laut README) | Apache-2.0 | Lesemodell für OCR-B, die Schrift der Zeilen unten (ICAO 9303), dritter Lauf der Probe (PC77 E155/2, Ja des Auftraggebers). Quelle: github.com/Shreeshrii/tessdata_ocrb, 1.453.578 Byte, SHA-256 `814f0d862538249d4122db8d41807b08fd7c31181455df7f596a2ed5ce4434ee`. Angelernt auf `tessdata_best/eng` mit künstlichen Zeilen. Später für Tesseract in App und Browser. |
+
+**Nur für Musterfotos in Tests, nie in App oder Website:** OCR-B-Schrift `ocr-b-outline` (CTAN, Z. Wagner nach den METAFONT-Quellen von N. Schwarz, Stand 6.1.2011), Datei `ocrb10.otf`. Lizenz laut README: frei zu nutzen, zu ändern und weiterzugeben, ohne Einschränkung. Paket 592.281 Byte, SHA-256 `2e625b468d92849071a2ec7debe8a8fe47cdf6f4ea8117e350f093ed32b90617`. Liegt im Werkzeugordner (`HEFTA_OCRB`), nicht im Repository (PC77 E155/2).
+
 ## Nur in der Entwicklung (werden nicht ausgeliefert)
 
 | Paket | Lizenz | Wofür |

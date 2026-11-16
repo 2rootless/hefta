@@ -162,7 +162,9 @@ export function heftaBau(): Plugin {
             !d.startsWith(`${RATGEBER_PFAD.m}/`) &&
             !d.startsWith(`${DATENSCHUTZ_PFAD}/`) &&
             // Die Seite der Rückmeldung gehört zur Website, nicht zur App (E54).
-            !d.startsWith(`${RUECKMELDUNG_PFAD}/`),
+            !d.startsWith(`${RUECKMELDUNG_PFAD}/`) &&
+            // Nur auf dem Zweig probe-vision (PC75): 27 MB Fotos und Tesseract nicht in den Zwischenspeicher.
+            !d.startsWith('probe/'),
         )
         .sort();
       const version = createHash('sha256');

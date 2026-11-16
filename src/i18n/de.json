@@ -2602,5 +2602,19 @@
   },
   "personAendern": {
     "inDerMappe": "In der Mappe:"
+  },
+  "probe": {
+    "eingang": "Probe: Vision gegen Tesseract",
+    "eingangKlein": "Nur in diesem Probe-Bau, nicht einreichen",
+    "titel": "Probe: Vision gegen Tesseract",
+    "nicht": "Probe, nicht einreichen. Dieser Bau ist nur für die Messung (PC75).",
+    "lead": "{app} liest {zahl} Musterfotos mit der Texterkennung des iPhones und mit Tesseract, die Zeilen unten auch mit einem Modell für OCR-B. Alles bleibt auf dem Gerät. Das dauert einige Minuten.",
+    "starten": "Probe starten",
+    "laeuft": "Foto {nr} von {zahl}: {datei}",
+    "startet": "Tesseract startet …",
+    "fertig": "Fertig. Kopiere den Text und schick ihn über die Planung.",
+    "kopieren": "Ergebnis kopieren",
+    "kopiert": "Kopiert.",
+    "ergebnis": "Ergebnis"
   }
 }
