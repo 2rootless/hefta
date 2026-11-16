@@ -393,6 +393,9 @@ test('Fragen ausblenden: nur hier, auch in neuen Heften, Rückgängig, wieder ze
   await expect(fragen).toContainText('0 von 10');
   await menue(/Keller, Fahrradraum/);
   await page.getByRole('menuitem', { name: 'Nur in diesem Heft ausblenden' }).click();
+  // Erst weiter, wenn die Zeile weg ist: Sonst rückt die Liste zwischen Drücken und Loslassen, und der
+  // nächste Tipp trifft das Menü nicht (CP44).
+  await expect(fragen).toContainText('0 von 9');
 
   // Auch in neuen Heften.
   await menue(/Internetanschluss/);

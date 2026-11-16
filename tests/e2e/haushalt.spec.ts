@@ -391,7 +391,12 @@ test('Backup mit Passwort: sichern, alles löschen, einspielen ergibt denselben 
   // Einspielen (S6–S8): falsches Passwort, dann richtiges.
   // Ohne Haushalt am iPhone in Safari: erst der Hinweis auf die App (E30), dann das Einspielen.
   await page.goto('/#/einstellungen');
+  // Erst tippen, wenn die Seite fertig dasteht (Backup-Stand und Speicher gelesen). Einmal blieb der Tipp
+  // unter Last ohne Wirkung (CP44); die Adresse danach zeigt, ob er ankam.
+  await expect(page.getByText('Noch keins')).toBeVisible();
+  await expect(page.getByText(/ belegt$/)).toBeVisible();
   await page.getByRole('link', { name: /^Backup einspielen/ }).click();
+  await expect(page).toHaveURL(/#\/homescreen\/einspielen$/);
   await page.getByRole('button', { name: 'Weiter im Browser', exact: true }).click();
   await page.locator('input[type=file]').first().setInputFiles(alsInhalt(pfad));
   await expect(page.getByRole('heading', { level: 1, name: 'Backup einspielen' })).toBeVisible();
