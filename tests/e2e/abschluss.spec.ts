@@ -37,6 +37,10 @@ async function laden(page: Page, szenario: string, pfad: string, pdf: number[]) 
   await page.goto('about:blank');
   await page.goto(`/#${pfad}`);
   await page.locator('main h1').first().waitFor();
+  // In „Mappe anpassen“ erscheint die Vorschau erst nach einem Moment und schiebt die Schalter nach unten.
+  // Ein Tipp in dem Augenblick trifft daneben (CP44, gemeldet). Darum erst tippen, wenn sie dasteht.
+  if (pfad === '/mappe/anpassen')
+    await expect(page.getByText('Vorschau wird erstellt …')).toHaveCount(0, { timeout: 30_000 });
 }
 
 async function textPdf(): Promise<number[]> {

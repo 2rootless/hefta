@@ -1059,6 +1059,9 @@ test('Farbe bei der Person: wählen, vergebene wird getauscht, wirkt überall (P
   // Die Mappe nimmt die neue Farbe, im Druckton (AM3), und sagt, wo man sie ändert.
   await page.goto('about:blank');
   await page.goto('/#/mappe/anpassen');
+  // Erst tippen, wenn die Vorschau dasteht: Sie schiebt die Wahl darunter nach unten (CP44).
+  await page.locator('main h1').first().waitFor();
+  await expect(page.getByText('Vorschau wird erstellt …')).toHaveCount(0, { timeout: 30_000 });
   await page.getByRole('radio', { name: /^Farben der Personen/ }).click();
   await expect(page.getByText(/Tippt? auf einen Namen, um die Farbe zu ändern\.$/)).toBeVisible();
   await expect
