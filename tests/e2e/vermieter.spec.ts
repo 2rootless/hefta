@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { bewerbungBauen } from '../../src/pdf/bewerbung';
+import { SZENARIEN } from './mappen-szenarien';
 import {
   FALSCH,
   KAPUTT,
@@ -199,8 +201,16 @@ test('Lesehilfe passt nicht: gar nicht zeigen. Neuere Fassung: zeigen, was die S
 });
 
 test('Fassung der echten App: Die Mappe aus Hefta wird gelesen', async ({ page }) => {
+  // Die Mappe baut der Test selbst mit dem Code der App. Vorher las er die Datei, die pdfmappe.spec.ts
+  // nach docs/screenshots schreibt; im frischen öffentlichen Ordner fehlte sie, solange jener Test nicht
+  // vorher gelaufen war (CP44).
+  const { bytes } = await bewerbungBauen(await SZENARIEN['MP1-standard']!());
   await page.goto('/');
-  await auswahl(page).setInputFiles('docs/screenshots/muster-MP1-standard.pdf');
+  await auswahl(page).setInputFiles({
+    name: 'muster-MP1-standard.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from(bytes),
+  });
   await expect(haupt(page)).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('.vs-rt')).toContainText('Max und Lea Mustermann');
   await expect(haupt(page)).toContainText('Beispielstraße 1');
