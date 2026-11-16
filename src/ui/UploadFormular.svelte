@@ -4,7 +4,10 @@
   import PruefKasten from './PruefKasten.svelte';
   import { untrack } from 'svelte';
   import { seitenJeMonat, seitenVorbelegen } from '../domain/aufteilen';
+  import KopfVorschau from './KopfVorschau.svelte';
   import SeitenMonate from './SeitenMonate.svelte';
+  import { gehaltsMarken } from '../domain/markieren';
+  import { textMessen } from './textMessen';
   // Alles nach der Dateiwahl (docs/05-dokument-pipeline.md, Entwurf 4-upload.png und R2 im Rutsch):
   // Seiten mit Kreis zum An- und Abwählen (Tipp auf die Seite macht sie groß), Datei direkt wechseln,
   // Passwort-PDFs entsperren, Variante, Monat bzw. Ausstellungsdatum (freiwillig, wird im Text gesucht
@@ -14,7 +17,12 @@
   import { daten, db, neuLaden } from '../app/daten.svelte';
   import { monatAusDateiname, monateAusDateiname } from '../domain/dateiname';
   import { istAndroidApp } from '../app/plattform';
-  import { ausstellungstag, datenFinden, monatFinden } from '../domain/datumErkennen';
+  import {
+    ausstellungstag,
+    datenFinden,
+    monatFinden,
+    type TextStueck,
+  } from '../domain/datumErkennen';
   import { bewerten, monatPlus, monatsAuswahl, tagAus } from '../domain/fristen';
   import { alterGrenze } from './texte';
   import type { Person } from '../domain/modell';
@@ -91,6 +99,8 @@
     miniaturen: string[];
     /** W16: die erste Seite groß genug, dass ihr Kopf lesbar ist („Verdienstabrechnung Oktober 2026“). */
     kopf: string | null;
+    /** Text der ersten Seite, für die Markierung von Monat und Name im Kopf (PC64, Punkt 4). */
+    stuecke: TextStueck[] | null;
   }
 
   const heute = new Date();
@@ -595,6 +605,9 @@
         return;
       }
       d.kopf = kopf;
+      // PC64, Punkt 4: Monat und Name im Kopf wie mit Textmarker; dafür der Text der ersten Seite.
+      const stuecke = await seitenStuecke(d.dokument, 1).catch(() => null);
+      if (lauf === ladeLauf) d.stuecke = stuecke;
     }
   }
 
@@ -627,6 +640,7 @@
         alsBilder: false,
         miniaturen: [],
         kopf: null,
+        stuecke: null,
       };
       try {
         eintrag.dokument = await pdfOeffnen(bytes);
@@ -1112,7 +1126,10 @@
                     aria-label={t('zuordnen.vorschauGross', { name: d.name })}
                     onclick={() => ansehen(`${i}:0`)}
                   >
-                    <img src={d.kopf ?? d.miniaturen[0]} alt="" />
+                    <KopfVorschau
+                      bild={d.kopf ?? d.miniaturen[0]!}
+                      marken={gehaltsMarken(d.stuecke, dateiMonate[i], person, textMessen())}
+                    />
                     <span class="w16-lupe" aria-hidden="true"
                       ><Symbol name="lupe" groesse={16} /></span
                     >
@@ -1144,6 +1161,7 @@
                   monate={monatsWahl}
                   ansehen={(seite) => ansehen(`${i}:${seite}`)}
                   dokument={d.dokument}
+                  {person}
                 />
               {:else if d.miniaturen.length > 1}
                 <div class="seiten je-datei" role="group" aria-label={t('hochladen.seitenGruppe')}>
@@ -1171,6 +1189,7 @@
           monate={seitenAuswahl}
           ansehen={(seite) => ansehen(`0:${seite}`)}
           dokument={dateien[0]?.dokument ?? null}
+          {person}
         />
       </div>
     {:else if serie}
@@ -1642,12 +1661,6 @@
     background: #fff;
     box-shadow: 0 0 0 1px var(--line);
     cursor: zoom-in;
-  }
-
-  .w16-vorschau img {
-    display: block;
-    width: 100%;
-    height: auto;
   }
 
   .w16-lupe {

@@ -25,7 +25,7 @@
   import { wohnungAus } from '../lesen/angaben';
   import { plzTabelle } from './plz.svelte';
   import { foto, fotoLaden } from './heftFoto.svelte';
-  import { flugFuer, landen, merken, wartendesHeft } from './heftFlug';
+  import { flugFuer, flugVergessen, landen, merken, wartendesHeft } from './heftFlug';
 
   let { hefte, jetzt }: { hefte: Heft[]; jetzt: Date } = $props();
 
@@ -100,10 +100,18 @@
     });
   }
   onMount(() => {
+    if (!flugFuer('liste')) return;
     const id = wartendesHeft();
-    if (!flugFuer('liste') || !liste || !id) return;
-    const karte = liste.querySelector<HTMLElement>(`[data-heft-karte="${CSS.escape(id)}"]`);
-    if (!karte) return;
+    const karte =
+      liste && id
+        ? liste.querySelector<HTMLElement>(`[data-heft-karte="${CSS.escape(id)}"]`)
+        : null;
+    // PC64, Punkt 1: Hat das Heft hier keine Zeile (große Terminkarte, „Abgelegt“ zugeklappt), muss das
+    // Abbild trotzdem weg. Sonst lag das Heft weiter fest über der Liste, und Taps gingen unsichtbar durch.
+    if (!karte) {
+      flugVergessen();
+      return;
+    }
     void landen({
       nach: 'liste',
       seite: seiteVon(karte),

@@ -4,8 +4,12 @@
   import { onDestroy } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import { monatName, t } from '../i18n';
-  import { miniatur, type PdfDokument } from '../pdf/pdfjs';
+  import type { TextStueck } from '../domain/datumErkennen';
+  import { gehaltsMarken } from '../domain/markieren';
+  import { miniatur, seitenStuecke, type PdfDokument } from '../pdf/pdfjs';
+  import KopfVorschau from './KopfVorschau.svelte';
   import Symbol from './Symbol.svelte';
+  import { textMessen } from './textMessen';
   import { monatJahr } from './versionInfo';
 
   let {
@@ -14,6 +18,7 @@
     monate,
     ansehen,
     dokument = null,
+    person = null,
   }: {
     zeilen: { seite: number; bild?: string; fund: string | null }[];
     /** Monat je Seite, leer heißt „Nicht in die Mappe“. */
@@ -22,10 +27,14 @@
     ansehen?: (seite: number) => void;
     /** Das PDF: Damit zeigt jede Zeile den Kopf ihrer Seite lesbar groß. Ohne bleibt die Miniatur. */
     dokument?: PdfDokument | null;
+    /** Wessen Gehaltsnachweis: Sein Name wird im Kopf hinterlegt, wie der Monat (PC64, Punkt 4). */
+    person?: { vorname: string; nachname: string } | null;
   } = $props();
 
   /** Kopf je Seite, scharf genug für die volle Breite („Verdienstabrechnung Oktober 2026“). */
   const koepfe = new SvelteMap<number, string>();
+  /** Text je Seite, für die Markierung von Monat und Name. */
+  const texte = new SvelteMap<number, TextStueck[]>();
   let gerendert: PdfDokument | null = null;
   let vorbei = false;
 
@@ -36,6 +45,7 @@
     if (gerendert !== dok) {
       koepfe.forEach((url) => URL.revokeObjectURL(url));
       koepfe.clear();
+      texte.clear();
       gerendert = dok;
     }
     void (async () => {
@@ -45,6 +55,8 @@
         if (!url) continue;
         if (vorbei || gerendert !== dok || koepfe.has(s)) URL.revokeObjectURL(url);
         else koepfe.set(s, url);
+        const stuecke = await seitenStuecke(dok, s + 1).catch(() => null);
+        if (stuecke && !vorbei && gerendert === dok) texte.set(s, stuecke);
       }
     })();
   });
@@ -73,7 +85,12 @@
         aria-label={t('seiten.grossAnsehen', { nummer: z.seite + 1 })}
         onclick={() => ansehen?.(z.seite)}
       >
-        {#if bild}<img src={bild} alt="" />{/if}
+        {#if bild}<KopfVorschau
+            {bild}
+            marken={person
+              ? gehaltsMarken(texte.get(z.seite), werte[z.seite], person, textMessen())
+              : []}
+          />{/if}
         <span class="lupe" aria-hidden="true"><Symbol name="lupe" groesse={16} /></span>
       </button>
       <label class="auswahl" class:ohne={!werte[z.seite]}>
@@ -142,12 +159,6 @@
     background: #fff;
     box-shadow: 0 0 0 1px var(--line);
     cursor: zoom-in;
-  }
-
-  .bild img {
-    display: block;
-    width: 100%;
-    height: auto;
   }
 
   .lupe {

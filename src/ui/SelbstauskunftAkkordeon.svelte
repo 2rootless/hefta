@@ -439,6 +439,9 @@
           {#if emailHinweis}<p class="format" role="status">
               {t('selbstauskunft.emailHinweis')}
             </p>{/if}
+          <!-- PC64, Punkt 7: Für „fertig“ reicht eine der beiden Angaben (selbstauskunft.ts, Teil Kontakt).
+               Wortlaut zur Freigabe mit dem Testbau. -->
+          <p class="hinweis">{t('selbstauskunft.kontaktSatz')}</p>
         {:else if teil.id === 'einkommen'}
           {#if felder.has('nettoeinkommen')}
             {#if imJahr}

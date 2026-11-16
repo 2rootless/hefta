@@ -46,8 +46,39 @@ export function nameFinden(
   return null;
 }
 
+/**
+ * PC64, Punkt 4: der eigene Name der Person auf ihrer Unterlage, zum Hinterlegen wie mit Textmarker. Anders
+ * als bei `nameFinden` zählt nur der volle Name, Vorname direkt vor oder nach dem Nachnamen: Bei einer
+ * Bürgin mit demselben Nachnamen wie der Hauptmieter darf sein Name nicht wie ihrer aussehen.
+ */
+export function vollerNameFinden(
+  stuecke: TextStueck[],
+  vorname: string,
+  nachname: string,
+  messen: (text: string) => number = (text) => text.length,
+): Stelle | null {
+  const nach = klein(nachname.trim());
+  const vor = klein(vorname.trim().split(/\s+/)[0] ?? '');
+  if (!nach || !vor) return null;
+  for (const zeile of zeilenAus(stuecke)) {
+    const text = klein(zeile.text);
+    if (text.length !== zeile.text.length) continue;
+    for (let start = text.indexOf(nach); start >= 0; start = text.indexOf(nach, start + 1)) {
+      const ende = start + nach.length;
+      const davor = text.lastIndexOf(vor, start - 1);
+      const danach = text.indexOf(vor, ende);
+      const wortGrenze = (i: number) => i < 0 || i >= text.length || !/\p{L}/u.test(text[i]!);
+      if (davor >= 0 && start - (davor + vor.length) <= ABSTAND && wortGrenze(davor - 1))
+        return stelleAus(zeile.herkunft.slice(davor, ende), messen);
+      if (danach >= 0 && danach - ende <= ABSTAND && wortGrenze(danach + vor.length))
+        return stelleAus(zeile.herkunft.slice(start, danach + vor.length), messen);
+    }
+  }
+  return null;
+}
+
 /** Die Fläche der Zeichen; in einem Stück teilt sich die Breite nach der gemessenen Breite der Zeichen. */
-function stelleAus(
+export function stelleAus(
   zeichen: { stueck: TextStueck; stelle: number }[],
   messen: (text: string) => number,
 ): Stelle | null {

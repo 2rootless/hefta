@@ -1116,6 +1116,7 @@
     "teilZu": "Fertig",
     "telefonHinweis": "Die Telefonnummer sieht ungewöhnlich aus. Stimmt sie?",
     "emailHinweis": "Die Mailadresse sieht ungewöhnlich aus. Stimmt sie?",
+    "kontaktSatz": "Eine Angabe reicht, die zweite ist freiwillig.",
     "vonWem": {
       "ihr": "Von {name} ausgefüllt. Schaut kurz drüber, wenn ihr unsicher seid.",
       "du": "Von {name} ausgefüllt. Schau kurz drüber, wenn du unsicher bist."

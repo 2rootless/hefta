@@ -51,7 +51,29 @@ const MONATE: Record<string, number> = {
   dezember: 12,
   dez: 12,
 };
-const MONATSWORT = Object.keys(MONATE).join('|');
+/**
+ * PC64, Punkt 5: Bei Buchstaben mit Unterlänge (g, j, p, q, y) ragt die Schrift unter die Zeile. Ist sie
+ * dort abgeschnitten, fehlt der Buchstabe im Text, ist verlesen („Auqust“) oder steht abgerückt („Au ust“).
+ * In den ausgeschriebenen Monaten (August, September, April) gilt er darum als Platzhalter: der Buchstabe
+ * selbst, ein anderes Zeichen, ein Leerzeichen oder nichts. Das erste Zeichen bleibt fest, kurze Formen
+ * („Aug“, „Sep“) auch: Sonst würde aus „an“ ein „Jan“. „Juni“ und „Juli“ unterscheiden sich in n und l,
+ * die keine Unterlänge haben; sie bleiben getrennt.
+ */
+const UNTERLAENGE = /[gjpqy]/;
+function monatsMuster(wort: string): string {
+  return [...wort]
+    .map((c, i) => (i > 0 && wort.length >= 5 && UNTERLAENGE.test(c) ? `(?:${c}|\\S|\\s?)` : c))
+    .join('');
+}
+const MONATS_MUSTER = Object.entries(MONATE).map(
+  ([wort, nummer]) => [new RegExp(`^${monatsMuster(wort)}$`, 'iu'), nummer] as const,
+);
+export const MONATSWORT = Object.keys(MONATE).map(monatsMuster).join('|');
+
+/** Die Nummer des Monats zu einem gefundenen Wort, auch mit fehlender oder verlesener Unterlänge. */
+export function monatNummer(wort: string): number | undefined {
+  return MONATE[wort.toLowerCase()] ?? MONATS_MUSTER.find(([muster]) => muster.test(wort))?.[1];
+}
 
 interface Zeile {
   text: string;
@@ -65,16 +87,30 @@ export function zeilenAus(stuecke: TextStueck[]): Zeile[] {
     .filter((s) => s.text.trim())
     .sort((a, b) => a.y + a.hoehe / 2 - (b.y + b.hoehe / 2) || a.x - b.x);
   const gruppen: TextStueck[][] = [];
+  /** Wie weit die Zeile bisher nach oben und unten reicht. */
+  let oben = 0;
+  let unten = 0;
   for (const s of gefuellt) {
     const letzte = gruppen.at(-1);
     const bezug = letzte?.[0];
+    const mitte = s.y + s.hoehe / 2;
+    // PC64, Punkt 5: Liegt ein Buchstabe mit Unterlänge als eigenes Stück tiefer („g“ in „August“), ist
+    // seine Mitte weiter vom ersten Stück weg als dessen halbe Höhe. Er gehört trotzdem zur Zeile, wenn
+    // seine Mitte in der Höhe liegt, die die Zeile schon einnimmt.
     if (
       letzte &&
       bezug &&
-      Math.abs(s.y + s.hoehe / 2 - (bezug.y + bezug.hoehe / 2)) < bezug.hoehe / 2
-    )
+      (Math.abs(mitte - (bezug.y + bezug.hoehe / 2)) < bezug.hoehe / 2 ||
+        (mitte > oben && mitte < unten))
+    ) {
       letzte.push(s);
-    else gruppen.push([s]);
+      oben = Math.min(oben, s.y);
+      unten = Math.max(unten, s.y + s.hoehe);
+    } else {
+      gruppen.push([s]);
+      oben = s.y;
+      unten = s.y + s.hoehe;
+    }
   }
   return gruppen.map((gruppe) => {
     gruppe.sort((a, b) => a.x - b.x);
@@ -135,7 +171,7 @@ export function datenFinden(stuecke: TextStueck[], heute: Date = new Date()): Da
     ],
     [
       new RegExp(`(?<!\\d)(\\d{1,2})\\.?\\s*(${MONATSWORT})\\.?\\s*(\\d{4})(?!\\d)`, 'gi'),
-      (m) => tagAus(Number(m[3]), MONATE[m[2]!.toLowerCase()]!, Number(m[1])),
+      (m) => tagAus(Number(m[3]), monatNummer(m[2]!) ?? 0, Number(m[1])),
     ],
     [
       /(?<!\d)(20\d\d)-(\d{2})-(\d{2})(?!\d)/g,
@@ -190,11 +226,11 @@ export function ausstellungstag(funde: (DatumFund & { seite: number })[]): {
   return tage.size === 1 && einziger ? { tag: einziger.tag, seite: einziger.seite } : null;
 }
 
-const ABRECHNUNG = /abrechnung|entgelt|gehalt|lohn|verdienst|bezüge|monat|zeitraum|periode/i;
-const STARK =
+export const ABRECHNUNG = /abrechnung|entgelt|gehalt|lohn|verdienst|bezüge|monat|zeitraum|periode/i;
+export const STARK =
   /abrechnungs(monat|zeitraum|periode)|lohnmonat|entgeltmonat|für\s+(den\s+)?monat|gehaltsabrechnung|lohnabrechnung|verdienstabrechnung|entgeltabrechnung|zeitraum/i;
 // Hier steht ein Monat, aber nicht der abgerechnete: Das Gehalt für August kommt im September.
-const NICHT_MONAT =
+export const NICHT_MONAT =
   /auszahl|überweis|ueberweis|zahlbar|fällig|wertstellung|erstellt|gedruckt|druckdatum|eintritt|austritt|geb\.|geboren|gültig|kündig|seit\b|stand\b|jahres|kumuliert/i;
 
 // Diese Monate sind auch Namen: „Jan Meier“, „Anna Mai“. Ohne jedes passende Wort zählen sie darum nicht
@@ -243,7 +279,8 @@ export function monatFinden(
       ...text.matchAll(/(?<![\d./-])(0?[1-9]|1[0-2])\s?[-/.]\s?(20\d\d)(?!\d)/g),
     ].map((m) => `${m[2]}-${zwei(Number(m[1]))}`);
     for (const m of text.matchAll(monatswort)) {
-      const monat = MONATE[m[1]!.toLowerCase()]!;
+      const monat = monatNummer(m[1]!);
+      if (!monat) continue;
       const jahr = jahrAus(m[2]);
       if (jahr) treffer.push(`${jahr}-${zwei(monat)}`);
       // Ohne Jahr nur neben einem passenden Wort sicher genug. Sonst merken, für ganz zuletzt.

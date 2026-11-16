@@ -4,6 +4,7 @@ import {
   datenFinden,
   datenZurAuswahl,
   monatFinden,
+  monatNummer,
   type TextStueck,
 } from './datumErkennen';
 
@@ -111,5 +112,89 @@ describe('Abrechnungsmonat finden', () => {
   it('rät nicht bei mehreren Monaten ohne Bezug', () => {
     const stuecke = [...zeile(0.1, 'März 2020'), ...zeile(0.2, 'April 2021')];
     expect(monatFinden(stuecke, HEUTE)).toBeNull();
+  });
+});
+
+// PC64, Punkt 5: Bei „August“ lag das „g“ teils außerhalb der Zeile, und der Monat wurde nicht erkannt.
+describe('Monat mit abgeschnittener Unterlänge (PC64, Punkt 5)', () => {
+  const MONATE_NAMEN = [
+    'Januar',
+    'Februar',
+    'März',
+    'April',
+    'Mai',
+    'Juni',
+    'Juli',
+    'August',
+    'September',
+    'Oktober',
+    'November',
+    'Dezember',
+  ];
+  const H = 0.015;
+  const B = 0.009;
+  /** „Gehaltsabrechnung {Monat} 2026“: Buchstaben mit Unterlänge als eigenes Stück, tiefer und kürzer. */
+  function zeileMitUnterlaenge(monat: string, ersatz?: string): TextStueck[] {
+    // Das erste Stück ist knapp gemessen (ohne Unterlänge, wie viele PDFs es liefern), die übrigen voll.
+    const stuecke: TextStueck[] = [
+      { text: 'Gehaltsabrechnung', x: 0.1, y: 0.1, breite: 17 * B, hoehe: 0.7 * H },
+    ];
+    let x = 0.1 + 18 * B;
+    let stueck = '';
+    const abschliessen = () => {
+      if (!stueck) return;
+      stuecke.push({
+        text: stueck,
+        x: x - stueck.length * B,
+        y: 0.1,
+        breite: stueck.length * B,
+        hoehe: H,
+      });
+      stueck = '';
+    };
+    for (const c of monat) {
+      if (/[gjpqyJ]/.test(c)) {
+        abschliessen();
+        // Abgeschnitten: Das Stück beginnt tiefer und ist kürzer. Seine Mitte liegt eine halbe Zeile unter
+        // der des ersten Stücks; nach der alten Regel fiel es aus der Zeile („Au ust“).
+        const text = ersatz === undefined ? c : ersatz;
+        if (text) stuecke.push({ text, x, y: 0.1 + 0.5 * H, breite: B, hoehe: 0.7 * H });
+        x += B;
+      } else {
+        stueck += c;
+        x += B;
+      }
+    }
+    abschliessen();
+    stuecke.push({ text: '2026', x: x + B, y: 0.1, breite: 4 * B, hoehe: H });
+    return stuecke;
+  }
+
+  it.each(MONATE_NAMEN.map((m, i) => [m, i + 1]))(
+    '%s: Buchstabe mit Unterlänge tiefer als die Zeile',
+    (monat, nummer) => {
+      const erwartet = `2026-${String(nummer).padStart(2, '0')}`;
+      expect(monatFinden(zeileMitUnterlaenge(monat as string), HEUTE)).toBe(erwartet);
+    },
+  );
+
+  it.each(['q', '9', ''])('verlesen oder ganz weg („%s“ statt g und p)', (ersatz) => {
+    for (const [monat, nummer] of [
+      ['August', '08'],
+      ['September', '09'],
+      ['April', '04'],
+    ])
+      expect(monatFinden(zeileMitUnterlaenge(monat!, ersatz), HEUTE)).toBe(`2026-${nummer}`);
+  });
+
+  it('Gegenprobe: Juni und Juli werden nicht verwechselt, auch mit abgeschnittenem J', () => {
+    expect(monatFinden(zeileMitUnterlaenge('Juni'), HEUTE)).toBe('2026-06');
+    expect(monatFinden(zeileMitUnterlaenge('Juli'), HEUTE)).toBe('2026-07');
+    expect(monatNummer('Juni')).toBe(6);
+    expect(monatNummer('Juli')).toBe(7);
+    expect(monatNummer('Ju i')).toBeUndefined();
+    // Kurze Formen und der Anfang bleiben fest: kein „Jan“ aus „an“, kein „Aug“ aus „Au“.
+    expect(monatNummer('an')).toBeUndefined();
+    expect(monatNummer('Au')).toBeUndefined();
   });
 });

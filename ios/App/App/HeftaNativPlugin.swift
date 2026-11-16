@@ -316,7 +316,7 @@ public class HeftaNativPlugin: CAPPlugin, CAPBridgedPlugin, UIDocumentPickerDele
             let betreff = call.getString("betreff") ?? ""
             var elemente: [Any] = []
             if let text = call.getString("text"), !text.isEmpty {
-                elemente.append(TeilenElement(text, betreff: betreff))
+                elemente.append(TeilenElement(text, betreff: betreff, html: call.getString("html")))
             }
             for eintrag in call.getArray("dateien") ?? [] {
                 if let uri = eintrag as? String, let url = URL(string: uri) {
@@ -355,10 +355,13 @@ extension HeftaNativPlugin: NotificationHandlerProtocol {
 final class TeilenElement: NSObject, UIActivityItemSource {
     private let wert: Any
     private let betreff: String
+    /// Derselbe Text als HTML, nur für Gmail (PC64 Punkt 2, W14).
+    private let html: String?
 
-    init(_ wert: Any, betreff: String) {
+    init(_ wert: Any, betreff: String, html: String? = nil) {
         self.wert = wert
         self.betreff = betreff
+        self.html = html
     }
 
     func activityViewControllerPlaceholderItem(_ controller: UIActivityViewController) -> Any { wert }
@@ -367,6 +370,11 @@ final class TeilenElement: NSObject, UIActivityItemSource {
                                 itemForActivityType typ: UIActivity.ActivityType?) -> Any? {
         // PC8 A7: In Gmail gingen die Absätze verloren. Text geht darum mit Zeilenumbrüchen als CRLF hinaus,
         // wie Mail sie kennt. Kein HTML: Läse eine App es als Text, stünde „<br>“ in der Bewerbung.
+        // PC64 Punkt 2: Gmail fasste die Umbrüche trotzdem zusammen; es liest den Text wie HTML. Nur Gmail
+        // bekommt darum die HTML-Fassung mit <br> (in der App gebaut und getestet: gmailHtml).
+        if let html = html, typ?.rawValue == "com.google.Gmail.ShareExtension" {
+            return html
+        }
         if let text = wert as? String {
             return text.replacingOccurrences(of: "\r\n", with: "\n")
                 .replacingOccurrences(of: "\n", with: "\r\n")

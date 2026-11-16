@@ -32,7 +32,7 @@ export async function pdfMit(seiten: string[], groesse = 12): Promise<Buffer> {
 }
 
 /** Gehaltsabrechnungen wie in den Mustermappen, neuester Monat zuerst. */
-export async function gehaltsPdfs(monate: string[]) {
+export async function gehaltsPdfs(monate: string[], name = 'Max Mustermann') {
   const liste = [];
   for (const monat of monate) {
     const doc = await PDFDocument.create();
@@ -41,7 +41,7 @@ export async function gehaltsPdfs(monate: string[]) {
     const s = doc.addPage([595, 842]);
     s.drawText('Musterwerk GmbH', { x: 60, y: 780, size: 14, font: fett });
     s.drawText(`Verdienstabrechnung ${monat} 2026`, { x: 60, y: 750, size: 14, font: fett });
-    s.drawText('Mitarbeiter: Max Mustermann', { x: 60, y: 720, size: 11, font: schrift });
+    s.drawText(`Mitarbeiter: ${name}`, { x: 60, y: 720, size: 11, font: schrift });
     liste.push({
       name: `Gehalt_${monat}_2026.pdf`,
       mimeType: 'application/pdf',

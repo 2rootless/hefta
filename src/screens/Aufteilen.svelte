@@ -28,6 +28,10 @@
   let { personId, typId }: { personId: string; typId: string } = $props();
 
   const basis = $derived(`/unterlage/${personId}/${typId}`);
+  /** Wessen Unterlage: Sein Name steht im Kopf jeder Seite wie mit Textmarker (PC64, Punkt 4). */
+  const person = $derived(
+    daten.ansicht?.mitglieder.find((m) => m.person.id === personId)?.person ?? null,
+  );
   const gruppe = $derived.by(() => {
     const a = daten.ansicht;
     const dok = a?.dokumente.find((d) => d.personId === personId && d.typ === typId);
@@ -135,6 +139,7 @@
       bind:werte
       monate={auswahl}
       {dokument}
+      {person}
       ansehen={(seite) => {
         grossIndex = seite;
         grossOffen = true;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import beispiele from '../../data/nachricht-faelle.de.json';
-import { ANGABEN, angabenWerte, erkennen, mailLink } from './nachricht';
+import { ANGABEN, angabenWerte, blankeUmbrueche, erkennen, gmailHtml, mailLink } from './nachricht';
 
 const text = (name: string) => beispiele.faelle.find((f) => f.name === name)!.text;
 
@@ -82,5 +82,33 @@ describe('Mail', () => {
       'mailto:a@example.com?subject=Wohnung%20%26%20mehr&body=Zeile%201%0D%0AZeile%202',
     );
     expect(mailLink(null, 'x', 'y')).toBe('mailto:?subject=x&body=y');
+  });
+});
+
+// W14 (PC64, Punkt 2): Absätze bleiben in der Mail aus Hefta erhalten, auch in Gmail.
+describe('wunsch-W14: Absätze in der Mail', () => {
+  const brief = 'Sehr geehrte Damen und Herren,\n\nich bewerbe mich.\nViele Grüße\n\nMax';
+
+  it('Mail-Link: jeder Umbruch als %0D%0A, Absätze als zwei', () => {
+    const l = mailLink(null, 'Bewerbung', brief);
+    expect(blankeUmbrueche(l)).toBe(0);
+    expect(l).toContain('Herren%2C%0D%0A%0D%0Aich');
+    expect(decodeURIComponent(l.split('&body=')[1]!)).toBe(brief.replace(/\n/g, '\r\n'));
+    // Auch was schon CRLF oder nur CR hat, wird nicht doppelt.
+    expect(blankeUmbrueche(mailLink(null, 'x', 'a\r\nb\rc'))).toBe(0);
+    expect(mailLink(null, 'x', 'a\r\nb')).toContain('a%0D%0Ab');
+  });
+
+  it('Gegenprobe: ein Link mit blankem %0A wird erkannt', () => {
+    const falsch = `mailto:?subject=x&body=${encodeURIComponent(brief)}`;
+    expect(blankeUmbrueche(falsch)).toBe(5);
+  });
+
+  it('Gmail: jeder Umbruch ein <br>, Zeichen maskiert', () => {
+    expect(gmailHtml(brief)).toBe(
+      'Sehr geehrte Damen und Herren,<br><br>ich bewerbe mich.<br>Viele Grüße<br><br>Max',
+    );
+    expect(gmailHtml('Miete <1.000 € & mehr>')).toBe('Miete &lt;1.000 € &amp; mehr&gt;');
+    expect(gmailHtml('a\r\nb')).toBe('a<br>b');
   });
 });

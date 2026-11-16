@@ -80,7 +80,7 @@ export function merken(o: {
     for (const i of pfad) z = z?.children[i];
     return (z as HTMLElement | undefined) ?? null;
   };
-  wartend = {
+  const flug: Flug = {
     nach: o.nach,
     heftId: o.heftId,
     ebene,
@@ -89,7 +89,16 @@ export function merken(o: {
     teile: o.teile.map(gegen).filter((x): x is HTMLElement => !!x),
     zeit: Date.now(),
   };
+  wartend = flug;
   document.body.append(ebene);
+  // Sicherung (P8, PC64 Punkt 1): Landet der Flug nie, etwa weil die Zielseite keine Karte für das Heft
+  // hat, verschwindet die Ebene nach der Verfallszeit trotzdem. Sie liegt fest über dem Bildschirm.
+  setTimeout(() => {
+    if (wartend === flug) {
+      ebeneWeg(flug);
+      wartend = null;
+    }
+  }, VERFALL_MS);
 }
 
 /** Wartet ein Flug für diese Seite? */
