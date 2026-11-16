@@ -34,10 +34,10 @@ test('Eingang: Reihenfolge der Ankunft, Stand ohne Wertung, keine Kinder und Bü
   await laden(page, await pdf(M1), await pdf(M2), await pdf(M3));
   await expect(page.locator('.vs-nr')).toHaveText(['1', '2', '3']);
   await expect(page.locator('.vs-cnt')).toHaveText('Drei Mappen');
-  await expect(page.locator('.vs-lw')).toHaveText('für Hauptstraße 12');
+  await expect(page.locator('.vs-lw')).toHaveText('für Beispielstraße 1');
   const eins = (await zeile(page, 1).innerText()).replaceAll('­', '');
   expect(eins).toContain('Max und Lea Mustermann');
-  expect(eins).toContain('Max und Lea im Vertrag · drei Personen');
+  expect(eins).toContain('Max und Lea im Vertrag, drei Personen');
   expect(eins).toContain('Selbstauskunft von allen dabei');
   expect(eins).not.toMatch(/Kind|bürgt|Petra/);
   await expect(zeile(page, 2)).toContainText('Olena allein im Vertrag');
@@ -99,7 +99,7 @@ test('Nicht nötig, datensparsam, ohne Selbstauskunft, mehrere Wohnungen', async
   await page.goto('/');
   await laden(page, await pdf(M2), await pdf(M4), await pdf(M6));
   await expect(page.locator('.vs-lw')).toHaveCount(0);
-  await expect(zeile(page, 3)).toContainText('für Lindenallee 3');
+  await expect(zeile(page, 3)).toContainText('für Lindenring 3');
   await expect(zeile(page, 3)).toContainText('Selbstauskunft nicht dabei');
   await expect(haupt(page).locator('.vs-gl').last()).toHaveText('Nicht nötig');
   await expect(haupt(page)).toContainText('für unzulässig');
@@ -195,7 +195,7 @@ test('Fassung der echten App: Die Mappe aus Hefta wird gelesen', async ({ page }
   await auswahl(page).setInputFiles('docs/screenshots/muster-MP1-standard.pdf');
   await expect(haupt(page)).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('.vs-rt')).toContainText('Max und Lea Mustermann');
-  await expect(haupt(page)).toContainText('Hauptstraße 12');
+  await expect(haupt(page)).toContainText('Beispielstraße 1');
 });
 
 // E60: Seit dem Start von Version 1 im Store gibt es Mappen bei Fremden. Diese Mappe hat der Code von
@@ -253,9 +253,9 @@ test('Für den Vertrag anfordern: Mail mit Zusage, Kopieren, Link mit Empfänger
   await page.goto('/');
   await laden(page, await pdf(M1), await pdf(M2));
   // Fassung 3 (E17): Telefon und Mail unter der Kontaktperson, als Links.
-  await expect(haupt(page).getByRole('link', { name: '0170 1234567' })).toHaveAttribute(
+  await expect(haupt(page).getByRole('link', { name: '0171 3920001' })).toHaveAttribute(
     'href',
-    'tel:01701234567',
+    'tel:01713920001',
   );
   await expect(
     haupt(page).getByRole('link', { name: 'max.mustermann@example.com' }),

@@ -19,7 +19,8 @@
     type MappenSchrift,
   } from '../domain/modell';
   import { t } from '../i18n';
-  import { AKZENTE, druckTon, PERSONENFARBEN } from '../pdf/mappe';
+  import { AKZENTE } from '../pdf/mappe';
+  import { personenfarbe } from '../domain/personenfarben';
   import type { PdfDokument } from '../pdf/pdfjs';
   import {
     bewerbungLaden,
@@ -217,6 +218,17 @@
     return { update: (neu: string) => element.style.setProperty('--ton', neu) };
   }
 
+  /** Zeichen der Person: hell im Druckton wie auf dem Papier, dunkel in `dunkel` (DP40). */
+  function personZeichen(element: HTMLElement, nummer: number) {
+    const setzen = (n: number) => {
+      const f = personenfarbe(n);
+      element.style.setProperty('--ton', f.druckton);
+      element.style.setProperty('--ton-dunkel', f.dunkel);
+    };
+    setzen(nummer);
+    return { update: setzen };
+  }
+
   async function speichern() {
     if (!daten.ansicht || !geladen) return;
     const sauber = name
@@ -408,10 +420,8 @@
                   farbeOffen = true;
                 }}
               >
-                <i
-                  class:umriss={s.rolle === 'buerge'}
-                  use:flaeche={druckTon(PERSONENFARBEN[(s.farbe - 1) % PERSONENFARBEN.length]!)}
-                ></i>{s.person.rufname || s.person.vorname}
+                <i class:umriss={s.rolle === 'buerge'} use:personZeichen={s.farbe}></i>{s.person
+                  .rufname || s.person.vorname}
               </button>
             {/each}
           </div>
@@ -719,6 +729,15 @@
   .reihe i.umriss {
     background: none;
     box-shadow: inset 0 0 0 2px var(--ton);
+  }
+
+  :global([data-theme='dark']) .reihe i {
+    background: var(--ton-dunkel);
+  }
+
+  :global([data-theme='dark']) .reihe i.umriss {
+    background: none;
+    box-shadow: inset 0 0 0 2px var(--ton-dunkel);
   }
 
   .etikett {

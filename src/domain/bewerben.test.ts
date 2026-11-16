@@ -36,15 +36,15 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
   });
 
   it('setzt die Präposition nach dem Straßennamen, im Zweifel keine', () => {
-    expect(inDerStrasse('Lindenallee 3')).toBe('in der Lindenallee 3');
-    expect(inDerStrasse('Eppendorfer Weg 211')).toBe('im Eppendorfer Weg 211');
-    expect(inDerStrasse('Methfesselstraße 12')).toBe('in der Methfesselstraße 12');
+    expect(inDerStrasse('Lindenring 3')).toBe('im Lindenring 3');
+    expect(inDerStrasse('Lindenring 8')).toBe('im Lindenring 8');
+    expect(inDerStrasse('Beispielstr. 1')).toBe('in der Beispielstr. 1');
     expect(inDerStrasse('Am Markt 4')).toBe('Am Markt 4');
     expect(inDerStrasse('Grindelhof 12a')).toBe('im Grindelhof 12a');
     expect(inDerStrasse('Lange Reihe 5')).toBe('');
-    expect(inDerStrasse('Große Bergstraße 2')).toBe('');
-    expect(inDerStrasse('Hoheluftchaussee 2')).toBe('in der Hoheluftchaussee 2');
-    expect(inDerStrasse('Jungfernstieg 1')).toBe('im Jungfernstieg 1');
+    expect(inDerStrasse('Große Beispielstraße 1')).toBe('');
+    expect(inDerStrasse('Beispielstraße 1')).toBe('in der Beispielstraße 1');
+    expect(inDerStrasse('Musterweg 7')).toBe('im Musterweg 7');
     expect(inDerStrasse('Planten un Blomen 1')).toBe('');
   });
 
@@ -53,13 +53,13 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
       anschreibenText({
         wir: false,
         anbieter: 'Frau Hansen',
-        strasse: 'Lindenallee 3',
+        strasse: 'Lindenring 3',
         einzug: '2027-01-01',
         heute: HEUTE,
       }),
     ).toEqual({
       anrede: 'Sehr geehrte Frau Hansen,',
-      text: 'ich möchte mich um die Wohnung in der Lindenallee 3 bewerben. Ich kann zum 1. Januar 2027 einziehen. Meine Mappe mit allen Unterlagen, die Sie verlangen, liegt bei.',
+      text: 'ich möchte mich um die Wohnung im Lindenring 3 bewerben. Ich kann zum 1. Januar 2027 einziehen. Meine Mappe mit allen Unterlagen, die Sie verlangen, liegt bei.',
     });
     const wir = anschreibenText({
       wir: true,
@@ -106,7 +106,7 @@ describe('Löschbitte und Nachfassen (B18)', () => {
   const auftrag = {
     wir: true,
     anbieter: 'Herr Kraus',
-    strasse: 'Bismarckstraße 56',
+    strasse: 'Beispielstraße 1',
     beworbenAm: '2026-10-15T09:00:00.000Z',
     namen: ['Max Mustermann', 'Lea Mustermann'],
     heute: HEUTE,
@@ -116,7 +116,7 @@ describe('Löschbitte und Nachfassen (B18)', () => {
     expect(loeschbitteText(auftrag)).toEqual({
       betreff: 'Bitte um Löschung unserer Unterlagen',
       text:
-        'Sehr geehrter Herr Kraus,\n\nwir haben uns am 15. Oktober um die Wohnung in der Bismarckstraße 56 beworben. ' +
+        'Sehr geehrter Herr Kraus,\n\nwir haben uns am 15. Oktober um die Wohnung in der Beispielstraße 1 beworben. ' +
         'Da wir sie nicht mehr suchen, bitten wir Sie, unsere Unterlagen zu löschen, auch Ausdrucke und Anhänge.' +
         '\n\nFreundliche Grüße\nMax Mustermann und Lea Mustermann',
     });
@@ -132,7 +132,7 @@ describe('Löschbitte und Nachfassen (B18)', () => {
     });
     expect(betreff).toBe('Bitte um Löschung meiner Unterlagen');
     expect(text).toBe(
-      'Sehr geehrte Damen und Herren,\n\nich habe mich um die Wohnung in der Bismarckstraße 56 beworben. ' +
+      'Sehr geehrte Damen und Herren,\n\nich habe mich um die Wohnung in der Beispielstraße 1 beworben. ' +
         'Da ich sie nicht mehr suche, bitte ich Sie, meine Unterlagen zu löschen, auch Ausdrucke und Anhänge.' +
         '\n\nFreundliche Grüße',
     );
@@ -140,9 +140,9 @@ describe('Löschbitte und Nachfassen (B18)', () => {
 
   it('Nachfassen beginnt nach der Anrede klein', () => {
     expect(nachfassText(auftrag)).toEqual({
-      betreff: 'Nachfrage zur Wohnung Bismarckstraße 56',
+      betreff: 'Nachfrage zur Wohnung Beispielstraße 1',
       text:
-        'Sehr geehrter Herr Kraus,\n\nam 15. Oktober haben wir uns um die Wohnung in der Bismarckstraße 56 beworben. ' +
+        'Sehr geehrter Herr Kraus,\n\nam 15. Oktober haben wir uns um die Wohnung in der Beispielstraße 1 beworben. ' +
         'Ist sie noch zu haben? Wir würden sie uns gern ansehen.\n\nFreundliche Grüße\nMax Mustermann und Lea Mustermann',
     });
     expect(nachfassText({ ...auftrag, wir: false, beworbenAm: null, strasse: '' }).text).toContain(

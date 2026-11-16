@@ -46,7 +46,10 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
 
   // R0: alle offenen Unterlagen, Person für Person.
   await expect(page.getByText(/^\S+ Stück, eine nach der anderen/)).toBeVisible();
-  await expect(page.getByRole('listitem')).toHaveText([/^Max \d+$/, /^Lea \d+$/, /^Petra \d+$/]);
+  // DP39, 4: je Person eine Zeile mit Rolle, Anzahl und Haarlinie.
+  await expect(page.locator('.pz-knopf')).toHaveCount(3);
+  for (const [i, name] of ['Max', 'Lea', 'Petra'].entries())
+    await expect(page.locator('.pz-knopf').nth(i)).toContainText(name);
   if (bilder) {
     await barrierefrei(page, 'Rutsch Start');
     await page.screenshot({ path: 'docs/screenshots/stilc-rutsch-start.png' });
@@ -57,6 +60,8 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await expect(page.getByText('Für Max')).toBeVisible();
   await expect(page.getByText(/^1 von \d+$/)).toBeVisible();
   await expect(page.getByRole('heading', { level: 1, name: /Selbst.?auskunft/ })).toBeVisible();
+  // DP39, 4: Die Selbstauskunft steht zuerst als Liste der Teile; „Ausfüllen“ öffnet den ersten.
+  await page.getByRole('button', { name: 'Ausfüllen' }).click();
   const weiterSA = page.getByRole('button', { name: 'Speichern und weiter' });
   await expect(weiterSA).toHaveAttribute('aria-disabled', 'true');
   await expect(page.getByText(/^Noch 5 Teile\./)).toBeVisible();
@@ -173,10 +178,12 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
       'Von Max: Drei Personen ziehen ein (zwei im Mietvertrag, ein Kind), eine Katze, Hamburg',
     ),
   ).toBeVisible();
+  await page.getByRole('button', { name: 'Ausfüllen' }).click();
   await expect(page.getByText(/^Noch 3 Teile\.$/)).toBeVisible();
   // Alles Restliche überspringen bis zum Ende.
   const ende = page.getByRole('heading', { level: 1, name: 'Gut gemacht.' });
-  const zaehler = page.getByText(/^\d+ von \d+$/);
+  // Der Gesamtstand oben rechts; „k von N“ steht seit DP39 auch in den Reihen am Ende.
+  const zaehler = page.locator('.fortschritt');
   while (!(await ende.isVisible())) {
     const vorher = await zaehler.innerText();
     await page.getByRole('button', { name: /^(Überspringen|Noch nicht da)$/ }).click();

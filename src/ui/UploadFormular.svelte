@@ -21,7 +21,7 @@
   import { eintragenText, ohneTrennstellen, type Dokumenttyp } from '../domain/regelkatalog';
   import { staendeAus } from './mappeDaten';
   import { versionTitel } from './versionInfo';
-  import { groesse, monatName, t, tagText } from '../i18n';
+  import { groesse, monatName, t, tagText, zahlwort } from '../i18n';
   import {
     PdfPasswortFehler,
     alsBilderPdf,
@@ -89,6 +89,8 @@
     aufbereitet: Uint8Array | null;
     alsBilder: boolean;
     miniaturen: string[];
+    /** W16: die erste Seite groß genug, dass ihr Kopf lesbar ist („Verdienstabrechnung Oktober 2026“). */
+    kopf: string | null;
   }
 
   const heute = new Date();
@@ -400,6 +402,20 @@
     ),
   );
 
+  /** DP39, 4: „Eine von fünf Seiten gewählt. Der Rest bleibt hier gespeichert …“ */
+  const auswahlSatz = $derived.by(() => {
+    if (!ausgewaehlt) return t('hochladen.seitenLeer');
+    if (ausgewaehlt === seitenGesamt)
+      return seitenGesamt === 2
+        ? t('hochladen.beideSeitenDrin')
+        : t('hochladen.alleSeitenDrin', { gesamt: zahlwort(seitenGesamt) });
+    const wahl = ausgewaehlt === 1 ? t('hochladen.eine') : zahlwort(ausgewaehlt);
+    return t('hochladen.vonSeitenGewaehlt', {
+      wahl: wahl.charAt(0).toUpperCase() + wahl.slice(1),
+      gesamt: zahlwort(seitenGesamt),
+    });
+  });
+
   function ansehen(schluessel: string) {
     ansichtIndex = Math.max(
       0,
@@ -571,6 +587,15 @@
       }
       if (url) d.miniaturen.push(url);
     }
+    // W16: Bei Serien wird zugeordnet; dafür der Kopf der ersten Seite in voller Breite lesbar.
+    if (serie && d.dokument && lauf === ladeLauf) {
+      const kopf = await miniatur(d.dokument, 1, 760).catch(() => null);
+      if (lauf !== ladeLauf) {
+        if (kopf) URL.revokeObjectURL(kopf);
+        return;
+      }
+      d.kopf = kopf;
+    }
   }
 
   async function dateienLaden(liste: FileList | File[] | null | undefined) {
@@ -601,6 +626,7 @@
         aufbereitet: null,
         alsBilder: false,
         miniaturen: [],
+        kopf: null,
       };
       try {
         eintrag.dokument = await pdfOeffnen(bytes);
@@ -791,6 +817,7 @@
     nachLaden = false;
     for (const d of dateien) {
       d.miniaturen.forEach((url) => URL.revokeObjectURL(url));
+      if (d.kopf) URL.revokeObjectURL(d.kopf);
       if (d.dokument) void pdfSchliessen(d.dokument);
     }
     dateien = [];
@@ -850,9 +877,8 @@
       onclick={() => umschalten(schluessel)}
     >
       <span class="ring"
-        >{#if !weggelassen.has(schluessel)}<Symbol name="haken" groesse={16} />{/if}</span
+        >{#if !weggelassen.has(schluessel)}<Symbol name="haken" groesse={12} />{/if}</span
       >
-      <span aria-hidden="true">{s + 1}</span>
     </button>
   </div>
 {/snippet}
@@ -893,18 +919,6 @@
 <div class="formular">
   <!-- Gesperrte PDFs zeigen erst nach dem Entsperren Seiten (D5). -->
   {#if seitenGesamt > 0}
-    {#if aufgeklappt || weggelassen.size}
-      <div class="auswahl-kopf">
-        <p role="status">
-          {ausgewaehlt
-            ? t('hochladen.vonSeiten', { anzahl: ausgewaehlt, gesamt: seitenGesamt })
-            : t('hochladen.seitenLeer')}
-        </p>
-        <button type="button" class="textlink" onclick={alleOderKeine}
-          >{weggelassen.size ? t('hochladen.alle') : t('hochladen.keine')}</button
-        >
-      </div>
-    {/if}
     <!-- Mehrere Dateien einer Serie: Seiten je Datei, unten bei der Monatswahl (RS3b). -->
     {#if !jeDatei || zuEntsperren}
       <div
@@ -932,9 +946,19 @@
           {@render weiteresPdf('seite plus-seite')}
         {/if}
       </div>
+      {#if aufgeklappt || weggelassen.size}
+        <!-- DP39, 4: „Eine von fünf Seiten gewählt …“ unter den Seiten. -->
+        <div class="auswahl-satz">
+          <p role="status">{auswahlSatz}</p>
+          <button type="button" class="textlink" onclick={alleOderKeine}
+            >{weggelassen.size ? t('hochladen.alle') : t('hochladen.keine')}</button
+          >
+        </div>
+      {:else if seitenGesamt > 1}
+        <p class="info">{t('hochladen.seitenHinweis')}</p>
+      {/if}
       {@render dateiZeile()}
       {#if schonDa(0)}<Notiz><p role="status">{schonDa(0)}</p></Notiz>{/if}
-      <p class="info">{t('hochladen.seitenHinweis')}</p>
     {/if}
     {#if aufgeklappt && seitenGesamt >= 10}
       <button
@@ -952,10 +976,12 @@
       <PruefKasten
         hinweis={entwurfHinweis}
         rufname={person.rufname || person.vorname}
+        dokument={dateien.length === 1 ? (dateien[0]?.dokument ?? null) : null}
+        ansehen={(n) => ansehen(`0:${n - 1}`)}
         ohneLoesung
         beimLoesen={entwurfHinweis.art === 'name' && entwurfHinweis.person
           ? {
-              text: t('pruef.nameHinzufuegen', { name: entwurfHinweis.person.rufname }),
+              text: t('pruef.nameKnopf', { name: entwurfHinweis.person.rufname }),
               onclick: () => {
                 zielPerson = entwurfHinweis!.person!.id;
                 void speichern();
@@ -1071,8 +1097,29 @@
                 <span class="dateiname">{d.name.replaceAll('_', '_\u200b')}</span>
                 <p class="hinweis">{t('hochladen.seitenEinerDatei')}</p>
               {:else}
-                <label>
+                <!-- W16 (DP39, 1.5): Name und Seiten in einer Zeile, der Kopf der ersten Seite lesbar, Lupe
+                     zum Vergrößern; darunter die Monatswahl. Nur Dateinamen reichen nicht. -->
+                <div class="w16-kopf">
                   <span class="dateiname">{d.name.replaceAll('_', '_\u200b')}</span>
+                  {#if d.dokument}<small
+                      >{t('unterlage.seitenZahl', { anzahl: d.dokument.numPages })}</small
+                    >{/if}
+                </div>
+                {#if d.kopf || d.miniaturen[0]}
+                  <button
+                    type="button"
+                    class="w16-vorschau"
+                    aria-label={t('zuordnen.vorschauGross', { name: d.name })}
+                    onclick={() => ansehen(`${i}:0`)}
+                  >
+                    <img src={d.kopf ?? d.miniaturen[0]} alt="" />
+                    <span class="w16-lupe" aria-hidden="true"
+                      ><Symbol name="lupe" groesse={16} /></span
+                    >
+                  </button>
+                {/if}
+                <label class="w16-monat">
+                  <span class="visually-hidden">{d.name}</span>
                   <select bind:value={dateiMonate[i]} aria-label={d.name} aria-invalid={doppelt}>
                     {#each [...new Set([dateiMonate[i]!, ...monatsListe])]
                       .sort()
@@ -1096,8 +1143,9 @@
                   bind:werte={() => dateiSeiten[i] ?? [], (neu) => (dateiSeiten[i] = neu)}
                   monate={monatsWahl}
                   ansehen={(seite) => ansehen(`${i}:${seite}`)}
+                  dokument={d.dokument}
                 />
-              {:else if d.miniaturen.length}
+              {:else if d.miniaturen.length > 1}
                 <div class="seiten je-datei" role="group" aria-label={t('hochladen.seitenGruppe')}>
                   {#each d.miniaturen as url, s (url)}
                     {@render zelle(i, s, url)}
@@ -1122,6 +1170,7 @@
           bind:werte={seitenMonate}
           monate={seitenAuswahl}
           ansehen={(seite) => ansehen(`0:${seite}`)}
+          dokument={dateien[0]?.dokument ?? null}
         />
       </div>
     {:else if serie}
@@ -1374,20 +1423,22 @@
     font-weight: 800;
   }
 
-  /* Immer dieselbe Ansicht: drei Spalten, darunter der Kreis zum An- und Abwählen. */
+  /* DP39, 4: Seiten in einer weißen Karte, bis zu vier in einer Reihe; der Kreis sitzt unten auf der Seite. */
   .seiten {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-3) var(--space-2);
-    padding: 4px;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 24px 12px;
+    padding: 16px 16px 24px;
+    border-radius: 20px;
+    background: var(--surface);
   }
 
-  /* Drei Seiten und „+9“ in einer Reihe. */
   .seiten.kurz {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .zelle {
+    position: relative;
     display: grid;
     min-width: 0;
   }
@@ -1407,18 +1458,19 @@
     overflow: hidden;
   }
 
+  /* Tippfläche 44 px, sichtbar ein Kreis von 24 px, halb über der Unterkante der Seite. */
   .kreis {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-height: var(--tap-target);
+    position: absolute;
+    bottom: -22px;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: var(--tap-target);
+    height: var(--tap-target);
     padding: 0;
     border: 0;
     background: none;
-    color: var(--ink);
-    font-size: calc(13 * var(--px));
-    font-weight: 700;
+    transform: translateX(-50%);
     cursor: pointer;
   }
 
@@ -1427,20 +1479,15 @@
     place-items: center;
     width: 24px;
     height: 24px;
-    border: 2px solid var(--ink);
+    border: 2px solid var(--surface);
     border-radius: 50%;
     background: var(--ink);
     color: var(--ground);
   }
 
   .kreis.weg .ring {
-    border-style: dashed;
-    border-color: var(--control-border);
-    background: none;
-  }
-
-  .kreis.weg {
-    color: var(--ink-muted);
+    border: 1.5px solid var(--control-border);
+    background: var(--surface);
   }
 
   .seite img {
@@ -1450,15 +1497,7 @@
   }
 
   .seite.weg img {
-    opacity: 0.25;
-  }
-
-  .seite.weg::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border: 2px dashed var(--control-border);
-    border-radius: var(--radius-sm);
+    opacity: 0.55;
   }
 
   .plus-seite {
@@ -1467,23 +1506,20 @@
     justify-content: center;
     align-items: center;
     gap: var(--space-2);
+    gap: 4px;
     align-self: start;
-    border: 2px dashed var(--ink);
-    background: none;
+    border: 0;
+    background: var(--track);
     box-shadow: none;
-    font-size: calc(14 * var(--px));
-    font-weight: 700;
+    font-size: calc(13 * var(--px));
+    font-weight: 600;
     color: var(--ink);
   }
 
   .plus-kreis {
     display: grid;
     place-items: center;
-    width: var(--plus-size);
-    height: var(--plus-size);
-    border-radius: 50%;
-    background: var(--ink);
-    color: var(--ground);
+    color: var(--ink);
   }
 
   .feld {
@@ -1542,18 +1578,20 @@
     margin-bottom: 0;
   }
 
-  .auswahl-kopf {
+  .auswahl-satz {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 12px;
+    padding: 0 4px;
   }
 
-  .auswahl-kopf p {
+  .auswahl-satz p {
+    flex: 1 1 14em;
     margin: 0;
-    font-size: calc(16 * var(--px));
-    line-height: calc(21 * var(--px));
-    font-weight: 800;
+    font-size: calc(14 * var(--px));
+    line-height: calc(19 * var(--px));
+    color: var(--ink-muted);
   }
 
   .zuordnung {
@@ -1570,7 +1608,65 @@
   }
 
   .zuordnung li {
-    padding-bottom: 6px;
+    padding: 12px 0 16px;
+  }
+
+  /* W16 (DP39, 1.5) */
+  .w16-kopf {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .w16-kopf .dateiname {
+    font-weight: 650;
+  }
+
+  .w16-kopf small {
+    flex: none;
+    font-size: calc(13 * var(--px));
+    color: var(--ink-muted);
+  }
+
+  .w16-vorschau {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 150px;
+    margin-top: 8px;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 0 0 1px var(--line);
+    cursor: zoom-in;
+  }
+
+  .w16-vorschau img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .w16-lupe {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    background: rgba(38, 34, 30, 0.75);
+    color: #fff;
+  }
+
+  .w16-monat select {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 8px;
   }
 
   /* Je Datei ihre Seiten unter dem Namen (RS3b), kleiner als im Raster. */
@@ -1642,7 +1738,14 @@
     align-items: center;
     justify-content: space-between;
     gap: 0 12px;
-    margin-bottom: calc(-1 * var(--space-3));
+    min-height: 60px;
+    padding: 8px 16px;
+    border-radius: 16px;
+    background: var(--surface);
+  }
+
+  .datei-zeile .info {
+    color: var(--ink);
   }
 
   .andere {

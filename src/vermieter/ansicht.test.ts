@@ -8,7 +8,7 @@ const M1: HeftaAnhang = {
   erstellt: '2026-11-02',
   bewerbung: {
     kennung: '6f1c2b9e-4d7a-4c1e-9b2f-3a5d8e7c1f40',
-    wohnung: { strasse: 'Hauptstraße 12', rest: '3. OG links · 22767 Hamburg' },
+    wohnung: { strasse: 'Beispielstraße 1', rest: '3. OG links · 12345 Musterstadt' },
   },
   haushalt: {
     personen: [

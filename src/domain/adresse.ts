@@ -36,7 +36,7 @@ export interface WohnungTeile {
 }
 
 /**
- * „Hauptstraße 12, 3. OG links / 22767 Hamburg“ → Straße, Nummer, Lage, Postleitzahl, Ort. Erste Angabe
+ * „Beispielstraße 1, 3. OG links / 12345 Musterstadt“ → Straße, Nummer, Lage, Postleitzahl, Ort. Erste Angabe
  * Straße mit Nummer, eine Angabe mit fünfstelliger Postleitzahl ist der Ort, alles andere die Lage.
  * Ohne erkennbare Hausnummer null: Dann gibt es nur das freie Feld.
  */

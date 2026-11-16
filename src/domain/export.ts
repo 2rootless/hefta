@@ -219,13 +219,13 @@ export function hinweise(staende: PersonStand[], e: ExportEinstellungen): Hinwei
   return liste;
 }
 
-/** Straße und Nummer für den Dateinamen: „Hauptstraße 12, 3. OG“ → „Hauptstr12“. */
+/** Straße und Nummer für den Dateinamen: „Beispielstraße 1, 3. OG“ → „Beispielstr1“. */
 export function strassenteil(adresse: string): string {
   const erste = adresse.split(/[,\n]/)[0] ?? '';
   return namensteil(erste.replace(/stra(ß|ss)e\b/gi, 'str').replace(/\s+/g, '')).replace(/-/g, '');
 }
 
-/** „Bewerbung_Mustermann_Hauptstr12.pdf“, bei zwei Nachnamen beide mit Bindestrich. */
+/** „Bewerbung_Mustermann_Beispielstr1.pdf“, bei zwei Nachnamen beide mit Bindestrich. */
 export function mappenDateiname(nachnamen: string[], adresse: string): string {
   const namen = [...new Set(nachnamen.map((n) => namensteil(n)).filter(Boolean))].join('-');
   return `${['Bewerbung', namen, strassenteil(adresse)].filter(Boolean).join('_')}.pdf`;

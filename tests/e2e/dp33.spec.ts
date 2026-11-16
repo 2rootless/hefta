@@ -48,7 +48,7 @@ test('Fehler 3: „Heft anlegen“ in der letzten Kontrolle deckt am Ende nichts
     .fill(
       [
         'Helle Wohnung am Park',
-        'Musterweg 12, 20359 Hamburg',
+        'Musterweg 7, 20359 Hamburg',
         'Kaltmiete 1.420 €',
         'Gesamtmiete 1.830 €',
         'Zimmer 2',

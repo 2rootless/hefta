@@ -144,9 +144,11 @@ describe('Datenbank', () => {
     await alt.put('bewerbungen', {
       ...basis,
       id: 'b1',
-      adresse: 'Hauptstraße 12, 3. OG links\n22767 Hamburg',
+      adresse: 'Beispielstraße 1, 3. OG links\n12345 Musterstadt',
       satz: 'Wir suchen ab Februar.',
-      kennungen: { [wohnungsSchluessel('Hauptstraße 12, 3. OG links\n22767 Hamburg')]: 'k-1' },
+      kennungen: {
+        [wohnungsSchluessel('Beispielstraße 1, 3. OG links\n12345 Musterstadt')]: 'k-1',
+      },
     });
     await alt.put('bewerbungen', { ...basis, id: 'b2', adresse: '  ' });
     alt.close();
@@ -157,7 +159,7 @@ describe('Datenbank', () => {
     expect(hefte).toHaveLength(1);
     expect(hefte[0]).toMatchObject({
       haushaltId: 'h1',
-      adresse: 'Hauptstraße 12, 3. OG links\n22767 Hamburg',
+      adresse: 'Beispielstraße 1, 3. OG links\n12345 Musterstadt',
       kennung: 'k-1',
       quelle: 'Kleinanzeigen',
       inseratText: 'Schöne Wohnung',
@@ -174,7 +176,7 @@ describe('Datenbank', () => {
   it('Hefta 2 ordnet Hefte aus Version 1 einmal ein, nur ohne eigene Ereignisse', async () => {
     const db = await neueDb();
     const zeit = '2026-10-01T10:00:00.000Z';
-    const adresse = 'Lindenallee 17\n20259 Hamburg';
+    const adresse = 'Lindenring 8\n20259 Hamburg';
     await db.put('bewerbungen', {
       ...(await bewerbungAnlegen(db, 'h1')),
       adresse,
@@ -221,14 +223,14 @@ describe('Datenbank', () => {
     const daten = datenMigrieren(
       {
         bewerbungen: [
-          { id: 'b1', haushaltId: 'h1', adresse: 'Elbchaussee 1', createdAt: '', updatedAt: '' },
+          { id: 'b1', haushaltId: 'h1', adresse: 'Lindenring 3', createdAt: '', updatedAt: '' },
           { id: 'b2', haushaltId: 'h1', adresse: '', createdAt: '', updatedAt: '' },
         ],
       },
       1,
     );
     expect(daten.hefte).toHaveLength(1);
-    expect(daten.hefte![0]).toMatchObject({ adresse: 'Elbchaussee 1', haushaltId: 'h1' });
+    expect(daten.hefte![0]).toMatchObject({ adresse: 'Lindenring 3', haushaltId: 'h1' });
     expect(daten.bewerbungen).toHaveLength(2);
   });
 
@@ -239,7 +241,7 @@ describe('Datenbank', () => {
       createdAt: '',
       updatedAt: '',
       haushaltId: null,
-      adresse: 'Lindenallee 3',
+      adresse: 'Lindenring 3',
       link: null,
       quelle: '',
       inseratText: null,
@@ -608,17 +610,17 @@ describe('Kennung der Bewerbung (E6)', () => {
     const a = await bewerbungsKennung(
       db,
       haushalt.id,
-      'Hauptstraße 12, 3. OG links\n22767 Hamburg',
+      'Beispielstraße 1, 3. OG links\n12345 Musterstadt',
     );
     expect(a).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(
-      await bewerbungsKennung(db, haushalt.id, 'Hauptstr. 12, 3. OG links\n22767 Hamburg'),
+      await bewerbungsKennung(db, haushalt.id, 'Beispielstr. 1, 3. OG links\n12345 Musterstadt'),
     ).toBe(a);
     const b = await bewerbungsKennung(db, haushalt.id, 'Am Wall 140\n28195 Bremen');
     expect(b).not.toBe(a);
     // Zurück zur ersten Wohnung: wieder ihre Kennung.
     expect(
-      await bewerbungsKennung(db, haushalt.id, 'Hauptstraße 12, 3. OG links\n22767 Hamburg'),
+      await bewerbungsKennung(db, haushalt.id, 'Beispielstraße 1, 3. OG links\n12345 Musterstadt'),
     ).toBe(a);
     const bewerbung = await bewerbungLaden(db, haushalt.id);
     expect(Object.values(bewerbung!.kennungen!)).toEqual([a, b]);
@@ -823,18 +825,18 @@ describe('Bewerbungen (Version 2)', () => {
   it('mehrere je Haushalt, mit Stand, Miete und Anschreiben; die aktuelle bleibt die zuletzt geänderte', async () => {
     const db = await neueDb();
     const haushalt = await haushaltDesAuftraggebers(db);
-    const erste = await bewerbungSpeichern(db, haushalt.id, { adresse: 'Hauptstraße 12' });
+    const erste = await bewerbungSpeichern(db, haushalt.id, { adresse: 'Beispielstraße 1' });
     // Zeitstempel in Millisekunden: zwei Schritte im selben Moment wären gleich alt.
     const warten = () => new Promise((ok) => setTimeout(ok, 5));
     await warten();
     const zweite = await bewerbungAnlegen(db, haushalt.id, {
-      adresse: 'Elbchaussee 1',
+      adresse: 'Lindenring 3',
       miete: { kalt: 1200, warm: 1450 },
       status: 'entwurf',
     });
     expect((await bewerbungenLaden(db, haushalt.id)).map((b) => b.adresse)).toEqual([
-      'Elbchaussee 1',
-      'Hauptstraße 12',
+      'Lindenring 3',
+      'Beispielstraße 1',
     ]);
     await warten();
     await bewerbungAendern(db, erste.id, {

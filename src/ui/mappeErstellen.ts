@@ -87,7 +87,7 @@ function mappenPerson(s: PersonStand): MappenPerson {
   };
 }
 
-/** „Hauptstraße 12“ aus „Hauptstraße 12, 3. OG links“, für Fußzeile und Titel. */
+/** „Beispielstraße 1“ aus „Beispielstraße 1, 3. OG links“, für Fußzeile und Titel. */
 export function wohnungKurz(adresse: string): string {
   return (adresse.split(/\n/)[0] ?? '').split(',')[0]!.trim();
 }

@@ -329,7 +329,7 @@
       await pdfSchliessen(dokument);
     }
 
-    const dateiname = 'Bewerbung_Mustermann_Hauptstr12.pdf';
+    const dateiname = 'Bewerbung_Mustermann_Beispielstr1.pdf';
     const fussName = 'Max und Lea Mustermann';
     const tBau = performance.now();
     const mappe = await mappeBauen({
@@ -337,7 +337,7 @@
       fussName,
       deckblatt: {
         kopf: 'Bewerbung um die Wohnung',
-        titel: ['Hauptstraße 12, 3. OG links', '22767 Hamburg'],
+        titel: ['Beispielstraße 1, 3. OG links', '12345 Musterstadt'],
         satz: 'Wir sind ein ruhiges Paar mit einem Kind und suchen ab Januar 2027 eine Wohnung für die nächsten Jahre.',
       },
       teile,
@@ -365,7 +365,7 @@
     melden(
       'schrift',
       'Archivo im PDF, Umlaute und ß',
-      deckblattText.includes('Hauptstraße') && deckblattText.includes('für'),
+      deckblattText.includes('Beispielstraße') && deckblattText.includes('für'),
       deckblattText.slice(0, 60),
     );
     await pdfSchliessen(ergebnis);
@@ -374,7 +374,7 @@
     const neutral =
       geladen.getProducer() === undefined &&
       geladen.getCreator() === undefined &&
-      geladen.getTitle() === 'Bewerbung_Mustermann_Hauptstr12';
+      geladen.getTitle() === 'Bewerbung_Mustermann_Beispielstr1';
     melden(
       'metadaten',
       'PDF-Metadaten neutral',

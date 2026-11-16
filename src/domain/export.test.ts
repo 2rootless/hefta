@@ -257,10 +257,10 @@ describe('Hinweise', () => {
 
 describe('Dateinamen (06-export.md)', () => {
   it('Mappe mit Nachname und Straße, „straße“ → „str“', () => {
-    expect(mappenDateiname(['Mustermann', 'Mustermann'], 'Hauptstraße 12, 3. OG links')).toBe(
-      'Bewerbung_Mustermann_Hauptstr12.pdf',
+    expect(mappenDateiname(['Mustermann', 'Mustermann'], 'Beispielstraße 1, 3. OG links')).toBe(
+      'Bewerbung_Mustermann_Beispielstr1.pdf',
     );
-    expect(strassenteil('Große Bergstraße 7a')).toBe('GrosseBergstr7a');
+    expect(strassenteil('Große Beispielstraße 1a')).toBe('GrosseBeispielstr1a');
   });
 
   it('ohne Wohnung, zwei Nachnamen, Umlaute', () => {

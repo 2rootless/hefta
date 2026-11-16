@@ -100,8 +100,8 @@ async function beispielAuftrag(aussehen: MappenAussehen): Promise<BewerbungAuftr
   return {
     titel: 'Beispiel',
     fussName: 'Max und Lea Mustermann',
-    kurz: 'Hauptstraße 12',
-    adresse: ['Hauptstraße 12, 3. OG links', '22767 Hamburg'],
+    kurz: 'Beispielstraße 1',
+    adresse: ['Beispielstraße 1, 3. OG links', '12345 Musterstadt'],
     satz: '',
     mitziehende: [],
     kontakt: [],

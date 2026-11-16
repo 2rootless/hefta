@@ -1,6 +1,7 @@
 <script lang="ts">
   import { t } from '../i18n';
   import Symbol from './Symbol.svelte';
+  import { tonStil } from './personTon';
 
   // Farbe bei der Person (design/person-und-haushalt.md, § 3, PF1, PF1b). Hat jemand anderes die Farbe,
   // tauscht ihr: Sie oder er bekommt die bisherige (Rückmeldung vom 4.11., sperren war nur nervig).
@@ -9,6 +10,7 @@
     ursprung,
     vergeben,
     beimWaehlen,
+    vorschau,
   }: {
     farbe: number;
     /** Die Farbe, mit der die Person gerade gespeichert ist. */
@@ -17,6 +19,8 @@
     vergeben: { farbe: number; name: string }[];
     /** Sofort wirksam statt erst mit „Speichern“. */
     beimWaehlen?: (farbe: number) => void;
+    /** DP39, 6: So steht die Person in der Mappe, mit dem Druckton der gewählten Farbe (Bürgen mit Umriss). */
+    vorschau?: { name: string; buerge: boolean };
   } = $props();
 
   // B14: zwölf Farben, nach Nummer.
@@ -43,7 +47,7 @@
 </script>
 
 <div class="wahl">
-  <span class="marke" id="{id}-marke">{t('personSeite.farbe')} <b>· {farbName(farbe)}</b></span>
+  <span class="marke" id="{id}-marke"><b>{t('personSeite.farbe')}</b> {farbName(farbe)}</span>
   <div class="farben" role="radiogroup" aria-labelledby="{id}-marke">
     {#each FARBEN as f (f)}
       {@const name = inhaber(f)}
@@ -66,26 +70,64 @@
     {/each}
   </div>
   <p class="meldung" role="status">{meldung}</p>
+  {#if vorschau}
+    <p class="vorschau person-ton" style={tonStil(farbe)}>
+      {t('personAendern.inDerMappe')}
+      <i class="zeichen" class:umriss={vorschau.buerge} aria-hidden="true"></i>
+      <span class="voll">{vorschau.name}</span>
+    </p>
+  {/if}
   <p class="hinweis">
     {mitBuchstabe ? t('personSeite.farbeHinweisBuchstabe') : t('personSeite.farbeHinweis')}
   </p>
 </div>
 
 <style>
+  .vorschau {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    margin: 8px 0 0;
+    font-size: calc(13 * var(--px));
+    line-height: calc(18 * var(--px));
+    color: var(--ink-muted);
+  }
+
+  .vorschau .voll {
+    color: var(--ink);
+  }
+
+  /* In der Mappe steht der Druckton (dunkel die App-Farbe), Bürgen mit Umriss (DP39, 1.1). */
+  .zeichen {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--p-linie);
+  }
+
+  .zeichen.umriss {
+    background: none;
+    box-shadow: inset 0 0 0 2px var(--p-linie);
+  }
+
   .wahl {
     container-type: inline-size;
   }
 
+  /* DP39, 6: „Farbe“ fett, der Name der Farbe grau dahinter. */
   .marke {
     display: block;
     font-size: calc(14 * var(--px));
     line-height: calc(19 * var(--px));
-    font-weight: 700;
+    font-weight: 500;
+    color: var(--ink-muted);
   }
 
   .marke b {
-    font-weight: 500;
-    color: var(--ink-muted);
+    font-weight: 700;
+    color: var(--ink);
   }
 
   .farben {

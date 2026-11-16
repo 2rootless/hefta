@@ -100,7 +100,7 @@ const MUSTERHEFT = {
   createdAt: '2026-11-10T12:00:00.000Z',
   updatedAt: '2026-11-10T12:00:00.000Z',
   haushaltId: null,
-  adresse: 'Lindenallee 3\n20259 Hamburg',
+  adresse: 'Lindenring 3\n20259 Hamburg',
   link: 'https://www.example.org/wohnung/3',
   quelle: '',
   inseratText: null,
@@ -157,11 +157,11 @@ for (const wie of ['Wischgeste', 'Knopf Zurück'] as const)
     await page.reload();
     // Die Überschrift der Liste ist die Begrüßung („Guten Morgen, Max“).
     const titel = page.locator('main h1').first();
-    await expect(titel).toHaveText(/^Guten/);
+    await expect(titel).toHaveText(/^(Guten|Hallo)/);
     const name = (await titel.textContent())!.trim();
     await page.locator('main a[href="#/heft/linden"]').first().click();
     await expect(
-      page.getByRole('heading', { level: 1, name: /Lindenallee 3|Altbau/ }),
+      page.getByRole('heading', { level: 1, name: /Lindenring 3|Altbau/ }),
     ).toBeVisible();
     await page.waitForTimeout(500);
     await bilderAn(page);
@@ -186,7 +186,7 @@ test('PC31 (A1), Gegenprobe: Vorwärts über den Reiter blendet „Wohnungen“ 
   await expect(page.getByRole('heading', { level: 1, name: 'Deine Mappe' })).toBeVisible();
   await bilderAn(page);
   await reiter(page, 'Wohnungen').click();
-  await expect(page.locator('main h1').first()).toHaveText(/^Guten/);
+  await expect(page.locator('main h1').first()).toHaveText(/^(Guten|Hallo)/);
   const bilder = await bilderAus(page);
-  expect(bilder.some((b) => b.h1.startsWith('Guten') && b.o < 1)).toBe(true);
+  expect(bilder.some((b) => /^(Guten|Hallo)/.test(b.h1) && b.o < 1)).toBe(true);
 });

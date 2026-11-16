@@ -324,7 +324,7 @@ function katalogHefte(): object[] {
   return [
     heft(
       'kh-beworben',
-      'Lindenallee 3, EG\n20259 Hamburg',
+      'Lindenring 3, EG\n20259 Hamburg',
       {
         beworben: { am: tag(-5), weg: 'mail', sicher: true },
       },
@@ -332,7 +332,7 @@ function katalogHefte(): object[] {
     ),
     heft(
       'kh-keine',
-      'Bismarckstraße 56\n20259 Hamburg',
+      'Beispielstraße 1\n20259 Hamburg',
       {
         beworben: { am: tag(-25), weg: 'mail', sicher: true },
         nachgefasstAm: tag(-2),
@@ -350,7 +350,7 @@ function katalogHefte(): object[] {
       },
       { spur: [{ ...mappe, weg: 'portal', an: 'ImmoScout24', ueber: 'WhatsApp' }] },
     ),
-    heft('kh-termin', 'Grindelallee 140\n20146 Hamburg', {
+    heft('kh-termin', 'Lindenring 8\n20146 Hamburg', {
       beworben: { am: tag(-8), weg: 'mail', sicher: true },
       termin: { am: tag(2, 18), ort: '', treffpunkt: 'Vor dem Haus' },
     }),
@@ -379,7 +379,7 @@ const IS24 = {
   url: 'https://www.immobilienscout24.de/expose/100000001',
   text: [
     'Besonders Wohnen direkt an den Landungsbrücken!',
-    'Musterweg 12, 20359 Hamburg',
+    'Musterweg 7, 20359 Hamburg',
     'Kaltmiete 1.420 €',
     'Nebenkosten 290 €',
     'Heizkosten 120 €',
@@ -647,7 +647,11 @@ const BILDER: Bild[] = [
     gruppe: 'R',
     szenario: '02-neustart',
     pfad: '/rutsch',
-    vorher: los,
+    // DP39, 4: Die Teile stehen zuerst als Liste; „Ausfüllen“ öffnet den ersten.
+    vorher: async (page) => {
+      await los(page);
+      await page.getByRole('button', { name: 'Ausfüllen' }).click();
+    },
     tastatur: true,
   },
   { id: 'A2-rutsch-lea', gruppe: 'R', szenario: '16-auskunft-lea', pfad: '/rutsch', vorher: los },
@@ -675,7 +679,7 @@ const BILDER: Bild[] = [
     vorher: async (page) => {
       await los(page);
       const titel = page.getByRole('heading', { level: 1 });
-      const zaehler = page.getByText(/^\d+ von \d+$/);
+      const zaehler = page.locator('.fortschritt');
       while (!/BAföG/.test(await titel.innerText())) {
         const vorher = await zaehler.innerText();
         await page.getByRole('button', { name: /^(Überspringen|Noch nicht da)$/ }).click();
@@ -710,9 +714,9 @@ const BILDER: Bild[] = [
       await los(page);
       const ende = page.getByRole('heading', {
         level: 1,
-        name: /Gut gemacht\.|Dann eben später\./,
+        name: /Gut gemacht\.|Für heute fertig\./,
       });
-      const zaehler = page.getByText(/^\d+ von \d+$/);
+      const zaehler = page.locator('.fortschritt');
       while (!(await ende.isVisible())) {
         const vorher = await zaehler.innerText();
         await page.getByRole('button', { name: /^(Überspringen|Noch nicht da)$/ }).click();
@@ -781,7 +785,7 @@ const BILDER: Bild[] = [
     szenario: '04-fertig',
     pfad: '/mappe',
     vorher: async (page) => {
-      await wohnungEintragen(page, 'Hauptstraße 12, 3. OG links\n22767 Hamburg');
+      await wohnungEintragen(page, 'Beispielstraße 1, 3. OG links\n12345 Musterstadt');
       await satzEintragen(
         page,
         'Wir sind ein ruhiges Paar mit einem Kind und suchen ab Januar 2027 eine Wohnung für die nächsten Jahre. Alle Unterlagen liegen bei.',
@@ -795,7 +799,7 @@ const BILDER: Bild[] = [
     szenario: '11-allein',
     pfad: '/mappe',
     vorher: async (page) => {
-      await wohnungEintragen(page, 'Hauptstraße 12, 3. OG links\n22767 Hamburg');
+      await wohnungEintragen(page, 'Beispielstraße 1, 3. OG links\n12345 Musterstadt');
       await vorschau(page);
     },
   },
@@ -807,7 +811,7 @@ const BILDER: Bild[] = [
     vorher: async (page) => {
       await wohnungEintragen(
         page,
-        'Große Bergstraße 152, Hinterhaus, 4. OG rechts\n22767 Hamburg-Altona',
+        'Große Beispielstraße 1, Hinterhaus, 4. OG rechts\n12345 Musterstadt-Nord',
       );
       await vorschau(page);
     },
@@ -1414,7 +1418,7 @@ const BILDER: Bild[] = [
       await page.getByRole('button', { name: 'Seiten auswählen' }).click();
       for (const n of [1, 2, 5])
         await page.getByRole('checkbox', { name: `Seite ${n} kommt in die Mappe` }).click();
-      await page.getByText('3 von 12 Seiten kommen in die Mappe').waitFor();
+      await page.getByText('Drei von zwölf Seiten gewählt').waitFor();
     },
   },
   {
@@ -1671,13 +1675,13 @@ const BILDER: Bild[] = [
     },
   },
   {
-    id: 'OR7c-bearbeiten',
+    // DP39 strich „Bearbeiten“: Ohne Wischen löscht ein Knopf, der beim Fokus erscheint (OR7c).
+    id: 'OR7c-tastatur',
     gruppe: 'P',
     szenario: '25-unterlage-seiten',
     pfad: '/unterlage/p-25-unterlage-seiten-0/bonitaet',
     vorher: async (page) => {
-      await page.getByRole('button', { name: 'Bearbeiten' }).click();
-      await page.getByRole('button', { name: 'Fertig' }).waitFor();
+      await page.getByRole('button', { name: /Version vom 12\.\sJuli löschen/ }).focus();
     },
   },
   {
@@ -1872,11 +1876,17 @@ const BILDER: Bild[] = [
     pfad: '/rutsch',
     vorher: async (page) => {
       await los(page);
-      await page.locator('button[aria-label^="Schritt 2 von"]').click();
+      // DP39: Schritt 2 über die Haarlinie, zurück über den Reiter und wieder die Haarlinie.
+      const linie = page.locator('.register-rahmen .haarlinie');
+      await linie.getByRole('button').nth(1).click();
       await page.locator('[data-feld="pdf"]').setInputFiles(pdfPfad);
       await page.getByRole('button', { name: 'Speichern und weiter' }).click();
-      await page.getByText(/^3 von \d+$/).waitFor();
-      await page.getByRole('button', { name: 'Zurück', exact: true }).click();
+      await page.locator('.fortschritt', { hasText: /^3 von/ }).waitFor();
+      await page
+        .getByRole('navigation', { name: 'Zwischen den Schritten wechseln' })
+        .getByRole('button', { name: /^Max / })
+        .click();
+      await linie.getByRole('button').nth(1).click();
       await page.getByText(/^Ist schon da/).waitFor();
     },
   },

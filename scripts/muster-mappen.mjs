@@ -77,7 +77,7 @@ async function mappenBauen(page) {
         if (m.zugehoerigkeit.farbe !== VERGABE[i])
           await sp.farbeSetzen(db, m.zugehoerigkeit.id, VERGABE[i]);
         // PC9: Die Muster-Mappen sind öffentlich. Telefonnummern nur aus dem Block, den die
-        // Bundesnetzagentur für Medienproduktionen freihält („Drama Numbers“: 0171 39200 00 bis 99).
+        // Bundesnetzagentur für Medienproduktionen freihält („Drama Numbers“: 0171 3920000 bis 0171 3920099).
         if (m.person.kontakt?.telefon?.trim())
           await sp.personAendern(db, m.person.id, {
             kontakt: {
@@ -252,10 +252,10 @@ async function fremdeMappe(page) {
     s.drawImage(bild, { x: 0, y: 0, width: groesse[0], height: groesse[1] });
   };
 
-  textSeite('Bewerbung um die Wohnung Hauptstraße 12', [
+  textSeite('Bewerbung um die Wohnung Beispielstraße 1', [
     'Sehr geehrte Damen und Herren,',
     '',
-    'wir bewerben uns um die Wohnung in der Hauptstraße 12, 3. OG links.',
+    'wir bewerben uns um die Wohnung in der Beispielstraße 1, 3. OG links.',
     'Wir sind Jonas Becker (Mechatroniker) und Sara Klein (Physiotherapeutin)',
     'und suchen eine Wohnung näher an unseren Arbeitsstellen.',
     '',

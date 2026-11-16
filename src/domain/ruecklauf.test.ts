@@ -84,16 +84,16 @@ describe('Serie: welcher Monat dran ist', () => {
 
 describe('Format von Kontaktdaten: nur ein Hinweis', () => {
   it('E-Mail', () => {
-    for (const gut of ['max@beispiel.de', ' lea.m+test@sub.beispiel.org ']) {
+    for (const gut of ['max@example.com', ' lea.m+test@sub.example.org ']) {
       expect(emailSiehtGutAus(gut)).toBe(true);
     }
-    for (const schlecht of ['max', 'max@', 'max@beispiel', '@beispiel.de', 'ma x@beispiel.de']) {
+    for (const schlecht of ['max', 'max@', 'max@beispiel', '@beispiel.de', 'ma x@example.com']) {
       expect(emailSiehtGutAus(schlecht)).toBe(false);
     }
   });
 
   it('Telefon', () => {
-    for (const gut of ['040 123456', '+49 (0)40 / 123-456', '0171.1234567']) {
+    for (const gut of ['0171 3920007', '+49 (0)40 / 123-456', '0171.1234567']) {
       expect(telefonSiehtGutAus(gut)).toBe(true);
     }
     for (const schlecht of ['abc', '12345', '040 12x456', '1234567890123456']) {
@@ -179,10 +179,10 @@ describe('Abrechnungsmonat finden', () => {
   it('ein Monat allein: nicht bei Namen, Tagen, zwei Monaten oder neben „Auszahlung“', () => {
     expect(monatFinden(seite('Herr Jan Meier'), HEUTE)).toBeNull();
     expect(monatFinden(seite('JAN MEIER'), HEUTE)).toBeNull();
-    expect(monatFinden(seite('Anna Mai, Musterweg 3'), HEUTE)).toBeNull();
+    expect(monatFinden(seite('Anna Mai, Musterweg 7'), HEUTE)).toBeNull();
     expect(monatFinden(seite('August Müller'), HEUTE)).toBeNull();
     expect(monatFinden(seite('Haug 26'), HEUTE)).toBeNull();
-    expect(monatFinden(seite('Martin Maier, Musterstraße 12'), HEUTE)).toBeNull();
+    expect(monatFinden(seite('Martin Maier, Beispielstraße 1'), HEUTE)).toBeNull();
     expect(monatFinden(seite('Hamburg, den 3. September'), HEUTE)).toBeNull();
     expect(monatFinden(seite('Aug', 'Sep'), HEUTE)).toBeNull();
     expect(monatFinden(seite('Auszahlung Aug'), HEUTE)).toBeNull();
@@ -239,7 +239,7 @@ describe('Abrechnungsmonat finden', () => {
     expect(
       monatFinden(seite('Der August 2026 war schön', 'Der September 2026 auch'), HEUTE),
     ).toBeNull();
-    expect(monatFinden(seite('Martin Maier, Musterstraße 12'), HEUTE)).toBeNull();
+    expect(monatFinden(seite('Martin Maier, Beispielstraße 1'), HEUTE)).toBeNull();
   });
 });
 

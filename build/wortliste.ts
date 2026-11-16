@@ -215,7 +215,7 @@ export function wortliste(): string {
   z.push(
     'Unten auf jeder Seite (F), links Wohnung und Namen der Vertragsparteien, rechts die Seitenzahl:',
     '',
-    '- „Bewerbung Hauptstraße 12, Max und Lea Mustermann“: Straße und Nummer aus der ersten Zeile der Adresse bis zum ersten Komma; ohne Adresse „Bewerbung, Max und Lea Mustermann“',
+    '- „Bewerbung Beispielstraße 1, Max und Lea Mustermann“: Straße und Nummer aus der ersten Zeile der Adresse bis zum ersten Komma; ohne Adresse „Bewerbung, Max und Lea Mustermann“',
     '- „Seite 3 von 16“',
     '',
   );

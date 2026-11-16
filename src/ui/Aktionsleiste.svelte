@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { rueck } from '../app/rueckgaengig.svelte';
+  import { einzeilig } from './einzeilig';
   import RueckgaengigZeile from './RueckgaengigZeile.svelte';
   // Hauptaktion unten, fixiert (design/stil-c.md, „Hauptaktion unten“), mit kleinem Zusatz wie „3 offen“.
   // Deckender Hintergrund mit Verlauf auf den ersten 26 px (mappe-erstellen-einstellungen.md, Abschnitt 7; C13).
@@ -18,6 +19,7 @@
     einblenden = false,
     nebenGeist,
     statt,
+    leise = false,
   }: {
     text: string;
     zusatz?: string;
@@ -42,6 +44,8 @@
     nebenGeist?: string;
     /** B21, Mappe entsteht: statt des Knopfs ein ruhiger Kasten, solange Hefta baut. */
     statt?: import('svelte').Snippet;
+    /** DP39: Ist alles da, wird der Knopf leise (weiche Fläche, Tinte), etwa „Unterlage hinzufügen“. */
+    leise?: boolean;
   } = $props();
   const grundId = $props.id();
 
@@ -135,11 +139,14 @@
 {#snippet inhalt()}
   {#if ansage}
     <span class="visually-hidden">{ansage}</span>
-    <span aria-hidden="true">{text}</span>{#if zusatz}<small class:neu={zahlNeu} aria-hidden="true"
-        >{zusatz}</small
+    <span class="beschriftung" aria-hidden="true" use:einzeilig>{text}</span>{#if zusatz}<small
+        class:neu={zahlNeu}
+        aria-hidden="true">{zusatz}</small
       >{/if}
   {:else}
-    {text}{#if zusatz}<small class:neu={zahlNeu}>{zusatz}</small>{/if}
+    <span class="beschriftung" use:einzeilig>{text}</span>{#if zusatz}<small class:neu={zahlNeu}
+        >{zusatz}</small
+      >{/if}
   {/if}
 {/snippet}
 
@@ -151,6 +158,7 @@
     {:else if href && !grund}
       <a
         class="haupt"
+        class:leise
         class:einblenden-neu={einblenden}
         {href}
         onclick={(e) => {
@@ -165,6 +173,7 @@
       <button
         type="button"
         class="haupt"
+        class:leise
         class:deaktiviert={!!grund}
         aria-disabled={grund ? 'true' : undefined}
         aria-describedby={grund ? grundId : undefined}
@@ -230,6 +239,18 @@
     text-decoration: none;
     cursor: pointer;
     transition: transform var(--bw-knapp) var(--bw-weich);
+  }
+
+  /* Einzeilig (C18); bei 320 px mit Text 130 % wird die Schrift etwas kleiner, siehe einzeilig.ts. */
+  .beschriftung {
+    display: inline-block;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .haupt.leise {
+    background: var(--track);
+    color: var(--ink);
   }
 
   .haupt:active:not(.deaktiviert) {

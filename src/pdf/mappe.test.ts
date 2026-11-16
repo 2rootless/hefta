@@ -17,11 +17,11 @@ async function quellPdf(seiten: string[], format: [number, number] = [595.28, 84
 describe('PDF-Mappe', () => {
   it('hat Deckblatt, Teile in fester Reihenfolge und richtige Seitenzahlen', async () => {
     const ergebnis = await mappeBauen({
-      dateiname: 'Bewerbung_Mustermann_Hauptstr12.pdf',
+      dateiname: 'Bewerbung_Mustermann_Beispielstr1.pdf',
       fussName: 'Max und Lea Mustermann',
       deckblatt: {
         kopf: 'Bewerbung um die Wohnung',
-        titel: ['Hauptstraße 12, 3. OG links', '22767 Hamburg'],
+        titel: ['Beispielstraße 1, 3. OG links', '12345 Musterstadt'],
         satz: 'Wir sind ein ruhiges Paar mit einem Kind.',
       },
       teile: [
@@ -50,7 +50,7 @@ describe('PDF-Mappe', () => {
 
     const text = await textJeSeite(ergebnis.bytes);
     expect(text).toHaveLength(5);
-    expect(text[0]).toContain('Hauptstraße 12, 3. OG links');
+    expect(text[0]).toContain('Beispielstraße 1, 3. OG links');
     expect(text[0]).toContain('Gehaltsnachweise Lea');
     expect(text[0]).toContain('Seite 1 von 5');
     expect(text[2]).toContain('Abrechnung C');

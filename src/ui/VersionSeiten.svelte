@@ -94,7 +94,7 @@
   .reihe {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
     min-height: 88px;
   }
 

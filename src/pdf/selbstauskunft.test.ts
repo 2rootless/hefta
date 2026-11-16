@@ -9,7 +9,7 @@ const MAX = {
   vorname: 'Max',
   nachname: 'Mustermann',
   rufname: 'Max',
-  kontakt: { telefon: '0151 23456789', email: 'max.mustermann@example.com' },
+  kontakt: { telefon: '0171 3920001', email: 'max.mustermann@example.com' },
   lebenssituation: 'angestellt',
   beruf: 'Elektroniker',
   arbeitgeber: 'Musterfirma GmbH, Hamburg',
@@ -78,7 +78,7 @@ describe('Selbstauskunft als festes Formular', () => {
     expect(t).toContain('Max Mustermann');
     expect(t).toContain('Hauptmieter, im Mietvertrag.');
     // DP30: Komma statt Mittelpunkt.
-    expect(t).toContain('0151 23456789, max.mustermann@example.com');
+    expect(t).toContain('0171 3920001, max.mustermann@example.com');
     expect(t).toContain('3 (2 Erwachsene, 1 Kind)');
     expect(t).toContain('Eine Katze');
     expect(t).toContain('2.643 €');

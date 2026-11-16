@@ -193,8 +193,9 @@ test('Löschen und Rückgängig: Die Datei bleibt da, bis „Rückgängig“ vor
         }),
     );
   const vorher = await dateien();
-  await page.getByRole('button', { name: 'Bearbeiten' }).click();
-  await page.getByRole('button', { name: /Version vom 12\.\sJuli löschen/ }).click();
+  // Ohne Wischen: der Knopf, der beim Fokus erscheint (DP39 strich „Bearbeiten“).
+  await page.getByRole('button', { name: /Version vom 12\.\sJuli löschen/ }).focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByRole('button', { name: 'Rückgängig' })).toBeVisible();
   expect(await dateien()).toBe(vorher);
   await page.getByRole('button', { name: 'Rückgängig' }).click();
@@ -222,12 +223,12 @@ test('Selbstauskunft: Hinweis zum Format, Knopf zum nächsten Teil, von wem der 
   await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toHaveCount(0);
   await page.getByLabel('Telefon').click();
   await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toBeVisible();
-  await email.fill('max@beispiel.de');
+  await email.fill('max@example.com');
   await page.getByLabel('Telefon').fill('abc');
   await email.click();
   await expect(page.getByText(/Die Telefonnummer sieht ungewöhnlich aus/)).toBeVisible();
   // Nur ein Hinweis: Es wird trotzdem gespeichert, und der Knopf führt weiter.
-  await page.getByLabel('Telefon').fill('040 123456');
+  await page.getByLabel('Telefon').fill('0171 3920007');
   await email.click();
   await expect(page.getByText(/Die Telefonnummer sieht ungewöhnlich aus/)).toHaveCount(0);
   await page.getByRole('button', { name: /^Weiter: / }).click();
@@ -361,7 +362,7 @@ test('Bonität mit zwei Seiten: Nur das Zertifikat ist vorgewählt; fremder Name
   await expect(blatt.getByText(/^Nur die Seite für den Vermieter/)).toHaveCount(0);
 });
 
-test('Hochladen: Name einer anderen Person im Haushalt, Knopf „Ja, zu … hinzufügen“', async ({
+test('Hochladen: Name einer anderen Person, Vorschau mit markiertem Namen, „Zu Lea verschieben“ (RU4)', async ({
   page,
 }) => {
   await laden(page, '01-standard', '/unterlage/p-01-standard-0/bonitaet');
@@ -376,7 +377,14 @@ test('Hochladen: Name einer anderen Person im Haushalt, Knopf „Ja, zu … hinz
   });
   const blatt = page.getByRole('dialog');
   const kasten = blatt.getByRole('group', { name: 'Bitte prüfen' });
-  await kasten.getByRole('button', { name: 'Ja, zu Lea hinzufügen' }).click({ timeout: 30_000 });
+  // DP39 1.4: Der Name ist auf dem Ausschnitt markiert, ohne Rahmen.
+  const vorschau = kasten.getByRole('button', { name: /der Name Lea Mustermann ist markiert/ });
+  await expect(vorschau).toBeVisible({ timeout: 30_000 });
+  const marke = vorschau.locator('.marke');
+  await expect(marke).toHaveCSS('mix-blend-mode', 'multiply');
+  await expect(marke).toHaveCSS('border-top-width', '0px');
+  expect((await marke.boundingBox())!.width).toBeGreaterThan(20);
+  await kasten.getByRole('button', { name: 'Zu Lea verschieben' }).click();
   await expect(blatt).toBeHidden();
   await page.goto('about:blank');
   await page.goto('/#/unterlage/p-01-standard-1/bonitaet');
@@ -553,14 +561,14 @@ test('Farbe gleich in „Mappe anpassen“ ändern, getauscht wird; die Vorschau
   await page.getByRole('button', { name: 'Farbe von Lea' }).click();
   const blatt = page.getByRole('dialog');
   await blatt.getByRole('radio', { name: 'Apricot, hat Max' }).click();
-  await expect(blatt.getByRole('status')).toHaveText('Max bekommt dafür Pistazie.');
+  await expect(blatt.getByRole('status')).toHaveText('Max bekommt dafür Lavendel.');
   await expect
     .poll(() => gross.locator('img').first().getAttribute('src'), { timeout: 30_000 })
     .not.toBe(vorher);
   await page.goto('about:blank');
   await page.goto('/#/person-aendern/p-04-fertig-0');
   const wahl = page.getByRole('radiogroup', { name: /^Farbe/ });
-  await expect(wahl.getByRole('radio', { name: 'Pistazie' })).toHaveAttribute(
+  await expect(wahl.getByRole('radio', { name: 'Lavendel' })).toHaveAttribute(
     'aria-checked',
     'true',
   );

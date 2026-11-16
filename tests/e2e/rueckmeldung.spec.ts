@@ -54,7 +54,7 @@ test.beforeEach(async ({ page }) => {
 
 test('„Kann helfen“ und „Meist unnötig“ klappen auf und wieder zu', async ({ page }) => {
   await laden(page, '01-standard', '/person/p-01-standard-1');
-  for (const titel of [/^Kann helfen \(/, /^Meist unnötig \(/]) {
+  for (const titel of [/^Kann helfen \d/, /^Meist unnötig \d/]) {
     const kopf = page.getByRole('button', { name: titel });
     await expect(kopf).toHaveAttribute('aria-expanded', 'false');
     await kopf.click();
@@ -62,7 +62,7 @@ test('„Kann helfen“ und „Meist unnötig“ klappen auf und wieder zu', asy
   }
   await expect(page.getByRole('link', { name: /^Empfehlung/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /^Ausweis/ })).toBeVisible();
-  await page.getByRole('button', { name: /^Meist unnötig \(/ }).click();
+  await page.getByRole('button', { name: /^Meist unnötig \d/ }).click();
   await expect(page.getByRole('link', { name: /^Ausweis/ })).toHaveCount(0);
 
   // In „Eigene Auswahl“ steht derselbe Knopf.
@@ -72,36 +72,19 @@ test('„Kann helfen“ und „Meist unnötig“ klappen auf und wieder zu', asy
   await expect(page.getByRole('switch', { name: /^Ausweis/ }).first()).toBeVisible();
 });
 
-test('Rutsch: Punkte, Personen, Zurück und Weiter; nichts geht verloren', async ({ page }) => {
+test('Rutsch: Register und Haarlinie, Springen; nichts geht verloren (DP39)', async ({ page }) => {
   await laden(page, '03-mehrere-offen', '/rutsch');
   // Schon auf dem Start führt ein Tipp auf die Person zu ihrer ersten Unterlage.
-  await page.getByRole('button', { name: 'Lea 3' }).click();
+  await page.locator('.pz-knopf').filter({ hasText: 'Lea' }).click();
   await expect(page.getByText('3 von 5')).toBeVisible();
   await expect(page.getByText('Für Lea')).toBeVisible();
 
+  // Die Reiter wechseln die Person, die Haarlinie springt innerhalb der Person.
   const navi = page.getByRole('navigation', { name: 'Zwischen den Schritten wechseln' });
-  await navi.getByRole('button', { name: 'Zurück' }).click();
-  await expect(page.getByText('2 von 5')).toBeVisible();
-  // Vorwärts geht es nur unten, mit dem Satz, was aus der Unterlage wird (R5).
-  await expect(navi.getByRole('button', { name: 'Weiter' })).toHaveCount(0);
-  await page.locator('button[aria-label^="Schritt 3 von 5: "]').click();
-  await expect(page.getByText('3 von 5')).toBeVisible();
-
-  // Eintrag im Bogen, dann weg und zurück: Er steht noch da.
-  await page.getByLabel('E-Mail').fill('lea@example.org');
-  await navi.getByRole('button', { name: 'Max' }).click();
+  await navi.getByRole('button', { name: /^Max / }).click();
   await expect(page.getByText('1 von 5')).toBeVisible();
-  await expect(navi.getByRole('button', { name: 'Zurück' })).toBeDisabled();
-  await navi.getByRole('button', { name: 'Lea' }).click();
-  await expect(page.getByText('lea@example.org')).toBeVisible();
-
-  // Direkt auf einen Punkt: Schritt 2, dort hochladen, zurück: schon da, neuere Datei möglich.
-  const punkt = page.locator('button[aria-label^="Schritt 2 von 5: "]');
-  await expect(page.locator('button[aria-label^="Schritt 3 von 5: "]')).toHaveAttribute(
-    'aria-current',
-    'step',
-  );
-  await punkt.click();
+  const linie = page.locator('.register-rahmen .haarlinie');
+  await linie.getByRole('button').nth(1).click();
   await expect(page.getByText('2 von 5')).toBeVisible();
   await page.locator('[data-feld="pdf"]').setInputFiles({
     name: 'bonitaet.pdf',
@@ -111,17 +94,22 @@ test('Rutsch: Punkte, Personen, Zurück und Weiter; nichts geht verloren', async
   await expect(page.getByText('bonitaet.pdf, 1 Seite')).toBeVisible();
   await page.getByRole('button', { name: 'Speichern und weiter' }).click();
   await expect(page.getByText('3 von 5')).toBeVisible();
-  await navi.getByRole('button', { name: 'Zurück' }).click();
+  // Zurück auf die Unterlage: schon da, eine neuere Datei geht.
+  await navi.getByRole('button', { name: /^Max / }).click();
+  await expect(page.getByText('1 von 5')).toBeVisible();
+  await linie.getByRole('button').nth(1).click();
   await expect(page.getByText(/^Ist schon da/)).toBeVisible();
   await expect(page.getByText('Neuere Datei wählen', { exact: true })).toBeVisible();
 
-  // Vor bis ans Ende: Was offen ist, steht in der Liste, ein Tipp führt wieder hin.
-  await page.locator('button[aria-label^="Schritt 5 von 5: "]').click();
-  await page.getByRole('button', { name: 'Überspringen' }).click();
+  // Vor bis ans Ende: Je Person eine Reihe, ein Tipp führt wieder hin.
+  await navi.getByRole('button', { name: /^Lea / }).click();
+  await linie.getByRole('button').last().click();
+  await expect(page.getByText('5 von 5')).toBeVisible();
+  await page.getByRole('button', { name: /^(Überspringen|Noch nicht da)$/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Gut gemacht.' })).toBeVisible();
-  await expect(page.locator('.lead')).toContainText('Eine Unterlage ist drin.');
-  await expect(page.locator('.lead')).toContainText('Vier habt ihr übersprungen');
-  await page.getByRole('button', { name: /^Selbstauskunft/ }).click();
+  await expect(page.getByText(/Eine Unterlage ist drin\./)).toBeVisible();
+  await expect(page.getByText(/Vier habt ihr übersprungen/)).toBeVisible();
+  await page.locator('.pz-knopf').filter({ hasText: 'Lea' }).click();
   await expect(page.getByText('3 von 5')).toBeVisible();
   await expect(page.getByText('Für Lea')).toBeVisible();
   expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
@@ -145,7 +133,7 @@ test('Unterlage ohne Datum: Die Personenansicht sagt es und führt zum Nachtrage
 }) => {
   await laden(page, '23-ohne-datum', '/person/p-23-ohne-datum-0');
   const zeile = page.getByRole('link', { name: /^Bonitäts.?nachweis/ });
-  await expect(zeile).toContainText('Ohne Datum · keine Erinnerung');
+  await expect(zeile).toContainText('Ohne Datum, Hefta erinnert nicht');
   await expect(zeile).toContainText('Datum eintragen');
   await zeile.click();
   // „Datum eintragen“ landet direkt im Feld, die Seite sagt, warum (UL3).
@@ -279,7 +267,7 @@ test('Seite einer Unterlage: Stand, Hinweis, „Warum?“, ältere Version, lös
   await expect(page.getByRole('link', { name: /Version vom 12\.\sJuli/ })).toContainText(
     'Nicht in der Mappe.',
   );
-  await expect(page.getByText('In die Mappe kommt immer die neueste.')).toBeVisible();
+  await expect(page.getByText('Die neue kommt in die Mappe, diese bleibt hier')).toBeVisible();
 
   // „Warum?“: drei Abschnitte, Fokus auf dem Titel, danach zurück auf den Link.
   const warum = page.getByRole('button', { name: 'Warum?' });
@@ -302,7 +290,7 @@ test('Seite einer Unterlage: Stand, Hinweis, „Warum?“, ältere Version, lös
   await expect(warum).toBeFocused();
 
   // Notiz: nur für dich.
-  await page.getByRole('button', { name: 'Hinzufügen', exact: true }).click();
+  await page.getByRole('button', { name: /^Notiz hinzufügen/ }).click();
   await page
     .getByRole('dialog', { name: 'Notiz' })
     .getByRole('textbox')
@@ -313,8 +301,8 @@ test('Seite einer Unterlage: Stand, Hinweis, „Warum?“, ältere Version, lös
     .click();
   await expect(page.getByText('Für Altbau reicht das')).toBeVisible();
 
-  // Datum ändern: Die Seite führt ins Feld und wieder zurück.
-  await page.getByRole('link', { name: 'Ändern' }).first().click();
+  // Datum ändern: Die Zeile „Ausgestellt am“ führt ins Feld und wieder zurück (DP39, 3).
+  await page.getByRole('link', { name: /^Ausgestellt am/ }).click();
   await expect(page.getByLabel('Ausgestellt am')).toHaveValue('2026-10-20');
   await page.getByLabel('Ausgestellt am').fill('2026-10-21');
   await page.getByRole('button', { name: 'Speichern' }).click();
@@ -363,9 +351,10 @@ test('Serie, zu alt, „Meist unnötig“: Satz und Hauptaktion passen (UL2, UL5
   await expect(
     page.getByText('Zu alt, vom 12. Juli 2026. Kommt trotzdem in die Mappe, bis ein neuer da ist.'),
   ).toBeVisible();
+  // DP39, 3 (W10, PD44 RU2): Der Satz zum Alter entfällt.
   await expect(
     page.getByText('Viele Vermieter wollen ihn nicht älter als drei Monate.'),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Version hinzufügen' })).toBeVisible();
 
   await laden(page, '25-unterlage-seiten', '/unterlage/p-25-unterlage-seiten-0/ausweiskopie');
@@ -412,9 +401,9 @@ test('Rolle wechseln: Folgen vor dem Speichern, nichts geht verloren (HA1)', asy
   await expect(page.getByRole('heading', { level: 1, name: 'Euer Haushalt' })).toBeVisible();
 
   await page.evaluate(() => (location.hash = '#/person/p-25-unterlage-seiten-2'));
-  await expect(page.locator('.rolle', { hasText: 'Mitmieterin' }).first()).toBeVisible();
+  await expect(page.getByText(/^Mitmieterin/).first()).toBeVisible();
   // Die Erklärung bleibt gespeichert und steht unter „Nicht mehr nötig“, nicht im Band.
-  await page.getByRole('button', { name: /^Nicht mehr nötig \(1\)/ }).click();
+  await page.getByRole('button', { name: /^Nicht mehr nötig 1/ }).click();
   await page.getByRole('link', { name: /^Bürgschafts.?erklärung/ }).click();
   await expect(
     page.getByText('Gespeichert. Wird nicht mehr gebraucht, kommt nicht in die Mappe.'),
@@ -512,11 +501,11 @@ test('Ohne Datum: alles erreichbar, Datum eintragen und wieder entfernen (OR8, O
   await laden(page, '23-ohne-datum', '/unterlage/p-23-ohne-datum-0/bonitaet');
   await expect(page.getByText(/^Ohne Datum\. Kommt in die Mappe, aber/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Diese Version löschen' })).toBeVisible();
-  await page.getByRole('link', { name: 'Eintragen' }).click();
+  await page.getByRole('link', { name: /^Ausgestellt am/ }).click();
   await page.getByRole('button', { name: 'Heute' }).click();
   await expect(page.getByRole('button', { name: 'Datum entfernen' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Speichern' }).click();
-  await page.getByRole('link', { name: 'Ändern' }).first().click();
+  await page.getByRole('link', { name: /^Ausgestellt am/ }).click();
   await page.getByRole('button', { name: 'Datum entfernen' }).click();
   await expect(page.getByText(/^Ohne Datum\. Kommt in die Mappe, aber/)).toBeVisible();
   await page.getByRole('button', { name: 'Rückgängig' }).click();
@@ -665,22 +654,26 @@ test('Löschen in der Liste: wischen und „Bearbeiten“, mit Rückgängig (OR7
   await page.getByRole('button', { name: 'Rückgängig' }).click();
   await expect(zeile).toBeVisible();
 
-  // Ohne Wischen: Der Weg für VoiceOver, Schalter und Tastatur.
-  await page.getByRole('button', { name: 'Bearbeiten' }).click();
-  await page.getByRole('button', { name: /Version vom 12\.\sJuli löschen/ }).click();
+  // Ohne Wischen: Der Weg für VoiceOver, Schalter und Tastatur, ein Knopf, der beim Fokus erscheint.
+  const knopf = page.getByRole('button', { name: /Version vom 12\.\sJuli löschen/ });
+  await knopf.focus();
+  await expect(knopf).toBeVisible();
+  await page.keyboard.press('Enter');
   await expect(zeile).toHaveCount(0);
   await page.getByRole('button', { name: 'Rückgängig' }).click();
   await expect(zeile).toBeVisible();
-  await page.getByRole('button', { name: 'Fertig' }).click();
-  await expect(page.getByRole('button', { name: /Version vom 12\.\sJuli löschen/ })).toHaveCount(0);
+  // DP39, 3: „Ältere Versionen“ ohne „Bearbeiten“.
+  await expect(page.getByRole('button', { name: 'Bearbeiten' })).toHaveCount(0);
 });
 
 test('Personenansicht: Unterlage mit allen Versionen löschen, Rückgängig (OR7)', async ({
   page,
 }) => {
   await laden(page, '25-unterlage-seiten', '/person/p-25-unterlage-seiten-0');
-  await page.getByRole('button', { name: 'Bearbeiten' }).click();
-  await page.getByRole('button', { name: /^Bonitäts.?nachweis löschen/ }).click();
+  // DP39, 2: kein „Bearbeiten“; ohne Wischen löscht der Knopf, der beim Fokus erscheint.
+  await expect(page.getByRole('button', { name: 'Bearbeiten' })).toHaveCount(0);
+  await page.getByRole('button', { name: /^Bonitäts.?nachweis löschen/ }).focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByText(/^Bonitätsnachweis gelöscht\./)).toBeVisible();
   await expect(page.getByRole('link', { name: /^Bonitäts.?nachweis.*Fehlt noch/ })).toBeVisible();
   await page.getByRole('button', { name: 'Rückgängig' }).click();
@@ -1010,11 +1003,11 @@ test('Farbe bei der Person: wählen, vergebene wird getauscht, wirkt überall (P
 }) => {
   await laden(page, '01-standard', '/person-aendern/p-01-standard-2');
   const gruppe = page.getByRole('radiogroup', { name: /^Farbe/ });
-  const flieder = gruppe.getByRole('radio', { name: 'Flieder' });
+  const minze = gruppe.getByRole('radio', { name: 'Minze' });
   // B14: zwölf Farben.
   await expect(gruppe.getByRole('radio')).toHaveCount(12);
-  await expect(flieder).toHaveAttribute('aria-checked', 'true');
-  await expect(page.getByText('· Flieder')).toBeVisible();
+  await expect(minze).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('.marke')).toHaveText('Farbe Minze');
   await expect(
     page.getByText(/Eine Farbe mit Buchstabe hat schon jemand\. Wählt ihr sie, tauscht ihr\.$/),
   ).toBeVisible();
@@ -1023,40 +1016,42 @@ test('Farbe bei der Person: wählen, vergebene wird getauscht, wirkt überall (P
   const koralle = gruppe.getByRole('radio', { name: 'Apricot, hat Max' });
   await expect(koralle).toHaveText('M');
   await koralle.click();
-  await expect(page.getByRole('status')).toHaveText('Max bekommt dafür Flieder.');
+  await expect(page.getByRole('status')).toHaveText('Max bekommt dafür Minze.');
   await expect(gruppe.getByRole('radio', { name: 'Apricot' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
-  await expect(gruppe.getByRole('radio', { name: 'Flieder, hat Max' })).toHaveText('M');
+  await expect(gruppe.getByRole('radio', { name: 'Minze, hat Max' })).toHaveText('M');
 
   // Frei: gewählt, die Meldung geht, Max steht wieder bei Apricot.
   await gruppe.getByRole('radio', { name: 'Honig' }).click();
-  await expect(page.getByText('· Honig')).toBeVisible();
+  await expect(page.locator('.marke')).toHaveText('Farbe Honig');
   await expect(page.getByRole('status')).toHaveText('');
   await expect(gruppe.getByRole('radio', { name: 'Apricot, hat Max' })).toHaveText('M');
-  await expect(flieder).toHaveAttribute('aria-checked', 'false');
+  await expect(minze).toHaveAttribute('aria-checked', 'false');
 
   // Erst „Speichern“ schreibt, danach gilt es überall.
   await page.getByRole('button', { name: 'Speichern' }).click();
   await expect(page.getByRole('radiogroup', { name: /^Farbe/ })).toHaveCount(0);
   await page.goto('about:blank');
   await page.goto('/#/haushalt');
-  // Petra bürgt: Karte oder Zeile, je nach Haushalt.
-  await expect(page.locator('.farbe-4').first()).toContainText('P');
+  // Petra bürgt: Zeichen mit Umriss in ihrer neuen Farbe (DP39, 5).
+  await expect(
+    page.locator('.hh-gruppe .zeile', { hasText: 'Petra' }).locator('.zeichen'),
+  ).toHaveAttribute('style', /--p-app: ?#efce7e/);
   await page.goto('about:blank');
   await page.goto('/#/person-aendern/p-01-standard-2');
   await expect(gruppe.getByRole('radio', { name: 'Honig' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
-  await expect(page.getByText('· Honig')).toBeVisible();
+  await expect(page.locator('.marke')).toHaveText('Farbe Honig');
 
-  // Bei Max steht jetzt Honig als vergeben, Flieder ist wieder frei.
+  // Bei Max steht jetzt Honig als vergeben, Minze ist wieder frei.
   await page.goto('about:blank');
   await page.goto('/#/person-aendern/p-01-standard-0');
   await expect(gruppe.getByRole('radio', { name: 'Honig, hat Petra' })).toHaveText('P');
-  await expect(gruppe.getByRole('radio', { name: 'Flieder', exact: true })).toBeVisible();
+  await expect(gruppe.getByRole('radio', { name: 'Minze', exact: true })).toBeVisible();
 
   // Die Mappe nimmt die neue Farbe, im Druckton (AM3), und sagt, wo man sie ändert.
   await page.goto('about:blank');
@@ -1083,13 +1078,14 @@ test('Farbe: Wer allein ist, liest nichts von Buchstaben; bei sechs Personen ble
   await laden(page, '27-sechs-personen', '/person-aendern/p-27-sechs-personen-3');
   const gruppe = page.getByRole('radiogroup', { name: /^Farbe/ });
   await expect(gruppe.getByRole('radio', { name: /, hat / })).toHaveCount(5);
-  await expect(gruppe.getByRole('radio', { name: 'Honig' })).toHaveAttribute(
+  // Sina hat Petrol (Testdaten in der Reihenfolge der Vergabe, PC48).
+  await expect(gruppe.getByRole('radio', { name: 'Petrol' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
   // Vergeben: Es geht trotzdem, getauscht wird.
   await gruppe.getByRole('radio', { name: 'Ton, hat Petra' }).click();
-  await expect(page.getByRole('status')).toHaveText('Petra bekommt dafür Honig.');
+  await expect(page.getByRole('status')).toHaveText('Petra bekommt dafür Petrol.');
 });
 
 test('Vorschau: sagt, was aus ist, liest keine Datei, erst der Tipp baut die ganze Mappe', async ({

@@ -105,7 +105,7 @@ export interface BewerbungAuftrag {
   autor?: string;
   /** „Max und Lea Mustermann“. */
   fussName: string;
-  /** Kurzform der Wohnung für die Fußzeile („Hauptstraße 12“). */
+  /** Kurzform der Wohnung für die Fußzeile („Beispielstraße 1“). */
   kurz?: string;
   /** Adresse der Wohnung in Zeilen; leer: der Name steht als Titel. */
   adresse: string[];

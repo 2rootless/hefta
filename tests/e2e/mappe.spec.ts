@@ -135,7 +135,7 @@ test('Mappe erstellen: Vorschau, Modi, Bürgin abwählen, Adresse, Download', as
   await page.getByRole('button', { name: 'Wohnung ändern' }).click();
   await page
     .getByLabel('Adresse der Wohnung (freiwillig)')
-    .fill('Hauptstraße 12, 3. OG links\n22767 Hamburg');
+    .fill('Beispielstraße 1, 3. OG links\n12345 Musterstadt');
   await page.getByRole('button', { name: 'Übernehmen' }).click();
   await page.evaluate(() => (location.hash = '#/mappe'));
   await expect(page.getByRole('heading', { level: 1, name: 'Mappe teilen' })).toBeVisible();
@@ -144,7 +144,7 @@ test('Mappe erstellen: Vorschau, Modi, Bürgin abwählen, Adresse, Download', as
     page.waitForEvent('download'),
     page.getByRole('button', { name: 'PDF ansehen' }).click(),
   ]);
-  expect(zweiter.suggestedFilename()).toBe('Bewerbung_Mustermann_Hauptstr12.pdf');
+  expect(zweiter.suggestedFilename()).toBe('Bewerbung_Mustermann_Beispielstr1.pdf');
 
   // Mappe anpassen (X8): Einzeldateien, dann „Alle teilen“ und eine Liste der Dateien (X7).
   await page.evaluate(() => (location.hash = '#/mappe/anpassen'));

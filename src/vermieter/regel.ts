@@ -176,7 +176,7 @@ export function werKurz(a: HeftaAnhang): string {
       : v.length === 2
         ? `${namen[0]} und ${namen[1]} im Vertrag`
         : `${gross(wort(v.length))} im Vertrag`;
-  return gesamt > v.length ? `${vertrag} · ${wort(gesamt)} Personen` : vertrag;
+  return gesamt > v.length ? `${vertrag}, ${wort(gesamt)} Personen` : vertrag;
 }
 
 export interface Fehlend {

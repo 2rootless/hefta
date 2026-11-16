@@ -1,7 +1,7 @@
 <script lang="ts">
-  // Personenansicht in Stil C (Entwürfe P1 bis P3): Karte in der Personenfarbe (Bürgen weiß mit
-  // Rahmen und „Zusatz“), das Band waagerecht mit den Steinen der Person, ohne Ziel, darunter die
-  // Unterlagen mit ihrem Stand in Worten. Freiwillige und meist unnötige hinter einem Textlink.
+  // Personenseite nach DP39, Abschnitt 2 (Richtung B): Kopf in der Tönung der Person mit Name, Rolle und Einkommen;
+  // darunter der Stand als Karte „{n} von {N} da“ mit der Haarlinie (W19), dann die Unterlagen als Zeilen,
+  // „Kann helfen“ und „Meist unnötig“ als Zeilen zum Aufklappen. Rot nur für Zurück (DP35, W5).
   import { daten, db, neuLaden } from '../app/daten.svelte';
   import { rueckgaengigAnbieten } from '../app/rueckgaengig.svelte';
   import { pruefhinweise } from '../domain/pruefhinweise';
@@ -21,11 +21,11 @@
     situationText,
     type UnterlagenStand,
   } from '../domain/regelkatalog';
-  import { t, zahlwort } from '../i18n';
+  import { t } from '../i18n';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
-  import Eingeklappt from '../ui/Eingeklappt.svelte';
-  import BandQuer, { type QuerStein } from '../ui/BandQuer.svelte';
+  import Haarlinie, { type HaarStueck } from '../ui/Haarlinie.svelte';
   import { passend } from '../ui/passend';
+  import { tonStil } from '../ui/personTon';
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
   import Symbol from '../ui/Symbol.svelte';
   import { ohneDatum, standText } from '../ui/texte';
@@ -46,17 +46,32 @@
         )
       : null,
   );
-  const zusatz = $derived(stand?.rolle === 'buerge');
-  // Auf dem Weg: übliche und vorhandene freiwillige Unterlagen. Der Rest hinter „weitere zeigen“.
+  const buerge = $derived(stand?.rolle === 'buerge');
+  // Auf dem Weg: übliche und vorhandene freiwillige Unterlagen. Der Rest unter „Kann helfen“ und „Meist unnötig“.
   const weitere = $derived(stand ? stand.unterlagen.filter((u) => !stand.pfad.includes(u)) : []);
   const offen = $derived(
     stand?.unterlagen.filter((u) => u.status === 'fehlt' || u.status === 'bald').length ?? 0,
   );
-  const steine = $derived<QuerStein[]>(
+  const da = $derived(stand?.pfad.filter((u) => u.status === 'da').length ?? 0);
+  const stuecke = $derived<HaarStueck[]>(
     (stand?.pfad ?? []).map((u) => ({
-      farbe: stand!.farbe,
-      art: u.status === 'da' ? 'drin' : u.status === 'bald' ? 'bald' : 'weg',
+      text: ohneTrennstellen(listenText(u.typ)),
+      symbol: u.typ.symbol,
+      zustand: u.status === 'da' ? 'fertig' : 'offen',
     })),
+  );
+  const unterzeile = $derived(
+    stand
+      ? [
+          rollenText(stand.rolle, stand.bezeichnung),
+          ...(buerge ? [t('personenseite.ziehtNicht')] : []),
+          stand.person.lebenssituation
+            ? situationText(stand.person.lebenssituation, stand.person.ausbildungArt)
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : '',
   );
 
   /** Die Zeile öffnet die Seite der Unterlage (UL1), „Datum eintragen“ gleich das Feld (UL3). */
@@ -64,13 +79,8 @@
     if (u.typ.inAppErstellt) return `#/selbstauskunft/${id}`;
     return `#/unterlage/${id}/${u.typ.id}${ohneDatum(u) ? '/datum' : ''}`;
   }
-
-  function steinArt(u: UnterlagenStand): 'da' | 'bald' | 'fehlt' {
-    if (u.status === 'da' || (u.status === 'optional' && u.versionen.length)) return 'da';
-    return u.status === 'bald' ? 'bald' : 'fehlt';
-  }
-
-  let bearbeiten = $state(false);
+  /** DP39: Was noch fehlt, steht in Tinte 600, nicht in Rot (DP35). */
+  const offenZeile = (u: UnterlagenStand) => u.status === 'fehlt' || u.status === 'bald';
 
   // Prüfhinweis als Unterzeile: „Bitte prüfen: Dieselbe Datei in drei Monaten“.
   const pruefFunde = $derived(pruefhinweise(haushaltStaende(daten.ansicht)));
@@ -81,138 +91,147 @@
     return t('pruef.bitte', { kurz: pruefAnzeige(h, rufname).kurz });
   }
 
-  /** Löscht alle Versionen der Unterlage (OR7); „Rückgängig“ holt sie zurück. */
+  /** Löscht alle Versionen der Unterlage (OR7), per Wischen; „Rückgängig“ holt sie zurück. */
   async function unterlageWeg(u: UnterlagenStand) {
     const verbindung = await db();
-    const stand = await versionenAendern(verbindung, { loeschen: u.versionen.map((v) => v.id) });
+    const vorher = await versionenAendern(verbindung, {
+      loeschen: u.versionen.map((v) => v.id),
+    });
     await neuLaden();
     rueckgaengigAnbieten({
       text: t('unterlage.geloescht', { titel: ohneTrennstellen(listenText(u.typ)) }),
       seite: `/person/${id}`,
       ausfuehren: async () => {
         // Frisch holen: iOS beendet Verbindungen, wenn die App im Hintergrund war.
-        await versionenZurueck(await db(), stand);
+        await versionenZurueck(await db(), vorher);
         await neuLaden();
       },
     });
   }
 
-  const NAME = ['30px/32px', '26px/28px', '22px/26px'];
+  // „Kann helfen“, „Meist unnötig“ und „Nicht mehr nötig“ klappen auf; nichts davon ist offen.
+  let auf = $state<Record<string, boolean>>({});
+
+  const NAME = ['34px/36px', '30px/32px', '26px/28px'];
 </script>
 
 {#snippet zeile(u: UnterlagenStand)}
   {@const loeschbar = !u.typ.inAppErstellt && u.versionen.length > 0}
-  <li class="bearbeitbar">
-    <WischZeile aktiv={loeschbar} beimLoeschen={() => unterlageWeg(u)}>
+  <li>
+    <WischZeile
+      aktiv={loeschbar}
+      beimLoeschen={() => unterlageWeg(u)}
+      loeschenText={t('person.unterlageWeg', { unterlage: ohneTrennstellen(listenText(u.typ)) })}
+    >
       <a class="zeile" href={ziel(u)}>
-        <span class="stein stein-{steinArt(u)}" aria-hidden="true"
-          ><Symbol name={u.typ.symbol} groesse={20} /></span
-        >
+        <span class="zeichen"><Symbol name={u.typ.symbol} groesse={20} /></span>
         <span class="tx">
           <b>{listenText(u.typ)}</b>
-          <small>{bitte(u) ?? standText(u)}</small>
+          <small class:offen={offenZeile(u) && !bitte(u)}>{bitte(u) ?? standText(u)}</small>
           {#if ohneDatum(u)}<span class="datum-eintragen">{t('person.datumEintragen')}</span>{/if}
         </span>
-        {#if !(bearbeiten && loeschbar)}<Symbol name="weiter" groesse={20} />{/if}
+        <span class="pfeil"><Symbol name="weiter" groesse={16} /></span>
       </a>
     </WischZeile>
-    {#if bearbeiten && loeschbar}
-      <button
-        type="button"
-        class="loesch-knopf"
-        aria-label={t('person.unterlageWeg', { unterlage: ohneTrennstellen(listenText(u.typ)) })}
-        onclick={() => unterlageWeg(u)}>{t('allgemein.loeschen')}</button
+  </li>
+{/snippet}
+
+{#snippet mehr(schluessel: string, titel: string, liste: UnterlagenStand[], hinweis: string)}
+  <li>
+    <button
+      type="button"
+      class="mehr"
+      aria-expanded={!!auf[schluessel]}
+      onclick={() => (auf[schluessel] = !auf[schluessel])}
+    >
+      <span>{titel} <em>{liste.length}</em></span>
+      <span class="pfeil" class:offen-pfeil={auf[schluessel]}
+        ><Symbol name="weiter" groesse={16} /></span
       >
+    </button>
+    {#if auf[schluessel]}
+      <p class="hinweis">{hinweis}</p>
+      <ul class="unterliste">
+        {#each liste as u (u.typ.id)}
+          {@render zeile(u)}
+        {/each}
+      </ul>
     {/if}
   </li>
 {/snippet}
 
-<main class="seite stil-alt farbe-{stand?.farbe ?? 1}">
+<main class="seite">
   <div class="kopf">
     <Zurueck href="#/" text={t('tabs.mappe')} />
     {#if stand}
-      <a class="textlink" href="#/person-aendern/{id}/person">{t('person.aendern')}</a>
+      <a class="aendern" href="#/person-aendern/{id}/person">{t('person.aendern')}</a>
     {/if}
   </div>
   {#if !stand || !mitglied}
     <p class="leer">{t('person.nichtGefunden')}</p>
   {:else}
-    <div class="karte" class:zusatz>
-      <div class="kopfzeile">
+    <div class="person-ton tafel" style={tonStil(stand.farbe)}>
+      <div class="name-karte">
         <h1 class="name" use:passend={NAME}>{stand.person.vorname}</h1>
-        <span class="rolle">{rollenText(stand.rolle, stand.bezeichnung)}</span>
-        {#if zusatz}<span class="marke">{t('allgemein.zusatz')}</span>{/if}
+        <p class="unter">{unterzeile}</p>
       </div>
-      <p class="lage">
-        {stand.person.lebenssituation
-          ? situationText(stand.person.lebenssituation, stand.person.ausbildungArt)
-          : t('person.keineLage')}
-      </p>
-    </div>
-    <BandQuer
-      {steine}
-      haus={false}
-      beschriftung={t('person.bandLabel', {
-        name: stand.person.rufname || stand.person.vorname,
-        da: zahlwort(stand.pfad.filter((u) => u.status === 'da').length),
-        gesamt: zahlwort(stand.pfad.length),
-      })}
-    />
 
-    <section>
-      <div class="abschnitt-kopf">
-        <h2>{t('person.unterlagen')}</h2>
-        {#if stand.unterlagen.some((x) => !x.typ.inAppErstellt && x.versionen.length)}
-          <button type="button" class="textlink" onclick={() => (bearbeiten = !bearbeiten)}
-            >{bearbeiten ? t('allgemein.fertig') : t('allgemein.bearbeiten')}</button
-          >
-        {/if}
-      </div>
-      <ul class="liste">
-        {#each stand.pfad as u (u.typ.id)}
-          {@render zeile(u)}
-        {/each}
-      </ul>
-    </section>
-
-    <!-- „Kann helfen“ und „Meist unnötig“ eingeklappt: Sie sind nicht offen, nur möglich. -->
-    {#each ['kann_helfen', 'meist_unnoetig'] as const as etikett (etikett)}
-      {@const liste = weitere.filter((u) => u.typ.etikett === etikett)}
-      {#if liste.length}
-        <div class="eingeklappt">
-          <Eingeklappt titel="{etikettText(etikett)} ({liste.length})">
-            <p class="hinweis">{etikettBeschreibung(etikett)}</p>
-            <ul class="liste">
-              {#each liste as u (u.typ.id)}
-                {@render zeile(u)}
-              {/each}
-            </ul>
-          </Eingeklappt>
+      <div class="karte stand">
+        <div class="stand-kopf">
+          <p class="zahl">{t('personenseite.stand', { da, gesamt: stand.pfad.length })}</p>
+          <p class="ziel" class:startklar={offen === 0}>
+            {offen === 0 ? t('personenseite.startklar') : t('personenseite.fuerMappe')}
+          </p>
         </div>
-      {/if}
-    {/each}
-
-    <!-- Rolle oder Lebenslage haben sich geändert: Es bleibt gespeichert und kommt nicht in die Mappe. -->
-    {#if stand.nichtMehrNoetig.length}
-      <div class="eingeklappt">
-        <Eingeklappt titel="{t('person.nichtMehrNoetig')} ({stand.nichtMehrNoetig.length})">
-          <p class="hinweis">{t('person.nichtMehrNoetigHinweis')}</p>
-          <ul class="liste">
-            {#each stand.nichtMehrNoetig as u (u.typ.id)}
-              {@render zeile(u)}
-            {/each}
-          </ul>
-        </Eingeklappt>
+        <div class="linie"><Haarlinie {stuecke} /></div>
       </div>
+    </div>
+
+    <ul class="karte liste">
+      {#each stand.pfad as u (u.typ.id)}
+        {@render zeile(u)}
+      {/each}
+    </ul>
+
+    {#if weitere.length || stand.nichtMehrNoetig.length}
+      <ul class="karte liste">
+        {#each ['kann_helfen', 'meist_unnoetig'] as const as etikett (etikett)}
+          {@const liste = weitere.filter((u) => u.typ.etikett === etikett)}
+          {#if liste.length}
+            {@render mehr(etikett, etikettText(etikett), liste, etikettBeschreibung(etikett))}
+          {/if}
+        {/each}
+        <!-- Rolle oder Lebenslage haben sich geändert: Es bleibt gespeichert und kommt nicht in die Mappe. -->
+        {#if stand.nichtMehrNoetig.length}
+          {@render mehr(
+            'nicht_mehr',
+            t('person.nichtMehrNoetig'),
+            stand.nichtMehrNoetig,
+            t('person.nichtMehrNoetigHinweis'),
+          )}
+        {/if}
+      </ul>
     {/if}
   {/if}
 </main>
-{#if stand && offen}
-  <Aktionsleiste
-    text={t('person.unterlagenHinzufuegen')}
-    zusatz={t('person.offenZusatz', { anzahl: offen })}
-    href="#/rutsch/{id}"
-  />
+{#if stand}
+  {#if offen}
+    <Aktionsleiste
+      text={t('person.unterlagenHinzufuegen')}
+      zusatz={t('person.offenZusatz', { anzahl: offen })}
+      href="#/rutsch/{id}"
+    />
+  {:else}
+    <!-- DP39: Ist alles da, wird der Knopf leise und öffnet, was noch helfen kann. -->
+    <Aktionsleiste
+      text={t('personenseite.unterlageHinzufuegen')}
+      leise
+      onclick={() => {
+        auf['kann_helfen'] = true;
+        document.querySelector('.mehr')?.scrollIntoView({ block: 'center' });
+      }}
+    />
+  {/if}
 {/if}
 
 <style>
@@ -220,168 +239,133 @@
     max-width: var(--content-width);
     min-height: 100dvh;
     margin: 0 auto;
-    padding: calc(40px + env(safe-area-inset-top)) 0
+    padding: calc(20px + env(safe-area-inset-top)) 0
       max(calc(140px + env(safe-area-inset-bottom)), calc(var(--leiste-hoehe, 0px) + 16px));
   }
 
-  .farbe-1 {
-    --farbe: var(--person-1);
-  }
-  .farbe-2 {
-    --farbe: var(--person-2);
-  }
-  .farbe-3 {
-    --farbe: var(--person-3);
-  }
-  .farbe-4 {
-    --farbe: var(--person-4);
-  }
-
-  .farbe-5 {
-    --farbe: var(--person-5);
-  }
-
-  .farbe-6 {
-    --farbe: var(--person-6);
-  }
-
   .kopf {
-    /* DP33: Diese Seite bekommt noch eine eigene Runde; bis dahin bleibt Zurück in Tinte. */
-    --on-zurueck: var(--ink);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    min-height: 52px;
+    padding: 0 16px 0 12px;
+  }
+
+  .aendern {
+    display: inline-flex;
+    align-items: center;
     min-height: var(--tap-target);
-    padding: 0 var(--space-5) 0 12px;
+    color: var(--ink);
+    font-size: calc(15 * var(--px));
+    font-weight: 600;
+    text-decoration: none;
   }
 
   .leer {
-    padding: 0 var(--space-5);
+    padding: 0 16px;
   }
 
-  .karte {
-    margin: 8px var(--space-4) 0;
-    padding: 14px 16px 12px;
-    border-radius: 22px;
-    background: var(--farbe);
-    color: var(--on-person);
+  .tafel {
+    margin: 4px 16px 0;
   }
 
-  .karte.zusatz {
-    border: 2px solid var(--farbe);
-    background: var(--surface);
+  .name-karte {
+    padding: 20px;
+    border-radius: 20px;
+    background: var(--p-tint);
     color: var(--ink);
-  }
-
-  .kopfzeile {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 2px 8px;
   }
 
   .name {
     max-width: 100%;
     margin: 0;
-    font-size: calc(30 * var(--px));
-    line-height: calc(32 * var(--px));
+    font-size: calc(34 * var(--px));
+    line-height: calc(36 * var(--px));
     font-weight: 800;
-    font-stretch: 118%;
-    letter-spacing: -0.6px;
+    font-stretch: 125%;
+    letter-spacing: -0.01em;
+    hyphens: manual;
     overflow-wrap: normal;
   }
 
-  .rolle {
-    font-size: calc(14 * var(--px));
-    font-weight: 500;
+  .unter {
+    margin: 8px 0 0;
+    font-size: calc(15 * var(--px));
+    line-height: calc(20 * var(--px));
   }
 
-  .marke {
-    align-self: center;
-    padding: 0 8px;
-    border: 1.5px solid currentColor;
-    border-radius: 10px;
-    font-size: calc(12 * var(--px));
-    line-height: calc(17 * var(--px));
-    font-weight: 700;
+  .karte {
+    border-radius: 20px;
+    background: var(--surface);
   }
 
-  .lage {
-    margin: 2px 0 0;
-    font-size: calc(14 * var(--px));
-    line-height: calc(19 * var(--px));
+  .stand {
+    margin-top: 12px;
+    padding: 16px 16px 4px;
   }
 
-  section {
-    margin: 12px var(--space-4) 0;
+  .stand-kopf {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
   }
 
-  h2 {
-    margin: 0 var(--space-1) 8px;
+  .zahl {
+    margin: 0;
     font-size: calc(17 * var(--px));
     line-height: calc(22 * var(--px));
-    font-weight: 800;
+    font-weight: 650;
   }
 
-  .abschnitt-kopf {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin: 0 var(--space-1) 4px;
-  }
-
-  .abschnitt-kopf h2 {
+  .ziel {
     margin: 0;
+    font-size: calc(13 * var(--px));
+    line-height: calc(18 * var(--px));
+    color: var(--ink-muted);
   }
 
-  .bearbeitbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+  .ziel.startklar {
+    color: var(--ink);
+    font-weight: 600;
   }
 
-  .loesch-knopf {
-    flex-shrink: 0;
-    min-height: 44px;
-    margin: 0 0 8px auto;
-    padding: 0 12px;
-    border: 1.5px solid var(--ink);
-    border-radius: 22px;
-    background: none;
-    color: inherit;
-    font: inherit;
-    font-size: calc(14 * var(--px));
-    font-weight: 700;
-    cursor: pointer;
+  .linie {
+    margin: 12px 0 8px;
   }
 
   .liste {
-    margin: 0;
-    padding: 0 16px;
-    border-radius: 20px;
-    background: var(--surface);
+    margin: 12px 16px 0;
+    padding: 0;
     list-style: none;
+    overflow: hidden;
   }
 
-  .liste li + li {
+  .liste > li + li,
+  .unterliste > li {
     border-top: 1px solid var(--track);
   }
 
+  .unterliste {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
   .zeile {
-    color: inherit;
-    text-decoration: none;
     display: flex;
     align-items: center;
     gap: 12px;
     width: 100%;
     min-height: 60px;
-    padding: 8px 0;
-    border: 0;
-    background: none;
+    padding: 12px 16px;
     color: var(--ink);
-    text-align: left;
-    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .zeichen {
+    display: flex;
+    flex-shrink: 0;
   }
 
   .tx {
@@ -393,56 +377,69 @@
   .tx b {
     font-size: calc(16 * var(--px));
     line-height: calc(21 * var(--px));
+    font-weight: 600;
     hyphens: manual;
   }
 
   .tx small {
+    margin-top: 2px;
     font-size: calc(13 * var(--px));
     line-height: calc(17 * var(--px));
     color: var(--ink-muted);
   }
 
-  .stein {
-    display: grid;
-    place-items: center;
+  .tx small.offen {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .pfeil {
+    display: flex;
     flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    color: var(--ink-quiet);
   }
 
-  .stein-da {
-    background: var(--farbe);
-    color: var(--on-person);
+  .offen-pfeil {
+    transform: rotate(90deg);
   }
 
-  .stein-bald {
-    background: var(--surface);
-    box-shadow: inset 0 0 0 2.5px var(--ink);
+  .mehr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    min-height: 52px;
+    padding: 0 20px;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: calc(16 * var(--px));
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
   }
 
-  .stein-fehlt {
-    border: 2px dashed var(--ink);
-    background: var(--ground);
-  }
-
-  .eingeklappt {
-    margin: 14px var(--space-4) 0;
+  .mehr em {
+    margin-left: 8px;
+    font-style: normal;
+    font-weight: 400;
+    font-size: calc(14 * var(--px));
+    color: var(--ink-muted);
   }
 
   .hinweis {
-    margin: 0 var(--space-1) 8px;
+    margin: 0 20px 12px;
     font-size: calc(13 * var(--px));
     line-height: calc(18 * var(--px));
     color: var(--ink-muted);
   }
 
-  /* Die ganze Zeile öffnet die Versionen; dort lässt sich das Datum nachtragen. */
+  /* Ohne Datum: „Datum eintragen“ in Tinte 600; die ganze Zeile öffnet das Feld. */
   .datum-eintragen {
-    font-size: calc(14 * var(--px));
-    line-height: calc(22 * var(--px));
-    font-weight: 700;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+    margin-top: 4px;
+    font-size: calc(13 * var(--px));
+    line-height: calc(18 * var(--px));
+    font-weight: 600;
   }
 </style>

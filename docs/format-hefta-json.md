@@ -24,8 +24,8 @@ Bis zur ersten Mappe, die jemand anderes als der Auftraggeber erzeugt, darf sich
   "bewerbung": {
     "kennung": "3b7c2f1e-8d4a-4c6b-9e2f-1a5d7c9b0e42",
     "wohnung": {
-      "strasse": "Hauptstraße 12",
-      "rest": "3. OG links · 22767 Hamburg",
+      "strasse": "Beispielstraße 1",
+      "rest": "3. OG links · 12345 Musterstadt",
       "teile": { "strasse": "Hauptstraße", "hausnummer": "12", "plz": "22767", "ort": "Hamburg", "lage": "3. OG links" }
     }
   },
@@ -36,7 +36,7 @@ Bis zur ersten Mappe, die jemand anderes als der Auftraggeber erzeugt, darf sich
       { "name": "Petra Mustermann", "rolle": "buerge" }
     ],
     "mitziehende": [{ "text": "Ein Kind", "anzahl": 1, "art": "kind" }],
-    "kontakt": { "telefon": "0170 1234567", "email": "max.mustermann@example.com" }
+    "kontakt": { "telefon": "0171 3920001", "email": "max.mustermann@example.com" }
   },
   "unterlagen": [
     { "person": 0, "typ": "selbstauskunft", "seiten": [2, 2] },

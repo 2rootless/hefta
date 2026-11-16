@@ -33,7 +33,7 @@ const art = (w: Wohnung, k: string, geld = GELD) =>
   urteile(w, WU, geld).find((u) => u.kriterium === k)!.art;
 
 describe('Urteile (B16, Nachricht 9.11. b und c, E50)', () => {
-  it('Lindenallee: Warmmiete knapp, sonst passt alles', () => {
+  it('Lindenring: Warmmiete knapp, sonst passt alles', () => {
     expect(abweichungen(urteile(LINDEN, WU, GELD))).toEqual([
       { art: 'knapp', wort: 'knapp', text: `1.240${NB}€ warm, 40${NB}€ über 1.200${NB}€` },
       { art: 'sonst', wort: '', text: 'Sonst passt alles.' },

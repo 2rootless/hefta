@@ -4,23 +4,23 @@ import { wohnungsSchluessel, wohnungTeile } from './adresse';
 describe('Adresse in Teilen (E6)', () => {
   it.each([
     [
-      'Hauptstraße 12, 3. OG links\n22767 Hamburg',
+      'Beispielstraße 1, 3. OG links\n12345 Musterstadt',
       {
-        strasse: 'Hauptstraße',
-        hausnummer: '12',
+        strasse: 'Beispielstraße',
+        hausnummer: '1',
         lage: '3. OG links',
-        plz: '22767',
-        ort: 'Hamburg',
+        plz: '12345',
+        ort: 'Musterstadt',
       },
     ],
     [
-      'Große Bergstraße 152, Hinterhaus, 4. OG rechts\n22767 Hamburg-Altona',
+      'Große Beispielstraße 1, Hinterhaus, 4. OG rechts\n12345 Musterstadt-Nord',
       {
-        strasse: 'Große Bergstraße',
-        hausnummer: '152',
+        strasse: 'Große Beispielstraße',
+        hausnummer: '1',
         lage: 'Hinterhaus, 4. OG rechts',
-        plz: '22767',
-        ort: 'Hamburg-Altona',
+        plz: '12345',
+        ort: 'Musterstadt-Nord',
       },
     ],
     [
@@ -32,10 +32,10 @@ describe('Adresse in Teilen (E6)', () => {
       { strasse: 'Bahrenfelder Ch.', hausnummer: '41', lage: '', plz: '', ort: '' },
     ],
     [
-      'Musterweg 3 a, 22761 Hamburg',
-      { strasse: 'Musterweg', hausnummer: '3a', lage: '', plz: '22761', ort: 'Hamburg' },
+      'Musterweg 7 a, 22761 Hamburg',
+      { strasse: 'Musterweg', hausnummer: '7a', lage: '', plz: '22761', ort: 'Hamburg' },
     ],
-    ['Lindenallee 3-5', { strasse: 'Lindenallee', hausnummer: '3-5', lage: '', plz: '', ort: '' }],
+    ['Lindenring 3-5', { strasse: 'Lindenring', hausnummer: '3-5', lage: '', plz: '', ort: '' }],
   ])('%s', (adresse, erwartet) => {
     expect(wohnungTeile(adresse)).toEqual(erwartet);
   });
@@ -46,9 +46,9 @@ describe('Adresse in Teilen (E6)', () => {
   });
 
   it('Schlüssel: gleich bei anderer Schreibweise, verschieden bei anderer Wohnung', () => {
-    const a = wohnungsSchluessel('Hauptstraße 12, 3. OG links\n22767 Hamburg');
-    expect(wohnungsSchluessel('Hauptstr. 12,  3.OG links\n22767  Hamburg')).toBe(a);
-    expect(wohnungsSchluessel('Hauptstraße 12, 3. OG rechts\n22767 Hamburg')).not.toBe(a);
-    expect(wohnungsSchluessel('Hauptstraße 14, 3. OG links\n22767 Hamburg')).not.toBe(a);
+    const a = wohnungsSchluessel('Beispielstraße 1, 3. OG links\n12345 Musterstadt');
+    expect(wohnungsSchluessel('Beispielstr. 1,  3.OG links\n12345  Musterstadt')).toBe(a);
+    expect(wohnungsSchluessel('Beispielstraße 1, 3. OG rechts\n12345 Musterstadt')).not.toBe(a);
+    expect(wohnungsSchluessel('Musterweg 7, 3. OG links\n12345 Musterstadt')).not.toBe(a);
   });
 });

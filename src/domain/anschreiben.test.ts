@@ -5,12 +5,12 @@ describe('Anschreiben-Vorlage', () => {
   it('füllt die Platzhalter', () => {
     const a = vorlageFuellen(standardVorlage(), {
       anrede: anredeAus('Frau Schmidt'),
-      adresse: 'Hauptstraße 12, 22767 Hamburg',
+      adresse: 'Beispielstraße 1, 12345 Musterstadt',
       personen: 'zwei Erwachsene und ein Kind',
       namen: 'Max Mustermann und Lea Beispiel',
-      kontakt: '0170 1234567',
+      kontakt: '0171 3920001',
     });
-    expect(a.betreff).toBe('Bewerbung um die Wohnung Hauptstraße 12, 22767 Hamburg');
+    expect(a.betreff).toBe('Bewerbung um die Wohnung Beispielstraße 1, 12345 Musterstadt');
     expect(a.text.startsWith('Sehr geehrte Frau Schmidt,\n')).toBe(true);
     expect(offenePlatzhalter(a)).toEqual([]);
   });

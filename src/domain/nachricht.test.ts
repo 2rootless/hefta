@@ -24,7 +24,7 @@ describe('PN4: Erkennen im Inseratstext', () => {
   });
 
   it('nennt die Mailadresse aus dem Text', () => {
-    expect(erkennen(text('mail')).mail).toBe('vermietung@beispiel-hausverwaltung.de');
+    expect(erkennen(text('mail')).mail).toBe('vermietung@hausverwaltung.example.com');
     expect(erkennen(text('kontakt')).mail).toBeNull();
   });
 });
@@ -67,18 +67,20 @@ describe('Werte aus den Angaben', () => {
 
   it('Anschrift nur, wenn sie eingetragen ist', () => {
     const w = angabenWerte(
-      { ...person, kontakt: { telefon: '', email: '', anschrift: ' Alte Straße 7 ' } },
+      { ...person, kontakt: { telefon: '', email: '', anschrift: ' Musterweg 7 ' } },
       { erwachsene: 1, kinder: 0 },
       hh,
     );
-    expect(w.adresse).toBe('Alte Straße 7');
+    expect(w.adresse).toBe('Musterweg 7');
   });
 });
 
 describe('Mail', () => {
   it('Empfänger aus dem Inserat, Text sicher kodiert', () => {
-    const l = mailLink('a@b.de', 'Wohnung & mehr', 'Zeile 1\nZeile 2');
-    expect(l).toBe('mailto:a@b.de?subject=Wohnung%20%26%20mehr&body=Zeile%201%0D%0AZeile%202');
+    const l = mailLink('a@example.com', 'Wohnung & mehr', 'Zeile 1\nZeile 2');
+    expect(l).toBe(
+      'mailto:a@example.com?subject=Wohnung%20%26%20mehr&body=Zeile%201%0D%0AZeile%202',
+    );
     expect(mailLink(null, 'x', 'y')).toBe('mailto:?subject=x&body=y');
   });
 });

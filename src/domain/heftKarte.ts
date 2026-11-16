@@ -66,7 +66,7 @@ export function heftOrt(h: Pick<Heft, 'adresse' | 'angaben'>): string {
   return (h.angaben?.stadtteil ?? '').trim() || ortAusAdresse(h.adresse);
 }
 
-/** „Lindenallee 3, EG · Eimsbüttel“: erste Adresszeile und Stadtteil. */
+/** „Lindenring 3, EG · Eimsbüttel“: erste Adresszeile und Stadtteil. */
 export function heftAdresseKurz(h: Pick<Heft, 'adresse' | 'angaben'>): string {
   const strasse = zeilen(h.adresse)[0];
   const ort = heftOrt(h);

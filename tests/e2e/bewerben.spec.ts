@@ -28,7 +28,7 @@ function heft(id: string, extra: Record<string, unknown> = {}) {
     createdAt: tag(-3),
     updatedAt: tag(-3),
     haushaltId: null,
-    adresse: 'Lindenallee 3\n20259 Hamburg',
+    adresse: 'Lindenring 3\n20259 Hamburg',
     link: 'https://www.example.org/wohnung/3',
     quelle: '',
     inseratText: null,
@@ -111,7 +111,7 @@ test('Bewerben per Portal: Anschreiben, Angaben, Mappe, Text kopieren, dann der 
   const anschreiben = page.locator('.mailblatt');
   await expect(anschreiben).toContainText('Sehr geehrte Frau Hansen,');
   await expect(anschreiben).toContainText(
-    'ich möchte mich um die Wohnung in der Lindenallee 3 bewerben. Ich kann zum 1. Januar 2027 einziehen.',
+    'ich möchte mich um die Wohnung im Lindenring 3 bewerben. Ich kann zum 1. Januar 2027 einziehen.',
   );
   await expect(anschreiben).toContainText('Einzug: 1. Januar 2027');
   await expect(anschreiben).toContainText('Wer einzieht: Eine Person im Mietvertrag.');

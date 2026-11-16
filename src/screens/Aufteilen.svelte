@@ -134,6 +134,7 @@
       {zeilen}
       bind:werte
       monate={auswahl}
+      {dokument}
       ansehen={(seite) => {
         grossIndex = seite;
         grossOffen = true;

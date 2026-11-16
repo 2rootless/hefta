@@ -416,20 +416,21 @@
     height: auto;
   }
 
+  /* DP39, 1.4 (W20): Stellen im Dokument wie mit Textmarker hinterlegt, nie umrandet. Die gewählte kräftig,
+     die anderen Fundstellen blass. */
   .marke {
     position: absolute;
     box-sizing: content-box;
-    margin: -3px -4px;
+    margin: -1px -2px;
     padding: 1px 2px;
-    border: 2px solid transparent;
-    border-radius: 4px;
-    background: rgb(255 210 63 / 0.35);
+    border-radius: 3px 6px 4px 7px;
+    background: rgba(247, 206, 70, 0.22);
+    mix-blend-mode: multiply;
     pointer-events: none;
   }
 
   .marke.gewaehlt {
-    border-color: #26221e;
-    background: rgb(255 210 63 / 0.55);
+    background: rgba(247, 206, 70, 0.55);
   }
 
   .fund {

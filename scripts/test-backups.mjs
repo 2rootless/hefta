@@ -138,7 +138,7 @@ async function plaene() {
           'hauptmieter',
           'angestellt',
           {
-            ...kontakt('0170 1234567', 'max.mustermann@example.com'),
+            ...kontakt('0171 3920001', 'max.mustermann@example.com'),
             beruf: 'Elektroniker',
             arbeitgeber: 'Musterwerk GmbH',
             nettoeinkommen: 2850,
@@ -162,7 +162,7 @@ async function plaene() {
           ],
         ),
       ],
-      bewerbung: { adresse: 'Hauptstraße 12, 3. OG links\n22767 Hamburg' },
+      bewerbung: { adresse: 'Beispielstraße 1, 3. OG links\n12345 Musterstadt' },
     },
     {
       id: '2-familie-buergin-mit-passwort',
@@ -184,7 +184,7 @@ async function plaene() {
           'hauptmieter',
           'angestellt',
           {
-            ...kontakt('0170 1234567', 'max.mustermann@example.com'),
+            ...kontakt('0171 3920001', 'max.mustermann@example.com'),
             beruf: 'Elektroniker',
             arbeitgeber: 'Musterwerk GmbH',
             nettoeinkommen: 2850,
@@ -235,7 +235,7 @@ async function plaene() {
           'mitmieter',
           'angestellt',
           {
-            ...kontakt('0171 7654321', ''),
+            ...kontakt('0171 3920006', ''),
             beruf: 'Erzieherin',
             arbeitgeber: 'Kita Sonnenschein',
             nettoeinkommen: 1950,
@@ -288,7 +288,7 @@ async function plaene() {
           'buerge',
           'rente',
           {
-            ...kontakt('040 123456', ''),
+            ...kontakt('0171 3920007', ''),
             beruf: 'Rentnerin',
             arbeitgeber: '',
             nettoeinkommen: 2100,
@@ -328,7 +328,7 @@ async function plaene() {
         ),
       ],
       bewerbung: {
-        adresse: 'Lindenallee 3, Erdgeschoss\n20259 Hamburg',
+        adresse: 'Lindenring 3, Erdgeschoss\n20259 Hamburg',
         satz: 'Wir suchen eine ruhige Wohnung nahe der Kita unserer Tochter.',
         export: { bitte: true },
       },
@@ -353,7 +353,7 @@ async function plaene() {
           'hauptmieter',
           'selbststaendig',
           {
-            ...kontakt('0151 2223334', 'jonas.becker@example.com'),
+            ...kontakt('0171 3920008', 'jonas.becker@example.com'),
             beruf: 'Grafikdesigner (selbstständig)',
             arbeitgeber: 'eigenes Büro',
             nettoeinkommen: 3100,
@@ -392,7 +392,7 @@ async function plaene() {
           'mitmieter',
           'studierend_azubi',
           {
-            ...kontakt('0176 5556667', ''),
+            ...kontakt('0171 3920004', ''),
             beruf: 'Lehramt Deutsch und Kunst',
             arbeitgeber: 'Universität Bremen',
             nettoeinkommen: 934,
@@ -445,7 +445,7 @@ async function plaene() {
           'buerge',
           'angestellt',
           {
-            ...kontakt('0421 998877', ''),
+            ...kontakt('0171 3920009', ''),
             beruf: 'Busfahrer',
             arbeitgeber: 'Verkehrsbetriebe (Muster)',
             nettoeinkommen: 2600,
@@ -496,7 +496,7 @@ async function plaene() {
           'hauptmieter',
           'angestellt',
           {
-            ...kontakt('0160 1112223', ''),
+            ...kontakt('0171 3920005', ''),
             beruf: 'Projektleiter',
             arbeitgeber: 'Hanseatische Logistik GmbH & Co. KG',
             nettoeinkommen: 3400,
@@ -582,7 +582,7 @@ async function plaene() {
         ),
       ],
       bewerbung: {
-        adresse: 'Große Bergstraße 152, Hinterhaus, 4. OG rechts\n22767 Hamburg-Altona',
+        adresse: 'Große Beispielstraße 1, Hinterhaus, 4. OG rechts\n12345 Musterstadt-Nord',
         export: {
           modus: 'eigene_auswahl',
           ausgabe: 'einzeln',
@@ -611,7 +611,7 @@ async function plaene() {
           'hauptmieter',
           'angestellt',
           {
-            ...kontakt('0170 1234567', 'max.mustermann@example.com'),
+            ...kontakt('0171 3920001', 'max.mustermann@example.com'),
             beruf: 'Elektroniker',
             arbeitgeber: 'Musterwerk GmbH',
             nettoeinkommen: 2850,
@@ -654,7 +654,7 @@ async function plaene() {
           'buerge',
           'angestellt',
           {
-            ...kontakt('040 123456', ''),
+            ...kontakt('0171 3920007', ''),
             beruf: 'Steuerfachangestellte',
             arbeitgeber: 'Kanzlei am Hafen (Muster)',
             nettoeinkommen: 2400,
@@ -685,7 +685,7 @@ async function plaene() {
         ),
       ],
       bewerbung: {
-        adresse: 'Hauptstraße 12, 3. OG links\n22767 Hamburg',
+        adresse: 'Beispielstraße 1, 3. OG links\n12345 Musterstadt',
         export: { modus: 'alles', kleiner: true },
       },
     },
@@ -796,17 +796,25 @@ async function einspielen(browser, basis, pfad, plan) {
       await page.getByText(/Erstellt am /).waitFor({ timeout: 60_000 });
     }
     await page.getByRole('button', { name: 'Einspielen' }).click();
-    const meldung = page.getByText(/^Eingespielt: /);
+    // Seit Hefta 2: „Eingespielt, Stand 15. November: 11 Unterlagen. …“
+    const meldung = page.getByText(/^Eingespielt[,:] /);
     await meldung.waitFor({ timeout: 120_000 });
     const eingespielt = (await meldung.textContent())?.trim();
-    // Die Übersicht: „Hallo Max.“, oder „Alles beisammen.“, wenn nichts mehr fehlt.
-    await page.getByRole('heading', { level: 1, name: /^Hallo |^Alles beisammen/ }).waitFor();
+    // Die Übersicht: seit Hefta 2 „Eure Mappe“ (früher „Hallo Max.“ oder „Alles beisammen.“).
+    await page
+      .getByRole('heading', { level: 1, name: /^Hallo |^Alles beisammen|^Eure Mappe|^Deine Mappe/ })
+      .waitFor();
     const hallo = (await page.getByRole('heading', { level: 1 }).textContent())?.trim();
     await page.screenshot({ path: join(ZIEL, 'bilder', `${plan.id}.png`) });
     await page.goto('/#/mappe');
     const umfang = page.getByText(/^\d+ Seiten?( aus \d+ Dateien)?$|^\d+ Dateien$/).first();
-    await umfang.waitFor({ timeout: 120_000 });
-    return { eingespielt, hallo, mappe: (await umfang.textContent())?.trim(), fehler };
+    // Hefta 2 nennt den Umfang nicht immer auf dieser Seite; dann fehlt die Angabe im Ergebnis.
+    const mitUmfang = await umfang
+      .waitFor({ timeout: 30_000 })
+      .then(() => true)
+      .catch(() => false);
+    const mappe = mitUmfang ? (await umfang.textContent())?.trim() : null;
+    return { eingespielt, hallo, mappe, fehler };
   } catch (e) {
     await page.screenshot({ path: join(ZIEL, `fehler-${plan.id}.png`) });
     const h1 = await page.locator('h1').allTextContents();

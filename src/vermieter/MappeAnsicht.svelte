@@ -83,7 +83,7 @@
   <div class="vs-akt">
     <button type="button" class="vs-btn" onclick={() => oeffnen(1)}>{t('mappe.oeffnen')}</button>
     <span class="vs-meta">
-      <Dateiname name={mappe.name} /> · {mappe.seiten}{NB}Seiten · {groesseText(mappe.bytes)}
+      <Dateiname name={mappe.name} />, {mappe.seiten}{NB}Seiten, {groesseText(mappe.bytes)}
     </span>
   </div>
 {/snippet}
@@ -156,7 +156,10 @@
     <h2 class="vs-t" data-titel tabindex="-1">{haushaltTitel(a)}</h2>
     <p class="vs-lead">
       {#if wohnung}
-        {t('mappe.bewerbung', { wohnung: `${wohnung.strasse}, ${wohnung.rest}` })}
+        <!-- W3: Ältere Mappen trennen die Lage noch mit „ · “; hier steht ein Komma wie in der Mail. -->
+        {t('mappe.bewerbung', {
+          wohnung: `${wohnung.strasse}, ${wohnung.rest.replaceAll(' · ', ', ')}`,
+        })}
       {:else}
         {t('mappe.bewerbungOhne')}
       {/if}

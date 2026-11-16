@@ -39,7 +39,7 @@ test('Schema 1 → 2: Die Bewerbung mit Adresse wird ein Heft, nichts geht verlo
             createdAt: zeit,
             updatedAt: zeit,
             haushaltId: 'h1',
-            adresse: 'Hauptstraße 12\n22767 Hamburg',
+            adresse: 'Beispielstraße 1\n12345 Musterstadt',
             quelle: '',
             inseratText: null,
             kennungen: {},
@@ -78,7 +78,7 @@ test('Schema 1 → 2: Die Bewerbung mit Adresse wird ein Heft, nichts geht verlo
   expect(stand.hefte).toHaveLength(1);
   expect(stand.hefte[0]).toMatchObject({
     haushaltId: 'h1',
-    adresse: 'Hauptstraße 12\n22767 Hamburg',
+    adresse: 'Beispielstraße 1\n12345 Musterstadt',
     ausVersion1: true,
   });
 });

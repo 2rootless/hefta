@@ -312,7 +312,7 @@
     "unterlagenHinzufuegen": "Unterlagen hinzufügen",
     "offenZusatz": "{anzahl} offen",
     "bandLabel": "{name}: {da} von {gesamt} aktuell",
-    "standOhneDatum": "Ohne Datum · keine Erinnerung",
+    "standOhneDatum": "Ohne Datum, {app} erinnert nicht",
     "nichtMehrNoetig": "Nicht mehr nötig",
     "nichtMehrNoetigHinweis": "Bleibt gespeichert, kommt aber nicht in die Mappe.",
     "datumEintragen": "Datum eintragen",
@@ -540,7 +540,10 @@
     },
     "seitenAuswaehlen": "Seiten auswählen",
     "alleBehalten": "Alle {wort} Seiten behalten",
-    "vonSeiten": "{anzahl} von {gesamt} Seiten kommen in die Mappe",
+    "vonSeitenGewaehlt": "{wahl} von {gesamt} Seiten gewählt. Der Rest bleibt hier gespeichert, kommt aber nicht in die Mappe.",
+    "alleSeitenDrin": "Alle {gesamt} Seiten kommen in die Mappe.",
+    "beideSeitenDrin": "Beide Seiten kommen in die Mappe.",
+    "eine": "eine",
     "alle": "Alle",
     "keine": "Keine",
     "heute": "Heute",
@@ -683,8 +686,8 @@
     "warum": "Warum?",
     "inDerMappe": "In der Mappe",
     "inDerMappeSerie": {
-      "one": "In der Mappe: der neueste",
-      "other": "In der Mappe: die {wort} neuesten"
+      "one": "In der Mappe · der neueste",
+      "other": "In der Mappe · die {wort} neuesten"
     },
     "gespeichert": "Gespeichert",
     "seitenZahl": {
@@ -899,7 +902,6 @@
   },
   "rutsch": {
     "bandSatz": "Schritt {schritt} von {gesamt}: {unterlage} für {name}",
-    "zuPerson": "Zu {name} springen",
     "startTitel": "Jetzt die Unterlagen.",
     "startLead": {
       "one": {
@@ -952,15 +954,15 @@
     "endeFuer": "für {name}",
     "zurUebersicht": "Zur Übersicht",
     "nichtsOffen": "Gerade ist nichts offen.",
-    "endeTitelSpaeter": "Dann eben später.",
+    "endeTitelSpaeter": "Für heute fertig.",
     "endeAlleUebersprungen": {
       "one": {
-        "ihr": "Ihr habt sie übersprungen. Sie bleibt auf der Übersicht offen, und ihr macht weiter, wenn ihr sie habt.",
-        "du": "Du hast sie übersprungen. Sie bleibt auf der Übersicht offen, und du machst weiter, wenn du sie hast."
+        "ihr": "Ihr habt sie übersprungen. Sie bleibt auf der Übersicht offen, bis ihr sie habt.",
+        "du": "Du hast sie übersprungen. Sie bleibt auf der Übersicht offen, bis du sie hast."
       },
       "other": {
-        "ihr": "Ihr habt alle {wort} übersprungen. Sie bleiben auf der Übersicht offen, und ihr macht weiter, wenn ihr sie habt.",
-        "du": "Du hast alle {wort} übersprungen. Sie bleiben auf der Übersicht offen, und du machst weiter, wenn du sie hast."
+        "ihr": "Ihr habt alle {wort} übersprungen. Sie bleiben auf der Übersicht offen, bis ihr sie habt.",
+        "du": "Du hast alle {wort} übersprungen. Sie bleiben auf der Übersicht offen, bis du sie hast."
       }
     },
     "uebersprungenTitel": "Übersprungen",
@@ -1012,7 +1014,9 @@
       "zwei": "Bei {a} und {b} ist aber noch etwas offen.",
       "mehr": "Bei anderen ist aber noch etwas offen."
     },
-    "nochOffenTitel": "Noch offen"
+    "nochOffenTitel": "Noch offen",
+    "endeVon": "{fertig} von {gesamt}",
+    "legende": "übersprungen, bleibt auf der Übersicht offen"
   },
   "selbstauskunft": {
     "titel": "Selbst­auskunft",
@@ -1220,7 +1224,7 @@
     "satzHinweisDu": "Steht auf dem Deckblatt, z. B. wer du bist und ab wann du suchst.",
     "adresseTitel": "Für welche Wohnung?",
     "adresseLabel": "Adresse der Wohnung (freiwillig)",
-    "adresseBeispiel": "Hauptstraße 12, 3. OG links\n22767 Hamburg",
+    "adresseBeispiel": "Beispielstraße 1, 3. OG links\n12345 Musterstadt",
     "adresseHinweis": {
       "ihr": "Das liest der Vermieter: Die Adresse steht groß auf dem Deckblatt, unten auf jeder Seite und im Dateinamen. Schreibt sie so wie im Inserat, in der zweiten Zeile Postleitzahl und Ort.",
       "du": "Das liest der Vermieter: Die Adresse steht groß auf dem Deckblatt, unten auf jeder Seite und im Dateinamen. Schreib sie so wie im Inserat, in der zweiten Zeile Postleitzahl und Ort."
@@ -1798,7 +1802,8 @@
     "nameKurz": "Auf dem Dokument steht {name}",
     "nameNach": ", nicht {eigen}. Gehört es zu {name}?",
     "nameKnopf": "Zu {name} verschieben",
-    "nameHinzufuegen": "Ja, zu {name} hinzufügen",
+    "nameVorschau": "Ausschnitt aus dem Dokument, der Name {name} ist markiert",
+    "nameVorschauGross": "Seite groß ansehen, der Name {name} ist markiert",
     "nameFehltKurz": "Der Name {name} steht nicht darauf",
     "nameFehltVor": "Auf dem Dokument findet {app} den Namen ",
     "nameFehltNach": " nicht. Ist es wirklich von {eigen}?",
@@ -2568,5 +2573,36 @@
     "ergebnis": {
       "zurueck": "‹ Doch noch offen"
     }
+  },
+  "haarlinie": {
+    "liste": "Stand der Unterlagen",
+    "aktuell": "{text}, jetzt",
+    "fertig": "{text}, fertig",
+    "uebersprungen": "{text}, übersprungen",
+    "offen": "{text}, noch offen"
+  },
+  "personenseite": {
+    "stand": "{da} von {gesamt} da",
+    "startklar": "Startklar",
+    "fuerMappe": "für die Mappe",
+    "ziehtNicht": "zieht nicht ein",
+    "unterlageHinzufuegen": "Unterlage hinzufügen"
+  },
+  "unterlageSeite": {
+    "notizHinzufuegen": "Notiz hinzufügen",
+    "warumUnterlage": "Warum {unterlage}?",
+    "warnung": "Warnung"
+  },
+  "zuordnen": {
+    "vorschauGross": "{name}, erste Seite groß ansehen"
+  },
+  "abgelegtListe": {
+    "selbst": "Selbst abgelegt"
+  },
+  "einrichtungZwei": {
+    "ziehenMitEin": "Ziehen mit ein"
+  },
+  "personAendern": {
+    "inDerMappe": "In der Mappe:"
   }
 }

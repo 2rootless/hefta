@@ -53,17 +53,19 @@ describe('Der Name steht an einer Stelle', () => {
 
 describe('Adresse auf dem Deckblatt', () => {
   it('teilt in Straße und den Rest', () => {
-    expect(adresseTeile(adresseZeilen('Hauptstraße 12, 3. OG links\n22767 Hamburg'))).toEqual({
-      strasse: 'Hauptstraße 12',
-      rest: '3.\u00a0OG links, 22767\u00a0Hamburg',
-    });
+    expect(adresseTeile(adresseZeilen('Beispielstraße 1, 3. OG links\n12345 Musterstadt'))).toEqual(
+      {
+        strasse: 'Beispielstraße 1',
+        rest: '3.\u00a0OG links, 12345\u00a0Musterstadt',
+      },
+    );
     expect(
-      adresseTeile(['Große Bergstraße 152, Hinterhaus, 4. OG rechts', '22767 Hamburg-Altona']),
+      adresseTeile(['Große Beispielstraße 1, Hinterhaus, 4. OG rechts', '12345 Musterstadt-Nord']),
     ).toEqual({
-      strasse: 'Große Bergstraße 152',
-      rest: 'Hinterhaus, 4.\u00a0OG rechts, 22767\u00a0Hamburg-Altona',
+      strasse: 'Große Beispielstraße 1',
+      rest: 'Hinterhaus, 4.\u00a0OG rechts, 12345\u00a0Musterstadt-Nord',
     });
-    expect(adresseTeile(['Lindenallee 3'])).toEqual({ strasse: 'Lindenallee 3', rest: '' });
+    expect(adresseTeile(['Lindenring 3'])).toEqual({ strasse: 'Lindenring 3', rest: '' });
     expect(adresseZeilen('  \n ')).toEqual([]);
   });
 });

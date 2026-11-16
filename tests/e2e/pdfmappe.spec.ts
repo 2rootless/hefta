@@ -130,7 +130,7 @@ function mensch(
       vorname,
       nachname,
       rufname: vorname,
-      kontakt: { telefon: '0151 23456789', email: `${vorname.toLowerCase()}@example.com` },
+      kontakt: { telefon: '0171 3920001', email: `${vorname.toLowerCase()}@example.com` },
       lebenssituation: 'angestellt',
       beruf: '',
       arbeitgeber: '',
@@ -216,13 +216,13 @@ function auftrag(
   const fussName = haushaltsZeile(vertrag.map((m) => nameImPdf(m.person)));
   const erste = vertrag[0]!.person;
   const kurz =
-    teil.kurz === undefined && 'kurz' in teil ? undefined : (teil.kurz ?? 'Hauptstraße 12');
+    teil.kurz === undefined && 'kurz' in teil ? undefined : (teil.kurz ?? 'Beispielstraße 1');
   return {
     titel: kurz ? `Bewerbung ${kurz} – ${fussName}` : `Bewerbung – ${fussName}`,
     autor: nameText(nameImPdf(erste)),
     fussName,
     kurz,
-    adresse: ['Hauptstraße 12, 3. OG links', '22767 Hamburg'],
+    adresse: ['Beispielstraße 1, 3. OG links', '12345 Musterstadt'],
     satz: 'Wir sind ein ruhiges Paar mit einem Kind und suchen ab Januar 2027 eine Wohnung für die nächsten Jahre. Alle Unterlagen liegen bei.',
     mitziehende: [{ text: 'Ein Kind', anzahl: 1, art: 'kind' }],
     // Wie in der App: Mit Lesehilfe trägt jede Mappe die Kennung der Bewerbung (Pflicht seit E21).
@@ -331,8 +331,8 @@ const SZENARIEN: Record<string, () => Promise<BewerbungAuftrag>> = {
         block(d, [{ abschnitt: 'Bürgschaftserklärung', quellen: [{ daten: await scan() }] }]),
       ],
       {
-        kurz: 'Große Bergstraße 152',
-        adresse: ['Große Bergstraße 152, Hinterhaus, 4. OG rechts', '22767 Hamburg-Altona'],
+        kurz: 'Große Beispielstraße 1',
+        adresse: ['Große Beispielstraße 1, Hinterhaus, 4. OG rechts', '12345 Musterstadt-Nord'],
         mitziehende: [],
       },
     );
@@ -346,7 +346,7 @@ const SZENARIEN: Record<string, () => Promise<BewerbungAuftrag>> = {
   'MP5-ohne-kopfzeile': async () => auftrag([MAX, LEA, PETRA], await mp1(), { fusszeile: false }),
   'MP6-einzeldatei-gehalt': async () =>
     auftrag([MAX, LEA], [block(MAX, [await gehalt()])], {
-      titel: 'Gehaltsnachweise – Max Mustermann – Bewerbung Hauptstraße 12',
+      titel: 'Gehaltsnachweise – Max Mustermann – Bewerbung Beispielstraße 1',
       deckblatt: false,
       inhaltsverzeichnis: false,
     }),
@@ -433,8 +433,8 @@ const SZENARIEN: Record<string, () => Promise<BewerbungAuftrag>> = {
       leute,
       leute.map((m) => block(m, [{ abschnitt: 'Selbstauskunft', quellen: [{ daten: seite }] }])),
       {
-        adresse: ['Große Bergstraße 152, Hinterhaus, 4. OG rechts', '22767 Hamburg-Altona'],
-        kurz: 'Große Bergstraße 152',
+        adresse: ['Große Beispielstraße 1, Hinterhaus, 4. OG rechts', '12345 Musterstadt-Nord'],
+        kurz: 'Große Beispielstraße 1',
         satz: 'Wir sind eine große Wohngemeinschaft mit zwei Kindern und suchen ab März eine Wohnung für mehrere Jahre.',
         mitziehende: [
           { text: 'Zwei Kinder', anzahl: 2, art: 'kind' },
@@ -446,12 +446,12 @@ const SZENARIEN: Record<string, () => Promise<BewerbungAuftrag>> = {
   'MP9-andere-schrift': async () => {
     const olena = mensch('Олена', 'Коваленко', 'hauptmieter', 'Hauptmieterin', {
       nameMappe: { vorname: 'Olena', nachname: 'Kovalenko' },
-      kontakt: { telefon: '0151 23456789', email: 'olena@example.com' },
+      kontakt: { telefon: '0171 3920004', email: 'olena@example.com' },
     });
     const piotr = mensch('Piotr', 'Wiśniewski', 'mitmieter', 'Mitmieter', { n: 1 });
     const mai = mensch('Thị Mai', 'Nguyễn', 'mitmieter', 'Mitmieterin', {
       n: 2,
-      kontakt: { telefon: '0151 23456789', email: 'mai@example.com' },
+      kontakt: { telefon: '0171 3920005', email: 'mai@example.com' },
     });
     const alle = [olena, piotr, mai];
     return auftrag(alle, [

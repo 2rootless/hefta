@@ -21,12 +21,10 @@
   import { vollstaendig } from '../domain/selbstauskunft';
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
-  import Band from '../ui/Band.svelte';
-  import Eintragen from '../ui/Eintragen.svelte';
   import { homescreenNochmal } from '../ui/homescreen';
-  import { passend } from '../ui/passend';
   import Sheet from '../ui/Sheet.svelte';
   import Symbol from '../ui/Symbol.svelte';
+  import { tonStil } from '../ui/personTon';
   import Zurueck from '../ui/Zurueck.svelte';
   import { herkunftsReiter } from '../ui/herkunft.svelte';
   import { nachLoeschen } from '../app/haushaltGeloescht.svelte';
@@ -49,9 +47,6 @@
   });
   const haushalt = $derived(daten.ansicht?.haushalt);
   const suffix = $derived(einrichtung ? '/einrichtung' : '');
-  // Lange Namen nie mitten im Wort trennen: lieber kleinere Schrift (wie auf der Übersicht).
-  const GROSS = ['24px/26px', '20px/24px', '18px/22px', '16px/20px'];
-  const KLEIN = ['20px/24px', '18px/22px', '16px/20px', '14px/18px'];
 
   const herausgenommen = $derived(daten.ansicht?.herausgenommen ?? []);
   const auskunftFertig = $derived.by(() => {
@@ -111,41 +106,15 @@
   });
 </script>
 
-{#snippet karte(m: Mitglied, zusatz: boolean)}
-  <div
-    class="karte farbe-{m.zugehoerigkeit.farbe}"
-    class:zusatz
-    data-band="p"
-    data-farbe={m.zugehoerigkeit.farbe}
-    data-duenn={zusatz ? '1' : '0'}
-  >
-    <div class="kopfzeile">
-      <span class="name" use:passend={zusatz ? KLEIN : GROSS}>{m.person.vorname}</span>
-      <span class="rolle">{rollenText(m.zugehoerigkeit.rolle, m.zugehoerigkeit.bezeichnung)}</span>
-      {#if zusatz}<span class="etikett">{t('allgemein.zusatz')}</span>{/if}
-    </div>
-    <div class="unterzeile">
-      <span class="lage"
-        >{m.person.lebenssituation
-          ? situationText(m.person.lebenssituation, m.person.ausbildungArt)
-          : ''}</span
-      >
-      <!-- DP35 R2: kein Wort am Rand; die ganze Zeile öffnet die Person, mit Pfeil. -->
-      <a class="aendern" href="#/person-aendern/{m.person.id}{suffix}"
-        ><span class="visually-hidden">{t('allgemein.aendern')} {m.person.vorname}</span><Symbol
-          name="weiter"
-          groesse={16}
-        /></a
-      >
-    </div>
-  </div>
-{/snippet}
-
 {#snippet zeile(m: Mitglied, zusatz: boolean)}
   <li class="zeile">
-    <span class="punkt farbe-{m.zugehoerigkeit.farbe}" class:zusatz aria-hidden="true"
-      >{m.person.vorname.slice(0, 1)}</span
-    >
+    <!-- DP39, 1.1: Zeichen in der App-Farbe; Bürgen mit Umriss in der Druckfarbe. -->
+    <span
+      class="zeichen person-ton"
+      class:zusatz
+      style={tonStil(m.zugehoerigkeit.farbe)}
+      aria-hidden="true"
+    ></span>
     <span class="tx">
       <b
         >{m.person.vorname}
@@ -169,7 +138,7 @@
 {/snippet}
 
 {#snippet zaehler(feld: 'kinder' | 'weitereErwachsene', titel: string, hinweis: string)}
-  <div class="zaehler" data-band="track">
+  <div class="zaehler">
     <span class="lab">{titel}<small>{hinweis}</small></span>
     <span class="stufen">
       <button
@@ -188,34 +157,35 @@
   </div>
 {/snippet}
 
+{#snippet plusZeile(text: string, grund: string, href: string)}
+  <li class="zeile plus">
+    <span class="plus-zeichen"><Symbol name="plus" groesse={20} /></span>
+    <a class="tx plus-link" {href}><b>{text}</b><small>{grund}</small></a>
+  </li>
+{/snippet}
+
 {#snippet mitmieterFeld()}
   {#if vertrag.length <= 1}
-    <Eintragen
-      zeile
-      unterlage={t('einrichtung.haushalt.mitmieter')}
-      grund={t('einrichtung.haushalt.mitmieterHinweis')}
-      gross
-      href="#/person-neu/mitmieter{suffix}"
-    />
+    {@render plusZeile(
+      t('einrichtung.haushalt.mitmieter'),
+      t('einrichtung.haushalt.mitmieterHinweis'),
+      `#/person-neu/mitmieter${suffix}`,
+    )}
   {:else}
-    <Eintragen
-      zeile
-      unterlage={t('einrichtung.haushalt.weiterePerson')}
-      grund={t('einrichtung.haushalt.weiterePersonHinweis')}
-      href="#/person-neu/mitmieter{suffix}"
-    />
+    {@render plusZeile(
+      t('einrichtung.haushalt.weiterePerson'),
+      t('einrichtung.haushalt.weiterePersonHinweis'),
+      `#/person-neu/mitmieter${suffix}`,
+    )}
   {/if}
 {/snippet}
 
 {#snippet buergeFeld()}
-  <Eintragen
-    zeile
-    unterlage={buergen.length
-      ? t('einrichtung.haushalt.buergeWeiterer')
-      : t('einrichtung.haushalt.buerge')}
-    grund={t('einrichtung.haushalt.buergeHinweis')}
-    href="#/person-neu/buerge{suffix}"
-  />
+  {@render plusZeile(
+    buergen.length ? t('einrichtung.haushalt.buergeWeiterer') : t('einrichtung.haushalt.buerge'),
+    t('einrichtung.haushalt.buergeHinweis'),
+    `#/person-neu/buerge${suffix}`,
+  )}
 {/snippet}
 
 {#snippet zaehlerBeide()}
@@ -274,55 +244,32 @@
     </a>
   {/if}
 
-  {#if haushalt && einrichtung}
-    <Band>
-      {#if buergen.length}
-        <p class="abschnitt" data-band="track">{t('uebersicht.abschnittVertrag')}</p>
-      {/if}
-      {#each vertrag as m (m.person.id)}
-        {@render karte(m, false)}
-      {/each}
-      <div class="feld" data-band="open">
-        {@render mitmieterFeld()}
-      </div>
-
-      {@render zaehlerBeide()}
-
-      <p class="abschnitt" data-band="open">{t('uebersicht.abschnittBuergen')}</p>
-      <p class="trenner" data-band="open">{t('uebersicht.zusatzZeile')}</p>
-      {#each buergen as m (m.person.id)}
-        {@render karte(m, true)}
-      {/each}
-      <div class="feld" data-band="open">
-        {@render buergeFeld()}
-      </div>
-      <div class="zielzeile" data-band-ziel></div>
-    </Band>
-  {:else if haushalt}
+  {#if haushalt}
+    <!-- DP39, Abschnitt 5: Gruppen als Etikett über einer Karte; Personen als Zeilen, keine Farbflächen. -->
     <section class="hh-gruppe">
       <h2>{t('uebersicht.abschnittVertrag')}</h2>
       <ul class="liste">
         {#each vertrag as m (m.person.id)}
           {@render zeile(m, false)}
         {/each}
+        {@render mitmieterFeld()}
       </ul>
-      <div class="feld">{@render mitmieterFeld()}</div>
     </section>
     <section class="hh-gruppe">
-      <h2>{t('einrichtung.haushalt.abschnittOhneVertrag')}</h2>
+      <h2>{t('einrichtungZwei.ziehenMitEin')}</h2>
       <div class="zaehler-kasten">{@render zaehlerBeide()}</div>
     </section>
     <section class="hh-gruppe">
-      <h2>{t('uebersicht.abschnittBuergen')}</h2>
-      <p class="gruppe-satz">{t('uebersicht.zusatzZeile')}</p>
-      {#if buergen.length}
-        <ul class="liste">
-          {#each buergen as m (m.person.id)}
-            {@render zeile(m, true)}
-          {/each}
-        </ul>
-      {/if}
-      <div class="feld">{@render buergeFeld()}</div>
+      <div class="gruppe-kopf">
+        <h2>{t('uebersicht.abschnittBuergen')}</h2>
+        <p class="gruppe-satz">{t('uebersicht.zusatzZeile')}</p>
+      </div>
+      <ul class="liste">
+        {#each buergen as m (m.person.id)}
+          {@render zeile(m, true)}
+        {/each}
+        {@render buergeFeld()}
+      </ul>
     </section>
   {/if}
   {#if haushalt}
@@ -485,92 +432,16 @@
     text-wrap: balance;
   }
 
-  .karte {
-    margin: 0 0 12px var(--spalte);
-    padding: 12px 14px;
-    border-radius: 20px;
-    background: var(--farbe);
-    color: var(--on-person);
-    box-shadow: 0 8px 18px rgb(25 26 44 / 0.1);
-  }
-
-  .farbe-1 {
-    --farbe: var(--person-1);
-  }
-  .farbe-2 {
-    --farbe: var(--person-2);
-  }
-  .farbe-3 {
-    --farbe: var(--person-3);
-  }
-  .farbe-4 {
-    --farbe: var(--person-4);
-  }
-
-  .farbe-5 {
-    --farbe: var(--person-5);
-  }
-
-  .farbe-6 {
-    --farbe: var(--person-6);
-  }
-
   .zusatz {
     border: 2px solid var(--farbe);
     background: var(--surface);
     color: var(--ink);
   }
 
-  .kopfzeile {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 2px 8px;
-  }
-
-  .name {
-    font-size: calc(24 * var(--px));
-    line-height: calc(26 * var(--px));
-    font-weight: 800;
-    font-stretch: 118%;
-    letter-spacing: -0.5px;
-    max-width: 100%;
-  }
-
-  .zusatz .name {
-    font-size: calc(20 * var(--px));
-    line-height: calc(24 * var(--px));
-  }
-
   .rolle {
     font-size: calc(14 * var(--px));
     line-height: calc(18 * var(--px));
     font-weight: 600;
-  }
-
-  .etikett {
-    align-self: center;
-    /* DP33 A6: 12 px grau auf weicher Fläche, ohne Linie. */
-    padding: 1px 8px;
-    border-radius: 10px;
-    /* Die weiche Fläche steht hier in einer Karte: der Ton der Spur, auf Weiß wie auf dem Grund sichtbar. */
-    background: var(--track);
-    color: var(--ink-muted);
-    font-size: calc(12 * var(--px));
-    line-height: calc(17 * var(--px));
-    font-weight: 650;
-  }
-
-  .unterzeile {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .lage {
-    font-size: calc(13 * var(--px));
-    line-height: calc(17 * var(--px));
   }
 
   /* DP35 R2: Pfeil (16 px, grau) statt „Ändern“; die Fläche des Links deckt die ganze Zeile. */
@@ -588,17 +459,8 @@
     inset: 0;
   }
 
-  .karte,
   .zeile {
     position: relative;
-  }
-
-  .feld {
-    margin: 0 0 12px var(--spalte);
-    --on-person: var(--ink);
-    --on-person-muted: var(--ink-muted);
-    --slot-fill: var(--ground);
-    --stone: var(--ground);
   }
 
   .zaehler {
@@ -628,7 +490,7 @@
   .stufen {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     margin-left: auto;
   }
 
@@ -656,17 +518,6 @@
     min-width: 16px;
     font-size: calc(20 * var(--px));
     text-align: center;
-  }
-
-  .abschnitt {
-    margin: 0 0 8px var(--spalte);
-    font-size: calc(15 * var(--px));
-    line-height: calc(20 * var(--px));
-    font-weight: 800;
-  }
-
-  .abschnitt + .trenner {
-    margin-top: -6px;
   }
 
   /* Euer Haushalt: Abschnitte mit ruhigen Listen statt Karten am Band. */
@@ -710,25 +561,6 @@
     border-top: 1px solid var(--track);
   }
 
-  .punkt {
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--farbe);
-    color: var(--on-person);
-    font-size: calc(15 * var(--px));
-    font-weight: 800;
-  }
-
-  .punkt.zusatz {
-    border: 2px solid var(--farbe);
-    background: var(--surface);
-    color: var(--ink);
-  }
-
   .zeile .tx {
     display: grid;
     flex: 1 1 min(10em, calc(100% - 44px));
@@ -756,10 +588,6 @@
     margin-left: auto;
   }
 
-  .hh-gruppe .feld {
-    margin: 8px 0 0;
-  }
-
   .zaehler-kasten .zaehler {
     margin: 0;
     padding: 6px 0;
@@ -767,13 +595,6 @@
 
   .zaehler-kasten .zaehler + .zaehler {
     border-top: 1px solid var(--track);
-  }
-
-  .trenner {
-    margin: 0 0 8px var(--spalte);
-    font-size: calc(13 * var(--px));
-    line-height: calc(18 * var(--px));
-    color: var(--ink-muted);
   }
 
   .eintrag {
@@ -927,14 +748,154 @@
     gap: 0 18px;
   }
 
-  .zielzeile {
-    min-height: 56px;
-  }
-
   .drei-monate {
     margin: 8px 0 0;
     font-size: calc(14 * var(--px));
     line-height: calc(19 * var(--px));
     font-weight: 700;
+  }
+
+  /* DP39, Abschnitt 5 */
+  .hh-gruppe {
+    margin: 24px 16px 0;
+  }
+
+  .hh-gruppe h2 {
+    margin: 0 4px 8px;
+    font-size: calc(15 * var(--px));
+    line-height: calc(20 * var(--px));
+    font-weight: 650;
+  }
+
+  .gruppe-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0 12px;
+    margin: 0 4px 8px;
+  }
+
+  .gruppe-kopf h2 {
+    margin: 0;
+  }
+
+  .gruppe-kopf .gruppe-satz {
+    margin: 0;
+    font-size: calc(13 * var(--px));
+    color: var(--ink-muted);
+  }
+
+  .liste,
+  .zaehler-kasten {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 20px;
+    background: var(--surface);
+    list-style: none;
+  }
+
+  .zeile {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 60px;
+    padding: 12px 16px;
+  }
+
+  .zeile + .zeile {
+    border-top: 1px solid var(--track);
+  }
+
+  .zeichen {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--p-app);
+  }
+
+  .zeichen.zusatz {
+    background: none;
+    box-shadow: inset 0 0 0 2px var(--p-linie);
+  }
+
+  .zeile b {
+    font-size: calc(16 * var(--px));
+    line-height: calc(21 * var(--px));
+    font-weight: 650;
+  }
+
+  .zeile .rolle {
+    margin-left: 8px;
+    font-size: calc(14 * var(--px));
+    font-weight: 400;
+    color: var(--ink-muted);
+  }
+
+  .zeile small {
+    font-size: calc(13 * var(--px));
+    line-height: calc(17 * var(--px));
+    color: var(--ink-muted);
+  }
+
+  .plus-zeichen {
+    display: flex;
+    flex: none;
+  }
+
+  .zeile.plus {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  /* Die ganze Zeile ist der Link, mindestens 60 px hoch (C5). */
+  .plus-link {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    align-self: stretch;
+    min-height: 60px;
+    padding: 12px 0;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  /* Die ganze Zeile nimmt den Tipp. */
+  .plus-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .zaehler-kasten .zaehler {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    min-height: 60px;
+    margin: 0;
+    padding: 12px 16px;
+  }
+
+  .zaehler-kasten .zaehler + .zaehler {
+    border-top: 1px solid var(--track);
+  }
+
+  .stufen button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 22px;
+    background: var(--track);
+    color: var(--ink);
+  }
+
+  .stufen button:disabled {
+    opacity: 0.4;
   }
 </style>

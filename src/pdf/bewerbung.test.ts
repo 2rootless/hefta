@@ -44,7 +44,7 @@ const auskunft = (name: string, rolle: string, farbe: string) => ({
     {
       id: 'person' as const,
       titel: 'Zur Person',
-      zeilen: [{ id: 'kontakt', etikett: 'Kontakt', art: 'text' as const, wert: '0151 23456789' }],
+      zeilen: [{ id: 'kontakt', etikett: 'Kontakt', art: 'text' as const, wert: '0171 3920001' }],
     },
   ],
   ortDatum: 'Hamburg, 6. November 2026',
@@ -104,14 +104,14 @@ async function bloecke(): Promise<MappenBlock[]> {
 
 async function auftrag(teil: Partial<BewerbungAuftrag> = {}): Promise<BewerbungAuftrag> {
   return {
-    titel: 'Bewerbung Hauptstraße 12 – Max und Lea Mustermann',
+    titel: 'Bewerbung Beispielstraße 1 – Max und Lea Mustermann',
     autor: 'Max Mustermann',
     fussName: 'Max und Lea Mustermann',
-    kurz: 'Hauptstraße 12',
-    adresse: ['Hauptstraße 12, 3. OG links', '22767 Hamburg'],
+    kurz: 'Beispielstraße 1',
+    adresse: ['Beispielstraße 1, 3. OG links', '12345 Musterstadt'],
     satz: 'Wir sind ein ruhiges Paar mit einem Kind.',
     mitziehende: [{ text: 'Ein Kind', anzahl: 1, art: 'kind' }],
-    kontakt: ['Max Mustermann', '0151 23456789'],
+    kontakt: ['Max Mustermann', '0171 3920001'],
     bloecke: await bloecke(),
     deckblatt: true,
     inhaltsverzeichnis: true,
@@ -176,8 +176,8 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
     expect(e.ersetzt).toEqual([]);
     for (const t of [
       'Bewerbung um die Wohnung',
-      'Hauptstraße 12',
-      '3. OG links, 22767 Hamburg',
+      'Beispielstraße 1',
+      '3. OG links, 12345 Musterstadt',
       'Wir sind ein ruhiges Paar',
       'Im Mietvertrag',
       'WAS BEILIEGT',
@@ -222,7 +222,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       expect(t).toContain(kopf);
       expect(t).toContain(`Seite ${nummer} von 10`);
       // DP30: Komma statt Mittelpunkt in der Fußzeile.
-      expect(t).toContain('Bewerbung Hauptstraße 12, Max und Lea Mustermann');
+      expect(t).toContain('Bewerbung Beispielstraße 1, Max und Lea Mustermann');
     }
     // DP30: Die Selbstauskunft trägt den Briefkopf, ihr Titel nennt die Person und die Rolle.
     expect(texte[1]).toContain('Hauptmieter, im Mietvertrag.');
@@ -315,7 +315,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
     });
     const e = await bewerbungBauen(zwei);
     const pdf = await PDFDocument.load(e.bytes, { updateMetadata: false });
-    expect(pdf.getTitle()).toBe('Bewerbung Hauptstraße 12 – Max und Lea Mustermann');
+    expect(pdf.getTitle()).toBe('Bewerbung Beispielstraße 1 – Max und Lea Mustermann');
     expect(pdf.getAuthor()).toBe('Max Mustermann');
     expect(pdf.getProducer()).toBeUndefined();
     expect(pdf.getCreator()).toBeUndefined();
@@ -476,7 +476,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       // „Erstellt mit Hefta“ nur auf Seite 1; Seite 2 hat den Briefkopf.
       expect(texte[0]).toContain('Erstellt mit Hefta');
       expect(texte[1]).not.toContain('Erstellt mit');
-      expect(texte[1]).toContain('Bewerbung um die Wohnung Hauptstraße 12');
+      expect(texte[1]).toContain('Bewerbung um die Wohnung Beispielstraße 1');
       const eine = await bewerbungBauen(await auftrag());
       expect(eine.deckSeiten).toBe(1);
     });
@@ -776,12 +776,12 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       const mail = 'm.mueller-luedenscheidt-sehr-lang@beispiel-hausverwaltung.example.com';
       const e = await bewerbungBauen(
         await auftrag({
-          kontakt: ['Maximilian-Alexander Müller-Lüdenscheidt', '0151 98765432', mail],
+          kontakt: ['Maximilian-Alexander Müller-Lüdenscheidt', '0171 3920010', mail],
         }),
       );
       const [deck] = await textJeSeite(e.bytes);
       const ohneLuecken = deck!.replace(/\s+/g, '');
-      expect(ohneLuecken).toContain('015198765432');
+      expect(ohneLuecken).toContain('01713920010');
       expect(ohneLuecken).toContain(mail);
       expect(ohneLuecken).toContain('Müller-Lüdenscheidt');
     });
@@ -872,7 +872,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
     const vieleImVertrag = async (anzahl: number) => {
       const q = await quelle(['S']);
       return auftrag({
-        kontakt: ['Maximilian-Alexander Müller-Lüdenscheidt', '0151 98765432', 'max@example.com'],
+        kontakt: ['Maximilian-Alexander Müller-Lüdenscheidt', '0171 3920010', 'max@example.com'],
         bloecke: [
           ...Array.from({ length: anzahl }, (_, n) => ({
             person: {
@@ -993,7 +993,7 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       expect(deckOhne).toContain('Bewerbung um eine Wohnung');
       expect(deckOhne).not.toContain('Bewerbung um die Wohnung');
       const strasse = 'Generalfeldmarschall-von-Hindenburg-Damm-Promenade 152';
-      const lang = await bewerbungBauen(await auftrag({ adresse: [strasse, '22767 Hamburg'] }));
+      const lang = await bewerbungBauen(await auftrag({ adresse: [strasse, '12345 Musterstadt'] }));
       const [deckLang] = await textJeSeite(lang.bytes);
       expect(deckLang!.replace(/\s+/g, ' ')).toContain(strasse);
     });
@@ -1070,11 +1070,11 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
         await auftrag({
           adresse: [
             'Hohenzollern-Sigmaringen-Straße 128a, Hinterhaus, 4. OG rechts',
-            '22767 Hamburg-Altona',
+            '12345 Musterstadt-Nord',
           ],
           kontakt: [
             'Dr. Konstantin Müller-Lüdenscheidt',
-            '0151 98765432',
+            '0171 3920010',
             'konstantin.mueller-luedenscheidt@example.com',
           ],
           bloecke: [

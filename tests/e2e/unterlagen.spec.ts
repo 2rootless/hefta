@@ -29,8 +29,12 @@ async function maxOeffnen(page: Page) {
 /** Zeile antippen, auf der Seite der Unterlage (UL1) hinzufügen: Das Blatt zum Hochladen geht auf. */
 async function hochladenOeffnen(page: Page, zeile: RegExp) {
   await page.getByRole('link', { name: zeile }).click();
-  // Ist etwas zu tun, die Hauptaktion unten, sonst das Feld „Neue Version hinzufügen“.
-  await page.locator('.leiste .haupt, button.eintragen').first().click();
+  // Ist etwas zu tun, die Hauptaktion unten, sonst die Zeile mit Plus („Neue Version hinzufügen“,
+  // bei Reihen „Oktober hinzufügen“; DP39, 3).
+  await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Max');
+  const plus = page.locator('button.zeile.plus', { hasNotText: 'Notiz' });
+  if (await plus.count()) await plus.first().click();
+  else await page.locator('.leiste .haupt').click();
 }
 
 /** Von der Seite der Unterlage zurück zur Person. */
@@ -282,14 +286,14 @@ test('schwierige Dateien: viele Seiten auswählen (D2, D3), Word-Datei (D7), ohn
   await expect(blatt.getByText('Tipp die Seiten an, die der Vermieter sehen soll.')).toBeVisible();
   for (const n of [1, 2, 5])
     await blatt.getByRole('checkbox', { name: `Seite ${n} kommt in die Mappe` }).click();
-  await expect(blatt.getByText('3 von 12 Seiten kommen in die Mappe')).toBeVisible();
+  await expect(blatt.getByText('Drei von zwölf Seiten gewählt')).toBeVisible();
   await blatt.getByRole('button', { name: 'Seite 7 ansehen, weggelassen' }).click();
   const gross = page.getByRole('dialog', { name: 'Seite 7 von 12' });
   await gross.getByRole('switch', { name: 'Kommt in die Mappe' }).check();
   await page.keyboard.press('Escape');
   await expect(gross).toBeHidden();
   await expect(blatt).toBeVisible();
-  await expect(blatt.getByText('4 von 12 Seiten kommen in die Mappe')).toBeVisible();
+  await expect(blatt.getByText('Vier von zwölf Seiten gewählt')).toBeVisible();
   await expect(blatt.getByRole('checkbox', { name: 'Seite 7 kommt in die Mappe' })).toBeChecked();
   // Das Blatt lässt sich nicht zur Seite schieben.
   expect(await blatt.evaluate((d) => d.scrollWidth - d.clientWidth)).toBeLessThanOrEqual(0);
@@ -498,12 +502,14 @@ test('drei Gehaltsnachweise auf einmal: je Datei ein Monat, erkannt aus dem Name
   const blatt = page.getByRole('dialog');
   await blatt.locator('[data-feld="pdf"]').setInputFiles(dateien);
   await expect(blatt.getByText('Welcher Monat ist welche Datei?')).toBeVisible();
-  await expect(blatt.getByLabel('Gehalt_September_2026.pdf')).toHaveValue('2026-09');
-  await expect(blatt.getByLabel('Gehalt_Juli_2026.pdf')).toHaveValue('2026-07');
+  await expect(blatt.getByLabel('Gehalt_September_2026.pdf', { exact: true })).toHaveValue(
+    '2026-09',
+  );
+  await expect(blatt.getByLabel('Gehalt_Juli_2026.pdf', { exact: true })).toHaveValue('2026-07');
   // Ohne Monat im Namen: der erwartete Monat, sonst der nächste freie davor (hier August).
-  await blatt.getByLabel('scan_0815.pdf').selectOption('2026-07');
+  await blatt.getByLabel('scan_0815.pdf', { exact: true }).selectOption('2026-07');
   await expect(blatt.getByText('Jeder Monat nur einmal.').first()).toBeVisible();
-  await blatt.getByLabel('scan_0815.pdf').selectOption('2026-08');
+  await blatt.getByLabel('scan_0815.pdf', { exact: true }).selectOption('2026-08');
   await blatt.getByRole('button', { name: 'Speichern' }).click();
   await expect(blatt).toBeHidden();
   await zurueckZuMax(page);

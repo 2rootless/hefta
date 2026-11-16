@@ -22,14 +22,14 @@ async function quelle(): Promise<Uint8Array> {
 async function auftrag(teil: Partial<BewerbungAuftrag> = {}): Promise<BewerbungAuftrag> {
   const q = await quelle();
   return {
-    titel: 'Bewerbung Hauptstraße 12 – Max und Lea Mustermann',
+    titel: 'Bewerbung Beispielstraße 1 – Max und Lea Mustermann',
     fussName: 'Max und Lea Mustermann',
-    kurz: 'Hauptstraße 12',
-    adresse: ['Hauptstraße 12, 3. OG links', '22767 Hamburg'],
+    kurz: 'Beispielstraße 1',
+    adresse: ['Beispielstraße 1, 3. OG links', '12345 Musterstadt'],
     satz: 'Wir sind ein ruhiges Paar.',
     mitziehende: [{ text: 'Ein Kind', anzahl: 1, art: 'kind' }],
-    kontakt: ['Max Mustermann', '0151 23456789', 'max@example.com'],
-    kontaktwege: { telefon: '0151 23456789', email: 'max@example.com' },
+    kontakt: ['Max Mustermann', '0171 3920001', 'max@example.com'],
+    kontaktwege: { telefon: '0171 3920001', email: 'max@example.com' },
     bloecke: [
       {
         person: {
@@ -113,14 +113,14 @@ describe('Lesehilfe für Vermieter (hefta.json)', () => {
     expect(a!.erstellt).toBe('2026-11-04');
     expect(a!.bewerbung.kennung).toBe(kennung);
     expect(a!.bewerbung.wohnung).toEqual({
-      strasse: 'Hauptstraße 12',
-      rest: '3. OG links, 22767 Hamburg',
+      strasse: 'Beispielstraße 1',
+      rest: '3. OG links, 12345 Musterstadt',
       teile: {
-        strasse: 'Hauptstraße',
-        hausnummer: '12',
+        strasse: 'Beispielstraße',
+        hausnummer: '1',
         lage: '3. OG links',
-        plz: '22767',
-        ort: 'Hamburg',
+        plz: '12345',
+        ort: 'Musterstadt',
       },
     });
     expect(a!.haushalt.personen).toEqual([
@@ -128,7 +128,7 @@ describe('Lesehilfe für Vermieter (hefta.json)', () => {
       { name: 'Petra Mustermann', rolle: 'buerge' },
     ]);
     expect(a!.haushalt.mitziehende).toEqual([{ text: 'Ein Kind', anzahl: 1, art: 'kind' }]);
-    expect(a!.haushalt.kontakt).toEqual({ telefon: '0151 23456789', email: 'max@example.com' });
+    expect(a!.haushalt.kontakt).toEqual({ telefon: '0171 3920001', email: 'max@example.com' });
     expect(a!.unterlagen).toEqual([
       { person: 0, typ: 'selbstauskunft', seiten: [2, 2] },
       {
@@ -157,18 +157,18 @@ describe('Lesehilfe für Vermieter (hefta.json)', () => {
     const glatt = deckblatt!.replace(/\s+/g, ' ');
     for (const text of anhangTexte(a)) expect(glatt).toContain(text);
     // Seit Fassung 3 stehen Telefon und Mail im Anhang, und genau so auf dem Deckblatt.
-    expect(anhangTexte(a)).toEqual(expect.arrayContaining(['0151 23456789', 'max@example.com']));
+    expect(anhangTexte(a)).toEqual(expect.arrayContaining(['0171 3920001', 'max@example.com']));
   });
 
   it('Fassung 3: Kontakt nur, wenn er auf dem Deckblatt steht; was fehlt, fehlt auch hier', async () => {
     const nurTelefon = await bewerbungBauen(
       await auftrag({
-        kontakt: ['Max Mustermann', '0151 23456789'],
-        kontaktwege: { telefon: '0151 23456789' },
+        kontakt: ['Max Mustermann', '0171 3920001'],
+        kontaktwege: { telefon: '0171 3920001' },
       }),
     );
     expect((await anhangAus(nurTelefon.bytes))!.haushalt.kontakt).toEqual({
-      telefon: '0151 23456789',
+      telefon: '0171 3920001',
     });
     const ohne = await bewerbungBauen(
       await auftrag({ kontakt: ['Max Mustermann'], kontaktwege: undefined }),

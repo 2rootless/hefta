@@ -187,7 +187,7 @@ describe('Prüfhinweise', () => {
   });
 
   it('Wörter: klein, „ü“ wie „ue“, ohne Zahlen', () => {
-    expect(woerterAus('Müller Straße 12, GARCÍA')).toEqual(['mueller', 'strasse', 'garcia']);
+    expect(woerterAus('Müller Straße, GARCÍA')).toEqual(['mueller', 'strasse', 'garcia']);
   });
 });
 

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { LANG, M1, M2, M4, M6, type Probe } from '../../tests/e2e/vermieter-hilfe';
 import type { HeftaAnhang } from '../pdf/anhang';
+import { aufMusteradressen } from '../test/musteradressen';
 import { absage, absageBefunde } from './absage';
 
 const anhang = (p: Probe) => p.anhang as unknown as HeftaAnhang;
@@ -11,8 +12,10 @@ const VORBILD = readFileSync('design/bildschirme/vermieter/absage-mails.md', 'ut
   '\r',
   '',
 );
+// W7 (PC53): Das Design nennt noch die alten Musteradressen.
+const VORBILD_HEUTE = aufMusteradressen(VORBILD);
 function vorbild(ueberschrift: string): { betreff: string; text: string } {
-  const teil = VORBILD.split('\n## ').find((t) => t.startsWith(ueberschrift));
+  const teil = VORBILD_HEUTE.split('\n## ').find((t) => t.startsWith(ueberschrift));
   if (!teil) throw new Error(`Kein Vorbild: ${ueberschrift}`);
   return {
     betreff: /Betreff: (.*)\n/.exec(teil)![1]!,

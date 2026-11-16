@@ -6,9 +6,9 @@ const TABELLE = tabelleDatei.plz as unknown as PlzTabelle;
 
 describe('Lage nach Postleitzahl (E46, E50)', () => {
   it('liest die Postleitzahl aus der Adresse', () => {
-    expect(plzAus('Lindenallee 3, EG\n20259 Hamburg')).toBe('20259');
+    expect(plzAus('Lindenring 3, EG\n20259 Hamburg')).toBe('20259');
     expect(plzAus('Am Markt 4, 01067 Dresden')).toBe('01067');
-    expect(plzAus('Hauptstraße 12345')).toBeNull();
+    expect(plzAus('Beispielstraße 12345')).toBeNull();
     expect(plzAus('')).toBeNull();
   });
 

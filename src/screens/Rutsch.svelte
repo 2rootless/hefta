@@ -3,13 +3,14 @@
   // „Unterlagen in einem Rutsch“ (design/einrichtung-rutsch-navigation.md, Abschnitt 2; Entwürfe R0–R3):
   // Start mit allen offenen Unterlagen, dann eine nach der anderen, Person für Person. Pause führt zur
   // Übersicht, der Stand bleibt in den Einstellungen. Nur „PDF wählen“ (Entscheidung G).
+  // Form nach DP39 (W18, W19): Personen als Register wie Trennblätter, die Karte hängt am aktiven Reiter;
+  // der Fortschritt der Person als Haarlinie, die aktuelle Unterlage im Ring, Übersprungenes mit Pfeil.
   import { onMount, untrack } from 'svelte';
   import { daten, db, gehe, neuLaden } from '../app/daten.svelte';
   import { abschliessen } from '../app/router.svelte';
   import { monatAus, nochNicht, serienFenster } from '../domain/fristen';
   import {
     ohneTrennstellen,
-    eintragenText,
     listenText,
     offeneDinge,
     personStand,
@@ -44,11 +45,12 @@
     type SelbstauskunftEingabe,
   } from '../ui/selbstauskunftEingabe';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
-  import BandQuer, { type QuerStein } from '../ui/BandQuer.svelte';
+  import Haarlinie, { type HaarStueck, type HaarZustand } from '../ui/Haarlinie.svelte';
   import Notiz from '../ui/Notiz.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import { alterGrenze, tagKurz } from '../ui/texte';
   import { passend, TITEL_BREIT } from '../ui/passend';
+  import { tonStil } from '../ui/personTon';
   import Zurueck from '../ui/Zurueck.svelte';
 
   const staende = $derived<PersonStand[]>(
@@ -128,6 +130,10 @@
     });
   });
   let akkordeon = $state<{ fehlendenOeffnen: () => void }>();
+  // DP39, Selbstauskunft als erster Schritt: zuerst die vier Teile als Liste und „Ausfüllen“; das öffnet den
+  // ersten offenen Teil, danach heißt der Knopf „Speichern und weiter“.
+  let ausfuellenBei = $state<string | null>(null);
+  const ausfuellen = $derived(!!auskunft && ausfuellenBei === auskunft.schluessel);
   const auskunftGrund = $derived(
     aktuell && auskunft ? grundFuer(aktuell.person, aktuell.rolle, auskunft.eingabe) : undefined,
   );
@@ -172,10 +178,6 @@
     if (await auskunftMerken()) naechster(ergebnis);
   }
 
-  function farbe(personId: string): number {
-    return staende.find((s) => s.person.id === personId)?.farbe ?? 1;
-  }
-
   function unterlageVon(p: RutschPosten | undefined) {
     return staende
       .find((x) => x.person.id === p?.personId)
@@ -187,32 +189,39 @@
     return !!u && (u.status === 'fehlt' || u.status === 'bald');
   }
 
-  const steine = $derived<QuerStein[]>(
-    stand.liste.map((p, i) => {
-      const ergebnis = stand.ergebnisse[postenSchluessel(p)];
-      const art: QuerStein['art'] =
-        i === stand.index && phase !== 'start' && phase !== 'ende'
-          ? 'aktuell'
-          : ergebnis === 'hochgeladen' || (unterlageVon(p) && !nochOffen(p))
-            ? 'drin'
-            : ergebnis || !unterlageVon(p)
-              ? 'weg'
-              : 'offen';
-      return { farbe: farbe(p.personId), art };
-    }),
-  );
-  const stellen = $derived(
-    stand.liste.map((p, i) =>
-      t('rutsch.stelle', {
-        schritt: i + 1,
-        gesamt: stand.liste.length,
-        unterlage: unterlageVon(p)?.typ.text.replaceAll('\u00ad', '') ?? '',
-        name: (() => {
-          const person = staende.find((x) => x.person.id === p.personId)?.person;
-          return person?.rufname || person?.vorname || '';
-        })(),
-      }),
-    ),
+  /** DP39, 1.2: Zustand eines Postens auf der Haarlinie. */
+  function zustandVon(p: RutschPosten, i: number): HaarZustand {
+    const ergebnis = stand.ergebnisse[postenSchluessel(p)];
+    if (i === stand.index && (phase === 'schritt' || phase === 'gewaehlt')) return 'aktuell';
+    if (ergebnis === 'hochgeladen') return 'fertig';
+    if (ergebnis === 'uebersprungen' || ergebnis === 'nochNicht' || !unterlageVon(p))
+      return 'uebersprungen';
+    return nochOffen(p) ? 'offen' : 'fertig';
+  }
+  /** Die Stücke der Haarlinie einer Person, in der Reihenfolge der Runde. */
+  function stueckeVon(personId: string): HaarStueck[] {
+    return stand.liste.flatMap((p, i) => {
+      if (p.personId !== personId) return [];
+      const u = unterlageVon(p);
+      return [
+        {
+          text: u ? ohneTrennstellen(listenText(u.typ)) : '',
+          symbol: u?.typ.symbol ?? 'weiteres',
+          zustand: zustandVon(p, i),
+          ziel: i,
+        },
+      ];
+    });
+  }
+  /** Der Zähler am Reiter zählt nur Fertiges, keine übersprungenen Unterlagen (DP39, 1.3). */
+  const fertigVon = (personId: string) =>
+    stueckeVon(personId).filter((s) => s.zustand === 'fertig').length;
+  const buergeVon = (personId: string) =>
+    staende.find((s) => s.person.id === personId)?.rolle === 'buerge';
+  const rufname = (person: { rufname: string; vorname: string } | undefined) =>
+    person?.rufname || person?.vorname || '';
+  const hatUebersprungen = $derived(
+    stand.liste.some((p, i) => zustandVon(p, i) === 'uebersprungen'),
   );
   // Schon erledigt (man ist dorthin zurückgesprungen): Man kann eine neuere Datei wählen oder weiter.
   const schonDa = $derived(!!aktuell && !nochOffen(posten));
@@ -425,15 +434,6 @@
     return drin === 2 ? t('rutsch.endeBeideDrin') : t('rutsch.endeAlleDrin', { anzahl: drin });
   });
 
-  // Für Screenreader: Das Band ist ein Bild mit einem Satz.
-  const bandSatz = $derived(
-    t('rutsch.bandSatz', {
-      schritt: zahlwort(stand.index + 1),
-      gesamt: zahlwort(stand.liste.length),
-      unterlage: aktuell ? ohneTrennstellen(eintragenText(aktuell.stand.typ)) : '',
-      name: aktuell ? aktuell.person.rufname || aktuell.person.vorname : '',
-    }),
-  );
   const schrittText = $derived(
     t('rutsch.schritt', { schritt: stand.index + 1, gesamt: stand.liste.length }),
   );
@@ -448,44 +448,120 @@
   }
 </script>
 
+{#snippet zeichen(farbeNr: number, buerge: boolean)}
+  <i class="zeichen-p person-ton" class:umriss={buerge} style={tonStil(farbeNr)} aria-hidden="true"
+  ></i>
+{/snippet}
+
+{#snippet hilfeText()}
+  {#if aktuell}
+    {#if serie}
+      <p class="hilfe" role="status">
+        {t('rutsch.serieNoch', {
+          anzahl: serie.fehlend.length,
+          monat: serie.drin,
+          zahl: zahlwort(serie.fehlend.length),
+        })}
+      </p>
+      <ul class="marken">
+        {#each serie.fenster as f (f.monat)}
+          <li class:da={f.da}>
+            {#if f.da}<Symbol name="haken" groesse={16} />{/if}{monatName(f.monat)}
+          </li>
+        {/each}
+      </ul>
+    {:else if aktuell.stand.typ.inAppErstellt}
+      <p class="hilfe">{auskunftLead}</p>
+    {:else if schonDa}
+      <p class="hilfe">{t('rutsch.schonDa')}</p>
+    {:else if aktuell.stand.status === 'fehlt' && aktuell.stand.veraltet && aktuell.stand.neuestesDatum}
+      <!-- Z2: zu alt, mit Grund und Datum -->
+      <p class="hilfe">
+        {t('rutsch.zuAlt', {
+          datum: tagKurz(aktuell.stand.neuestesDatum),
+          grenze: alterGrenze(aktuell.stand),
+        })}
+      </p>
+    {:else if aktuell.stand.typ.hilfe}
+      <p class="hilfe">{aktuell.stand.typ.hilfe}</p>
+    {/if}
+  {/if}
+{/snippet}
+
 {#snippet kopf()}
   <div class="kopf">
     <Zurueck href="#{heim}" text={t('rutsch.pause')} />
     <span class="fortschritt">{schrittText}</span>
   </div>
-  {#if phase === 'schritt'}
-    <BandQuer {steine} beschriftung={bandSatz} {springen} {stellen} />
-    <nav class="navi" aria-label={t('rutsch.navi')}>
-      <button
-        type="button"
-        class="navi-knopf"
-        disabled={stand.index === 0}
-        onclick={() => springen(stand.index - 1)}
-      >
-        <span class="gedreht"><Symbol name="weiter" groesse={16} /></span>{t('rutsch.zurueck')}
-      </button>
-      <!-- Vorwärts geht es unten, mit dem Satz, was aus der Unterlage wird (R5). -->
+  {#if aktuell}
+    {@const aktiv = proPerson.findIndex((x) => x.person.id === aktuell.person.id)}
+    <div class="register-rahmen">
       {#if proPerson.length > 1}
-        <div class="sprung">
-          {#each proPerson as x (x.person.id)}
+        <!-- DP39, 1.3 (W18): Reiter je Person, in der Reihenfolge des Haushalts; Namen nie gekürzt. -->
+        <nav class="register" aria-label={t('rutsch.navi')}>
+          {#each proPerson as x, i (x.person.id)}
             <button
               type="button"
-              class="sprung-person farbe-{x.farbe}"
-              aria-current={x.person.id === aktuell?.person.id ? 'true' : undefined}
-              aria-label={t('rutsch.zuPerson', { name: x.person.rufname || x.person.vorname })}
+              class="reiter person-ton"
+              class:an={i === aktiv}
+              style={tonStil(x.farbe)}
+              aria-current={i === aktiv ? 'true' : undefined}
               onclick={() => springen(ersterVon(x.person.id))}
-              >{x.person.rufname || x.person.vorname}</button
             >
+              {@render zeichen(x.farbe, buergeVon(x.person.id))}<span class="reiter-name"
+                >{rufname(x.person)}</span
+              ><small>{fertigVon(x.person.id)}/{x.anzahl}</small>
+            </button>
           {/each}
-        </div>
+        </nav>
       {/if}
-    </nav>
-  {:else}
-    <BandQuer {steine} beschriftung={schrittText} />
+      <div
+        class="karte person-ton"
+        class:ecke={aktiv === 0 && proPerson.length > 1}
+        style={tonStil(aktuell.farbe)}
+      >
+        <div class="linie">
+          <Haarlinie stuecke={stueckeVon(aktuell.person.id)} {springen} />
+        </div>
+        <!-- Jeder Schritt blendet kurz ein; Register und Linie bleiben stehen (W8, W9). -->
+        {#key `${stand.index}-${serie?.vorschlag ?? ''}`}
+          <div class="einblenden">
+            <p class="fuer">
+              {@render zeichen(aktuell.farbe, aktuell.rolle === 'buerge')}{t('rutsch.fuer', {
+                name: rufname(aktuell.person),
+              })}
+            </p>
+            <h1
+              class="unterlage"
+              use:passend={['26px/30px', '23px/27px', '21px/25px']}
+              use:titelFokus
+            >
+              {aktuell.stand.typ.text}
+            </h1>
+            {@render hilfeText()}
+          </div>
+        {/key}
+      </div>
+    </div>
   {/if}
 {/snippet}
 
-<main class="seite stil-alt">
+{#snippet personZeile(
+  x: { person: { id: string; rufname: string; vorname: string }; farbe: number; anzahl: number },
+  unter: string,
+)}
+  <li class="person-zeile person-ton" style={tonStil(x.farbe)}>
+    <button type="button" class="pz-knopf" onclick={() => springen(ersterVon(x.person.id))}>
+      <span class="pz-name"
+        >{@render zeichen(x.farbe, buergeVon(x.person.id))}<b>{rufname(x.person)}</b></span
+      >
+      <small>{unter}</small>
+    </button>
+    <div class="pz-linie"><Haarlinie stuecke={stueckeVon(x.person.id)} /></div>
+  </li>
+{/snippet}
+
+<main class="seite">
   {#if phase === 'start'}
     <div class="kopf"><Zurueck href="#{heim}" text={heimName} /></div>
     <div class="titelblock">
@@ -499,26 +575,14 @@
       {/if}
     </div>
     {#if stand.liste.length}
-      <BandQuer
-        {steine}
-        {springen}
-        {stellen}
-        beschriftung={t('rutsch.startLead', { anzahl: stand.liste.length })}
-      />
-      <ul class="personen">
+      <!-- DP39, Start: je Person eine Zeile mit Rolle, Anzahl und Haarlinie, alles offen. -->
+      <ul class="karte-weiss personen">
         {#each proPerson as x (x.person.id)}
-          <li>
-            <button
-              type="button"
-              class="pille farbe-{x.farbe}"
-              onclick={() => springen(ersterVon(x.person.id))}
-            >
-              {t('rutsch.personZahl', {
-                name: x.person.rufname || x.person.vorname,
-                anzahl: x.anzahl,
-              })}
-            </button>
-          </li>
+          {@const s = staende.find((y) => y.person.id === x.person.id)}
+          {@render personZeile(
+            x,
+            `${s ? rollenText(s.rolle, s.bezeichnung) : ''}, ${zahlwort(x.anzahl)}`,
+          )}
         {/each}
       </ul>
       <p class="tipp">{t('rutsch.tipp')}</p>
@@ -529,103 +593,70 @@
       <h1 use:passend={TITEL_BREIT} class="display-breit frage">{endeTitel}</h1>
       <p class="lead">{endeLead}</p>
     </div>
-    <BandQuer {steine} beschriftung={endeTitel} {springen} {stellen} />
-    {#if uebersprungen.length}
-      <h2 class="liste-titel">{t('rutsch.uebersprungenTitel')}</h2>
-      <ul class="liste liste-mit-titel">
-        {#each uebersprungen as x (x.schluessel)}
-          <li>
-            <button type="button" class="eintrag" onclick={() => springen(x.index)}>
-              <span class="punkt farbe-{farbe(x.person?.id ?? '')}" aria-hidden="true"></span>
-              <span class="eintrag-text"
-                >{x.typ ? listenText(x.typ) : ''}
-                <span class="fuer-name"
-                  >{t('rutsch.endeFuer', { name: x.person?.rufname ?? '' })}</span
-                ></span
-              >
-              <Symbol name="weiter" groesse={16} />
-            </button>
-          </li>
+    {#if stand.liste.length && (ergebnisse.hochgeladen || uebersprungen.length)}
+      <!-- DP39, Ende: Reihen je Person mit „{n} von {N}“ und Haarlinie, darunter die Legende. -->
+      <ul class="karte-weiss personen">
+        {#each proPerson as x (x.person.id)}
+          {@render personZeile(
+            x,
+            t('rutsch.endeVon', { fertig: fertigVon(x.person.id), gesamt: x.anzahl }),
+          )}
         {/each}
       </ul>
+      {#if hatUebersprungen}
+        <p class="legende">
+          <svg
+            viewBox="0 0 12 12"
+            width="12"
+            height="12"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            ><path d="M2 8.5C2.6 5 6.5 3.4 9.4 5.6" /><path d="M9.6 2.9v2.9H6.7" /></svg
+          >{t('rutsch.legende')}
+        </p>
+      {/if}
     {/if}
     {#if neu.length}
+      <!-- DP39: „Hier war schon alles da.“ mit der offenen Unterlage als Zeile und „Gleich mitmachen“. -->
       <section class="neu-dazu" aria-labelledby="neu-dazu">
-        <h2 id="neu-dazu">
+        <h2 id="neu-dazu" class="visually-hidden">
           {nichtsZuTun ? t('rutsch.nochOffenTitel') : t('rutsch.neuDazuTitel')}
         </h2>
-        <ul>
-          {#each neu as x (x.schluessel)}
-            <li>
-              <span class="punkt farbe-{farbe(x.person?.id ?? '')}" aria-hidden="true"></span>
-              <span
-                >{x.typ ? listenText(x.typ) : ''}
-                <span class="fuer-name"
-                  >{t('rutsch.endeFuer', { name: x.person?.rufname ?? '' })}</span
+        <ul class="karte-weiss">
+          {#each neu as x, i (x.schluessel)}
+            <li class="neu-zeile">
+              {#if x.typ}<Symbol name={x.typ.symbol} groesse={20} />{/if}
+              <span class="tx"
+                ><b>{x.typ ? listenText(x.typ) : ''}</b><small
+                  >{t('rutsch.endeFuer', { name: rufname(x.person) })}</small
                 ></span
               >
+              {#if i === 0}
+                <button type="button" class="mitmachen" onclick={mitmachen}
+                  >{t('rutsch.gleichMitmachen')}</button
+                >
+              {/if}
             </li>
           {/each}
         </ul>
-        <button type="button" class="knopf-klein" onclick={mitmachen}
-          >{t('rutsch.gleichMitmachen')}</button
-        >
       </section>
     {/if}
   {:else if aktuell}
     {@render kopf()}
-    <!-- Jeder Schritt blendet kurz ein; das Band oben bleibt stehen. -->
     {#key `${stand.index}-${phase}-${serie?.vorschlag ?? ''}`}
       <div class="einblenden">
         {#if phase === 'schritt'}
-          <div class="karte farbe-{aktuell.farbe}" class:zusatz={aktuell.rolle === 'buerge'}>
-            <p class="fuer">
-              {t('rutsch.fuer', { name: aktuell.person.rufname || aktuell.person.vorname })}
-            </p>
-            <h1
-              class="unterlage"
-              use:passend={['28px/31px', '24px/28px', '21px/25px']}
-              use:titelFokus
-            >
-              {aktuell.stand.typ.text}
-            </h1>
-            {#if serie}
-              <p class="hilfe" role="status">
-                {t('rutsch.serieNoch', {
-                  anzahl: serie.fehlend.length,
-                  monat: serie.drin,
-                  zahl: zahlwort(serie.fehlend.length),
-                })}
-              </p>
-              <ul class="marken">
-                {#each serie.fenster as f (f.monat)}
-                  <li class:da={f.da}>
-                    {#if f.da}<Symbol name="haken" groesse={16} />{/if}{monatName(f.monat)}
-                  </li>
-                {/each}
-              </ul>
-            {:else if aktuell.stand.typ.inAppErstellt}
-              <p class="hilfe">{auskunftLead}</p>
-            {:else if schonDa}
-              <p class="hilfe">{t('rutsch.schonDa')}</p>
-            {:else if aktuell.stand.status === 'fehlt' && aktuell.stand.veraltet && aktuell.stand.neuestesDatum}
-              <!-- Z2: zu alt, mit Grund und Datum -->
-              <p class="hilfe">
-                {t('rutsch.zuAlt', {
-                  datum: tagKurz(aktuell.stand.neuestesDatum),
-                  grenze: alterGrenze(aktuell.stand),
-                })}
-              </p>
-            {:else if aktuell.stand.typ.hilfe}
-              <p class="hilfe">{aktuell.stand.typ.hilfe}</p>
-            {/if}
-          </div>
           {#if aktuell.stand.typ.inAppErstellt}
             {#if auskunft}
               <div class="auskunft">
                 {#key auskunft.schluessel}
                   <SelbstauskunftAkkordeon
                     bind:this={akkordeon}
+                    start="zu"
                     bind:eingabe={auskunft.eingabe}
                     person={aktuell.person}
                     rolle={aktuell.rolle}
@@ -656,12 +687,17 @@
               <div class="datei-fehler"><Notiz stark><p role="alert">{fehler}</p></Notiz></div>
             {/if}
             <label class="kachel">
-              <Symbol name="datei" groesse={28} />
-              {serie
-                ? t('rutsch.serieWaehlen', { monat: monatName(serie.vorschlag) })
-                : schonDa
-                  ? t('rutsch.neuereDatei')
-                  : t('rutsch.dateiWaehlen')}
+              <Symbol name="datei" groesse={24} />
+              <span class="tx"
+                ><b
+                  >{serie
+                    ? t('rutsch.serieWaehlen', { monat: monatName(serie.vorschlag) })
+                    : schonDa
+                      ? t('rutsch.neuereDatei')
+                      : t('rutsch.dateiWaehlen')}</b
+                >{#if aktuell.stand.typ.serie && !serie}<small>{t('rutsch.serieAufEinmal')}</small
+                  >{/if}</span
+              >
               <input
                 class="visually-hidden"
                 type="file"
@@ -672,13 +708,7 @@
               />
             </label>
             {#if !serie && !schonDa}<p class="sicher">{t('rutsch.papier')}</p>{/if}
-            <p class="sicher">
-              {serie
-                ? t('rutsch.serieMehrere')
-                : aktuell.stand.typ.serie
-                  ? t('rutsch.serieAufEinmal')
-                  : t('rutsch.bleibt')}
-            </p>
+            {#if serie}<p class="sicher">{t('rutsch.serieMehrere')}</p>{/if}
             <div class="ausweg">
               {#if serie}
                 <button type="button" class="textlink" onclick={() => naechster('hochgeladen')}
@@ -712,12 +742,6 @@
             </div>
           {/if}
         {:else if gewaehlt}
-          <div class="klein-titel">
-            <p class="fuer">
-              {t('rutsch.fuer', { name: aktuell.person.rufname || aktuell.person.vorname })}
-            </p>
-            <h1 class="unterlage">{aktuell.stand.typ.text}</h1>
-          </div>
           <div class="formular">
             {#await uploadFormular() then modul}
               {#key gewaehlt}
@@ -763,12 +787,22 @@
     <Aktionsleiste text={t('rutsch.zurUebersicht')} href="#{heim}" />
   {/if}
 {:else if phase === 'schritt' && aktuell?.stand.typ.inAppErstellt}
-  <Aktionsleiste
-    text={t('rutsch.speichernWeiter')}
-    grund={auskunftGrund}
-    beiGrund={() => akkordeon?.fehlendenOeffnen()}
-    onclick={() => auskunftSichern('hochgeladen')}
-  />
+  {#if ausfuellen || !auskunftGrund}
+    <Aktionsleiste
+      text={t('rutsch.speichernWeiter')}
+      grund={auskunftGrund}
+      beiGrund={() => akkordeon?.fehlendenOeffnen()}
+      onclick={() => auskunftSichern('hochgeladen')}
+    />
+  {:else}
+    <Aktionsleiste
+      text={t('person.ausfuellen')}
+      onclick={() => {
+        ausfuellenBei = auskunft?.schluessel ?? null;
+        akkordeon?.fehlendenOeffnen();
+      }}
+    />
+  {/if}
 {:else if phase === 'ende'}
   <Aktionsleiste
     text={t('rutsch.zurUebersicht')}
@@ -784,165 +818,128 @@
     max-width: var(--content-width);
     min-height: 100dvh;
     margin: 0 auto;
-    padding: calc(40px + env(safe-area-inset-top)) 0
+    padding: calc(20px + env(safe-area-inset-top)) 0
       max(calc(150px + env(safe-area-inset-bottom)), calc(var(--leiste-hoehe, 0px) + 16px));
   }
 
   .kopf {
-    /* DP33: Diese Seite bekommt noch eine eigene Runde; bis dahin bleibt Zurück in Tinte. */
-    --on-zurueck: var(--ink);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    min-height: var(--tap-target);
-    padding: 0 var(--space-5) 0 12px;
+    min-height: 52px;
+    padding: 0 16px 0 12px;
   }
 
   .fortschritt {
     font-size: calc(15 * var(--px));
-    font-weight: 800;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
   }
 
   .titelblock {
-    padding: 6px var(--space-5) 0;
+    padding: 4px 20px 0;
   }
 
   .frage {
-    margin-top: 10px;
+    margin-top: 8px;
     text-wrap: balance;
   }
 
-  .personen {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 18px var(--space-4) 0;
-    padding: 0;
-    list-style: none;
+  /* Zeichen der Person: Fläche in der App-Farbe, Bürgen mit Umriss in der Druckfarbe (DP39, 1.1). */
+  .zeichen-p {
+    display: inline-block;
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--p-app);
   }
 
-  .pille {
-    min-height: var(--tap-target);
-    padding: 10px 18px;
-    border: 0;
-    border-radius: var(--radius-full);
-    background: var(--farbe);
-    color: var(--on-person);
-    font-size: calc(16 * var(--px));
-    font-weight: 800;
-    cursor: pointer;
-  }
-
-  /* Zurück und Personen (R5). Namen werden nie gekürzt; reicht es nicht, rutschen sie darunter. */
-  .navi {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px 8px;
-    padding: 0 var(--space-3);
-  }
-
-  .navi-knopf {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    min-height: var(--tap-target);
-    padding: 0 6px;
-    border: 0;
+  .zeichen-p.umriss {
     background: none;
-    color: var(--ink);
-    font-size: calc(15 * var(--px));
-    font-weight: 800;
-    cursor: pointer;
+    box-shadow: inset 0 0 0 2px var(--p-linie);
   }
 
-  .navi-knopf:disabled {
-    color: var(--ink-muted);
-    opacity: 0.55;
-    cursor: default;
+  /* Register (DP39, 1.3): Reiter je Person, die Karte schließt am aktiven ohne Spalt an. */
+  .register-rahmen {
+    margin: 4px 16px 0;
+    container-type: inline-size;
   }
 
-  .gedreht {
-    display: inline-flex;
-    transform: scaleX(-1);
-  }
-
-  .sprung {
+  .register {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin-left: auto;
+    align-items: flex-end;
+    gap: 4px;
   }
 
-  .sprung-person {
-    min-height: var(--tap-target);
-    padding: 0 14px;
+  .reiter {
+    display: flex;
+    flex: 0 1 auto;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 44px;
+    margin-bottom: 4px;
+    padding: 12px 16px;
     border: 0;
-    border-radius: var(--radius-full);
-    background: var(--farbe);
-    color: var(--on-person);
+    border-radius: 14px 14px 0 0;
+    background: var(--track);
+    color: var(--ink-muted);
+    font: inherit;
     font-size: calc(15 * var(--px));
-    line-height: calc(19 * var(--px));
-    font-weight: 800;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+    text-align: left;
     cursor: pointer;
   }
 
-  .sprung-person[aria-current] {
-    box-shadow: inset 0 0 0 2px var(--ink);
+  .reiter.an {
+    margin-bottom: 0;
+    background: var(--p-tint);
+    color: var(--ink);
+    font-weight: 650;
   }
 
-  .farbe-1 {
-    --farbe: var(--person-1);
-  }
-  .farbe-2 {
-    --farbe: var(--person-2);
-  }
-  .farbe-3 {
-    --farbe: var(--person-3);
-  }
-  .farbe-4 {
-    --farbe: var(--person-4);
-  }
-
-  .farbe-5 {
-    --farbe: var(--person-5);
-  }
-
-  .farbe-6 {
-    --farbe: var(--person-6);
-  }
-
-  .tipp,
-  .sicher {
-    margin: 18px var(--space-5) 0;
-    font-size: calc(15 * var(--px));
-    line-height: calc(21 * var(--px));
-    color: var(--ink-muted);
-  }
-
-  .sicher {
-    margin-top: 12px;
+  .reiter small {
     font-size: calc(13 * var(--px));
+    font-weight: 500;
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Bis 300 px brechen die Reiter um; der aktive steht unten, damit er an der Karte hängt. */
+  @container (max-width: 300px) {
+    .reiter.an {
+      order: 1;
+    }
   }
 
   .karte {
-    margin: 14px var(--space-4) 0;
-    padding: 14px 16px;
+    --hl-grund: var(--p-tint);
+    padding: 16px 20px 20px;
     border-radius: 20px;
-    background: var(--farbe);
-    color: var(--on-person);
-  }
-
-  .karte.zusatz {
-    border: 2px solid var(--farbe);
-    background: var(--surface);
+    background: var(--p-tint);
     color: var(--ink);
   }
 
+  .karte.ecke {
+    border-top-left-radius: 0;
+  }
+
+  .linie {
+    margin: 0 0 16px;
+  }
+
   .fuer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 0;
-    font-size: calc(14 * var(--px));
-    font-weight: 500;
+    font-size: calc(13 * var(--px));
+    line-height: calc(18 * var(--px));
+    font-weight: 600;
   }
 
   .unterlage:focus {
@@ -950,26 +947,24 @@
   }
 
   .unterlage {
-    margin: 2px 0 0;
-    font-size: calc(28 * var(--px));
-    line-height: calc(31 * var(--px));
-    font-weight: 800;
-    font-stretch: 112%;
-    letter-spacing: -0.6px;
+    margin: 4px 0 0;
+    font-size: calc(26 * var(--px));
+    line-height: calc(30 * var(--px));
+    font-weight: 650;
     hyphens: manual;
   }
 
   .hilfe {
-    margin: 4px 0 0;
-    font-size: calc(14 * var(--px));
-    line-height: calc(19 * var(--px));
+    margin: 8px 0 0;
+    font-size: calc(15 * var(--px));
+    line-height: calc(20 * var(--px));
   }
 
   .marken {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin: 10px 0 0;
+    gap: 8px;
+    margin: 12px 0 0;
     padding: 0;
     list-style: none;
   }
@@ -977,35 +972,111 @@
   .marken li {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     min-height: 32px;
     padding: 0 12px;
-    border: 1.5px dashed var(--ink);
     border-radius: 16px;
-    background: rgb(255 255 255 / 0.75);
-    color: var(--ink);
+    background: var(--surface);
+    color: var(--ink-muted);
     font-size: calc(14 * var(--px));
-    font-weight: 700;
+    font-weight: 600;
   }
 
   .marken li.da {
-    border-style: solid;
-    background: #fff;
+    color: var(--ink);
   }
 
-  .kachel {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    min-height: 120px;
-    margin: 14px var(--space-4) 0;
+  /* Weiße Karten mit Zeilen: Start, Ende, „Hier war schon alles da.“ */
+  .karte-weiss {
+    margin: 20px 16px 0;
+    padding: 0;
     border-radius: 20px;
     background: var(--surface);
-    box-shadow: 0 8px 18px rgb(25 26 44 / 0.08);
-    font-size: calc(17 * var(--px));
-    font-weight: 800;
+    list-style: none;
+    container-type: inline-size;
+  }
+
+  /* 320 px mit Text 130 %: Name oben, Haarlinie darunter in voller Breite. */
+  @container (max-width: 300px) {
+    .person-zeile {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 4px;
+    }
+  }
+
+  .person-zeile {
+    display: grid;
+    grid-template-columns: minmax(96px, auto) minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+  }
+
+  .person-zeile + .person-zeile,
+  .neu-zeile + .neu-zeile {
+    border-top: 1px solid var(--track);
+  }
+
+  .pz-knopf {
+    display: grid;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .pz-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pz-name b {
+    font-size: calc(16 * var(--px));
+    line-height: calc(21 * var(--px));
+    font-weight: 650;
+  }
+
+  .pz-knopf small {
+    padding-left: 18px;
+    font-size: calc(13 * var(--px));
+    line-height: calc(17 * var(--px));
+    color: var(--ink-muted);
+  }
+
+  .legende {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 20px 0;
+    font-size: calc(13 * var(--px));
+    line-height: calc(18 * var(--px));
+    color: var(--ink-muted);
+  }
+
+  .tipp,
+  .sicher {
+    margin: 16px 20px 0;
+    font-size: calc(13 * var(--px));
+    line-height: calc(18 * var(--px));
+    color: var(--ink-muted);
+  }
+
+  /* „PDF wählen“ als weiße Zeile (DP39, Abschnitt 4). */
+  .kachel {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 72px;
+    margin: 12px 16px 0;
+    padding: 16px;
+    border-radius: 20px;
+    background: var(--surface);
+    color: var(--ink);
     cursor: pointer;
   }
 
@@ -1014,8 +1085,27 @@
     outline-offset: 2px;
   }
 
+  .tx {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tx b {
+    font-size: calc(16 * var(--px));
+    line-height: calc(21 * var(--px));
+    font-weight: 650;
+  }
+
+  .tx small {
+    margin-top: 2px;
+    font-size: calc(13 * var(--px));
+    line-height: calc(17 * var(--px));
+    color: var(--ink-muted);
+  }
+
   .datei-fehler {
-    margin: 16px var(--space-4) 0;
+    margin: 16px 16px 0;
   }
 
   .ausweg {
@@ -1028,119 +1118,49 @@
     text-align: center;
   }
 
+  .ausweg .textlink {
+    color: var(--ink);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
   .auskunft {
-    margin: 24px var(--space-4) 0;
-  }
-
-  .klein-titel {
-    padding: 14px var(--space-5) 0;
-  }
-
-  .klein-titel .unterlage {
-    font-size: calc(26 * var(--px));
-    line-height: calc(30 * var(--px));
+    margin: 12px 16px 0;
   }
 
   .formular {
-    margin: 10px var(--space-4) 0;
+    margin: 12px 16px 0;
   }
 
-  .liste-titel {
-    margin: 24px var(--space-5) 0;
-    font-size: calc(18 * var(--px));
-    line-height: calc(24 * var(--px));
-    font-weight: 800;
+  .neu-dazu {
+    margin: 0;
   }
 
-  .liste-mit-titel {
-    margin-top: 10px;
-  }
-
-  .liste {
-    display: grid;
-    gap: 6px;
-    margin: 24px var(--space-4) 0;
-    padding: 12px 16px;
-    border-radius: 20px;
-    background: var(--surface);
-    list-style: none;
-  }
-
-  .eintrag {
+  .neu-zeile {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
-    width: 100%;
-    min-height: var(--tap-target);
-    padding: 6px 0;
-    border: 0;
-    background: none;
-    color: var(--ink);
-    font-size: calc(17 * var(--px));
-    line-height: calc(22 * var(--px));
-    text-align: left;
-    cursor: pointer;
+    gap: 4px 12px;
+    min-height: 60px;
+    padding: 12px 16px;
   }
 
-  .eintrag-text {
-    flex: 1;
+  .neu-zeile .tx {
+    display: grid;
+    flex: 1 1 8em;
     min-width: 0;
   }
 
-  .punkt {
-    flex: none;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--farbe);
-  }
-
-  .fuer-name {
-    color: var(--ink-muted);
-  }
-
-  /* Z4: gestrichelter Kasten unter „Übersprungen“. */
-  .neu-dazu {
-    margin: 24px var(--space-4) 0;
-    padding: 14px 16px 16px;
-    border: 2px dashed var(--control-border);
-    border-radius: 20px;
-  }
-
-  .neu-dazu h2 {
-    margin: 0;
-    font-size: calc(16 * var(--px));
-    line-height: calc(21 * var(--px));
-    font-weight: 800;
-  }
-
-  .neu-dazu ul {
-    display: grid;
-    margin: 4px 0 12px;
+  .mitmachen {
+    margin-left: auto;
+    min-height: 44px;
     padding: 0;
-    list-style: none;
-  }
-
-  .neu-dazu li {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    padding-top: 10px;
-    font-size: calc(16 * var(--px));
-    line-height: calc(21 * var(--px));
-  }
-
-  .knopf-klein {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--tap-target);
-    padding: 0 18px;
-    border: 2px solid var(--ink);
-    border-radius: var(--radius-full);
+    border: 0;
     background: none;
     color: var(--ink);
+    font: inherit;
     font-size: calc(15 * var(--px));
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
   }
 </style>

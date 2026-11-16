@@ -31,7 +31,7 @@ export function anrede(anbieter: string | null | undefined): string {
 }
 
 /**
- * „in der Lindenallee 3“, „im Eppendorfer Weg 211“: die Präposition nach dem Geschlecht des Straßennamens.
+ * „im Lindenring 3“, „im Lindenring 8“: die Präposition nach dem Geschlecht des Straßennamens.
  * Beginnt der Name schon mit einer („Am Markt 4“), bleibt er, wie er ist. Ist das Geschlecht unbekannt
  * oder steht ein gebeugtes Adjektiv davor („Lange Reihe“ hieße „in der Langen Reihe“), gibt es keine:
  * Dann steht „die Wohnung Lange Reihe 5“, ungelenk, aber nie falsch.

@@ -28,7 +28,7 @@ export interface Nachforderung {
   ziel: string;
 }
 
-/** Die Wohnung, wie sie in einer Mail steht: „Hauptstraße 12, 3. OG links, 22767 Hamburg“. */
+/** Die Wohnung, wie sie in einer Mail steht: „Beispielstraße 1, 3. OG links, 12345 Musterstadt“. */
 export function wohnungText(a: HeftaAnhang): string | null {
   const w = a.bewerbung.wohnung;
   return w ? `${w.strasse}, ${w.rest}`.replaceAll(NB, ' ').replaceAll(' · ', ', ') : null;

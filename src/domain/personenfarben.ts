@@ -11,6 +11,8 @@ export interface Personenfarbe {
   name: string;
   app: string;
   druckton: string;
+  /** DP40: Zeichen, Umriss, Ring und Linie auf dunklem Grund (heute wie `app`). */
+  dunkel: string;
 }
 
 export const PERSONENFARBEN: readonly Personenfarbe[] = (

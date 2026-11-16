@@ -27,7 +27,7 @@ function heft(id: string, titel: string, ereignisse: Record<string, unknown>) {
     createdAt: tag(-10),
     updatedAt: tag(-10),
     haushaltId: null,
-    adresse: 'Musterweg 5\n20000 Hamburg',
+    adresse: 'Musterweg 7\n20000 Hamburg',
     link: null,
     quelle: '',
     inseratText: null,
@@ -126,7 +126,7 @@ test('Termin eintragen, in den Kalender, ändern, Absage und doch noch offen (Ze
   expect(ics).toContain('TRIGGER:-PT1410M');
   expect(ics).toContain('TRIGGER:-PT60M');
   expect(ics).toContain('SUMMARY:Besichtigung: Zwei Zimmer am Park');
-  expect(ics).toContain(String.raw`LOCATION:Musterweg 5\, 20000 Hamburg`);
+  expect(ics).toContain(String.raw`LOCATION:Musterweg 7\, 20000 Hamburg`);
   expect(ics).toContain('DESCRIPTION:Klingeln bei Okafor');
   await expect(page.getByRole('status')).toContainText('Die Datei für den Kalender ist da.');
   await ganzesBild(page, 'heft-termin.png');

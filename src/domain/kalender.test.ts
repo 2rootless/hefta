@@ -116,7 +116,7 @@ describe('Besichtigung in den Kalender (Zeile 9)', () => {
       {
         id: 'linden',
         titel: 'Altbau mit Garten',
-        adresse: 'Lindenallee 3, EG\n20259 Hamburg',
+        adresse: 'Lindenring 3, EG\n20259 Hamburg',
         termin: {
           am: new Date(2026, 10, 13, 17, 30).toISOString(),
           treffpunkt: 'Klingeln bei Hansen',
@@ -134,7 +134,7 @@ describe('Besichtigung in den Kalender (Zeile 9)', () => {
     expect(ics).toContain('TRIGGER:-PT60M');
     expect(ics.match(/BEGIN:VALARM/g)).toHaveLength(2);
     expect(ics).toContain('TRANSP:OPAQUE');
-    expect(ics).toContain(String.raw`LOCATION:Lindenallee 3\, EG\, 20259 Hamburg`);
+    expect(ics).toContain(String.raw`LOCATION:Lindenring 3\, EG\, 20259 Hamburg`);
     expect(ics).toContain('SUMMARY:Besichtigung: Altbau mit Garten');
   });
 });

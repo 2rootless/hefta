@@ -370,7 +370,7 @@
           {/if}
           {#if rolle !== 'hauptmieter'}
             <button type="button" class="textlink links" onclick={herausnehmen}
-              >{t('personSeite.ausHaushaltNehmen')}</button
+              >{t('personSeite.ausHaushaltNehmen')}&nbsp;›</button
             >
           {/if}
         </div>
@@ -393,6 +393,10 @@
             bind:farbe
             ursprung={mitglied.zugehoerigkeit.farbe}
             vergeben={vergebeneFarben}
+            vorschau={{
+              name: `${werte.vorname} ${werte.nachname}`.trim(),
+              buerge: mitglied.zugehoerigkeit.rolle === 'buerge',
+            }}
           />
         </div>
       </section>
@@ -592,9 +596,9 @@
   .abschnitt-kopf h2,
   .liste-titel {
     margin: 0;
-    font-size: calc(17 * var(--px));
-    line-height: calc(22 * var(--px));
-    font-weight: 800;
+    font-size: calc(15 * var(--px));
+    line-height: calc(20 * var(--px));
+    font-weight: 650;
   }
 
   .liste-titel {

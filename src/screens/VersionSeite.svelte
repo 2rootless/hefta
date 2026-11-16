@@ -91,7 +91,7 @@
   const wegdamit = einmal(wegdamitRoh);
 </script>
 
-<main class="seite stil-alt">
+<main class="seite">
   <div class="kopf">
     <Zurueck href="#{basis}" text={u ? listenText(u.typ) : t('allgemein.zurueck')} />
   </div>

@@ -1,4 +1,5 @@
 import { FAKTEN_STAND } from '../../src/domain/pruefhinweise';
+import { VERGABE } from '../../src/domain/personenfarben';
 
 // Szenarien aus design/pruefkatalog.md als Testdaten. Jede Unterlage bekommt einen Zustand;
 // daraus entstehen Versionen mit passenden Daten relativ zum festen Testtag HEUTE.
@@ -506,7 +507,7 @@ export function datensaetze(s: Szenario) {
       // Selbstauskunft „da“ heißt: alle Angaben beisammen (sie entsteht in der App, nicht als Datei).
       ...(p.unterlagen.selbstauskunft === 'da'
         ? {
-            kontakt: { telefon: '0170 1234567', email: '' },
+            kontakt: { telefon: '0171 3920001', email: '' },
             nettoeinkommen: 2800,
             selbstauskunft: {
               einkommenArt: 'betrag',
@@ -530,7 +531,9 @@ export function datensaetze(s: Szenario) {
       personId: id,
       rolle: p.rolle,
       bezeichnung: p.bezeichnung,
-      farbe: (i % 6) + 1,
+      // DP39, 1.1: Farben in der Reihenfolge, in der Hefta sie vergibt, wie in den Mustermappen (Lea Lavendel,
+      // Petra Minze).
+      farbe: VERGABE[i % VERGABE.length]!,
       reihenfolge: i,
       herausgenommenAm: p.raus ?? null,
     });

@@ -127,17 +127,23 @@ test('Ohne Bürgen gibt es keine Trennzeile: Die Personen sind Ebene 2', async (
   expect(kopf.some((k) => k.includes('Im Mietvertrag'))).toBe(false);
 });
 
-test('Personenansicht und Rutsch: Band als ein Satz, Personen als Tasten', async ({ page }) => {
+test('Personenseite und Rutsch: Haarlinie als benannte Liste, Register mit Reitern (DP39)', async ({
+  page,
+}) => {
   await laden(page, '01-standard', '/person/p-01-standard-0');
-  await expect(page.getByRole('img', { name: /^Max: \S+ von \S+ aktuell$/ })).toHaveCount(1);
+  const linie = page.getByRole('list', { name: 'Stand der Unterlagen' });
+  await expect(linie).toHaveCount(1);
+  for (const stueck of await linie.getByRole('listitem').all())
+    await expect(stueck).toHaveAttribute('aria-label', /, (fertig|noch offen|übersprungen)$/);
   await expect(page.getByRole('link', { name: /^Bonitäts/ })).toBeVisible();
 
   await laden(page, '01-standard', '/rutsch');
-  await page.getByRole('button', { name: /^Max/ }).click();
-  await expect(page.getByRole('img', { name: /^Schritt \S+ von \S+: .+ für Max$/ })).toHaveCount(1);
-  await expect(page.getByRole('button', { name: 'Zu Petra springen' })).toBeVisible();
-  // Die Steine liest niemand einzeln vor.
-  await expect(page.getByRole('button', { name: /^Schritt \d+ von/ })).toHaveCount(0);
+  await page.getByRole('button', { name: /^Los geht/ }).click();
+  const register = page.getByRole('navigation', { name: 'Zwischen den Schritten wechseln' });
+  await expect(register.getByRole('button', { name: /^Petra \d+\/\d+$/ })).toBeVisible();
+  await expect(register.locator('[aria-current="true"]')).toHaveCount(1);
+  // Die aktuelle Unterlage heißt „…, jetzt“; jede andere sagt ihren Stand.
+  await expect(page.getByRole('button', { name: /, jetzt$/ })).toHaveCount(1);
 });
 
 test('Fokus: nach einem Seitenwechsel auf dem Titel, sichtbarer Ring, Felder behalten ihn', async ({

@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 export const NB = ' ';
 const BITTE =
   'Falls die Wohnung an jemand anderen geht, löschen Sie diese Unterlagen bitte. Vielen Dank.';
-const WOHNUNG = { strasse: 'Hauptstraße 12', rest: `3. OG links · 22767 Hamburg` };
+const WOHNUNG = { strasse: 'Beispielstraße 1', rest: `3. OG links · 12345 Musterstadt` };
 
 export interface Probe {
   datei: string;
@@ -40,7 +40,7 @@ export const M1: Probe = {
         { name: 'Petra Mustermann', rolle: 'buerge' },
       ],
       mitziehende: [{ text: 'Ein Kind', anzahl: 1, art: 'kind' }],
-      kontakt: { telefon: '0170 1234567', email: 'max.mustermann@example.com' },
+      kontakt: { telefon: '0171 3920001', email: 'max.mustermann@example.com' },
     },
     modus: 'marktueblich',
     loeschwunsch: BITTE,
@@ -81,7 +81,7 @@ export const M2: Probe = {
     ],
   },
 };
-export const M3: Probe = { datei: 'Bewerbung_Schmidt_Hauptstr12.pdf', seiten: 12 };
+export const M3: Probe = { datei: 'Bewerbung_Schmidt_Beispielstr1.pdf', seiten: 12 };
 export const M4: Probe = {
   datei: 'Bewerbung_Becker_Yilmaz.pdf',
   seiten: 3,
@@ -133,7 +133,7 @@ export const M6: Probe = {
     erstellt: '2026-11-04',
     bewerbung: {
       kennung: 'c47b0e93-2d1f-4a68-9f35-e8a1d6c4b210',
-      wohnung: { strasse: 'Lindenallee 3', rest: `Erdgeschoss · 20259 Hamburg` },
+      wohnung: { strasse: 'Lindenring 3', rest: `Erdgeschoss · 20259 Hamburg` },
     },
     haushalt: {
       personen: [{ name: 'Tom Nguyen', rolle: 'hauptmieter', kontakt: true }],
@@ -159,8 +159,8 @@ export const LANG: Probe = {
     bewerbung: {
       kennung: '5d8a2f40-9c3e-4b71-b6d2-0e4f7a1c8b93',
       wohnung: {
-        strasse: 'Große Bergstraße 152',
-        rest: 'Hinterhaus, 4. OG rechts · 22767 Hamburg-Altona',
+        strasse: 'Große Beispielstraße 1',
+        rest: 'Hinterhaus, 4. OG rechts · 12345 Musterstadt-Nord',
       },
     },
     haushalt: {

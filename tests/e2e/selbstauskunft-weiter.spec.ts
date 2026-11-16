@@ -12,9 +12,11 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   await haushaltMitMax(page);
   await page.getByRole('link', { name: /^Unterlagen hinzufügen/ }).click();
   await page.getByRole('button', { name: 'Los geht’s' }).click();
+  // DP39, 4: Die Teile stehen zuerst als Liste; „Ausfüllen“ öffnet den ersten offenen.
+  await page.getByRole('button', { name: 'Ausfüllen' }).click();
 
   // Kontakt: Enter führt von Feld zu Feld, im letzten Feld zum nächsten offenen Teil.
-  await page.getByLabel('Telefon').fill('0170 1234567');
+  await page.getByLabel('Telefon').fill('0171 3920001');
   await page.getByLabel('Telefon').press('Enter');
   await expect(page.getByLabel('E-Mail')).toBeFocused();
   await page.getByLabel('E-Mail').press('Enter');
@@ -78,7 +80,7 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   await page.getByRole('button', { name: /^Kontakt .*Ändern/ }).click();
   await page.getByRole('button', { name: 'Angaben löschen' }).click();
   await page.getByRole('button', { name: 'Abbrechen' }).click();
-  await expect(page.getByLabel('Telefon')).toHaveValue('0170 1234567');
+  await expect(page.getByLabel('Telefon')).toHaveValue('0171 3920001');
   await page.getByRole('button', { name: 'Angaben löschen' }).click();
   await expect(page.getByText(/^Angaben in diesem Teil löschen\?/)).toBeVisible();
   await page.getByRole('button', { name: 'Löschen', exact: true }).click();

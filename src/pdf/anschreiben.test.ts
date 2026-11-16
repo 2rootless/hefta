@@ -8,14 +8,14 @@ describe('Anschreiben-PDF (Version 2)', () => {
   it('eine Seite mit Betreff und Text, neutrale Metadaten', async () => {
     const anschreiben = vorlageFuellen(standardVorlage(), {
       anrede: 'Sehr geehrte Frau Schmidt,',
-      adresse: 'Hauptstraße 12',
+      adresse: 'Beispielstraße 1',
       personen: 'zwei Erwachsene und ein Kind',
       namen: 'Max Mustermann und Lea Beispiel',
-      kontakt: '0170 1234567',
+      kontakt: '0171 3920001',
     });
     const { bytes, seiten } = await anschreibenBauen({
       dateiname: '00_Anschreiben_Mustermann.pdf',
-      absender: ['Max Mustermann und Lea Beispiel', 'Friedensallee 1, 22761 Hamburg'],
+      absender: ['Max Mustermann und Lea Beispiel', 'Lindenring 8, 20259 Hamburg'],
       empfaenger: ['Frau Schmidt', 'Hausverwaltung Nord'],
       ortDatum: 'Hamburg, 6. November 2026',
       anschreiben,
@@ -25,7 +25,7 @@ describe('Anschreiben-PDF (Version 2)', () => {
     });
     expect(seiten).toBe(1);
     const text = (await textJeSeite(bytes))[0]!;
-    expect(text).toContain('Bewerbung um die Wohnung Hauptstraße 12');
+    expect(text).toContain('Bewerbung um die Wohnung Beispielstraße 1');
     expect(text).toContain('Sehr geehrte Frau Schmidt,');
     const pdf = await PDFDocument.load(bytes, { updateMetadata: false });
     expect(pdf.getTitle()).toBe('00_Anschreiben_Mustermann');

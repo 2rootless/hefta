@@ -1,0 +1,161 @@
+{
+ "usage": "Personenfarben je Grund (DP40). app: Fläche in App und Vermieterseite, hell und dunkel; druckton: Zeichen auf Papier und auf der Vermieterseite hell; dunkel: Zeichen, Umriss (Bürgen), Kreis und Haarlinie auf dunklem Grund (#26221d, #1b1814), in App und Vermieterseite. Schrift auf der Farbe immer #26221e.",
+ "farben": [
+  {
+   "id": "apricot",
+   "name": "Apricot",
+   "nummer": 1,
+   "reihenfolge": 1,
+   "app": "#e9a970",
+   "druckton": "#956f4d",
+   "dunkel": "#e9a970",
+   "kontrast_dunkel": {
+    "#26221d": 7.81,
+    "#1b1814": 8.74
+   }
+  },
+  {
+   "id": "lavendel",
+   "name": "Lavendel",
+   "nummer": 7,
+   "reihenfolge": 2,
+   "app": "#8c89d3",
+   "druckton": "#65628e",
+   "dunkel": "#8c89d3",
+   "kontrast_dunkel": {
+    "#26221d": 4.99,
+    "#1b1814": 5.59
+   }
+  },
+  {
+   "id": "minze",
+   "name": "Minze",
+   "nummer": 8,
+   "reihenfolge": 3,
+   "app": "#97edda",
+   "druckton": "#597d73",
+   "dunkel": "#97edda",
+   "kontrast_dunkel": {
+    "#26221d": 11.62,
+    "#1b1814": 13.01
+   }
+  },
+  {
+   "id": "petrol",
+   "name": "Petrol",
+   "nummer": 9,
+   "reihenfolge": 4,
+   "app": "#3f9ea5",
+   "druckton": "#366f72",
+   "dunkel": "#3f9ea5",
+   "kontrast_dunkel": {
+    "#26221d": 5.0,
+    "#1b1814": 5.6
+   }
+  },
+  {
+   "id": "flieder",
+   "name": "Flieder",
+   "nummer": 3,
+   "reihenfolge": 5,
+   "app": "#cbb9eb",
+   "druckton": "#7d728b",
+   "dunkel": "#cbb9eb",
+   "kontrast_dunkel": {
+    "#26221d": 8.79,
+    "#1b1814": 9.84
+   }
+  },
+  {
+   "id": "ton",
+   "name": "Ton",
+   "nummer": 6,
+   "reihenfolge": 6,
+   "app": "#bb9a85",
+   "druckton": "#826c5e",
+   "dunkel": "#bb9a85",
+   "kontrast_dunkel": {
+    "#26221d": 6.08,
+    "#1b1814": 6.8
+   }
+  },
+  {
+   "id": "honig",
+   "name": "Honig",
+   "nummer": 4,
+   "reihenfolge": 7,
+   "app": "#efce7e",
+   "druckton": "#86754c",
+   "dunkel": "#efce7e",
+   "kontrast_dunkel": {
+    "#26221d": 10.38,
+    "#1b1814": 11.62
+   }
+  },
+  {
+   "id": "rose",
+   "name": "Rose",
+   "nummer": 5,
+   "reihenfolge": 8,
+   "app": "#ef9fbb",
+   "druckton": "#996977",
+   "dunkel": "#ef9fbb",
+   "kontrast_dunkel": {
+    "#26221d": 7.79,
+    "#1b1814": 8.71
+   }
+  },
+  {
+   "id": "beere",
+   "name": "Beere",
+   "nummer": 10,
+   "reihenfolge": 9,
+   "app": "#c578a6",
+   "druckton": "#895772",
+   "dunkel": "#c578a6",
+   "kontrast_dunkel": {
+    "#26221d": 4.97,
+    "#1b1814": 5.57
+   }
+  },
+  {
+   "id": "kornblume",
+   "name": "Kornblume",
+   "nummer": 11,
+   "reihenfolge": 10,
+   "app": "#67a0d3",
+   "druckton": "#4e708e",
+   "dunkel": "#67a0d3",
+   "kontrast_dunkel": {
+    "#26221d": 5.68,
+    "#1b1814": 6.36
+   }
+  },
+  {
+   "id": "himmel",
+   "name": "Himmel",
+   "nummer": 12,
+   "reihenfolge": 11,
+   "app": "#93cef3",
+   "druckton": "#5e7a8b",
+   "dunkel": "#93cef3",
+   "kontrast_dunkel": {
+    "#26221d": 9.3,
+    "#1b1814": 10.41
+   }
+  },
+  {
+   "id": "pistazie",
+   "name": "Pistazie",
+   "nummer": 2,
+   "reihenfolge": 12,
+   "app": "#c4db83",
+   "druckton": "#727b4e",
+   "dunkel": "#c4db83",
+   "kontrast_dunkel": {
+    "#26221d": 10.39,
+    "#1b1814": 11.63
+   }
+  }
+ ]
+}

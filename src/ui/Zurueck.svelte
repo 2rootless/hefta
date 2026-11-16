@@ -39,7 +39,7 @@
   .zurueck {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     min-height: var(--tap-target);
     padding-right: var(--space-2);
     /* DP33 A7: überall in Akzent, wie im Heft; Seiten, die noch eine Runde bekommen, setzen Tinte. */

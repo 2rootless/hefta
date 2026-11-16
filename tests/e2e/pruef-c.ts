@@ -4,6 +4,7 @@ export function pruefen() {
   const out = {
     c1: false,
     c2: [] as string[],
+    c32: [] as string[],
     c3: [] as string[],
     c4: [] as string[],
     c5: [] as string[],
@@ -236,6 +237,14 @@ export function pruefen() {
       const r = e.getBoundingClientRect();
       // Der Link der Person steht in der Überschrift, seine Fläche ist die ganze Karte.
       const flaeche = e.matches('.ueberzug') ? e.closest('.karte')!.getBoundingClientRect() : r;
+      // Ziele mitten im Satz (DP39: „Warum?“ im Hinweis) nimmt auch WCAG 2.5.8 aus.
+      if (
+        e.matches('p > button, p > a') &&
+        /^inline/.test(getComputedStyle(e).display) &&
+        (e.parentElement!.textContent ?? '').trim().length >
+          (e.textContent ?? '').trim().length + 20
+      )
+        return;
       if (flaeche.height > 0 && flaeche.height < 43.5 && sichtbar(e))
         out.c5.push(`${(e.textContent ?? '').trim().slice(0, 30)} ${Math.round(r.height)}`);
     });
@@ -466,6 +475,8 @@ export function pruefen() {
     for (let j = i + 1; j < flaechen.length; j++) {
       const b = flaechen[j]!;
       if (a.contains(b) || b.contains(a)) continue;
+      // DP39: Der Kreis zum Auswählen sitzt mit Absicht unten auf der Miniatur.
+      if (a.closest('.zelle') && a.closest('.zelle') === b.closest('.zelle')) continue;
       const trifft = kaesten[i]!.some((ra) =>
         kaesten[j]!.some(
           (rb) =>
@@ -494,6 +505,12 @@ export function pruefen() {
     if (rects.some((x) => x.right > window.innerWidth + 1 || x.left < -1))
       out.c11.push(`Wort „${wort}“`);
   }
+  // C32 (Wunschliste W3, PC45; Fassung 5, PC47): kein Trennpunkt „·“ im sichtbaren Text, nur auf der
+  // Vermieterseite und ihren Ratgeber-Seiten. In der App dürfen die Punkte bleiben (Auftraggeber, 15.11.).
+  // Personenzeichen sind Flächen, kein Text.
+  if (document.querySelector('.vs-top, .vs-h1'))
+    for (const z of document.body.innerText.split('\n'))
+      if (z.includes('\u00b7')) out.c32.push(z.trim().slice(0, 40));
   out.hoehe = Math.round(main.getBoundingClientRect().height);
   // C28 (DP35, PC36): Rot (Akzent) steht nur für Zurück oben, Warnungen, Fehler, den Zähler über der Grenze
   // und den gewählten Reiter unten (R1). Gesucht wird Text in der Akzentfarbe; zulässig ist er nur in

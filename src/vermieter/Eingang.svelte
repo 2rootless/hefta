@@ -113,7 +113,7 @@
               </span>
               {werKurz(a)}
             {:else}
-              {seitenzahlText(m.seiten)} · {groesseText(m.bytes)}
+              {seitenzahlText(m.seiten)}, {groesseText(m.bytes)}
             {/if}
           </span>
           {#if a}

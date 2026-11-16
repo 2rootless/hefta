@@ -1,5 +1,7 @@
 <script lang="ts">
+  import NamensVorschau from './NamensVorschau.svelte';
   import Symbol from './Symbol.svelte';
+  import type { PdfDokument } from '../pdf/pdfjs';
   // Prüfhinweis als Kasten (design/nachtraeglich-ordnen.md, PH2 bis PH4): eine Frage mit dem, was Hefta
   // gesehen hat, darunter die Lösung und „Passt so“. Sperrt nie etwas.
   import type { Pruefhinweis } from '../domain/pruefhinweise';
@@ -16,6 +18,8 @@
     ohneLoesung = false,
     aufMonatsSeite = false,
     beimLoesen,
+    dokument = null,
+    ansehen,
   }: {
     hinweis: Pruefhinweis;
     rufname: string;
@@ -30,7 +34,14 @@
     aufMonatsSeite?: boolean;
     /** Beim Hochladen: eine Lösung, die das Formular selbst ausführt. */
     beimLoesen?: { text: string; onclick: () => void };
+    /** Beim Hochladen: das offene PDF, für die Vorschau mit dem markierten Namen (RU4). */
+    dokument?: PdfDokument | null;
+    /** Lupe auf der Vorschau: Seite groß (Nummer ab 1). */
+    ansehen?: (seite: number) => void;
   } = $props();
+
+  /** RU4, DP39 1.4: Bei einem fremden Namen zeigt die Karte die Stelle im Dokument. */
+  const fremd = $derived(hinweis.art === 'name' ? hinweis.person : undefined);
 
   const a = $derived(pruefAnzeige(hinweis, rufname, aufMonatsSeite));
   const k = $derived(a.knopf);
@@ -41,6 +52,19 @@
   <p>
     {#each a.satz as teil, i (i)}{#if teil.fett}<b>{teil.text}</b>{:else}{teil.text}{/if}{/each}
   </p>
+  {#if fremd}
+    <div class="vorschau">
+      {#if dokument}
+        <NamensVorschau {dokument} vorname={fremd.vorname} nachname={fremd.nachname} {ansehen} />
+      {:else}
+        <NamensVorschau
+          version={hinweis.version}
+          vorname={fremd.vorname}
+          nachname={fremd.nachname}
+        />
+      {/if}
+    </div>
+  {/if}
   <div class="wege">
     {#if beimLoesen}
       <button type="button" class="los" onclick={beimLoesen.onclick}>{beimLoesen.text}</button>
@@ -90,6 +114,22 @@
     flex: 1 1 0;
     min-width: 0;
     margin: 0;
+  }
+
+  .vorschau {
+    flex-basis: 100%;
+    margin-top: 12px;
+    padding-left: 32px;
+  }
+
+  .vorschau:has(:global(.mass)) {
+    margin-top: 0;
+  }
+
+  @media (max-width: 359px) {
+    .vorschau {
+      padding-left: 0;
+    }
   }
 
   .wege {

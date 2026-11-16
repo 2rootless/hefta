@@ -3,7 +3,7 @@ import { adresseAus, angabenAus, portalAus, warmAus, wohnungAus } from './angabe
 
 describe('Vom Gelesenen zum Heft', () => {
   const adresse = {
-    strasse: 'Lindenallee 3',
+    strasse: 'Lindenring 3',
     plz: '20259',
     ort: 'Hamburg',
     stadtteil: 'Eimsbüttel',
@@ -45,7 +45,7 @@ describe('Vom Gelesenen zum Heft', () => {
       befristung: null,
       portal: 'ImmoScout24',
     });
-    expect(adresseAus(adresse)).toBe('Lindenallee 3\n20259 Hamburg');
+    expect(adresseAus(adresse)).toBe('Lindenring 3\n20259 Hamburg');
   });
 
   it('nur ein Monat oder „sofort“ ist kein Einzugstag; befristet bleibt befristet', () => {

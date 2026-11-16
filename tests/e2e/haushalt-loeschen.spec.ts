@@ -20,7 +20,7 @@ async function einHeft(page: Page) {
               createdAt: zeit,
               updatedAt: zeit,
               haushaltId: (hh.result[0] as { id: string }).id,
-              adresse: 'Lindenallee 3\n20259 Hamburg',
+              adresse: 'Lindenring 3\n20259 Hamburg',
               link: null,
               quelle: '',
               inseratText: null,
@@ -68,7 +68,7 @@ test('„Haushalt löschen“: erst nach dem Blatt, Hefte bleiben, Hinweis führ
 
   // Das Heft ist noch da, jetzt ohne Haushalt.
   await page.goto('/#/wohnungen');
-  await expect(page.getByText('Lindenallee 3').first()).toBeVisible();
+  await expect(page.getByText('Lindenring 3').first()).toBeVisible();
 });
 
 test('Nachname fehlt: eigener Punkt im Kasten, führt zum Ändern und zurück zur Mappe', async ({

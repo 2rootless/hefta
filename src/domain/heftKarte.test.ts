@@ -10,9 +10,9 @@ import {
 } from './heftKarte';
 
 const NB = ' ';
-const ohne = { adresse: 'Methfesselstraße 12\n20255 Hamburg' };
+const ohne = { adresse: 'Musterweg 7\n20255 Hamburg' };
 const mit = {
-  adresse: 'Lindenallee 3, EG\n20259 Hamburg',
+  adresse: 'Lindenring 3, EG\n20259 Hamburg',
   angaben: {
     titel: 'Helle 3-Zimmer-Wohnung',
     merkmal: 'Altbau mit Garten',
@@ -29,7 +29,7 @@ describe('Kopf eines Hefts', () => {
     expect(heftTitel({ ...mit, angaben: { ...mit.angaben, merkmal: null } }).text).toBe(
       'Helle 3-Zimmer-Wohnung',
     );
-    expect(heftTitel(ohne)).toEqual({ text: 'Methfesselstraße 12', strasse: true });
+    expect(heftTitel(ohne)).toEqual({ text: 'Musterweg 7', strasse: true });
   });
 
   it('Titel ohne Titel und ohne Straße: gebaut nach E78', () => {
@@ -59,7 +59,7 @@ describe('Kopf eines Hefts', () => {
   it('Ort: Stadtteil, sonst der Ort ohne Postleitzahl', () => {
     expect(heftOrt(mit)).toBe('Eimsbüttel');
     expect(heftOrt(ohne)).toBe('Hamburg');
-    expect(heftAdresseKurz(mit)).toBe('Lindenallee 3, EG · Eimsbüttel');
+    expect(heftAdresseKurz(mit)).toBe('Lindenring 3, EG · Eimsbüttel');
   });
 
   it('Eckdaten mit Komma, festen Leerzeichen und „ca.“', () => {
@@ -112,13 +112,13 @@ describe('Zurück-Link von den Seiten im Heft (P003)', () => {
     angaben: merkmal ? ({ merkmal } as never) : undefined,
   });
   it('nimmt das Merkmal, sonst die Straße', () => {
-    expect(zurueckZumHeft(heft('Lindenallee 3\n20259 Hamburg', 'Mit Balkon'))).toBe('Mit Balkon');
-    expect(zurueckZumHeft(heft('Lindenallee 3\n20259 Hamburg'))).toBe('Lindenallee 3');
+    expect(zurueckZumHeft(heft('Lindenring 3\n20259 Hamburg', 'Mit Balkon'))).toBe('Mit Balkon');
+    expect(zurueckZumHeft(heft('Lindenring 3\n20259 Hamburg'))).toBe('Lindenring 3');
   });
   it('ab 15 Zeichen oder ohne Namen bleibt „Heft“', () => {
-    expect(zurueckZumHeft(heft('Lindenallee 3, EG'))).toBeNull(); // 17 Zeichen
-    expect(zurueckZumHeft(heft('Rosenweg 12345A'))).toBeNull(); // genau 15
-    expect(zurueckZumHeft(heft('Rosenweg 1234A'))).toBe('Rosenweg 1234A'); // 14
+    expect(zurueckZumHeft(heft('Lindenring 3, EG'))).toBeNull(); // 17 Zeichen
+    expect(zurueckZumHeft(heft('Musterweg 7, EG'))).toBeNull(); // genau 15
+    expect(zurueckZumHeft(heft('Musterweg 7 EG'))).toBe('Musterweg 7 EG'); // 14
     expect(zurueckZumHeft(heft(''))).toBeNull();
     expect(zurueckZumHeft(null)).toBeNull();
   });

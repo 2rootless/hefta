@@ -205,7 +205,28 @@
 
   function ergebnisWort(h: Heft): string {
     const art = h.ereignisse.ergebnis?.art;
-    return t(art ? `hefte.ergebnis.${art}` : 'hefte.ergebnis.abgelegt');
+    // DP39: Ohne Ergebnis hat man es selbst abgelegt.
+    return art ? t(`hefte.ergebnis.${art}`) : t('abgelegtListe.selbst');
+  }
+
+  const MONAT_KURZ = [
+    'Jan.',
+    'Feb.',
+    'März',
+    'Apr.',
+    'Mai',
+    'Juni',
+    'Juli',
+    'Aug.',
+    'Sept.',
+    'Okt.',
+    'Nov.',
+    'Dez.',
+  ];
+  /** DP39, 7: „12. Nov.“, wann das Heft abgelegt wurde. */
+  function abgelegtTag(h: Heft): string {
+    const d = new Date(h.ereignisse.abgelegtAm ?? h.ereignisse.ergebnis?.am ?? h.updatedAt);
+    return `${d.getDate()}.\u00a0${MONAT_KURZ[d.getMonth()]}`;
   }
 </script>
 
@@ -339,13 +360,18 @@
       <Symbol name={offen === 'abgelegt' ? 'auf' : 'ab'} groesse={20} />
     </button>
     {#if offen === 'abgelegt'}
-      <div class="leise">
+      <!-- DP39, 7 (W21): eine Zeile je Heft ohne Bild, Datum vorn, Name in einer Zeile, darunter der Grund. -->
+      <ul class="ab-karte">
         {#each g.abgelegt as h (h.id)}
-          <a class="lz" href={`#/heft/${h.id}`}
-            ><b>{heftTitel(h).text}</b><span>{ergebnisWort(h)}</span></a
-          >
+          <li>
+            <a class="az" href={`#/heft/${h.id}`}>
+              <span class="az-tag">{abgelegtTag(h)}</span>
+              <span class="az-tx"><b>{heftTitel(h).text}</b><small>{ergebnisWort(h)}</small></span>
+              <span class="az-pfeil"><Symbol name="weiter" groesse={16} /></span>
+            </a>
+          </li>
         {/each}
-      </div>
+      </ul>
     {/if}
   {/if}
 </div>
@@ -737,6 +763,64 @@
 
   .an {
     font-weight: 400;
+  }
+
+  .ab-karte {
+    margin: 0 0 8px;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 20px;
+    background: var(--surface);
+    list-style: none;
+  }
+
+  .ab-karte li + li {
+    border-top: 1px solid var(--track);
+  }
+
+  .az {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 60px;
+    padding: 12px 16px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .az-tag {
+    flex: none;
+    width: 52px;
+    font-size: calc(13.5 * var(--px));
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .az-tx {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .az-tx b {
+    overflow: hidden;
+    font-size: calc(16 * var(--px));
+    line-height: calc(21 * var(--px));
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .az-tx small {
+    margin-top: 2px;
+    font-size: calc(13 * var(--px));
+    color: var(--ink-muted);
+  }
+
+  .az-pfeil {
+    display: flex;
+    flex: none;
+    color: var(--ink-quiet);
   }
 
   .leise {

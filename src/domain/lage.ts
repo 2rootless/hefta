@@ -4,7 +4,7 @@
 /** Je Postleitzahl [Breite, Länge, Spanne in km]. */
 export type PlzTabelle = Record<string, [number, number, number]>;
 
-/** Die Postleitzahl aus einer Adresse im Format der Hefte („Lindenallee 3\n20259 Hamburg“). */
+/** Die Postleitzahl aus einer Adresse im Format der Hefte („Lindenring 3\n20259 Hamburg“). */
 export function plzAus(text: string | null | undefined): string | null {
   const m = /(?:^|\D)(\d{5})(?=\s+\p{L})/u.exec(text ?? '');
   return m ? m[1]! : null;

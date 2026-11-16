@@ -1,14 +1,22 @@
 <script lang="ts">
   // Nach links wischen zeigt „Löschen“, ganz durchwischen löscht (design/nachtraeglich-ordnen.md, OR7).
-  // Für VoiceOver, Schalter und Tastatur ist die Fläche versteckt: Dort gibt es „Bearbeiten“ (OR7c).
+  // Für VoiceOver, Schalter und Tastatur ist die Fläche versteckt. Seit DP39 gibt es kein „Bearbeiten“
+  // mehr: Dafür steht am Ende der Zeile ein Knopf „… löschen“, der erst beim Fokus sichtbar wird (OR7c).
   import type { Snippet } from 'svelte';
   import { t } from '../i18n';
 
   let {
     aktiv = true,
     beimLoeschen,
+    loeschenText,
     children,
-  }: { aktiv?: boolean; beimLoeschen: () => void; children: Snippet } = $props();
+  }: {
+    aktiv?: boolean;
+    beimLoeschen: () => void;
+    /** Name des Knopfs für Tastatur und Vorleser, etwa „Bonitätsnachweis löschen“. */
+    loeschenText?: string;
+    children: Snippet;
+  } = $props();
 
   const BREITE = 96;
   let zeile = $state<HTMLElement>();
@@ -104,6 +112,11 @@
   <div class="inhalt" class:gezogen bind:this={zeile} use:wischen>
     {@render children()}
   </div>
+  {#if aktiv && loeschenText}
+    <button type="button" class="tastatur visually-hidden" onclick={beimLoeschen}
+      >{loeschenText}</button
+    >
+  {/if}
 </div>
 
 <style>
@@ -145,5 +158,27 @@
 
   .inhalt.gezogen {
     transition: none;
+  }
+
+  /* Versteckt wie jedes `visually-hidden`, bis er den Fokus hat; dann liegt er wie die Wischfläche
+     rechts auf der Zeile. */
+  .tastatur {
+    background: var(--action);
+    color: var(--on-action);
+    font: inherit;
+    font-size: calc(14 * var(--px));
+    font-weight: 700;
+  }
+
+  .tastatur:focus,
+  .tastatur:focus-visible {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0 16px;
+    clip: auto;
   }
 </style>

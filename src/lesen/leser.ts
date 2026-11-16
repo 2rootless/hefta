@@ -361,7 +361,7 @@ export interface GeleseneAdresse {
   strasse: string;
   plz: string;
   ort: string;
-  /** Mittlerer Teil wie „Eimsbüttel“ in „Lindenallee 3, Eimsbüttel, 20259 Hamburg“. */
+  /** Mittlerer Teil wie „Eimsbüttel“ in „Lindenring 3, Eimsbüttel, 20259 Hamburg“. */
   stadtteil: string | null;
 }
 
@@ -372,8 +372,8 @@ const ORT = String.raw`([A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß .\-/]*[A-Za-
 
 /**
  * Die erste Adresse im Text, in der Reihenfolge der Seite: Die Lage des Inserats steht oben, die des
- * Anbieters weiter unten (Probe 2). Formen (Beispiele erfunden): „Lindenallee 3, Eimsbüttel, 20259 Hamburg“,
- * „Talstraße, Westend, Frankfurt am Main (60325)“, „Am Ring 5 - 21109 Hamburg“, Straße und Postleitzahl
+ * Anbieters weiter unten (Probe 2). Formen (Beispiele erfunden): „Lindenring 3, Eimsbüttel, 20259 Hamburg“,
+ * „Talstraße, Westend, Frankfurt am Main (60325)“, „Lindenring 3 - 20259 Hamburg“, Straße und Postleitzahl
  * in zwei Zeilen. Lieber keine als eine falsche.
  */
 export function adresseLesen(text: string): GeleseneAdresse | null {

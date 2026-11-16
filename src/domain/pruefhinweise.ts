@@ -51,7 +51,7 @@ export interface Pruefhinweis {
   /** Monat auf der Seite. */
   monat?: string;
   /** Name einer anderen Person. */
-  person?: { id: string; rufname: string; voll: string };
+  person?: { id: string; rufname: string; voll: string; vorname: string; nachname: string };
   /** Seite in der Datei. */
   seite?: number;
   /** „Seite 1 von 2“. */
@@ -181,6 +181,8 @@ export function versionPruefen(
           id: andere.id,
           rufname: andere.rufname,
           voll: `${andere.vorname} ${andere.nachname}`.trim(),
+          vorname: andere.vorname,
+          nachname: andere.nachname,
         },
       });
   }

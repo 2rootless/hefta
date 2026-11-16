@@ -21,7 +21,7 @@ const HEFT = {
   createdAt: tag(-3),
   updatedAt: tag(-3),
   haushaltId: null,
-  adresse: 'Lindenallee 17, 4. OG\n20259 Hamburg',
+  adresse: 'Lindenring 8, 4. OG\n20259 Hamburg',
   link: null,
   quelle: '',
   inseratText: null,

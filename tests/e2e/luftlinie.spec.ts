@@ -32,7 +32,7 @@ test('Ort mit Postleitzahl: Heft zeigt die Luftlinie als „ca.“ mit Abweichun
               createdAt: jetzt,
               updatedAt: jetzt,
               haushaltId: (hh.result[0] as { id: string }).id,
-              adresse: 'Lindenallee 3\n20259 Hamburg',
+              adresse: 'Lindenring 3\n20259 Hamburg',
               link: null,
               quelle: '',
               inseratText: null,
