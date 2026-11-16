@@ -29,7 +29,10 @@ for (const s of SEITEN) {
     await expect(page.getByText(/Ein Hinweis, keine Rechtsberatung/)).toBeVisible();
     expect(fremde(beobachtung.anfragen, s.url)).toEqual([]);
     expect(beobachtung.fehler).toEqual([]);
-    expect(await page.evaluate(() => document.fonts.check('800 20px Archivo'))).toBe(true);
+    // Die Schrift kann unter Last kurz nach der Überschrift fertig sein: warten statt einmal fragen (CP44).
+    await expect
+      .poll(() => page.evaluate(() => document.fonts.check('800 20px Archivo')))
+      .toBe(true);
     if (browserName === 'chromium') {
       const axe = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
