@@ -20,7 +20,15 @@ test.use({ baseURL: 'http://localhost:4174', viewport: { width: 1280, height: 86
 
 const auswahl = (page: Page) => page.locator('input[type=file]');
 async function laden(page: Page, ...dateien: (Datei | string)[]) {
-  await auswahl(page).setInputFiles(dateien as never);
+  // Feste Mappen als Inhalt übergeben, nicht als Pfad: Mit einem Pfad liest WebKit die Datei selbst von
+  // der Platte, und bei frisch geschriebenen Dateien (neuer Klon, Prüfung durch den Virenschutz) scheiterte
+  // das zeitweise mit „Lässt sich nicht lesen“ (CP44).
+  const inhalt = dateien.map((d) =>
+    typeof d === 'string'
+      ? { name: d.split('/').pop()!, mimeType: 'application/pdf', buffer: readFileSync(d) }
+      : d,
+  );
+  await auswahl(page).setInputFiles(inhalt as never);
   await expect(page.getByRole('status')).toHaveCount(0, { timeout: 30_000 });
 }
 const zeile = (page: Page, n: number) => page.locator('.vs-row').nth(n - 1);

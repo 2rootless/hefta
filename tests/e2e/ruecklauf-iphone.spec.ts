@@ -320,6 +320,9 @@ test('Monat direkt im großen Bild wählen; danach steht man, wo man war', async
     ]),
   });
   await expect(page.getByLabel('Monat von Seite 3')).toHaveValue('2026-08', { timeout: 30_000 });
+  // Erst messen, wenn das Lesen ganz fertig ist: „Einen Moment …“ geht oft erst nach dem Monat, und die
+  // Seite wird dabei 35 px kürzer. Sonst misst der Test eine Lage, die es beim Öffnen nicht mehr gibt (CP44).
+  await expect(page.getByText('Einen Moment …')).toHaveCount(0);
   await page.getByLabel('Monat von Seite 3').scrollIntoViewIfNeeded();
   const vorher = await page.evaluate(() => window.scrollY);
   expect(vorher).toBeGreaterThan(0);
