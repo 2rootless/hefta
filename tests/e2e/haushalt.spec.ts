@@ -4,6 +4,7 @@ import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 import { haushaltDesAuftraggebers } from './einrichtung';
 import { animationenFertig, cspMelden } from './hilfen';
+import { alsInhalt } from './dateien';
 
 // Abnahme Stil C: Haushalt des Auftraggebers in zwei Schritten (Max, Lea, ein Kind, Bürgin Petra),
 // Unterlagen in einem Rutsch mit Pause und Überspringen, Übersicht, Personenansicht, Haushalt
@@ -110,16 +111,22 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
     await page.screenshot({ path: 'docs/screenshots/stilc-rutsch-schritt.png' });
   }
   // Falsche Datei gewählt: „Abbrechen“ führt zurück zum Schritt, nichts ist gespeichert.
-  await page.locator('[data-feld="pdf"]').setInputFiles(await pdfDatei(info, 'falsch.pdf'));
+  await page
+    .locator('[data-feld="pdf"]')
+    .setInputFiles(alsInhalt(await pdfDatei(info, 'falsch.pdf')));
   await expect(page.getByText('falsch.pdf, 1 Seite')).toBeVisible();
   await page.getByRole('button', { name: 'Abbrechen' }).click();
   await expect(page.getByText('falsch.pdf, 1 Seite')).toBeHidden();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(erste);
   await expect(page.getByText(/^2 von \d+$/)).toBeVisible();
   // Oder gleich eine andere Datei wählen, ohne Umweg.
-  await page.locator('[data-feld="pdf"]').setInputFiles(await pdfDatei(info, 'falsch.pdf'));
+  await page
+    .locator('[data-feld="pdf"]')
+    .setInputFiles(alsInhalt(await pdfDatei(info, 'falsch.pdf')));
   await expect(page.getByText('falsch.pdf, 1 Seite')).toBeVisible();
-  await page.getByLabel('Andere Datei wählen').setInputFiles(await pdfDatei(info, 'erste.pdf'));
+  await page
+    .getByLabel('Andere Datei wählen')
+    .setInputFiles(alsInhalt(await pdfDatei(info, 'erste.pdf')));
   await expect(page.getByText('erste.pdf, 1 Seite')).toBeVisible();
   if (bilder) await page.screenshot({ path: 'docs/screenshots/stilc-rutsch-gewaehlt.png' });
   // Gehaltsnachweise: September ist vorbelegt (6. November, Abrechnung meist spät).
@@ -139,7 +146,9 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
     await page.screenshot({ path: 'docs/screenshots/stilc-rutsch-serie.png' });
   }
   // Eine Seite gehört zu genau einem Monat (OR3): Die Wahl ersetzt die Vorbelegung.
-  await page.locator('[data-feld="pdf"]').setInputFiles(await pdfDatei(info, 'juli-august.pdf'));
+  await page
+    .locator('[data-feld="pdf"]')
+    .setInputFiles(alsInhalt(await pdfDatei(info, 'juli-august.pdf')));
   await page.getByRole('radio', { name: 'Juli' }).click();
   await expect(page.getByRole('radio', { name: 'Juli' })).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByRole('radio', { name: 'August' })).toHaveAttribute(
@@ -384,7 +393,7 @@ test('Backup mit Passwort: sichern, alles löschen, einspielen ergibt denselben 
   await page.goto('/#/einstellungen');
   await page.getByRole('link', { name: /^Backup einspielen/ }).click();
   await page.getByRole('button', { name: 'Weiter im Browser', exact: true }).click();
-  await page.locator('input[type=file]').first().setInputFiles(pfad);
+  await page.locator('input[type=file]').first().setInputFiles(alsInhalt(pfad));
   await expect(page.getByRole('heading', { level: 1, name: 'Backup einspielen' })).toBeVisible();
   await expect(page.getByText('Sichtbar nach dem Passwort')).toBeVisible();
   // Die App ist leer: kein Hinweis „ersetzt alles“.

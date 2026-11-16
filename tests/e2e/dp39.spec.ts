@@ -9,6 +9,7 @@ import {
 } from './dp39-regeln';
 import { HEUTE } from './szenarien';
 import { gehaltsPdfs, pdfMit, szenarioLaden } from './szenario-laden';
+import { alsInhalt } from './dateien';
 
 // DP39 (PC48): Prüfkatalog A1 bis A24 und die Wünsche W16, W18 bis W22 der Wunschliste (Fassung 6).
 // Jede Wunsch-Prüfung hat eine Gegenprobe: Ein Verstoß, gebaut aus wenig HTML, muss anschlagen.
@@ -185,7 +186,7 @@ test('A13, wunsch-W16: mehrere Monate: Kopf jeder Datei lesbar, Lupe, Wahl bleib
     .click();
   await page
     .locator('[data-feld="pdf"]')
-    .setInputFiles(await gehaltsPdfs(['Oktober', 'September']));
+    .setInputFiles(alsInhalt(await gehaltsPdfs(['Oktober', 'September'])));
   const blatt = page.getByRole('dialog');
   const vorschau = blatt.locator('.w16-vorschau');
   await expect(vorschau).toHaveCount(2, { timeout: 30_000 });

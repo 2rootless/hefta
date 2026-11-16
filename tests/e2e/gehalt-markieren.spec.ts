@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { markerPruefen } from './dp39-regeln';
 import { gehaltsPdfs, szenarioLaden } from './szenario-laden';
+import { alsInhalt } from './dateien';
 
 // PC64, Punkt 4 (W20): Beim Gehaltsnachweis stehen der Monat und der Name der Person in der Vorschau wie
 // mit Textmarker, für Hauptmieter, Mitmieterin und Bürgin. Gerade bei der Bürgin muss der Name zu ihr
@@ -16,7 +17,7 @@ async function hochladen(page: Page, person: number, name: string) {
     .click();
   await page
     .locator('[data-feld="pdf"]')
-    .setInputFiles(await gehaltsPdfs(['August', 'September'], name));
+    .setInputFiles(alsInhalt(await gehaltsPdfs(['August', 'September'], name)));
   const vorschau = page.getByRole('dialog').locator('.w16-vorschau');
   await expect(vorschau).toHaveCount(2, { timeout: 30_000 });
   return vorschau;

@@ -9,6 +9,7 @@ import { wuenscheSetzen } from './hefte-hilfen';
 import { animationenFertig } from './hilfen';
 import { pruefen } from './pruef-c';
 import { HEUTE, SZENARIEN, datensaetze } from './szenarien';
+import { alsInhalt } from './dateien';
 
 // Prüfkatalog (design/pruefkatalog.md, Stil C): alle Szenarien der Übersicht, der Einrichtung und
 // des Rutschs in allen Ansichten, automatische Prüfungen C1 bis C12 (ohne C8, entfällt in Stil C),
@@ -701,7 +702,7 @@ const BILDER: Bild[] = [
     pfad: '/rutsch',
     vorher: async (page) => {
       await los(page);
-      await page.locator('[data-feld="pdf"]').setInputFiles(pdfPfad);
+      await page.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(pdfPfad));
       await page.getByText('abrechnung_oktober.pdf, 2 Seiten').waitFor();
     },
   },
@@ -1097,7 +1098,7 @@ const BILDER: Bild[] = [
     szenario: '01-standard',
     pfad: '/einstellungen',
     vorher: async (page) => {
-      await page.locator('input[type=file]').setInputFiles(backupOffen);
+      await page.locator('input[type=file]').setInputFiles(alsInhalt(backupOffen));
       await page.getByText(/^Erstellt am/).waitFor();
     },
   },
@@ -1107,7 +1108,7 @@ const BILDER: Bild[] = [
     szenario: '01-standard',
     pfad: '/einstellungen',
     vorher: async (page) => {
-      await page.locator('input[type=file]').setInputFiles(backupPasswort);
+      await page.locator('input[type=file]').setInputFiles(alsInhalt(backupPasswort));
       await page.getByLabel('Passwort des Backups').fill('sommer in hamburg');
       await page.getByLabel('Passwort des Backups').press('Enter');
       await page.getByText(/Das Passwort passt nicht/).waitFor();
@@ -1404,7 +1405,7 @@ const BILDER: Bild[] = [
     pfad: '/rutsch/p-01-standard-2',
     vorher: async (page) => {
       await los(page);
-      await page.locator('[data-feld="pdf"]').setInputFiles(vielePfad);
+      await page.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(vielePfad));
       await page.getByText(/^Zwölf Seiten machen/).waitFor();
     },
   },
@@ -1415,7 +1416,7 @@ const BILDER: Bild[] = [
     pfad: '/rutsch/p-01-standard-2',
     vorher: async (page) => {
       await los(page);
-      await page.locator('[data-feld="pdf"]').setInputFiles(vielePfad);
+      await page.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(vielePfad));
       await page.getByRole('button', { name: 'Seiten auswählen' }).click();
       for (const n of [1, 2, 5])
         await page.getByRole('checkbox', { name: `Seite ${n} kommt in die Mappe` }).click();
@@ -1429,7 +1430,7 @@ const BILDER: Bild[] = [
     pfad: '/rutsch/p-01-standard-2',
     vorher: async (page) => {
       await los(page);
-      await page.locator('[data-feld="pdf"]').setInputFiles(vielePfad);
+      await page.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(vielePfad));
       await page.getByRole('button', { name: 'Seiten auswählen' }).click();
       await page.getByText(/^Tippt? die Seiten an, die der Vermieter sehen soll.$/).waitFor();
     },
@@ -1441,7 +1442,7 @@ const BILDER: Bild[] = [
     pfad: '/rutsch/p-01-standard-2',
     vorher: async (page) => {
       await los(page);
-      await page.locator('[data-feld="pdf"]').setInputFiles(gesperrtPfad);
+      await page.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(gesperrtPfad));
       await page.getByLabel('Passwort der Datei').fill('Geheim');
       await page.getByRole('button', { name: 'Entsperren' }).click();
       await page.getByText(/Das Passwort passt nicht/).waitFor();
@@ -1454,7 +1455,7 @@ const BILDER: Bild[] = [
     pfad: '/rutsch/p-01-standard-2',
     vorher: async (page) => {
       await los(page);
-      await page.locator('[data-feld="pdf"]').setInputFiles(pdfPfad);
+      await page.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(pdfPfad));
       await page.locator('[data-feld="datum"]').waitFor();
     },
   },
@@ -1465,7 +1466,7 @@ const BILDER: Bild[] = [
     pfad: '/rutsch/p-01-standard-2',
     vorher: async (page) => {
       await los(page);
-      await page.locator('[data-feld="pdf"]').setInputFiles(pdfPfad);
+      await page.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(pdfPfad));
       await page.getByRole('button', { name: 'Seite 1 ansehen' }).click();
       await page.getByRole('img', { name: 'Seite 1' }).waitFor();
     },
@@ -1477,7 +1478,7 @@ const BILDER: Bild[] = [
     pfad: '/rutsch/p-01-standard-2',
     vorher: async (page) => {
       await los(page);
-      await page.locator('[data-feld="pdf"]').setInputFiles(datumPfad);
+      await page.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(datumPfad));
       await page.getByText(/^Im Dokument gefunden/).waitFor();
     },
   },
@@ -1505,7 +1506,7 @@ const BILDER: Bild[] = [
     pfad: '/rutsch/p-01-standard-2',
     vorher: async (page) => {
       await los(page);
-      await page.locator('[data-feld="pdf"]').setInputFiles(datumPfad);
+      await page.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(datumPfad));
       await page.getByRole('button', { name: 'Im Dokument auswählen' }).click();
       await page.getByRole('radio', { name: /^20\.10\.2026/ }).waitFor();
       await page.getByRole('img', { name: 'Seite 1' }).waitFor();
@@ -1864,7 +1865,7 @@ const BILDER: Bild[] = [
     pfad: '/rutsch/p-01-standard-2',
     vorher: async (page) => {
       await los(page);
-      await page.locator('[data-feld="pdf"]').setInputFiles(pdfPfad);
+      await page.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(pdfPfad));
       await page.getByText('abrechnung_oktober.pdf, 2 Seiten').waitFor();
       await page.getByRole('button', { name: 'Speichern und weiter' }).click();
       await page.getByRole('heading', { name: 'Gut gemacht.' }).waitFor();
@@ -1880,7 +1881,7 @@ const BILDER: Bild[] = [
       // DP39: Schritt 2 über die Haarlinie, zurück über den Reiter und wieder die Haarlinie.
       const linie = page.locator('.register-rahmen .haarlinie');
       await linie.getByRole('button').nth(1).click();
-      await page.locator('[data-feld="pdf"]').setInputFiles(pdfPfad);
+      await page.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(pdfPfad));
       await page.getByRole('button', { name: 'Speichern und weiter' }).click();
       await page.locator('.fortschritt', { hasText: /^3 von/ }).waitFor();
       await page

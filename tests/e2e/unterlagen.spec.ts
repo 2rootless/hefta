@@ -4,6 +4,7 @@ import { expect, test, type Locator, type Page, type TestInfo } from '@playwrigh
 import { readFileSync, writeFileSync } from 'node:fs';
 import { haushaltMitMax } from './einrichtung';
 import { animationenFertig, cspMelden } from './hilfen';
+import { alsInhalt } from './dateien';
 
 // Abnahme M3: drei Gehaltsabrechnungen als PDF ergeben eine Serie; eine vierte schiebt die Serie weiter.
 // Dazu: passwortgeschütztes PDF, Seiten weglassen, Versionen löschen, „Noch nicht“.
@@ -50,7 +51,7 @@ async function gehaltHochladen(
 ) {
   await hochladenOeffnen(page, /^Gehalts.?nachweise/);
   const blatt = page.getByRole('dialog');
-  await blatt.locator('[data-feld="pdf"]').setInputFiles(datei);
+  await blatt.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(datei));
   await expect(blatt.getByRole('radiogroup').first()).toBeVisible();
   // Gehalt ist eine Serie: Monate als Mehrfachauswahl (RS2). Erst die Vorbelegung abwählen.
   await monatWaehlen(blatt, monat.chip ?? null);
@@ -93,7 +94,7 @@ test('drei Gehaltsabrechnungen ergeben eine Serie, eine vierte schiebt sie weite
   const blatt = page.getByRole('dialog');
   await expect(blatt.getByText('Für Max')).toBeVisible();
   await expect(blatt.getByText(/unter „Durchsuchen“/)).toBeVisible();
-  await blatt.locator('[data-feld="pdf"]').setInputFiles(august);
+  await blatt.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(august));
   await expect(blatt.getByRole('button', { name: 'Seite 2 ansehen' })).toBeVisible();
   await expect(blatt.getByText('august.pdf, 2 Seiten')).toBeVisible();
   // Mehrere Seiten: je Seite ein Monat (OR3); ohne Fund auf der Seite gilt der Monat im Dateinamen.
@@ -136,7 +137,7 @@ test('drei Gehaltsabrechnungen ergeben eine Serie, eine vierte schiebt sie weite
   // Neue Version: Datei gewählt, dann doch abbrechen. Nichts wird gespeichert, alles geht zu.
   await hochladenOeffnen(page, /^Gehalts.?nachweise/);
   const abbruch = page.getByRole('dialog');
-  await abbruch.locator('[data-feld="pdf"]').setInputFiles(oktober);
+  await abbruch.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(oktober));
   await expect(abbruch.getByText('oktober.pdf, 1 Seite')).toBeVisible();
   await abbruch.getByRole('button', { name: 'Abbrechen' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -146,10 +147,10 @@ test('drei Gehaltsabrechnungen ergeben eine Serie, eine vierte schiebt sie weite
   // Vierte Abrechnung schiebt die Serie weiter, die älteste bleibt gespeichert.
   await hochladenOeffnen(page, /^Gehalts.?nachweise/);
   const neu = page.getByRole('dialog');
-  await neu.locator('[data-feld="pdf"]').setInputFiles(juli);
+  await neu.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(juli));
   await expect(neu.getByText('juli.pdf, 1 Seite')).toBeVisible();
   // Falsche Datei erwischt: direkt wechseln, ohne erst abzubrechen.
-  await neu.getByLabel('Andere Datei wählen').setInputFiles(oktober);
+  await neu.getByLabel('Andere Datei wählen').setInputFiles(alsInhalt(oktober));
   await expect(neu.getByText('oktober.pdf, 1 Seite')).toBeVisible();
   await expect(neu.getByText('juli.pdf, 1 Seite')).toHaveCount(0);
   await monatWaehlen(neu, 'Oktober');
@@ -192,7 +193,7 @@ test('passwortgeschütztes PDF: entsperren, ohne Passwort speichern, Größe seh
 
   await hochladenOeffnen(page, /^Bonitäts.?nachweis/);
   const blatt = page.getByRole('dialog');
-  await blatt.locator('[data-feld="pdf"]').setInputFiles(geschuetzt);
+  await blatt.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(geschuetzt));
   await expect(blatt.getByText(/^Die Datei ist mit einem Passwort geschützt\./)).toBeVisible();
   await expect(blatt.getByText(/Hefta speichert das Passwort nicht/)).toBeVisible();
   // D5: Solange die Datei gesperrt ist, ist „Entsperren“ die Hauptaktion; Datum und Rest kommen danach.
@@ -276,7 +277,7 @@ test('schwierige Dateien: viele Seiten auswählen (D2, D3), Word-Datei (D7), ohn
   ).toBeVisible();
 
   // D2: zwölf Seiten machen die Mappe dick; erst drei Seiten und „+9“.
-  await blatt.locator('[data-feld="pdf"]').setInputFiles(dick);
+  await blatt.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(dick));
   await expect(blatt.getByText(/^Zwölf Seiten machen die Mappe dick\./)).toBeVisible();
   await expect(blatt.getByRole('button', { name: 'Alle 12 Seiten ansehen' })).toHaveText('+9');
   await expect(blatt.getByRole('checkbox')).toHaveCount(3);
@@ -333,7 +334,9 @@ test('PDF eines Lohnportals (geschützt, ohne Passwort): kommt mit Text in die M
   await maxOeffnen(page);
   await hochladenOeffnen(page, /^Bonitäts.?nachweis/);
   const blatt = page.getByRole('dialog');
-  await blatt.locator('[data-feld="pdf"]').setInputFiles('tests/fixtures/portal-aes-256.pdf');
+  await blatt
+    .locator('[data-feld="pdf"]')
+    .setInputFiles(alsInhalt('tests/fixtures/portal-aes-256.pdf'));
   await expect(blatt.getByText('portal-aes-256.pdf, 1 Seite')).toBeVisible();
   await blatt.getByRole('button', { name: 'Speichern' }).click();
   await expect(blatt).toBeHidden();
@@ -392,7 +395,7 @@ test('Kein Datum gefunden: Die Seite steht da, das Feld darunter (D11c)', async 
   const blatt = page.getByRole('dialog');
   await blatt
     .locator('[data-feld="pdf"]')
-    .setInputFiles(await pdfDatei(info, 'ohne.pdf', ['Auskunft ohne Angabe']));
+    .setInputFiles(alsInhalt(await pdfDatei(info, 'ohne.pdf', ['Auskunft ohne Angabe'])));
   await blatt.getByRole('button', { name: 'Im Dokument auswählen' }).click();
 
   const auswahl = page.getByRole('dialog', { name: 'Kein Datum gefunden.' });
@@ -426,8 +429,8 @@ test('Datum und Monat: im Dokument erkannt oder dort ausgewählt, Datei direkt g
   const blatt = page.getByRole('dialog');
   const datum = blatt.locator('[data-feld="datum"]');
   // Wechsel, während die lange Datei noch lädt: Es gilt die neue, das Blatt bleibt, wo es ist.
-  await blatt.locator('[data-feld="pdf"]').setInputFiles(lang);
-  await blatt.getByLabel('Andere Datei wählen').setInputFiles(klar);
+  await blatt.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(lang));
+  await blatt.getByLabel('Andere Datei wählen').setInputFiles(alsInhalt(klar));
   await expect(blatt.getByText('auskunft.pdf, 1 Seite')).toBeVisible();
   await expect(blatt.getByRole('checkbox')).toHaveCount(1);
   await expect(datum).toHaveValue('2026-10-20');
@@ -436,7 +439,7 @@ test('Datum und Monat: im Dokument erkannt oder dort ausgewählt, Datei direkt g
   ).toBeVisible();
 
   // Andere Datei, zwei Daten ohne klaren Bezug: Hefta rät nicht, man wählt im Dokument.
-  await blatt.getByLabel('Andere Datei wählen').setInputFiles(unklar);
+  await blatt.getByLabel('Andere Datei wählen').setInputFiles(alsInhalt(unklar));
   await expect(blatt.getByText('nachweis.pdf, 1 Seite')).toBeVisible();
   await expect(datum).toHaveValue('');
   await blatt.getByRole('button', { name: 'Im Dokument auswählen' }).click();
@@ -467,7 +470,7 @@ test('Datum und Monat: im Dokument erkannt oder dort ausgewählt, Datei direkt g
   const gehalt = page.getByRole('dialog');
   await gehalt
     .locator('[data-feld="pdf"]')
-    .setInputFiles(await pdfDatei(info, 'lohn.pdf', ['Gehaltsabrechnung Oktober 2026']));
+    .setInputFiles(alsInhalt(await pdfDatei(info, 'lohn.pdf', ['Gehaltsabrechnung Oktober 2026'])));
   await expect(gehalt.getByRole('radio', { name: 'Oktober' })).toBeChecked();
   await expect(gehalt.getByRole('radio', { name: 'September' })).not.toBeChecked();
   await expect(gehalt.getByText(/^Aus dem Dokument erkannt: Oktober/)).toBeVisible();
@@ -485,7 +488,7 @@ test('Datum wird auch ohne „for await“ über Streams erkannt, wie auf echten
   const blatt = page.getByRole('dialog');
   await blatt
     .locator('[data-feld="pdf"]')
-    .setInputFiles(await pdfDatei(info, 'alt.pdf', ['Ausgestellt am 20.10.2026']));
+    .setInputFiles(alsInhalt(await pdfDatei(info, 'alt.pdf', ['Ausgestellt am 20.10.2026'])));
   await expect(blatt.locator('[data-feld="datum"]')).toHaveValue('2026-10-20');
 });
 
@@ -500,7 +503,7 @@ test('drei Gehaltsnachweise auf einmal: je Datei ein Monat, erkannt aus dem Name
   ];
   await hochladenOeffnen(page, /^Gehalts.?nachweise/);
   const blatt = page.getByRole('dialog');
-  await blatt.locator('[data-feld="pdf"]').setInputFiles(dateien);
+  await blatt.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(dateien));
   await expect(blatt.getByText('Welcher Monat ist welche Datei?')).toBeVisible();
   await expect(blatt.getByLabel('Gehalt_September_2026.pdf', { exact: true })).toHaveValue(
     '2026-09',

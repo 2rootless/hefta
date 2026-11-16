@@ -225,6 +225,7 @@ async function aufbauen(page: Page, b: Bild, grossPfad: string) {
         { ...(await pdf(M1)), name: 'Bewerbung_Mustermann (1).pdf' },
       ] as never);
     await expect(page.locator('.vs-err li')).toHaveCount(4, { timeout: 30_000 });
+    // Über 50 MB: Als Inhalt nimmt Playwright das nicht, darum hier der Pfad.
     await page.locator('input[type=file]').setInputFiles(grossPfad);
     await expect(page.locator('.vs-err li')).toHaveCount(5, { timeout: 30_000 });
   }

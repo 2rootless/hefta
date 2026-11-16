@@ -3,6 +3,7 @@ import { test, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { animationenFertig } from './hilfen';
 import { HEUTE, SZENARIEN, datensaetze } from './szenarien';
+import { alsInhalt } from './dateien';
 
 // Bilder von App-Seiten für die Berichte an die Planung (PC48: WebKit bei 390 und 320/130 %, hell und dunkel).
 // Kein Test im eigentlichen Sinn: läuft nur mit APP_BILDER=<Liste>, etwa
@@ -120,7 +121,7 @@ for (const ansicht of ANSICHTEN)
           if (anzahl) {
             await page
               .locator('input[type=file][data-feld=pdf]')
-              .setInputFiles(await gehaltsPdfs(Number(anzahl)));
+              .setInputFiles(alsInhalt(await gehaltsPdfs(Number(anzahl))));
             await page.waitForTimeout(1500);
             continue;
           }

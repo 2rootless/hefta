@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { pruefung } from './hilfen';
+import { alsInhalt } from './dateien';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/#/technik-test');
@@ -56,14 +57,14 @@ test('Backup mit Passwort: speichern, herunterladen, einspielen ist identisch; f
   await download.saveAs(pfad);
 
   await page.locator('[data-feld="import-passwort"]').fill('falsch');
-  await page.locator('[data-feld="backup-datei"]').setInputFiles(pfad);
+  await page.locator('[data-feld="backup-datei"]').setInputFiles(alsInhalt(pfad));
   const falsch = await pruefung(page, 'einspielen');
   expect(falsch.ok).toBe('false');
   expect(falsch.text).toContain('Das Passwort passt nicht.');
 
   await page.locator('[data-feld="import-passwort"]').fill('Sommer in Hamburg');
   await page.locator('[data-feld="backup-datei"]').setInputFiles([]);
-  await page.locator('[data-feld="backup-datei"]').setInputFiles(pfad);
+  await page.locator('[data-feld="backup-datei"]').setInputFiles(alsInhalt(pfad));
   await expect(page.locator('[data-pruefung="einspielen"]')).toHaveAttribute('data-ok', 'true', {
     timeout: 60_000,
   });

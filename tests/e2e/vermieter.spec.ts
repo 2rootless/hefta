@@ -17,20 +17,13 @@ import {
   pdf,
   type Datei,
 } from './vermieter-hilfe';
+import { alsInhalt } from './dateien';
 
 test.use({ baseURL: 'http://localhost:4174', viewport: { width: 1280, height: 860 } });
 
 const auswahl = (page: Page) => page.locator('input[type=file]');
 async function laden(page: Page, ...dateien: (Datei | string)[]) {
-  // Feste Mappen als Inhalt übergeben, nicht als Pfad: Mit einem Pfad liest WebKit die Datei selbst von
-  // der Platte, und bei frisch geschriebenen Dateien (neuer Klon, Prüfung durch den Virenschutz) scheiterte
-  // das zeitweise mit „Lässt sich nicht lesen“ (CP44).
-  const inhalt = dateien.map((d) =>
-    typeof d === 'string'
-      ? { name: d.split('/').pop()!, mimeType: 'application/pdf', buffer: readFileSync(d) }
-      : d,
-  );
-  await auswahl(page).setInputFiles(inhalt as never);
+  await auswahl(page).setInputFiles(alsInhalt(dateien));
   await expect(page.getByRole('status')).toHaveCount(0, { timeout: 30_000 });
 }
 const zeile = (page: Page, n: number) => page.locator('.vs-row').nth(n - 1);
@@ -145,6 +138,7 @@ test('Fehler stehen getrennt, die Nummern zählen nur Mappen', async ({ page }, 
     await pdf({ datei: 'Mappe_Schulz.pdf', seiten: 2, passwort: 'geheim' }),
     { ...(await pdf(M1)), name: 'Bewerbung_Mustermann (1).pdf' },
   );
+  // Über 50 MB: Als Inhalt nimmt Playwright das nicht, darum hier der Pfad.
   await auswahl(page).setInputFiles(gross);
   const kasten = page.getByRole('region', { name: 'Nicht aufgenommen' });
   await expect(kasten.locator('li')).toHaveCount(5, { timeout: 30_000 });
