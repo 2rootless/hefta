@@ -24,12 +24,13 @@ describe('Adresse in Teilen (E6)', () => {
       },
     ],
     [
-      'Am Wall 140\n28195 Bremen',
-      { strasse: 'Am Wall', hausnummer: '140', lage: '', plz: '28195', ort: 'Bremen' },
+      'Am Musterplatz 1\n12345 Musterstadt',
+      { strasse: 'Am Musterplatz', hausnummer: '1', lage: '', plz: '12345', ort: 'Musterstadt' },
     ],
     [
-      'Bahrenfelder Ch. 41',
-      { strasse: 'Bahrenfelder Ch.', hausnummer: '41', lage: '', plz: '', ort: '' },
+      // Ohne Postleitzahl und Ort (PC56: Musteradresse statt einer echten Straße).
+      'Am Musterplatz 1',
+      { strasse: 'Am Musterplatz', hausnummer: '1', lage: '', plz: '', ort: '' },
     ],
     [
       'Musterweg 7 a, 22761 Hamburg',

@@ -472,7 +472,7 @@ async function plaene() {
         ),
       ],
       bewerbung: {
-        adresse: 'Am Wall 140\n28195 Bremen',
+        adresse: 'Am Musterplatz 1\n12345 Musterstadt',
         export: { modus: 'datensparsam', schritt: 'will_wohnung' },
       },
     },

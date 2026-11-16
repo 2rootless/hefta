@@ -616,7 +616,7 @@ describe('Kennung der Bewerbung (E6)', () => {
     expect(
       await bewerbungsKennung(db, haushalt.id, 'Beispielstr. 1, 3. OG links\n12345 Musterstadt'),
     ).toBe(a);
-    const b = await bewerbungsKennung(db, haushalt.id, 'Am Wall 140\n28195 Bremen');
+    const b = await bewerbungsKennung(db, haushalt.id, 'Am Musterplatz 1\n12345 Musterstadt');
     expect(b).not.toBe(a);
     // Zurück zur ersten Wohnung: wieder ihre Kennung.
     expect(

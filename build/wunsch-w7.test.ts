@@ -21,7 +21,14 @@ const ERLAUBT_MAIL =
 const ADRESSE =
   /(?<![\wäöüß-])((?:[A-ZÄÖÜ][\wäöüß-]*(?:straße|strasse|str\.|weg|allee|ring|platz|gasse|damm|chaussee|stieg|kamp|ufer|deich|markt))|(?:[A-ZÄÖÜ][\wäöüß-]*(?:er|e) (?:Weg|Straße|Allee|Ring|Platz)))[ \u00a0]+(\d{1,5})(?![\d:]|[.,]\d)/g;
 /** Geprüft von der Planung (PC53): Lindenring 3 und 8 in 20259 Hamburg, Musterweg 7 und Beispielstraße 1 in Musterstadt. */
-export const MUSTERADRESSEN = ['Lindenring 3', 'Lindenring 8', 'Musterweg 7', 'Beispielstraße 1'];
+export const MUSTERADRESSEN = [
+  'Lindenring 3',
+  'Lindenring 8',
+  'Musterweg 7',
+  'Beispielstraße 1',
+  // Am Musterplatz 1, 12345 Musterstadt (PC56)
+  'Musterplatz 1',
+];
 /** Die Anschrift des Anbieters im Impressum ist echt und gehört nicht zu den Mustern. */
 const ANBIETER = ['Friedensallee 378'];
 

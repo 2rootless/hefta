@@ -100,7 +100,7 @@ test('Bewerben per Portal: Anschreiben, Angaben, Mappe, Text kopieren, dann der 
   await expect(page.getByText('Anschreiben und Mappe liegen bereit')).toBeVisible();
   await page.getByRole('link', { name: 'Jetzt bewerben' }).click();
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Bewerben in einer Minute' }),
+    page.getByRole('heading', { level: 1, name: 'Bewerben mit wenigen Tipps' }),
   ).toBeVisible();
   // Aus einem Portal gemerkt: Portal ist vorgewählt.
   await expect(page.getByRole('button', { name: 'Portal' })).toHaveAttribute(
