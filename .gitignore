@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-vermieter/
+dist-web/
 coverage/
 test-results/
 playwright-report/

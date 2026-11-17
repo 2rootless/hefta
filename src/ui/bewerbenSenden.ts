@@ -62,6 +62,20 @@ export async function mailMitMappe(o: {
   return 'anhangSelbst';
 }
 
+/**
+ * PC81 B2 (QA3): Kann diese Umgebung die Mappe nicht an die Mail hängen? Das ist der Browser ohne Teilen von
+ * Dateien; dann lädt Hefta die Mappe und öffnet einen Mail-Link. Geprüft mit einer leeren PDF, wie beim Senden.
+ */
+export function mappeHaengtNichtAn(): boolean {
+  if (istApp()) return false;
+  try {
+    const probe = new File([''], 'mappe.pdf', { type: 'application/pdf' });
+    return !navigator.canShare?.({ files: [probe], text: '' });
+  } catch {
+    return true;
+  }
+}
+
 /** PC31: Was nie als Bewerbung zählt (WhatsApp, Dateien …), behandelt das Bewerben wie abgebrochen. */
 const alsGesendet = (w: ReturnType<typeof teilenWerten>): Gesendet =>
   w === 'gesendet' ? 'gesendet' : w === 'unsicher' ? 'geoeffnet' : 'abgebrochen';

@@ -1,4 +1,5 @@
 import type { Einstellungen, Heft } from '../domain/modell';
+import { markeSetzen } from './marke';
 import { rueckgaengigVergessen } from './rueckgaengig.svelte';
 import { datenbankOeffnen, type HeftaDb } from '../storage/db';
 import {
@@ -66,6 +67,7 @@ async function laden(): Promise<void> {
   daten.einstellungen = einstellungen;
   daten.geladen = true;
   daten.fehler = null;
+  markeSetzen(!!ansicht);
   // Erinnerungen folgen dem Stand (nur in der App unter iOS); ein Fehler dort stört das Laden nicht.
   void import('./erinnerungen.svelte')
     .then((m) => m.erinnerungenAbgleichen({ hefte, ansicht, einstellungen }))

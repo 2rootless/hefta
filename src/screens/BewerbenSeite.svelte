@@ -24,7 +24,12 @@
   import { einziehend } from '../domain/selbstauskunft';
   import { t, type TextSchluessel } from '../i18n';
   import { heftAendern } from '../storage/speicher';
-  import { mailMitMappe, mappeTeilen, textKopieren } from '../ui/bewerbenSenden';
+  import {
+    mailMitMappe,
+    mappeHaengtNichtAn,
+    mappeTeilen,
+    textKopieren,
+  } from '../ui/bewerbenSenden';
   import type { MappenErgebnis } from '../ui/mappeErstellen';
   import { staendeAus } from '../ui/mappeDaten';
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
@@ -63,6 +68,7 @@
       strasse,
       einzug: heft?.einzug ?? '',
       heute,
+      weg: weg ?? 'mail',
     }),
   );
   let eigenerText = $state<string | null>(null);
@@ -223,13 +229,17 @@
     strasse ? t('bewerben.betreff', { wohnung: strasse }) : t('bewerben.betreffOhne'),
   );
 
+  // PC81 B2 (QA3): Im Browser ohne Teilen von Dateien steht gleich oben, dass ihr die Mappe selbst anhängt.
+  const ohneAnhang = mappeHaengtNichtAn();
+
   async function mail() {
     meldung = '';
     const m = await mappeHolen();
     if (!m) return;
     const a = await mailMitMappe({ an: erkannt.mail, betreff, text, dateien: m.dateien });
     if (a === 'abgebrochen') return;
-    if (a === 'anhangSelbst') meldung = t('bewerben.anhangSelbst');
+    // PC81 B2: Steht der Satz schon oben, wiederholt ihn die Meldung nicht.
+    if (a === 'anhangSelbst' && !ohneAnhang) meldung = t('bewerben.anhangSelbst');
     await beworbenMerken('mail', a === 'gesendet', m);
     // PC8 A6: Nach dem Senden zurück ins Heft; dort steht „Beworben“ oder der Vorschlag dazu. Nur wenn
     // ihr die Mappe noch selbst anhängen müsst, bleibt der Hinweis dazu hier stehen.
@@ -301,7 +311,9 @@
         ? t(ihr ? 'bewerben.satzPortalIhr' : 'bewerben.satzPortalDu')
         : weg === 'website'
           ? t('bewerben.satzWebsite')
-          : t('bewerben.satzMail')}
+          : ohneAnhang
+            ? t('bewerben.anhangSelbst')
+            : t('bewerben.satzMail')}
     </p>
 
     {@render kopf(1)}
@@ -377,7 +389,9 @@
     <div class="cta">
       {#if weg === 'mail'}
         <button class="btn" type="button" onclick={mail}
-          ><Symbol name="mail" groesse={20} />{t('bewerben.mailOeffnen')}</button
+          ><Symbol name="mail" groesse={20} />{t(
+            ohneAnhang ? 'bewerben.mappeLadenMailOeffnen' : 'bewerben.mailOeffnen',
+          )}</button
         >
       {:else if weg === 'portal'}
         <button class="btn" type="button" onclick={teilen}

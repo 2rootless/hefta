@@ -1,6 +1,7 @@
 node_modules
 dist
 dist-vermieter
+dist-web
 package-lock.json
 design/
 docs/
@@ -14,3 +15,12 @@ playwright-report
 public/manifest.webmanifest
 ios/
 android/
+
+# Vorlagen des Designs (B22), so belassen, wie geliefert, damit sie mit der Lieferung vergleichbar bleiben.
+web/hefta2.html
+web/version1.html
+web/seite.css
+web/hefta.js
+web/icon.svg
+web/app-store.svg
+web/app-store-dunkel.svg

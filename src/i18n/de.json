@@ -1044,7 +1044,10 @@
     "antwortEntfernen": "Antwort entfernen",
     "speichern": "Speichern",
     "grund": "Es fehlt noch: {liste}.",
-    "grundZahl": "Noch {anzahl} Teile.",
+    "grundZahl": {
+      "one": "Noch ein Teil.",
+      "other": "Noch {anzahl} Teile."
+    },
     "fehlt": {
       "kontakt": "Kontakt",
       "nettoeinkommen": "Einkommen",
@@ -1187,6 +1190,8 @@
     "titel": "Mappe teilen",
     "leadIhr": "Ein PDF mit Deckblatt und Lesehilfe. Ihr schickt es, wohin ihr wollt.",
     "leadDu": "Ein PDF mit Deckblatt und Lesehilfe. Du schickst es, wohin du willst.",
+    "leadEinzeln": "Eine Datei je Unterlage, ohne Deckblatt",
+    "ausgabeZeile": "Ausgabe: Einzeldateien",
     "alsPdfTeilen": "Als PDF teilen",
     "deckblattAendern": "Deckblatt ändern",
     "fuerBeide": "für beide",
@@ -2394,6 +2399,7 @@
       "du": "Die Mappe ließ sich nicht zusammenlegen. Versuch es noch einmal."
     },
     "mailOeffnen": "Mail mit Mappe öffnen",
+    "mappeLadenMailOeffnen": "Mappe laden und Mail öffnen",
     "textKopieren": "Text kopieren",
     "mappeTeilen": "Mappe teilen",
     "websiteOeffnen": "Website öffnen",

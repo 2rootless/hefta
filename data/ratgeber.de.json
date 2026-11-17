@@ -29,21 +29,21 @@
       "nr": 1,
       "titel": { "m": "Zur Besich­tigung", "v": "Zur Besich­tigung" },
       "wann": {
-        "m": "Du fragst an oder schaust dir die Wohnung an.",
+        "m": "Ihr fragt an oder schaut euch die Wohnung an.",
         "v": "Die Bewerber fragen an oder sehen sich die Wohnung an."
       },
       "vor": [
-        { "text": "Name und eine Kontaktangabe: Anschrift, Telefon oder E-Mail. Mehr Kontaktdaten sind freiwillig.", "fund": "Musterbogen A" },
+        { "text": "Name und eine Kontaktangabe: Anschrift, Telefon oder E-Mail. Weitere Kontaktdaten sind nach dem Musterbogen freiwillig.", "fund": "Musterbogen A" },
         { "text": "Bei einer Sozialwohnung: ob ein Wohnberechtigungs­schein vorliegt, mit Wohnfläche und Zahl der Räume.", "fund": "A.2" },
-        { "text": "Wer allein besichtigt, kann gebeten werden, den Ausweis zu zeigen. Eine Kopie davon ist „nicht erforderlich und damit unzulässig“.", "fund": "A.1" }
+        { "text": "Wer allein besichtigt, kann gebeten werden, den Ausweis zu zeigen. Eine Kopie nennt die Orientierungs­hilfe „nicht erforderlich und damit unzulässig“.", "fund": "A.1" }
       ],
-      "nochNicht": { "text": "Angaben zu Einkommen und Beruf, Unterlagen aller Art: „in aller Regel nicht erforderlich“.", "fund": "A" }
+      "nochNicht": { "text": "Angaben zu Einkommen und Beruf und Unterlagen aller Art sind zu diesem Zeitpunkt nach der Orientierungs­hilfe „in aller Regel nicht erforderlich“.", "fund": "A" }
     },
     {
       "nr": 2,
-      "titel": { "m": "Wenn du die Wohnung willst", "v": "Wenn die Bewerber die Wohnung wollen" },
+      "titel": { "m": "Wenn ihr die Wohnung wollt", "v": "Wenn die Bewerber die Wohnung wollen" },
       "wann": {
-        "m": "Du sagst, dass du diese Wohnung mieten möchtest. Ab hier gilt die Selbstauskunft.",
+        "m": "Ihr sagt, dass ihr diese Wohnung mieten möchtet. Ab hier sieht die Orientierungs­hilfe die Selbstauskunft vor.",
         "v": "Die Bewerber erklären, dass sie diese Wohnung mieten möchten. Ab hier gilt die Selbstauskunft."
       },
       "vor": [
@@ -55,13 +55,13 @@
         { "text": "Ein Räumungstitel wegen Mietrückständen in den letzten fünf Jahren.", "fund": "B.2" },
         { "text": "Bei einer Sozialwohnung: jetzt die Kopie des Wohnberechtigungs­scheins.", "fund": "A.2" }
       ],
-      "nochNicht": { "text": "Nachweise und Bonitätsauskunft: erst im dritten Schritt. Der Musterbogen sagt dazu: „Keine unaufgeforderte Zusendung nicht erforderlicher Unterlagen!“", "fund": "Musterbogen C" }
+      "nochNicht": { "text": "Nachweise und Bonitätsauskunft gehören nach der Orientierungs­hilfe erst in den dritten Schritt. Der Musterbogen sagt dazu: „Keine unaufgeforderte Zusendung nicht erforderlicher Unterlagen!“", "fund": "Musterbogen C" }
     },
     {
       "nr": 3,
-      "titel": { "m": "Wenn der Vermieter sich für dich entschieden hat", "v": "Wenn Sie sich für Bewerber entschieden haben" },
+      "titel": { "m": "Wenn der Vermieter sich für euch entschieden hat", "v": "Wenn Sie sich für Bewerber entschieden haben" },
       "wann": {
-        "m": "Erst jetzt, unmittelbar vor dem Vertrag, kommen die Nachweise.",
+        "m": "Erst jetzt, unmittelbar vor dem Vertrag, sieht die Orientierungs­hilfe die Nachweise vor.",
         "v": "Erst jetzt, unmittelbar vor dem Vertrag, kommen die Nachweise, und nur von diesen Bewerbern."
       },
       "vor": [
@@ -75,62 +75,97 @@
   ],
   "nieKopf": {
     "titel": "In keinem Schritt vorgesehen",
-    "text": "Die Orientierungshilfe nennt diese Fragen und Unterlagen ausdrücklich. Die Liste ist ihre, nicht unsere, und sie ist nicht abschließend."
+    "text": "Diese Fragen und Unterlagen nennt die Orientierungshilfe ausdrücklich. Die Liste ist ihre, nicht unsere, und sie ist nicht abschließend."
   },
   "nie": [
     { "was": "Ausweiskopie", "warum": "„nicht erforderlich und damit unzulässig“", "fund": "A.1" },
-    { "was": "SCHUFA-Datenkopie nach Art. 15 DSGVO", "warum": "wird nicht angefordert, weil sie „wesentlich mehr Angaben“ enthält als nötig", "fund": "C.3" },
-    { "was": "Bescheinigung über Mietschuldenfreiheit", "warum": "„kann … nicht verlangt werden“, frühere Vermieter müssen sie nicht ausstellen", "fund": "C.1" },
+    { "was": "SCHUFA-Datenkopie nach Art. 15 DSGVO", "warum": "nicht anzufordern, weil sie „wesentlich mehr Angaben“ enthält als nötig", "fund": "C.3" },
+    { "was": "Bescheinigung über Mietschuldenfreiheit", "warum": "„kann … nicht verlangt werden“; frühere Vermieter müssen sie nicht ausstellen", "fund": "C.1" },
     { "was": "Kontakt des Vorvermieters", "warum": "Name, Anschrift, Telefon oder E-Mail: „unzulässig“", "fund": "C.1" },
     { "was": "Familienstand", "warum": "kein berechtigtes Interesse", "fund": "B.1" },
     { "was": "Staatsangehörigkeit, Religion, Herkunft", "warum": "„pauschale Abfrage … unzulässig“", "fund": "B.3" },
     { "was": "Vorstrafen, Ermittlungs­verfahren", "warum": "„grundsätzlich nicht erforderlich und damit unzulässig“", "fund": "B.4" },
     { "was": "Heiratsabsicht, Schwangerschaft, Kinderwunsch", "warum": "„Kernbereich privater Lebensgestaltung“", "fund": "B.5" },
     { "was": "Partei, Mieterverein", "warum": "„unzulässig“", "fund": "B.6" },
-    { "was": "Dauer der Beschäftigung", "warum": "„unzulässig“, sagt nichts über die Zukunft", "fund": "B.7" },
+    { "was": "Dauer der Beschäftigung", "warum": "„unzulässig“; sie sagt nach der Orientierungshilfe nichts über die Zukunft", "fund": "B.7" },
     { "was": "Gründe für monatliche Belastungen", "warum": "Unterhalt, Kredite: „unzulässig“", "fund": "B.8" },
-    { "was": "Einwilligung zur Bonitätsabfrage im Formular", "warum": "„nicht das richtige Mittel“; wer Nachweise hat, darf nicht zusätzlich abgefragt werden", "fund": "Einleitung, C.4" }
+    { "was": "Einwilligung zur Bonitätsabfrage im Formular", "warum": "„nicht das richtige Mittel“; wer Nachweise vorlegt, soll nicht zusätzlich abgefragt werden", "fund": "Einleitung, C.4" }
   ],
   "fuss": {
     "titel": "Quellen",
-    "satz": "Zitate in Anführungszeichen stammen wörtlich aus diesen Dokumenten; Fundstellen nennen Abschnitt und Nummer der Orientierungs­hilfe. Zusammengefasst von {app} im November 2026. Ein Hinweis, keine Rechtsberatung; die Orientierungs­hilfe ist die Auffassung der Aufsichtsbehörden, kein Gesetz.",
+    "satz": "Zitate in Anführungszeichen stammen wörtlich aus diesen Dokumenten; Fundstellen nennen Abschnitt und Nummer der Orientierungs­hilfe. Zusammengefasst von {app} im November 2026. Ein Hinweis, keine Rechtsberatung. Die Orientierungs­hilfe ist die Auffassung der Aufsichtsbehörden, kein Gesetz.",
     "recht": "Impressum und Datenschutz"
   },
   "seiten": {
     "m": {
-      "pfad": "was-darf-der-vermieter-verlangen",
+      "pfad": "ratgeber/was-darf-der-vermieter-verlangen",
       "h1": "Was darf der Vermieter verlangen?",
       "beschreibung": "Welche Angaben und Unterlagen Vermieter wann erfragen können und welche nicht, nach der Orientierungshilfe der Datenschutzkonferenz, jeder Punkt mit Fundstelle.",
-      "marke": "Ratgeber",
-      "kopfLink": { "text": "{app} öffnen", "ziel": "start" },
+      "kicker": "Ratgeber, Stand Januar 2026",
+      "uebersicht": {
+        "text": "Welche Angaben und Unterlagen Vermieter wann erfragen können und welche nicht, nach der Orientierungs­hilfe der Datenschutz­konferenz. Jeder Punkt mit Fundstelle.",
+        "fund": "Nach der Orientierungshilfe, Stand Januar 2026"
+      },
       "einleitung": "Die Datenschutzbehörden von Bund und Ländern haben aufgeschrieben, welche Angaben Vermieter wann erfragen können und welche nicht: die Orientierungs­hilfe der Datenschutz­konferenz mit einem Musterbogen, Stand Januar 2026. Hier steht sie in Kurzform, jeder Punkt mit Fundstelle.",
       "kern": {
         "zitat": "„Unzulässige Fragen müssen demnach nicht beantwortet werden.“",
-        "text": "So steht es in der Einleitung der Orientierungs­hilfe. Drei Schritte, und zu jedem gehört nur, was dort steht.",
-        "fund": "Einleitung"
+        "quelle": "Orientierungshilfe, Einleitung",
+        "text": "Die Orientierungs­hilfe teilt die Bewerbung in drei Schritte. Zu jedem steht hier nur, was sie dort vorsieht."
       },
       "mehr": {
         "titel": "Wenn ein Inserat oder Formular mehr verlangt",
         "punkte": [
-          { "titel": "Du kannst das Feld leer lassen.", "text": "Nach der Orientierungs­hilfe müssen unzulässige Fragen nicht beantwortet werden. Ein Satz wie ‚Nach dem Musterbogen der Datenschutz­konferenz gehört das nicht zur Selbstauskunft‘ reicht. Ob du das tust, entscheidest du; manche Vermieter nehmen es übel, und das sagen wir lieber vorher." },
-          { "titel": "Vorab schicken musst du nichts.", "text": "Der Musterbogen legt Vermietern diesen Satz in den Mund: „Aus datenschutzrechtlichen Gründen dürfen wir keine unaufgefordert zugesandten Unterlagen mit Personenbezug verarbeiten, wenn diese im Vermietungsprozess noch nicht erforderlich sind.“ Viele Vermieter erwarten Nachweise trotzdem schon mit der ersten Mappe. Beides geht; in {app} heißt es ‚Marktüblich‘ oder ‚Datensparsam‘, und du wählst.", "fund": "Musterbogen, Hinweis" },
-          { "titel": "Einwilligung im Formular?", "text": "Ein Feld ‚Ich willige in eine SCHUFA-Abfrage ein‘ ist nach der Orientierungs­hilfe „nicht das richtige Mittel“; wer einen Bonitätsnachweis vorlegt, darf nicht zusätzlich abgefragt werden.", "fund": "C.4" },
-          { "titel": "Hilfe:", "text": "Mietervereine beraten dazu. Eine Beschwerde geht an die Datenschutz­behörde deines Bundeslandes (Art. 77 DSGVO); die Wohnung bekommst du damit nicht schneller." }
+          {
+            "titel": "Ein Feld leer lassen.",
+            "text": "Nach der Orientierungs­hilfe müssen unzulässige Fragen nicht beantwortet werden. Manche schreiben dazu einen Satz wie ‚Nach dem Musterbogen der Datenschutz­konferenz gehört das nicht zur Selbstauskunft.‘ Ob ihr das tut, entscheidet ihr. Manche Vermieter nehmen es übel, und das sagen wir lieber vorher.",
+            "fund": "Einleitung"
+          },
+          {
+            "titel": "Unterlagen vorab.",
+            "text": "Der Musterbogen legt Vermietern diesen Satz in den Mund: „Aus datenschutzrechtlichen Gründen dürfen wir keine unaufgefordert zugesandten Unterlagen mit Personenbezug verarbeiten, wenn diese im Vermietungsprozess noch nicht erforderlich sind.“ Viele Vermieter erwarten Nachweise trotzdem schon mit der ersten Mappe. In {app} wählt ihr, was in die Mappe kommt: ‚Nur das Übliche‘, ‚Alles‘ oder ‚Eigene Auswahl‘, Unterlage für Unterlage. Dort lässt sich auch einstellen, dass ihr die Frage nach Mietrückständen erst nach der Zusage beantwortet.",
+            "fund": "Musterbogen, Hinweis"
+          },
+          {
+            "titel": "Einwilligung im Formular.",
+            "text": "Ein Feld ‚Ich willige in eine SCHUFA-Abfrage ein‘ ist nach der Orientierungs­hilfe „nicht das richtige Mittel“. Wer einen Bonitätsnachweis vorlegt, soll danach nicht zusätzlich abgefragt werden.",
+            "fund": "C.4"
+          },
+          {
+            "titel": "Hilfe.",
+            "text": "Mietervereine beraten dazu. Beschwerden nimmt die Datenschutz­behörde des Bundeslandes entgegen (Art. 77 DSGVO). Die Wohnung bekommt man damit nicht schneller."
+          }
         ]
       },
       "loesch": {
-        "titel": "Deine Daten nach der Absage",
-        "text": "Nach der Orientierungs­hilfe sind die Daten von Bewerbern, die die Wohnung nicht bekommen, zu löschen, sobald sie für die Entscheidung nicht mehr gebraucht werden; kommen Ansprüche wegen Benachteiligung (§ 21 AGG) in Frage, „regelmäßig spätestens nach 6 Monaten“. Das Führen einer „schwarzen Liste“ auffälliger Bewerber ist „grundsätzlich unzulässig“. Auch vom neuen Mieter bleibt nur, was für das Mietverhältnis nötig ist.",
+        "titel": "Eure Daten nach der Absage",
+        "text": "Nach der Orientierungs­hilfe sind die Daten von Bewerbern, die die Wohnung nicht bekommen, zu löschen, sobald sie für die Entscheidung nicht mehr gebraucht werden. Kommen Ansprüche wegen Benachteiligung in Frage (§ 21 AGG), nennt sie „regelmäßig spätestens nach 6 Monaten“. Das Führen einer „schwarzen Liste“ auffälliger Bewerber nennt sie „grundsätzlich unzulässig“. Auch vom neuen Mieter soll nur bleiben, was für das Mietverhältnis nötig ist.",
         "fund": "D",
-        "unter": "Du kannst die Löschung verlangen (Art. 17 DSGVO). {app} legt dafür einen Satz auf das Deckblatt deiner Mappe, wenn du willst."
+        "unter": "Das Recht auf Löschung regelt Art. 17 DSGVO. Auf Wunsch steht dafür eine kurze Bitte unten auf dem Deckblatt eurer Mappe, über ‚Erstellt mit {app}‘. Nach einer Absage schickt ihr die Bitte aus dem Heft der Wohnung mit einem Tipp als Mail."
       },
-      "cta": {
-        "titel": "So sieht die Mappe nach diesem Muster aus",
-        "text": "{app} stellt deine Bewerbungsmappe zusammen, wie du willst: die Selbstauskunft in der Reihenfolge des Musterbogens, die Nachweise nach diesen drei Schritten oder alles Übliche auf einmal, wie es viele Vermieter erwarten. Du entscheidest. Eine Bescheinigung über Mietschulden­freiheit geht mit, wenn du sie hochgeladen hast; Ausweis­kopie und Daten­kopie nur, wenn du sie einzeln auswählst. Kostenlos, ohne Konto. {app} schickt deine Daten nirgendwohin. Was hinausgeht, schickst du selbst.",
-        "knopf": { "text": "{app} öffnen", "ziel": "start" },
-        "link": { "text": "Wie {app} Daten behandelt", "ziel": "recht" }
+      "mappe": {
+        "titel": "Und eure Mappe?",
+        "text": "Die Selbstauskunft in {app} folgt dem Musterbogen: dieselben Felder, dieselbe Reihenfolge. Was die Orientierungs­hilfe in keinem Schritt vorsieht, fragt {app} nicht ab. Ausweis­kopie und Daten­kopie kommen nur in die Mappe, wenn ihr sie einzeln auswählt. Was ihr wann mitschickt, entscheidet ihr. {app} schlägt vor, was bei Bewerbungen üblich ist; dazu gehören oft schon Einkommensnachweise und Bonität, die die Orientierungs­hilfe erst im dritten Schritt vorsieht. Wer es genau nach den drei Schritten halten will, wählt unter ‚Eigene Auswahl‘ zur Besichtigung nur das Deckblatt.",
+        "knopf": {
+          "text": "{app} öffnen",
+          "ziel": "start"
+        },
+        "links": [
+          {
+            "text": "Beispiel-Mappe ansehen",
+            "ziel": "beispiel"
+          },
+          {
+            "text": "Wie {app} Daten behandelt",
+            "ziel": "datenschutz"
+          }
+        ]
       },
-      "andere": { "text": "{app} für Vermieter", "ziel": "andere" }
+      "inhalt": {
+        "kein": "In keinem Schritt vorgesehen",
+        "mehr": "Wenn mehr verlangt wird",
+        "absage": "Nach der Absage",
+        "quellen": "Quellen"
+      }
     },
     "v": {
       "pfad": "welche-unterlagen-wann",

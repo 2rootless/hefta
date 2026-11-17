@@ -265,6 +265,7 @@
       "warumErlaubt": "Erst kurz vor dem Vertrag, wenn du die Zusage hast.", "warumErlaubtIhr": "Erst kurz vor dem Vertrag, wenn ihr die Zusage habt.",
       "warumUeblich": "Vermieter fragen vor allem danach, wenn das Einkommen knapp ist.",
       "warumGutZuWissen": ["Bürgschaft und Kaution zusammen dürfen grundsätzlich höchstens drei Nettokaltmieten betragen, außer die Bürgschaft wurde freiwillig angeboten.", "Die Bürgschaft gilt nur mit Unterschrift auf Papier. Bring das Original zur Vertragsunterzeichnung mit. In {app} liegt nur der Scan."],
+      "warumGutZuWissenQuellen": ["§ 551 Abs. 1 BGB und Rechtsprechung des Bundesgerichtshofs", "§ 766 BGB"],
       "hilfe": "Unterschrieben auf Papier, hier nur der Scan.",
       "hilfeAndere": "unterschrieben auf Papier, für die Mappe reicht ein Scan.",
       "text": "Bürgschafts­erklärung",

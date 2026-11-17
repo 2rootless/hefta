@@ -1,0 +1,507 @@
+/* hefta.de · Ratgeber nach DP36 (satz/ratgeber-artikel.html). Liegt über /seite.css der Landingpage: Kopf, Fuß,
+   Farben und Schrift kommen von dort. Rot nur für Zurück, Kicker und Ziffern (DP35); Links im Satz in Tinte,
+   unterstrichen. Fundstellen in --tinte3 statt #8a8076 aus dem Satz: Das reicht auf Weiß für 4,5 : 1. */
+
+/* Der aufgeschlagene Reiter ist „Ratgeber“ */
+.rg-seite .reiter .r-mieter {
+  background: var(--reiter);
+  color: var(--tinte2);
+}
+.rg-seite:not(.ohne-reiter) .reiter .r-rat {
+  background: var(--blatt);
+  color: var(--tinte);
+}
+.rg-blatt {
+  border-top: 1px solid var(--linie2);
+  background: var(--blatt);
+}
+
+.rg-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 600px) 1fr;
+  gap: 96px;
+}
+.rg-artikel {
+  padding: 56px 0 96px;
+  min-width: 0;
+  font-size: 18px;
+  line-height: 1.6;
+}
+.rg-artikel .zurueck {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--akzent-text);
+  text-decoration: none;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 44px;
+}
+.rg-artikel .kicker {
+  /* DP41, Abschnitt 2 (W5, PC51): Kicker grau statt Akzent; im Ratgeber ist nur „Zurück“ rot. */
+  color: var(--tinte2);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin-top: 20px;
+}
+.rg-artikel h1 {
+  font-stretch: 125%;
+  font-weight: 800;
+  font-size: 52px;
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  margin: 12px 0 24px;
+  hyphens: manual;
+}
+.rg-artikel .lead {
+  font-size: 21px;
+  line-height: 1.5;
+}
+.rg-artikel blockquote {
+  margin: 36px 0 12px;
+  padding: 4px 0 4px 20px;
+  border-left: 3px solid var(--tinte);
+  font-size: 24px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+.rg-artikel cite {
+  display: block;
+  font-style: normal;
+  margin-top: 10px;
+}
+.rg-artikel cite .rg-f {
+  display: inline;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--tinte2);
+}
+.rg-artikel h2 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 64px 0 12px;
+  letter-spacing: -0.005em;
+}
+.rg-artikel .schritt {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  margin-top: 64px;
+}
+.rg-artikel .nr {
+  font-stretch: 125%;
+  font-weight: 800;
+  font-size: 44px;
+  line-height: 1;
+  /* DP41 (W5): Ziffern der Schritte in Tinte statt Akzent. */
+  color: var(--tinte);
+  flex: none;
+  width: 40px;
+}
+.rg-artikel .schritt h2 {
+  margin: 0;
+}
+.rg-artikel .unter {
+  color: var(--tinte2);
+  margin: 8px 0 20px 56px;
+}
+.rg-artikel .etikett {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tinte2);
+  margin: 0 0 4px 56px;
+}
+.rg-artikel ul.punkte {
+  list-style: none;
+  margin-left: 56px;
+  padding: 0;
+}
+.rg-artikel ul.punkte li {
+  padding: 14px 0;
+  border-top: 1px solid var(--linie);
+}
+.rg-artikel ul.punkte li:last-child {
+  border-bottom: 1px solid var(--linie);
+}
+/* Fundstellen als eigenes Element, unter dem Satz; sie führen zur Quelle */
+.rg-artikel .rg-f {
+  display: block;
+  width: fit-content;
+  font-size: 14px;
+  color: var(--tinte3);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+}
+.rg-artikel .rg-f:hover {
+  text-decoration: underline;
+}
+.rg-artikel .noch {
+  margin: 20px 0 0 56px;
+  background: var(--papier3);
+  border-radius: 16px;
+  padding: 16px 20px;
+  font-size: 17px;
+}
+.rg-artikel .noch b {
+  font-weight: 700;
+}
+/* PC81 B10 (QA12): Auf der dunklen Karte erreicht --tinte3 nur 4,3 : 1; --tinte2 (wie --ink-muted der App)
+   liegt in beiden Themen über 4,5 : 1. */
+.rg-artikel .noch .rg-f {
+  color: var(--tinte2);
+}
+.rg-artikel dl.kein {
+  margin-top: 8px;
+}
+.rg-artikel dl.kein div {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 4px 24px;
+  padding: 14px 0;
+  border-top: 1px solid var(--linie);
+}
+.rg-artikel dl.kein div:last-child {
+  border-bottom: 1px solid var(--linie);
+}
+.rg-artikel dl.kein dt {
+  font-weight: 650;
+}
+.rg-artikel dl.kein dd {
+  margin: 0;
+}
+.rg-artikel dl.kein dd .rg-f {
+  margin-top: 2px;
+}
+.rg-artikel .mehr p,
+.rg-artikel .absage p {
+  margin-top: 16px;
+}
+.rg-artikel .mehr b {
+  font-weight: 700;
+}
+.rg-artikel .mappe {
+  margin-top: 8px;
+}
+.rg-artikel .mappe .mappe-stapel {
+  max-width: 300px;
+  margin: 24px 0 0;
+}
+.rg-artikel .mappe .knopf {
+  margin-top: 20px;
+}
+.rg-artikel .link-satz {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.rg-artikel .quellen {
+  margin-top: 16px;
+  font-size: 16px;
+  padding-left: 20px;
+}
+.rg-artikel .quellen li {
+  margin-top: 10px;
+}
+.rg-artikel .wo {
+  color: var(--tinte3);
+  font-size: 14px;
+}
+.rg-artikel .klein {
+  font-size: 15px;
+  color: var(--tinte2);
+  margin-top: 20px;
+  line-height: 1.5;
+}
+.rg-artikel .klein .link-satz {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--tinte);
+}
+.rg-wrap aside {
+  padding-top: 150px;
+}
+.toc {
+  position: sticky;
+  top: 32px;
+  font-size: 15px;
+  border-left: 1px solid var(--linie);
+  padding-left: 20px;
+}
+.toc p {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tinte2);
+  margin-bottom: 8px;
+}
+.toc a {
+  display: block;
+  color: var(--tinte);
+  text-decoration: none;
+  padding: 6px 0;
+  line-height: 1.35;
+}
+.toc a:hover {
+  text-decoration: underline;
+}
+
+/* Übersicht */
+.rg-uebersicht {
+  grid-column: 1/-1;
+  max-width: 600px;
+}
+.rg-uebersicht .kicker {
+  margin-top: 0;
+}
+.rg-uebersicht .liste {
+  list-style: none;
+  margin-top: 32px;
+  padding: 0;
+  border-top: 1px solid var(--linie);
+}
+.rg-uebersicht .liste li {
+  border-bottom: 1px solid var(--linie);
+}
+.rg-uebersicht .liste a {
+  display: block;
+  padding: 24px 0;
+  text-decoration: none;
+  color: var(--tinte);
+}
+.rg-uebersicht .liste h2 {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0;
+}
+.rg-uebersicht .liste a:hover h2 {
+  text-decoration: underline;
+}
+.rg-uebersicht .liste p {
+  color: var(--tinte2);
+  margin-top: 6px;
+}
+.rg-uebersicht .liste .wo {
+  display: block;
+  margin-top: 8px;
+}
+
+@media (max-width: 760px) {
+  .rg-wrap {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .rg-wrap aside {
+    display: none;
+  }
+  .rg-artikel {
+    padding: 24px 0 64px;
+    font-size: 17px;
+  }
+  .rg-artikel h1 {
+    font-size: 34px;
+  }
+  .rg-artikel .lead {
+    font-size: 19px;
+  }
+  .rg-artikel blockquote {
+    font-size: 20px;
+  }
+  .rg-artikel h2 {
+    font-size: 24px;
+    margin-top: 48px;
+  }
+  .rg-artikel .schritt {
+    margin-top: 48px;
+    gap: 12px;
+  }
+  .rg-artikel .nr {
+    font-size: 34px;
+    width: 28px;
+  }
+  .rg-artikel .unter,
+  .rg-artikel .etikett,
+  .rg-artikel ul.punkte,
+  .rg-artikel .noch {
+    margin-left: 0;
+  }
+  .rg-artikel dl.kein div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .rg-artikel .mappe .mappe-stapel {
+    max-width: 240px;
+  }
+}
+@media (max-width: 420px) {
+  .rg-artikel h1 {
+    font-size: 30px;
+    font-stretch: 112%;
+  }
+}
+@media print {
+  .rg-wrap aside {
+    display: none;
+  }
+  .rg-wrap {
+    display: block;
+  }
+}
+
+/* Tippflächen ab 44 px (C5), ohne den Satz zu verschieben: Die Fläche wächst nach oben und unten in den Abstand. */
+.rg-artikel .rg-f {
+  padding: 11px 0;
+  margin-top: -7px;
+  margin-bottom: -11px;
+}
+.rg-artikel dl.kein dd .rg-f {
+  margin-top: -9px;
+}
+.rg-artikel cite .rg-f {
+  padding: 15px 0;
+  margin: 0;
+}
+.rg-artikel .quellen .link-satz {
+  padding: 14px 0;
+}
+
+/* PC40: Datenschutz, Impressum und Rückmeldung im Rahmen der Landingpage. Ohne eigenes Design: Text des
+   Generators unverändert, Links in Tinte und unterstrichen (DP35), Tippflächen ab 44 px. */
+.ohne-reiter .reiter .r-mieter {
+  background: var(--reiter);
+  color: var(--tinte2);
+}
+.rg-text {
+  grid-column: 1 / -1;
+  max-width: 760px;
+  min-width: 0;
+  padding: 48px 0 80px;
+  font-size: 17px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.rg-text h1 {
+  font-size: clamp(22px, 7vw, 40px);
+  line-height: 1.1;
+  font-weight: 800;
+  font-stretch: 112%;
+  letter-spacing: -0.01em;
+  overflow-wrap: normal;
+  /* PC81 B11 (QA13): „Datenschutzerklärung“ trennt bei 320 px mit 130 % nach den Regeln der Sprache (lang="de"). */
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+.rg-text h2 {
+  margin: 36px 0 0;
+  font-size: clamp(19px, 5.8vw, 24px);
+  line-height: 1.2;
+  font-weight: 750;
+  scroll-margin-top: 16px;
+}
+.rg-text h3 {
+  margin: 22px 0 0;
+  font-size: 18px;
+  line-height: 1.3;
+  font-weight: 700;
+}
+.rg-text p,
+.rg-text ul {
+  margin: 10px 0 0;
+  max-width: 72ch;
+}
+.rg-text ul {
+  padding-left: 20px;
+}
+.rg-text li {
+  margin-top: 6px;
+}
+.rg-text a,
+.rg-text .link-satz {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--tinte);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.rg-text .link-satz {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.rg-text .klein {
+  font-size: 15px;
+  color: var(--tinte2);
+}
+.ds .index {
+  padding: 0;
+  list-style: none;
+}
+.ds .index li {
+  margin: 0;
+}
+.ds .seal {
+  margin-top: 32px;
+  font-size: 13px;
+  color: var(--tinte2);
+}
+.ds .seal a {
+  color: var(--tinte2);
+}
+.ds-zusatz {
+  margin-top: 20px;
+  padding: 20px 24px;
+  border-radius: 16px;
+  border-left: 4px solid var(--tinte);
+  background: var(--papier3);
+}
+.ds .ds-zusatz h2 {
+  margin: 0;
+}
+.ds-stand {
+  color: var(--tinte2);
+}
+.rm .rm-q {
+  margin-top: 32px;
+}
+.rm .rm-q legend {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+@media (max-width: 760px) {
+  .rg-text {
+    padding: 24px 0 56px;
+  }
+  .ds-zusatz {
+    padding: 16px;
+  }
+}
+@media (max-width: 340px) {
+  .rg-text h2 {
+    font-size: 18px;
+    font-stretch: 100%;
+  }
+}
+/* „Datenschutzerklärung“ ist ein Wort: Auf 320 px passt es nur schmaler in die Zeile. */
+@media (max-width: 420px) {
+  .rg-text h1 {
+    font-stretch: 100%;
+  }
+}
+
+/* W3 (PC45): Die beiden Links unter „Und eure Mappe?“ stehen ohne Trennpunkt nebeneinander. */
+.rg-artikel .mappe .klein {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--s5, 20px);
+}

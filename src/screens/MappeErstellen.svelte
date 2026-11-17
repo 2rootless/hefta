@@ -621,7 +621,15 @@
     {#if ansicht}
       <div class="titelblock">
         <h1 class="display frage" use:passend={TITEL}>{t('mappe.titel')}</h1>
-        <p class="lead">{t(allein ? 'mappe.leadDu' : 'mappe.leadIhr')}</p>
+        <!-- PC81 B3 (QA4): Bei Einzeldateien gibt es kein Deckblatt; der Lead sagt es, die Zeile führt zur Wahl. -->
+        <p class="lead">
+          {einzeln ? t('mappe.leadEinzeln') : t(allein ? 'mappe.leadDu' : 'mappe.leadIhr')}
+        </p>
+        {#if einzeln}
+          <a class="textlink weiter ausgabe-zeile" href="#/mappe/anpassen"
+            >{t('mappe.ausgabeZeile')}</a
+          >
+        {/if}
       </div>
 
       {#if vorherAnzahl}
@@ -1150,6 +1158,10 @@
 
   .titelblock {
     padding: 6px var(--space-5) 0;
+  }
+
+  .ausgabe-zeile {
+    margin-top: 4px;
   }
 
   .frage {

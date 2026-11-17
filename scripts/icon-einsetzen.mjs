@@ -20,10 +20,12 @@ const kopie = (von, nach) => {
   fs.copyFileSync(von, nach);
 };
 
-// Web-App: Favicon, Manifest, Home-Bildschirm
-kopie(`${D}/favicon/favicon.svg`, 'public/icons/favicon.svg');
-kopie(`${D}/favicon/favicon-16.png`, 'public/icons/favicon-16.png');
-kopie(`${D}/favicon/favicon-32.png`, 'public/icons/favicon-32.png');
+// Web-App: Favicon, Manifest, Home-Bildschirm. PC85 (W34, DP63a): Das Favicon ist nicht mehr das App-Symbol,
+// sondern F1, das Zeichen frei, aus design/logo/favicon-dp63a-f1/.
+const F1 = 'design/logo/favicon-dp63a-f1';
+kopie(`${F1}/favicon.svg`, 'public/icons/favicon.svg');
+kopie(`${F1}/favicon-16.png`, 'public/icons/favicon-16.png');
+kopie(`${F1}/favicon-32.png`, 'public/icons/favicon-32.png');
 kopie(`${D}/web/apple-touch-icon.png`, 'public/icons/apple-touch-icon.png');
 kopie(`${D}/web/hefta-icon-192.png`, 'public/icons/icon-192.png');
 kopie(`${D}/web/hefta-icon-512.png`, 'public/icons/icon-512.png');

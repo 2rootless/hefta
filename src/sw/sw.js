@@ -6,7 +6,9 @@
 const VERSION = '__VERSION__';
 /** @type {string[]} */
 const DATEIEN = /** @type {string[]} */ (/** @type {unknown} */ ('__DATEIEN__'));
-const CACHE = `hefta-${VERSION}`;
+// „mappe“ im Namen: Der Worker auf „/“ (web/sw.js) räumt nur die Speicher der früheren Mappe auf „/“
+// weg, `hefta-` und zwölf Zeichen, und lässt diesen hier stehen.
+const CACHE = `hefta-mappe-${VERSION}`;
 
 const sw = /** @type {ServiceWorkerGlobalScope} */ (/** @type {unknown} */ (self));
 

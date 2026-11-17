@@ -19,8 +19,10 @@
     gesamt: number;
   } = $props();
 
-  let geloescht = $state(true);
-  const mail = $derived(absage(anhang, geloescht));
+  // PC81 B9: Nichts ist vorgewählt. „Gelöscht“ steht in der Mail nur, wenn der Vermieter „Schon gelöscht“
+  // selbst wählt; ohne Wahl steht der Satz von „Lösche ich später“ da (spätestens nach sechs Monaten, DSK D).
+  let geloescht = $state<boolean | null>(null);
+  const mail = $derived(absage(anhang, geloescht === true));
   const link = $derived(
     mailLink(mail.betreff, mail.text, mailEmpfaenger(anhang.haushalt.kontakt?.email)),
   );
@@ -82,7 +84,7 @@
         class:on={geloescht === w.wert}
         role="radio"
         aria-checked={geloescht === w.wert}
-        tabindex={geloescht === w.wert ? 0 : -1}
+        tabindex={geloescht === w.wert || (geloescht === null && i === 0) ? 0 : -1}
         bind:this={knoepfe[i]}
         onclick={() => waehlen(w.wert)}
         onkeydown={(e) => taste(e, i)}>{w.text()}</button

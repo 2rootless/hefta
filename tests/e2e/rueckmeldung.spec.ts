@@ -283,6 +283,8 @@ test('Seite einer Unterlage: Stand, Hinweis, „Warum?“, ältere Version, lös
     'Zusage: dürfen fragen',
   ]);
   await expect(blatt.getByRole('link', { name: /Orientierungshilfe.*Januar 2026/ })).toBeVisible();
+  // PC81 B12: Eigene Quellen je Satz nur, wo die Orientierungshilfe ihn nicht trägt; bei der Bonität keine.
+  await expect(blatt.locator('.satz-quelle')).toHaveCount(0);
   await expect(blatt.getByText(/Stand der Angaben in Hefta: 30\.\sOktober 2026/)).toBeVisible();
   await expect(blatt.getByText(/29,95/)).toHaveCount(0);
   await blatt.getByRole('button', { name: 'Verstanden' }).click();

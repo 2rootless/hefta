@@ -92,6 +92,11 @@ export interface AnschreibenAuftrag {
   /** „JJJJ-MM-TT“ oder freier Text; leer: kein Satz zum Einzug. */
   einzug: string;
   heute: Date;
+  /**
+   * PC81 A1: Nur per Mail liegt die Mappe bei. Über ein Portal oder eine Website geht keine Datei mit; dann
+   * bietet der Satz die Mappe an, sobald der Vermieter eine Mailadresse nennt.
+   */
+  weg: BewerbungsWeg;
 }
 
 /** Das Anschreiben nach B23 (`s=bewerben`), ohne Gruß und Unterschrift. */
@@ -110,9 +115,13 @@ export function anschreibenText(a: AnschreibenAuftrag): { anrede: string; text: 
     saetze.push(a.wir ? `Wir können zum ${wann} einziehen.` : `Ich kann zum ${wann} einziehen.`);
   }
   saetze.push(
-    a.wir
-      ? 'Unsere Mappe mit allen Unterlagen, die Sie verlangen, liegt bei.'
-      : 'Meine Mappe mit allen Unterlagen, die Sie verlangen, liegt bei.',
+    a.weg === 'mail'
+      ? a.wir
+        ? 'Unsere Mappe mit den üblichen Unterlagen liegt bei.'
+        : 'Meine Mappe mit den üblichen Unterlagen liegt bei.'
+      : a.wir
+        ? 'Unsere Mappe mit den üblichen Unterlagen schicken wir Ihnen gern, sobald Sie uns eine Mailadresse nennen.'
+        : 'Meine Mappe mit den üblichen Unterlagen schicke ich Ihnen gern, sobald Sie mir eine Mailadresse nennen.',
   );
   return { anrede: anrede(a.anbieter), text: saetze.join(' ') };
 }

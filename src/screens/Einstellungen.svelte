@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { versionKurz } from '../app/version';
   import { backupKlick, istAndroidApp, istApp } from '../app/plattform';
   // Einstellungen in Gruppen (design/mappe-erstellen-einstellungen.md, Abschnitt 2, S1/S2):
   // Sicherung, Speicher, App, Daten. Backup erstellen, einspielen und alles löschen sind eigene Seiten.
@@ -341,7 +342,10 @@
         <div class="listenzeile">
           <span class="tx"
             ><b>{t('einstellungen.version')}</b><small
-              >{t('einstellungen.versionWert', { version: __APP_VERSION__, stand })}</small
+              >{t('einstellungen.versionWert', {
+                version: versionKurz(__APP_VERSION__),
+                stand,
+              })}</small
             ></span
           >
         </div>

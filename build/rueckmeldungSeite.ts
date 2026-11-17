@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { APP_NAME } from '../src/app/name.ts';
 import { FRAGE_REIHE, FRAGEN } from '../src/rueckmeldung/fragen.ts';
-import { RATGEBER_ORDNER } from './ratgeber.ts';
+import { webRahmen } from './ratgeber.ts';
 
 // Die Seite hefta.de/rueckmeldung/ (E54, B19 Fassung 2 und 5): nur noch für Links von außen, etwa aus
 // einer Mail. Hefta selbst fragt im Fenster. Beim Bau aus src/i18n/de.json erzeugt, im Stil der
@@ -15,8 +15,13 @@ export const RUECKMELDUNG_PFAD = 'rueckmeldung';
 type Baum = { [k: string]: string | Baum };
 const de = JSON.parse(readFileSync(join(wurzel, 'src/i18n/de.json'), 'utf8')) as Baum;
 const rm = de.rueckmeldung as Baum;
+const suchen = (pfad: string) =>
+  pfad.split('.').reduce<string | Baum | undefined>((k, s) => (k as Baum | undefined)?.[s], rm);
 const text = (pfad: string): string => {
-  let wert = pfad.split('.').reduce<string | Baum>((k, s) => (k as Baum)[s]!, rm);
+  // Release 2.0: Die Fragen, „aus“ und „deine“ liegen in der App unter `rueckmeldung.*` (du/ihr-Paare), nicht
+  // unter `rueckmeldung.seite.*`. Fehlt der Schlüssel unter `seite.`, gilt derselbe eine Ebene höher.
+  let wert = suchen(pfad) ?? (pfad.startsWith('seite.') ? suchen(pfad.slice(6)) : undefined);
+  if (wert === undefined) throw new Error(`Text fehlt: rueckmeldung.${pfad}`);
   // Paar „ihr“/„du“ (B28b): Die Seite spricht wie die übrige Website mit „ihr“ an (DP32).
   if (typeof wert === 'object' && 'ihr' in wert) wert = wert.ihr!;
   return (wert as string).replaceAll('{app}', APP_NAME);
@@ -40,16 +45,14 @@ const CSP = [
   "form-action 'none'",
 ].join('; ');
 
-/** „{Zahl} kurze Fragen“, die Zahl als Wort aus `FRAGE_REIHE`, derselben Quelle wie in der App (DP32, DP33). */
-export function kurzeFragen(): string {
-  const wort = fragenZahlwort();
-  return text('seite.kurzeFragen').replace('{Zahl}', wort.charAt(0).toUpperCase() + wort.slice(1));
-}
-
-/** Die Zahl der Fragen als Wort („vier“). */
-export function fragenZahlwort(): string {
+/**
+ * DP32, Abschnitt 4: „{Zahl} kurze Fragen“, die Zahl als Wort aus derselben Quelle wie in der App
+ * (`FRAGE_REIHE`). Die Seite spricht wie die übrige Website mit „ihr“ an.
+ */
+function kurzeFragen(): string {
   const n = FRAGE_REIHE.length;
-  return (de.zahlwoerter as unknown as string[])[n] ?? String(n);
+  const wort = (de.zahlwoerter as unknown as string[])[n] ?? String(n);
+  return text('seite.kurzeFragen').replace('{Zahl}', wort.charAt(0).toUpperCase() + wort.slice(1));
 }
 
 export function rueckmeldungHtml(): string {
@@ -64,42 +67,41 @@ export function rueckmeldungHtml(): string {
       .join('');
     const anders =
       f === 'fehlt'
-        ? `<a class="vs-lk rm-mail" href="${esc(mail)}">${esc(text('seite.anderes'))}</a>`
+        ? `<a class="link-satz rm-mail" href="${esc(mail)}">${esc(text('seite.anderes'))}</a>`
         : '';
     return (
-      `<fieldset class="rm-q sec" data-frage="${f}"><legend class="vs-h2">${esc(text(`fragen.${f}`))}</legend>` +
+      `<fieldset class="rm-q" data-frage="${f}"><legend>${esc(text(`seite.fragen.${f}`))}</legend>` +
       `${optionen}${anders}</fieldset>`
     );
   }).join('');
-  return (
-    `<!doctype html>\n<html lang="de"><head><meta charset="utf-8" />` +
-    `<meta name="viewport" content="width=device-width, initial-scale=1" />` +
-    `<meta http-equiv="Content-Security-Policy" content="${CSP}" />` +
-    `<meta name="robots" content="noindex" />` +
-    `<title>${esc(text('seite.titel'))} | ${APP_NAME}</title>` +
-    `<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />` +
-    `<link rel="stylesheet" href="/${RATGEBER_ORDNER}/ratgeber.css" />` +
-    `<link rel="stylesheet" href="/${RUECKMELDUNG_PFAD}/rueckmeldung.css" />` +
-    `<script type="module" src="/${RUECKMELDUNG_PFAD}/rueckmeldung.js"></script></head>` +
-    `<body><div class="s"><header class="vs-top"><a class="vs-brand" href="/">` +
-    `<img class="vs-logo" src="/${RATGEBER_ORDNER}/logo.svg" alt="" /><span>${esc(APP_NAME.toLowerCase())}</span></a>` +
-    `<span class="vs-tr rm-leise">${esc(text('seite.titel'))}</span></header>` +
-    `<main class="rm"><form id="rm" novalidate><h1 class="vs-h1" id="rm-titel">${esc(kurzeFragen())}</h1>` +
-    `${fragen}<p class="vs-sub">${esc(text('seite.satz'))}</p>` +
-    `<p class="rm-aus vs-sub" role="status" hidden>${esc(text('aus'))}</p>` +
-    `<button class="vs-btn" type="submit" disabled>${esc(text('abschicken'))}</button></form>` +
-    `<section id="rm-danke" class="sec" hidden><h1 class="vs-h1" tabindex="-1">${esc(text('danke'))}</h1>` +
-    `<p class="rm-deine"></p><p class="vs-links"><button class="vs-lk rm-aendern" type="button">${esc(text('aendern'))}</button>` +
-    `<a class="vs-lk" href="/">${esc(text('seite.zurueck'))}</a></p></section></main>` +
-    `<footer class="rg-fuss"><p class="vs-links"><a class="vs-lk" href="/datenschutz/">${esc(text('seite.recht'))}</a></p></footer>` +
-    `</div></body></html>\n`
+  // PC40: im Rahmen der Landingpage (Kopf und Fuß), ohne aufgeschlagenen Reiter. Das Skript bleibt eine Datei
+  // daneben, die Seite bleibt für Suchmaschinen gesperrt.
+  return webRahmen(
+    text('seite.titel'),
+    '',
+    `<main id="inhalt" class="rg-text rm"><form id="rm" novalidate><h1 id="rm-titel">${esc(kurzeFragen())}</h1>` +
+      `${fragen}<p class="klein">${esc(text('seite.satz'))}</p>` +
+      `<p class="rm-aus klein" role="status" hidden>${esc(text('seite.aus'))}</p>` +
+      `<button class="knopf" type="submit" disabled>${esc(text('abschicken'))}</button></form>` +
+      `<section id="rm-danke" hidden><h1 tabindex="-1">${esc(text('danke'))}</h1>` +
+      `<p class="rm-deine"></p><p class="rm-links"><button class="link-satz rm-aendern" type="button">${esc(text('aendern'))}</button>` +
+      `<a class="link-satz" href="/">${esc(text('seite.zurueck'))}</a></p></section>` +
+      `<p class="klein"><a class="link-satz" href="/datenschutz/">${esc(text('seite.recht'))}</a></p></main>`,
+    {
+      reiter: null,
+      csp: CSP,
+      kopf:
+        `<meta name="robots" content="noindex" />` +
+        `<link rel="stylesheet" href="/${RUECKMELDUNG_PFAD}/rueckmeldung.css" />` +
+        `<script type="module" src="/${RUECKMELDUNG_PFAD}/rueckmeldung.js"></script>`,
+    },
   );
 }
 
 /** Das Skript der Seite: Vorwahl aus ?f=…&a=…, Abschicken, Danke, ohne Netz. */
 export function rueckmeldungJs(): string {
   const woerter = {
-    deine: text('deine'),
+    deine: text('seite.deine'),
     deineMehr: text('seite.deineMehr'),
     antworten: Object.fromEntries(
       FRAGE_REIHE.map((f) => [
@@ -169,10 +171,10 @@ danke.querySelector('.rm-aendern').addEventListener('click', () => {
 }
 
 const STIL = `.rm-q{border:0;margin:0;padding:0}.rm-q legend{padding:0;margin-bottom:10px}
-.rm-a{display:flex;align-items:center;gap:12px;min-height:54px;border-top:1px solid currentColor;border-top-color:rgb(0 0 0 / 0.12);cursor:pointer}
+.rm-a{display:flex;align-items:center;gap:12px;min-height:54px;border-top:1px solid currentColor;border-top-color:var(--linie, rgb(0 0 0 / 0.12));cursor:pointer}
 .rm-a input{flex:none;width:22px;height:22px;margin:0}
-.rm-mail{display:inline-flex;align-items:center;min-height:44px;margin-top:8px}.rm-leise{opacity:.75}
-.rm .vs-btn{min-height:52px;margin-top:8px;border:0;font:inherit}.rm .vs-btn:disabled{opacity:.45}
+.rm-mail{display:inline-flex;align-items:center;min-height:44px;margin-top:8px}.rm-links{display:flex;flex-wrap:wrap;gap:4px 24px;margin-top:12px}
+.rm .knopf{margin-top:20px;border:0;font:inherit;cursor:pointer}.rm .knopf:disabled{opacity:.45;cursor:default}
 .rm-aendern{background:none;border:0;padding:0;font:inherit;cursor:pointer;min-height:44px}
 `;
 

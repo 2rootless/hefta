@@ -55,6 +55,10 @@
       <h3>{t('warum.gutZuWissen')}</h3>
       {#each inhalt.gutZuWissen as satz, i (i)}
         <p>{satz}</p>
+        <!-- PC81 B12: Trägt die Orientierungshilfe den Satz nicht, steht seine eigene Quelle darunter. -->
+        {#if inhalt.gutZuWissenQuellen[i]}
+          <p class="quelle satz-quelle">{t('warum.quelle')} {inhalt.gutZuWissenQuellen[i]}</p>
+        {/if}
       {/each}
     </section>
     <p class="quelle">
@@ -132,6 +136,10 @@
     font-size: calc(13 * var(--px));
     line-height: calc(18 * var(--px));
     color: var(--ink-muted);
+  }
+
+  .satz-quelle {
+    margin-top: 2px;
   }
 
   .quelle a {

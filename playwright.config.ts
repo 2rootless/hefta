@@ -46,5 +46,11 @@ export default defineConfig({
       url: 'http://localhost:4174',
       reuseExistingServer: false,
     },
+    {
+      // Die Website (dist-web/, build/webseite.ts) mit Kopfzeilen und Weiterleitungen wie bei Cloudflare.
+      command: 'node scripts/vorschau-web.mjs 4175',
+      url: 'http://localhost:4175',
+      reuseExistingServer: false,
+    },
   ],
 });

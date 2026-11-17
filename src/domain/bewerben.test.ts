@@ -56,10 +56,11 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
         strasse: 'Lindenring 3',
         einzug: '2027-01-01',
         heute: HEUTE,
+        weg: 'mail',
       }),
     ).toEqual({
       anrede: 'Sehr geehrte Frau Hansen,',
-      text: 'ich möchte mich um die Wohnung im Lindenring 3 bewerben. Ich kann zum 1. Januar 2027 einziehen. Meine Mappe mit allen Unterlagen, die Sie verlangen, liegt bei.',
+      text: 'ich möchte mich um die Wohnung im Lindenring 3 bewerben. Ich kann zum 1. Januar 2027 einziehen. Meine Mappe mit den üblichen Unterlagen liegt bei.',
     });
     const wir = anschreibenText({
       wir: true,
@@ -67,11 +68,29 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
       strasse: 'Planten un Blomen 1',
       einzug: '',
       heute: HEUTE,
+      weg: 'mail',
     });
     expect(wir.text).toBe(
-      'wir möchten uns um die Wohnung Planten un Blomen 1 bewerben. Unsere Mappe mit allen Unterlagen, die Sie verlangen, liegt bei.',
+      'wir möchten uns um die Wohnung Planten un Blomen 1 bewerben. Unsere Mappe mit den üblichen Unterlagen liegt bei.',
     );
     expect(einzugText('2026-12-01', HEUTE)).toBe('1. Dezember');
+  });
+
+  it('PC81 A1 (QA1): Über Portal und Website liegt nichts bei; nur per Mail „liegt bei“', () => {
+    const basis = { anbieter: null, strasse: 'Lindenring 3', einzug: '', heute: HEUTE };
+    for (const weg of ['portal', 'website'] as const) {
+      const wir = anschreibenText({ ...basis, wir: true, weg });
+      expect(wir.text).toContain(
+        'Unsere Mappe mit den üblichen Unterlagen schicken wir Ihnen gern, sobald Sie uns eine Mailadresse nennen.',
+      );
+      // Gegenprobe: kein „liegt bei“, kein „die Sie verlangen“.
+      expect(wir.text).not.toMatch(/liegt bei|die Sie verlangen/);
+      const ich = anschreibenText({ ...basis, wir: false, weg });
+      expect(ich.text).toContain('schicke ich Ihnen gern, sobald Sie mir eine Mailadresse nennen.');
+    }
+    const mail = anschreibenText({ ...basis, wir: true, weg: 'mail' });
+    expect(mail.text).toContain('Unsere Mappe mit den üblichen Unterlagen liegt bei.');
+    expect(mail.text).not.toContain('die Sie verlangen');
   });
 
   it('sagt kurz, wer einzieht (E25)', () => {

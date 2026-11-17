@@ -3,6 +3,7 @@ import {
   fehlendeAngaben,
   haushaltsAngaben,
   selbstauskunftVon,
+  teile as teileDerAuskunft,
 } from '../domain/selbstauskunft';
 import type { HaushaltsAngaben, Selbstauskunft } from '../domain/selbstauskunft';
 import type { Haushalt, Person, Rolle } from '../domain/modell';
@@ -106,7 +107,8 @@ export function grundFuer(
   rolle: Rolle,
   e: SelbstauskunftEingabe,
 ): string | undefined {
-  const fehlt = fehlendeAngaben({ ...person, ...angabenAus(e) }, rolle, e.hh);
+  const mitEingabe = { ...person, ...angabenAus(e) };
+  const fehlt = fehlendeAngaben(mitEingabe, rolle, e.hh);
   if (!fehlt.length) return undefined;
   const fragen = fehlt.filter((f) => ['insolvenz', 'raeumungstitel'].includes(f));
   // Reihenfolge wie im Akkordeon: Kontakt, Einkommen, Fragen, Haustiere, Ort.
@@ -116,8 +118,12 @@ export function grundFuer(
   if (fragen.length) teile.push(t('selbstauskunft.fehltFragen', { anzahl: fragen.length }));
   if (fehlt.includes('haustiere')) teile.push(t('selbstauskunft.fehlt.haustiere'));
   if (fehlt.includes('ort')) teile.push(t('selbstauskunft.fehlt.ort'));
-  // Ab drei Teilen nur die Zahl: Die Teile stehen als Schritte darüber, und der Satz wurde bei großer
-  // Schrift dreizeilig (selbstauskunft-person-serie.md, 4.11.).
-  if (teile.length >= 3) return t('selbstauskunft.grundZahl', { anzahl: teile.length });
+  // Ab drei Angaben nur die Zahl: Die Teile stehen als Schritte darüber, und der Satz wurde bei großer
+  // Schrift dreizeilig (selbstauskunft-person-serie.md, 4.11.). PC81 B1 (QA2): Die Zahl zählt Teile wie der
+  // Kopf (Kontakt, Einkommen, Fragen, Haushalt), nicht die Angaben; Haustiere und Ort sind ein Teil.
+  if (teile.length >= 3) {
+    const offen = teileDerAuskunft(mitEingabe, rolle, e.hh).filter((x) => !x.fertig).length;
+    return t('selbstauskunft.grundZahl', { anzahl: offen });
+  }
   return t('selbstauskunft.grund', { liste: teile.join(', ') });
 }

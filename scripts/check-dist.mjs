@@ -49,7 +49,7 @@ function dateien(ordner) {
 }
 
 const funde = [];
-for (const datei of [...dateien('dist'), ...dateien('dist-vermieter')]) {
+for (const datei of [...dateien('dist'), ...dateien('dist-vermieter'), ...dateien('dist-web')]) {
   if (!TEXT.has(extname(datei))) continue;
   const inhalt = readFileSync(datei, 'utf8');
   for (const [, host] of inhalt.matchAll(/https?:\/\/([a-zA-Z0-9.-]+)/g)) {

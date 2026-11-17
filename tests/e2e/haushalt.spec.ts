@@ -65,7 +65,9 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await page.getByRole('button', { name: 'Ausfüllen' }).click();
   const weiterSA = page.getByRole('button', { name: 'Speichern und weiter' });
   await expect(weiterSA).toHaveAttribute('aria-disabled', 'true');
-  await expect(page.getByText(/^Noch 5 Teile\./)).toBeVisible();
+  // PC81 B1 (QA2): Der Zähler zählt die vier Teile wie der Kopf, nicht fünf Angaben.
+  await expect(page.getByText(/^Noch 4 Teile\.$/)).toBeVisible();
+  await expect(page.getByText(/Noch 5 Teile/)).toHaveCount(0);
   // Akkordeon (A1): Teil 1 ist offen, die anderen tippt man an.
   await page.getByLabel('E-Mail').fill('max@example.org');
   // PC65 (W32): „Wird fast immer gefragt“ statt „Pflicht“.

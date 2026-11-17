@@ -55,7 +55,12 @@ describe('Die Prüfungen schlagen an', () => {
   });
 
   it('RG2: die falsche Anrede', () => {
-    expect(mit('Du kannst das Feld', 'Wenn Sie wollen, das Feld').join()).toContain('RG2');
+    expect(
+      mit('Ob ihr das tut, entscheidet ihr', 'Ob du das tust, entscheidest du').join(),
+    ).toContain('RG2');
+    expect(
+      mit('Ob ihr das tut, entscheidet ihr', 'Ob Sie das tun, entscheiden Sie').join(),
+    ).toContain('RG2');
     expect(
       ratgeberBefunde(
         ratgeberHtml('v').replace('Wann löschen', 'Wann du löschst'),
@@ -66,14 +71,14 @@ describe('Die Prüfungen schlagen an', () => {
   });
 
   it('RG3: ein Schritt oder ein Eintrag fehlt', () => {
-    expect(mit('class="rg-step sec" aria-label="Schritt 3"', 'class="x"').join()).toContain(
-      'RG3-schritte',
-    );
-    expect(mit('<li><div><b>Ausweiskopie', '<div><b>Ausweiskopie').join()).toContain('RG3-liste');
+    expect(mit('class="rg-step" id="s3"', 'class="x" id="s3"').join()).toContain('RG3-schritte');
+    expect(mit('<div><dt>Ausweiskopie', '<div><b>Ausweiskopie').join()).toContain('RG3-liste');
   });
 
   it('RG4: ein Betrag', () => {
-    expect(mit('Kostenlos, ohne Konto', 'Für 30 Euro, ohne Konto').join()).toContain('RG4');
+    expect(mit('Beruf und Arbeitgeber.', 'Beruf und Arbeitgeber, ab 30 Euro.').join()).toContain(
+      'RG4',
+    );
   });
 
   it('RG5: eine Fundstelle führt woandershin', () => {
@@ -101,7 +106,8 @@ describe('Die Prüfungen schlagen an', () => {
 describe('Einbindung', () => {
   it('Der Service Worker der App lässt die Seite in Ruhe', () => {
     const sw = readFileSync('src/sw/sw.js', 'utf8');
-    expect(sw).toContain(`/${RATGEBER_PFAD.m}`);
+    // Der Beitrag liegt seit der Landingpage im Ordner des Ratgebers (E70); den lässt der Worker aus.
+    expect(RATGEBER_PFAD.m.startsWith(`${RATGEBER_ORDNER}/`)).toBe(true);
     expect(sw).toContain(`/${RATGEBER_ORDNER}/`);
   });
 

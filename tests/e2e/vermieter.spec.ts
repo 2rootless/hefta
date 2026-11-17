@@ -294,7 +294,7 @@ test('Für den Vertrag anfordern: Mail mit Zusage, Kopieren, Link mit Empfänger
   await expect(page.getByRole('button', { name: 'Mappe öffnen' })).toBeVisible();
 });
 
-test('Absagen: Mail ohne Grund, Wahl „Schon gelöscht“ oder „Lösche ich später“ (VS10, VS16)', async ({
+test('Absagen: Mail ohne Grund, Wahl „Schon gelöscht“ oder „Lösche ich später“, nichts vorgewählt (VS10, VS16, PC81 B9 QA11)', async ({
   page,
   context,
   browserName,
@@ -308,7 +308,9 @@ test('Absagen: Mail ohne Grund, Wahl „Schon gelöscht“ oder „Lösche ich s
   const mail = page.locator('.vs-abs .vs-mt');
   await expect(mail).toContainText('Guten Tag Max Mustermann und Lea Mustermann,');
   await expect(mail).toContainText('ist vergeben.');
-  await expect(mail).toContainText('Wir haben Ihre Unterlagen gelöscht, wie Sie es sich gewünscht');
+  // PC81 B9 (QA11): Ohne Wahl steht „gelöscht“ nirgends in der Mail, nur der Satz von „Lösche ich später“.
+  await expect(mail).toContainText('spätestens nach sechs Monaten');
+  await expect(mail).not.toContainText('gelöscht');
   await expect(mail).not.toContainText('Petra');
   await expect(page.locator('.vs-abs .vs-bitte')).toContainText('Bitte der Bewerber');
   await expect(page.locator('.vs-abs textarea, .vs-abs input')).toHaveCount(0);
@@ -317,7 +319,15 @@ test('Absagen: Mail ohne Grund, Wahl „Schon gelöscht“ oder „Lösche ich s
   const gruppe = page.getByRole('radiogroup', { name: 'Unterlagen' });
   const schon = gruppe.getByRole('radio', { name: 'Schon gelöscht' });
   const spaeter = gruppe.getByRole('radio', { name: 'Lösche ich später' });
+  // Nichts ist vorgewählt; der erste Knopf ist per Tab erreichbar.
+  await expect(schon).toHaveAttribute('aria-checked', 'false');
+  await expect(spaeter).toHaveAttribute('aria-checked', 'false');
+  await expect(schon).toHaveAttribute('tabindex', '0');
+  await expect(spaeter).toHaveAttribute('tabindex', '-1');
+  // Gegenprobe: Erst die eigene Wahl „Schon gelöscht“ bringt „gelöscht“ in die Mail.
+  await schon.click();
   await expect(schon).toHaveAttribute('aria-checked', 'true');
+  await expect(mail).toContainText('Wir haben Ihre Unterlagen gelöscht, wie Sie es sich gewünscht');
   await spaeter.click();
   await expect(spaeter).toHaveAttribute('aria-checked', 'true');
   await expect(mail).toContainText('spätestens nach sechs Monaten');
@@ -346,6 +356,9 @@ test('Absagen: Mail ohne Grund, Wahl „Schon gelöscht“ oder „Lösche ich s
   // Ohne Bitte in der Mappe: kein „wie Sie es sich gewünscht haben“.
   await page.evaluate(() => (window.location.hash = '#/mappe/2/absagen'));
   await expect(mail).toContainText('Guten Tag Olena Kovalenko,');
+  // PC81 B9: Auch hier ist nichts vorgewählt; erst die Wahl bringt „gelöscht“.
+  await expect(mail).not.toContainText('gelöscht');
+  await gruppe.getByRole('radio', { name: 'Schon gelöscht' }).click();
   await expect(mail).toContainText('Wir haben Ihre Unterlagen gelöscht. Haben');
   await expect(page.locator('.vs-abs .vs-bitte')).toHaveCount(0);
 });
