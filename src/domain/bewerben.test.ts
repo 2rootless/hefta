@@ -116,8 +116,45 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
         mail: '',
       }),
     ).toBe(
-      'Sehr geehrte Frau Hansen,\n\nich möchte mich bewerben.\n\nEinzug: 1. Januar 2027\n\nMit freundlichen Grüßen\nLea Berg\n040 123',
+      'Sehr geehrte Frau Hansen,\n\nich möchte mich bewerben.\n\nEinzug: 1. Januar 2027.\n\nMit freundlichen Grüßen\nLea Berg\n040 123',
     );
+  });
+});
+
+describe('PC92 K3: Angabe-Zeilen enden mit Punkt (DP66, E192)', () => {
+  const angaben = [
+    { label: 'Einzug ab', wert: '1. Januar 2027' },
+    { label: 'Personen', wert: '2 Erwachsene, 1 Kind' },
+    { label: 'Einkommen', wert: '3.200 € netto im Monat' },
+    { label: 'Haustiere', wert: 'keine' },
+    { label: 'Haustiere', wert: 'Eine Katze.' },
+  ];
+  /** Die Zeilen mit „Bezeichnung: Wert“ zwischen Anschreiben und Gruß. */
+  const zeilen = (text: string) => text.split('\n').filter((z) => /^[A-ZÄÖÜ][a-zäöüß ]+: /.test(z));
+  const mitPunkt = (z: string) => /[^.][.]$/.test(z);
+
+  it('jede Zeile endet mit genau einem Punkt', () => {
+    const text = bewerbungsText({
+      anrede: 'Hallo,',
+      text: 'Text.',
+      angaben,
+      name: 'Lea',
+      telefon: '',
+      mail: '',
+    });
+    expect(zeilen(text)).toEqual([
+      'Einzug ab: 1. Januar 2027.',
+      'Personen: 2 Erwachsene, 1 Kind.',
+      'Einkommen: 3.200 € netto im Monat.',
+      'Haustiere: keine.',
+      'Haustiere: Eine Katze.',
+    ]);
+    expect(zeilen(text).every(mitPunkt)).toBe(true);
+  });
+
+  it('Gegenprobe: die Fassung ohne Punkt fällt auf', () => {
+    const alt = angaben.map((a) => `${a.label}: ${a.wert}`).join('\n');
+    expect(zeilen(alt).every(mitPunkt)).toBe(false);
   });
 });
 
@@ -136,9 +173,17 @@ describe('Löschbitte und Nachfassen (B18)', () => {
       betreff: 'Bitte um Löschung unserer Unterlagen',
       text:
         'Sehr geehrter Herr Kraus,\n\nwir haben uns am 15. Oktober um die Wohnung in der Beispielstraße 1 beworben. ' +
-        'Da wir sie nicht mehr suchen, bitten wir Sie, unsere Unterlagen zu löschen, auch Ausdrucke und Anhänge.' +
+        'Unsere Bewerbung ist erledigt. Bitte löschen Sie unsere Unterlagen, auch Ausdrucke und Anhänge.' +
         '\n\nFreundliche Grüße\nMax Mustermann und Lea Mustermann',
     });
+  });
+
+  it('PC92 K4, Gegenprobe: Der alte Grund „nicht mehr suchen“ steht nicht mehr da', () => {
+    for (const wir of [true, false]) {
+      const { text } = loeschbitteText({ ...auftrag, wir });
+      expect(text).not.toMatch(/nicht mehr such|Da (wir|ich) sie/);
+      expect(text).toMatch(/beworben\. (Unsere|Meine) Bewerbung ist erledigt\. Bitte löschen Sie/);
+    }
   });
 
   it('Löschbitte allein, ohne Datum, ohne Anbieter, ohne Namen', () => {
@@ -152,7 +197,7 @@ describe('Löschbitte und Nachfassen (B18)', () => {
     expect(betreff).toBe('Bitte um Löschung meiner Unterlagen');
     expect(text).toBe(
       'Sehr geehrte Damen und Herren,\n\nich habe mich um die Wohnung in der Beispielstraße 1 beworben. ' +
-        'Da ich sie nicht mehr suche, bitte ich Sie, meine Unterlagen zu löschen, auch Ausdrucke und Anhänge.' +
+        'Meine Bewerbung ist erledigt. Bitte löschen Sie meine Unterlagen, auch Ausdrucke und Anhänge.' +
         '\n\nFreundliche Grüße',
     );
   });

@@ -32,8 +32,8 @@
     "neinDanke": "Nein danke",
     "sendet": "Wird gesendet …",
     "mailZeile": {
-      "ihr": "Was fehlt euch? Schreibt uns an {adresse}.",
-      "du": "Was fehlt dir? Schreib uns an {adresse}."
+      "ihr": "Was fehlt euch? Schreibt an {adresse}.",
+      "du": "Was fehlt dir? Schreib an {adresse}."
     },
     "mailKnopf": "Mail schreiben",
     "mailHinweis": {
@@ -101,8 +101,8 @@
       "du": "Gerade keine Verbindung. Versuch es später noch einmal."
     },
     "mehr": {
-      "ihr": "Mehr zu sagen? Schreibt uns.",
-      "du": "Mehr zu sagen? Schreib uns."
+      "ihr": "Mehr zu sagen? Schreibt an {adresse}.",
+      "du": "Mehr zu sagen? Schreib an {adresse}."
     },
     "nichtMehr": "Nicht mehr fragen",
     "seite": {
@@ -113,8 +113,8 @@
         "du": "Mit „Abschicken“ geht nur deine Antwort an uns: ohne Namen und ohne Daten aus {app}."
       },
       "anderes": {
-        "ihr": "Etwas anderes? Schreibt uns.",
-        "du": "Etwas anderes? Schreib uns."
+        "ihr": "Etwas anderes? Schreibt an {adresse}.",
+        "du": "Etwas anderes? Schreib an {adresse}."
       },
       "zurueck": "Zurück zu {app}",
       "recht": "Impressum und Datenschutz",
@@ -252,7 +252,7 @@
       "weiterePersonHinweis": "Falls noch jemand unterschreibt",
       "buerge": "Bürge hinzufügen",
       "buergeWeiterer": "Weiteren Bürgen hinzufügen",
-      "buergeHinweis": "Nur nötig, wenn das Einkommen knapp ist",
+      "buergeHinweis": "Hilft, wenn das Einkommen knapp ist",
       "anlegen": "Haushalt anlegen",
       "fertig": "Fertig",
       "herausgenommen": "Herausgenommen",
@@ -357,8 +357,8 @@
     "lizenzWert": "{app} steht unter der AGPL-3.0, die Schrift Archivo unter der OFL-1.1. Die Postleitzahlen für die Luftlinie stammen von GeoNames (geonames.org) unter CC BY 4.0. Alle Lizenztexte liegen der App als lizenzen.txt bei. Der Quellcode steht offen auf GitHub.",
     "quellcode": "Quellcode ansehen",
     "rueckmeldung": {
-      "ihr": "Was fehlt euch? Schreibt uns.",
-      "du": "Was fehlt dir? Schreib uns."
+      "ihr": "Was fehlt euch? Schreibt an {adresse}.",
+      "du": "Was fehlt dir? Schreib an {adresse}."
     },
     "rueckmeldungBetreff": "Rückmeldung zu {app}",
     "ueber": "Über {app}",

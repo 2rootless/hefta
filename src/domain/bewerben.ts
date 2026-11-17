@@ -152,12 +152,16 @@ function gruss(namen: string[]): string {
   return liste ? `Freundliche Grüße\n${liste}` : 'Freundliche Grüße';
 }
 
-/** Löschbitte nach B18 (`s=loeschbitte`): kurz und freundlich, der Nutzer schickt sie selbst. */
+/**
+ * Löschbitte nach B18 (`s=loeschbitte`): kurz und freundlich, der Nutzer schickt sie selbst.
+ * PC92 K4 (DP66 U1, E192): Der Satz mit dem Datum bleibt; danach „Unsere Bewerbung ist erledigt. Bitte löschen
+ * Sie unsere Unterlagen, auch Ausdrucke und Anhänge.“ Allein steht dasselbe mit „Meine“ und „meine“.
+ */
 export function loeschbitteText(a: NachrichtAuftrag): { betreff: string; text: string } {
   const { wohnung, am } = wohnungUndDatum(a);
   const satz = a.wir
-    ? `wir haben uns ${am}um ${wohnung} beworben. Da wir sie nicht mehr suchen, bitten wir Sie, unsere Unterlagen zu löschen, auch Ausdrucke und Anhänge.`
-    : `ich habe mich ${am}um ${wohnung} beworben. Da ich sie nicht mehr suche, bitte ich Sie, meine Unterlagen zu löschen, auch Ausdrucke und Anhänge.`;
+    ? `wir haben uns ${am}um ${wohnung} beworben. Unsere Bewerbung ist erledigt. Bitte löschen Sie unsere Unterlagen, auch Ausdrucke und Anhänge.`
+    : `ich habe mich ${am}um ${wohnung} beworben. Meine Bewerbung ist erledigt. Bitte löschen Sie meine Unterlagen, auch Ausdrucke und Anhänge.`;
   return {
     betreff: a.wir ? 'Bitte um Löschung unserer Unterlagen' : 'Bitte um Löschung meiner Unterlagen',
     text: `${anrede(a.anbieter)}\n\n${satz}\n\n${gruss(a.namen)}`,
@@ -223,6 +227,15 @@ export function werZiehtEin(o: {
   return satz;
 }
 
+/**
+ * PC92 K3 (DP66, E192): Jede Angabe-Zeile endet mit Punkt („Haustiere: keine.“). Zieht Gmail die Absätze
+ * zusammen, bleiben die Angaben so trotzdem Sätze. Steht schon ein Satzzeichen am Ende, kommt keins dazu.
+ */
+export function angabeZeile(a: { label: string; wert: string }): string {
+  const wert = a.wert.trim();
+  return `${a.label}: ${wert}${/[.!?…]$/.test(wert) ? '' : '.'}`;
+}
+
 /** Der ganze Text für Mail und Portal: Anrede, Anschreiben, die Angaben, Gruß und Kontakt. */
 export function bewerbungsText(o: {
   anrede: string;
@@ -233,7 +246,7 @@ export function bewerbungsText(o: {
   mail: string;
 }): string {
   const z = [o.anrede, '', o.text];
-  if (o.angaben.length) z.push('', ...o.angaben.map((a) => `${a.label}: ${a.wert}`));
+  if (o.angaben.length) z.push('', ...o.angaben.map(angabeZeile));
   z.push('', 'Mit freundlichen Grüßen', o.name.trim());
   const kontakt = [o.telefon.trim(), o.mail.trim()].filter(Boolean).join(' · ');
   if (kontakt) z.push(kontakt);

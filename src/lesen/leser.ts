@@ -369,6 +369,10 @@ export interface GeleseneAdresse {
 // BonitätsCheck“ oder eine Postleitzahl allein außen vor.
 const STRASSE = String.raw`([A-ZÄÖÜ][^\n,()]*?(?:(?:straße|str\.|weg|allee|ring|platz|damm|chaussee|gasse|ufer|kamp|stieg|twiete|markt|berg|feld|hof)|\d+\s*[a-z]?))`;
 const ORT = String.raw`([A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß .\-/]*[A-Za-zÄÖÜäöüß])`;
+// PC92 K7 (DP68): Das Geschoss steht oft zwischen Straße und Postleitzahl („Lindenring 8, 2. OG, 20259 Hamburg“).
+// Es ist kein Stadtteil und trägt eine Ziffer; ohne dieses Stück fiel die ganze Adresse durch. Das Geschoss
+// selbst übernimmt Hefta nicht, die Adresse im Heft bleibt Straße mit Hausnummer, Postleitzahl und Ort.
+const GESCHOSS = String.raw`(?:\d{1,2}\s*\.?\s*(?:OG|Og|og|Obergeschoss|OBERGESCHOSS|Etage|Stock|Geschoss)|EG|Erdgeschoss|Hochparterre|Parterre|DG|Dachgeschoss|UG|Untergeschoss|Souterrain)(?:\s+(?:links|rechts|Mitte|mitte|li\.?|re\.?))?`;
 
 /**
  * Die erste Adresse im Text, in der Reihenfolge der Seite: Die Lage des Inserats steht oben, die des
@@ -381,10 +385,21 @@ export function adresseLesen(text: string): GeleseneAdresse | null {
     .split('\n')
     .map((z) => z.trim());
   const eine = new RegExp(
-    '^' + STRASSE + String.raw`\s*(?:,|\s-\s)\s*(?:([^,\n\d]+?),\s*)?(\d{5})\s+` + ORT,
+    '^' +
+      STRASSE +
+      String.raw`\s*(?:,|\s-\s)\s*(?:` +
+      GESCHOSS +
+      String.raw`\s*,\s*)?(?:([^,\n\d]+?),\s*)?(\d{5})\s+` +
+      ORT,
   );
   const klammer = new RegExp(
-    '^' + STRASSE + String.raw`\s*,\s*(?:([^,\n\d]+?),\s*)?` + ORT + String.raw`\s*\((\d{5})\)`,
+    '^' +
+      STRASSE +
+      String.raw`\s*,\s*(?:` +
+      GESCHOSS +
+      String.raw`\s*,\s*)?(?:([^,\n\d]+?),\s*)?` +
+      ORT +
+      String.raw`\s*\((\d{5})\)`,
   );
   const nurStrasse = new RegExp('^' + STRASSE + '$');
   const plzZeile = new RegExp(String.raw`^(\d{5})\s+` + ORT);

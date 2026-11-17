@@ -24,7 +24,7 @@ const text = (pfad: string): string => {
   if (wert === undefined) throw new Error(`Text fehlt: rueckmeldung.${pfad}`);
   // Paar „ihr“/„du“ (B28b): Die Seite spricht wie die übrige Website mit „ihr“ an (DP32).
   if (typeof wert === 'object' && 'ihr' in wert) wert = wert.ihr!;
-  return (wert as string).replaceAll('{app}', APP_NAME);
+  return (wert as string).replaceAll('{app}', APP_NAME).replaceAll('{adresse}', ADRESSE);
 };
 const esc = (t: string) =>
   t.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;');

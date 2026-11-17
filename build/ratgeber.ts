@@ -180,6 +180,8 @@ export function webRahmen(
     (beschreibung ? `<meta name="description" content="${esc(beschreibung)}" />` : '') +
     `<link rel="preload" href="/archivo.woff2" as="font" type="font/woff2" crossorigin />` +
     FAVICONS +
+    // PC88 U9: wie „/“, sonst nimmt iOS ein Bildschirmfoto als Symbol für den Home-Bildschirm.
+    `<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />` +
     `<link rel="stylesheet" href="/seite.css" />` +
     `<link rel="stylesheet" href="/${RATGEBER_ORDNER}/artikel.css" />${kopf}</head>` +
     `<body class="rg-seite${reiter ? '' : ' ohne-reiter'}"><a class="sprung" href="#inhalt">Zum Inhalt</a>` +

@@ -5,12 +5,18 @@ import type { HeftaAnhang } from '../pdf/anhang';
 import { absage } from '../vermieter/absage';
 import { mailLink as vermieterMailLink, nachforderung } from '../vermieter/nachforderung';
 import { anschreibenText, loeschbitteText, nachfassText } from './bewerben';
-import { blankeUmbrueche, mailLink } from './nachricht';
+import { mailLink } from './nachricht';
 
 // wunsch-W14 (Fassung 20, PC87): Im Text einer Mail aus Hefta steht kein HTML. Zeilenumbrüche gehen nur als Text
 // hinaus: im Mail-Link als %0D%0A (RFC 6068), beim Kopieren und Teilen als echter Umbruch; ein Absatz ist eine
 // Leerzeile. Das gilt für jede Mail, die Hefta baut: in der App (Anschreiben, Löschbitte, Nachfrage) und auf der
 // Vermieterseite (Absagen, Unterlagen anfordern).
+
+/** Stellen im Mail-Link, an denen ein Umbruch nicht als CRLF kodiert ist (wie in der App, hier eigen). */
+function blankeUmbrueche(link: string): number {
+  const body = link.split('&body=')[1] ?? '';
+  return (body.match(/(?<!%0D)%0A/gi) ?? []).length + (body.match(/%0D(?!%0A)/gi) ?? []).length;
+}
 
 /** Was im Text einer Mail nach HTML aussieht: Tags wie <br> oder <p>, Entitäten wie &nbsp; oder &#160;. */
 export function htmlImMailtext(text: string): string[] {

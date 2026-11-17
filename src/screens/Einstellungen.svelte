@@ -123,6 +123,11 @@
 
   // DP29: Rückmeldung als Zeile mit Blatt; nach einer Antwort „Danke, beantwortet am …“.
   let rueckOffen = $state(false);
+  // PC92 K6 (E166): „Mehr zu sagen? Schreib an {adresse}.“ An der Stelle der Adresse steht der Link.
+  const mehrTeile = $derived(t('rueckmeldung.mehr', { adresse: '\u0000' }).split('\u0000'));
+  // Das Leerzeichen am Ende bleibt: Bildschirmleser lesen sonst „anhallo“.
+  const mehrVor = $derived(mehrTeile[0] ?? '');
+  const mehrNach = $derived(mehrTeile[1] ?? '');
   const rueckAm = $derived.by(() => {
     const am = daten.einstellungen?.rueckmeldungAm;
     return am
@@ -291,11 +296,13 @@
       {/if}
       <li>
         <div class="listenzeile rueck">
+          <!-- PC92 K6 (E166): „Mehr zu sagen? Schreib an hallo@hefta.de.“ Die Adresse steht als Link im Satz, die
+               erste Zeile endet vor ihr. -->
           <span class="tx"
-            ><b>{t('rueckmeldung.mehr')}</b><a
-              class="adresse"
-              href={rueckmeldungLink(t('einstellungen.rueckmeldungBetreff'))}
-              >{RUECKMELDUNG_ADRESSE.replace('@', '@​')}</a
+            ><b>{mehrVor}</b><span
+              ><a class="adresse" href={rueckmeldungLink(t('einstellungen.rueckmeldungBetreff'))}
+                >{RUECKMELDUNG_ADRESSE.replace('@', '@​')}</a
+              >{mehrNach}</span
             ></span
           >
           <button type="button" class="kopieren" onclick={adresseKopieren}

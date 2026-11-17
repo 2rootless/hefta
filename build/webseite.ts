@@ -233,7 +233,16 @@ export function webseiteBauen(
     join(ziel, '404.html'),
     readFileSync(join(wurzel, 'public', '404.html'), 'utf8')
       .replaceAll('%APP_NAME%', APP_NAME)
-      .replace('href="./"', 'href="/"'),
+      .replace('href="./"', 'href="/"')
+      // PC88 QA17 und U9: Auch die 404-Seite zeigt im Tab das Favicon F1 und hat das Symbol für den Home-Bildschirm.
+      .replace(
+        '</title>',
+        '</title>' +
+          '<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />' +
+          '<link rel="icon" href="/icons/favicon-32.png" type="image/png" sizes="32x32" />' +
+          '<link rel="icon" href="/icons/favicon-16.png" type="image/png" sizes="16x16" />' +
+          '<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />',
+      ),
   );
   writeFileSync(join(ziel, '_headers'), webHeadersFuer(vorschau));
   writeFileSync(join(ziel, '_redirects'), webRedirects);

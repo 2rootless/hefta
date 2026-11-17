@@ -196,6 +196,10 @@ test('Moment der Rückmeldung nach der Zusage: einmal, „Nein danke“ beendet 
 });
 
 test('PC23 A3: Ohne Empfang keine Rückmeldung im Heft, kein Fehler', async ({ page }) => {
+  // PC92 K1: In 2.0 ist der Empfang an. Für den Fall, dass er wieder aus muss, schaltet der Test ihn ab.
+  await page.addInitScript(() => {
+    (globalThis as { __heftaEmpfangTest?: boolean }).__heftaEmpfangTest = false;
+  });
   await haushaltMitMax(page);
   await besuchtesHeft(page);
   await page.goto('/#/heft/besucht');
@@ -204,4 +208,15 @@ test('PC23 A3: Ohne Empfang keine Rückmeldung im Heft, kein Fehler', async ({ p
   await expect(page.getByRole('heading', { level: 2, name: /Zusage/ })).toBeVisible();
   await expect(page.getByText(/Hefta bei der Bewerbung geholfen/)).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Nein danke' })).toHaveCount(0);
+});
+
+test('PC92 K1: In 2.0 fragt Hefta nach der Zusage, ohne Testschalter (Gegenprobe zu PC23 A3)', async ({
+  page,
+}) => {
+  await haushaltMitMax(page);
+  await besuchtesHeft(page);
+  await page.goto('/#/heft/besucht');
+  await page.reload();
+  await page.getByRole('button', { name: 'Zusage', exact: true }).click();
+  await expect(page.getByText('Hat dir Hefta bei der Bewerbung geholfen?')).toBeVisible();
 });

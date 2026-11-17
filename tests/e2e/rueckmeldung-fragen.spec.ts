@@ -179,7 +179,10 @@ test('Seite hefta.de/rueckmeldung/ für Links von außen: Vorwahl, Abschicken, D
       'Mit „Abschicken“ geht nur eure Antwort an uns: ohne Namen und ohne Daten aus Hefta.',
     ),
   ).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Etwas anderes? Schreibt uns.' })).toBeVisible();
+  // PC92 K6 (E166): ohne „uns“.
+  await expect(
+    page.getByRole('link', { name: 'Etwas anderes? Schreibt an hallo@hefta.de.' }),
+  ).toBeVisible();
   await expect(page.locator('main')).not.toContainText(/Kennung|\bdu\b|\bdir\b|\bdein/i);
   await expect(page.getByRole('button', { name: 'Abschicken' })).toBeDisabled();
   await page.getByRole('radio', { name: 'Suche im Netz' }).check();

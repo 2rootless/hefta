@@ -17,12 +17,16 @@
 </header>
 
 <style>
+  /* W36 (PC88, DP63c Abschnitt 8): Logo und Einstellungen stehen wie im Kopf von „Wohnungen“: 16 px vom Rand,
+     12 px von oben, Zeile 52 px. Die Übersicht rückt ihren Inhalt 20 px ein, der Kopf hebt das um 4 px auf. */
   .kopfzeile {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: var(--tap-target);
-    padding: calc(40px + env(safe-area-inset-top)) 12px 0 16px;
+    gap: 8px;
+    min-height: 52px;
+    margin-inline: calc(var(--space-4) - var(--space-5));
+    padding: calc(12px + env(safe-area-inset-top)) 0 4px;
   }
 
   /* Unter 360 px nur das Zeichen, ohne das Wort (design/stil-c.md, „Enge Bildschirme“). */
@@ -39,7 +43,7 @@
     gap: 6px;
     min-width: var(--tap-target);
     min-height: var(--tap-target);
-    padding: 0 10px;
+    padding: 0;
     border-radius: 22px;
     color: var(--ink);
     font-size: calc(14 * var(--px));
