@@ -126,11 +126,11 @@ function vermieterHtml(): string {
 // Kopf und Fuß wie auf „/“ (web/hefta2.html), Stile aus /seite.css und /ratgeber/artikel.css. Kein Skript:
 // Die Reiter sind hier einfache Links, „Ratgeber“ ist der aufgeschlagene.
 
-const HAUS =
-  '<svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" ' +
-  'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-  '<path d="M6 13.5L16 5l10 8.5V26a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 6 26z"/><path d="M12.5 27.5V19h7v8.5"/></svg>';
-const ZEICHEN = `<a class="zeichen" href="/" aria-label="hefta, Startseite">${HAUS}<span>hefta</span></a>`;
+/** PC86 (E178, W13): Im Fuß steht das Logo mit 24 px statt Haus und „hefta“. */
+const LOGO_FUSS =
+  '<a class="zeichen logo-fuss" href="/" aria-label="Hefta, zur Startseite"><picture>' +
+  '<source srcset="/icons/hefta-logo-dunkel.svg" media="(prefers-color-scheme: dark)">' +
+  '<img src="/icons/hefta-logo.svg" alt="Hefta" width="74" height="24"></picture></a>';
 /** PC85 (W35, DP63a): Im Kopf steht das Logo, hell und dunkel, 93 × 30; der Fuß behält das Zeichen. */
 const LOGO_KOPF =
   '<a class="zeichen logo-kopf" href="/" aria-label="Hefta, zur Startseite"><picture>' +
@@ -187,7 +187,7 @@ export function webRahmen(
     `<a href="/#mieter" class="r-mieter">Für Mieter</a><a href="/#vermieter" class="r-verm">Für Vermieter</a>` +
     `<a href="/#ratgeber" class="r-rat"${rat}>Ratgeber</a></nav></div></header>` +
     `<div class="rg-blatt"><div class="innen rg-wrap">${haupt}</div></div>` +
-    `<footer class="fuss"><div class="innen">${ZEICHEN}<nav aria-label="Rechtliches und Kontakt">` +
+    `<footer class="fuss"><div class="innen">${LOGO_FUSS}<nav aria-label="Rechtliches und Kontakt">` +
     `<a href="/impressum/">Impressum</a><a href="/${DATENSCHUTZ_PFAD}/">Datenschutz</a>` +
     `<a href="/rueckmeldung/">Rückmeldung</a><a href="mailto:hallo@hefta.de">hallo@hefta.de</a></nav></div></footer>` +
     // Cloudflare würde die Mailadresse sonst hinter einem nachgeladenen Skript verstecken.

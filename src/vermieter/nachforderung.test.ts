@@ -98,7 +98,7 @@ describe('Mail-Link', () => {
   it('ohne Empfänger und sicher kodiert', () => {
     const l = mailLink('Wohnung & mehr', 'Zeile 1\nZeile 2');
     expect(l).toEqual({
-      href: 'mailto:?subject=Wohnung%20%26%20mehr&body=Zeile%201%0AZeile%202',
+      href: 'mailto:?subject=Wohnung%20%26%20mehr&body=Zeile%201%0D%0AZeile%202',
       nurBetreff: false,
     });
   });

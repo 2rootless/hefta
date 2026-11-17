@@ -136,7 +136,7 @@ test('PC84: Startseite „/“ mit den neuen Texten; die alten stehen nirgends (
     'Eure Daten bleiben bei euch. Was hinausgeht, schickt ihr selbst.',
   );
   expect(await ohneTrenner('.im-browser .nicht-android.nicht-iphone')).toBe(
-    'Ohne Installation. Eure Daten bleiben in diesem Browser. Unter Android legt ihr Hefta von hier auf den Startbildschirm.',
+    'Ohne Installation. Eure Daten bleiben in diesem Browser.',
   );
   expect(await ohneTrenner('.wege-fuss')).toBe('Dieselbe Mappe, zwei Wege.');
   expect(await mieter.locator('.nicht li').allTextContents()).toEqual([
@@ -222,3 +222,65 @@ for (const schema of ['light', 'dark'] as const) {
     await kontext.close();
   });
 }
+
+// PC86 (E178): Logo im Fuß mit 24 px (W13), Zeichen bei „Was Hefta nicht tut“ in Tinte (W5), je mit Gegenprobe.
+for (const schema of ['light', 'dark'] as const) {
+  test(`PC86: Fuß mit Logo 24 px, Zeichen bei „Was Hefta nicht tut“ in Tinte, ${schema}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: schema });
+    for (const pfad of ['/', '/ratgeber/', '/impressum/', '/datenschutz/', '/rueckmeldung/']) {
+      await page.goto(`${WEB}${pfad}`);
+      const fuss = page.locator('footer.fuss');
+      const logo = fuss
+        .getByRole('link', { name: 'Hefta, zur Startseite' })
+        .getByRole('img', { name: 'Hefta' });
+      await expect(logo, pfad).toBeVisible();
+      await expect(logo, pfad).toHaveCSS('height', '24px');
+      expect(
+        await logo.evaluate((i) => (i as HTMLImageElement).currentSrc.split('/').pop()),
+        pfad,
+      ).toBe(schema === 'dark' ? 'hefta-logo-dunkel.svg' : 'hefta-logo.svg');
+      // Kein Haus-Zeichen und kein „hefta“ als Text mehr im Fuß.
+      await expect(fuss.locator('svg'), pfad).toHaveCount(0);
+      await expect(fuss.getByText('hefta', { exact: true }), pfad).toHaveCount(0);
+    }
+    await page.goto(`${WEB}/`);
+    const farben = () =>
+      page.evaluate(() => {
+        const p = document.createElement('p');
+        p.style.color = 'var(--tinte)';
+        document.body.append(p);
+        const tinte = getComputedStyle(p).color;
+        p.style.color = 'var(--akzent-text)';
+        const akzent = getComputedStyle(p).color;
+        p.remove();
+        const zeichen = [...document.querySelectorAll('#mieter .nicht li svg')].map(
+          (z) => getComputedStyle(z).color,
+        );
+        return { tinte, akzent, zeichen };
+      });
+    const f = await farben();
+    expect(f.zeichen.length).toBe(2);
+    for (const z of f.zeichen) expect(z).toBe(f.tinte);
+    // Gegenprobe: die frühere Fassung in Akzent wird rot.
+    await page.evaluate(() => {
+      const s = document.styleSheets[0]!;
+      s.insertRule('.nicht li svg{color:var(--akzent-text)!important}', s.cssRules.length);
+    });
+    const frueher = await farben();
+    expect(frueher.zeichen.every((z) => z === frueher.akzent)).toBe(true);
+    expect(frueher.zeichen).not.toContain(frueher.tinte);
+  });
+}
+
+test('PC86, Gegenprobe zum Fuß: ein Fuß mit Haus und „hefta“ als Text fällt durch', async ({
+  page,
+}) => {
+  await page.setContent(
+    '<footer class="fuss"><a href="/" aria-label="hefta, Startseite"><svg width="26" height="26"></svg><span>hefta</span></a></footer>',
+  );
+  const fuss = page.locator('footer.fuss');
+  await expect(fuss.getByRole('link', { name: 'Hefta, zur Startseite' })).toHaveCount(0);
+  await expect(fuss.locator('svg')).toHaveCount(1);
+});

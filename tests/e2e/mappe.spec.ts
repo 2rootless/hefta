@@ -159,7 +159,7 @@ test('Mappe erstellen: Vorschau, Modi, Bürgin abwählen, Adresse, Download', as
 
   // PC81 B3 (QA4): Lead ohne Deckblatt; „Ausgabe: Einzeldateien ›“ führt zur Wahl der Ausgabe.
   await expect(page.locator('.titelblock .lead')).toHaveText(
-    'Eine Datei je Unterlage, ohne Deckblatt',
+    'Eine Datei je Unterlage, ohne Deckblatt.',
   );
   await expect(page.getByText(/Ein PDF mit Deckblatt/)).toHaveCount(0);
   const ausgabe = page.getByRole('link', { name: /^Ausgabe: Einzeldateien/ });

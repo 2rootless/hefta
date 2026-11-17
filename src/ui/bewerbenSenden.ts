@@ -4,7 +4,7 @@
 import { ablageLeeren, ablegen, appTeilenWohin, istApp, istIosApp } from '../app/plattform';
 import type { BewerbungsWeg } from '../domain/bewerben';
 import { teilenWerten, teilenZiel } from '../domain/teilenZiel';
-import { gmailHtml, mailLink } from '../domain/nachricht';
+import { mailLink } from '../domain/nachricht';
 import { sichern } from './mappeErstellen';
 
 export type Gesendet = 'gesendet' | 'geoeffnet' | 'abgebrochen' | 'anhangSelbst';
@@ -37,7 +37,6 @@ export async function mailMitMappe(o: {
     const { geteilt, app } = await HeftaNativ.teilen({
       dateien: anhaenge.map((a) => a.uri),
       text: o.text,
-      html: gmailHtml(o.text),
       betreff: o.betreff,
     });
     return alsGesendet(teilenWerten(app, geteilt, 'mail'));

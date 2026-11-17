@@ -122,10 +122,10 @@ for (const f of FAELLE) {
     if (!f.marke)
       await expect(wege(page).locator('section.im-browser .weg-satz > span:visible')).toHaveText(
         f.geraet === 'android'
-          ? 'Ohne Konto. Alles bleibt in Chrome auf diesem Gerät. Legt Hefta auf den Startbildschirm, dann räumt Chrome eure Unterlagen nicht so leicht weg, wenn der Speicher knapp wird.'
+          ? 'Alles bleibt in Chrome auf diesem Gerät. Legt Hefta auf den Startbildschirm, dann räumt Chrome eure Unterlagen nicht so leicht weg, wenn der Speicher knapp wird.'
           : f.geraet === 'iphone'
             ? /^In Safari, ohne App\./
-            : 'Ohne Installation. Eure Daten bleiben in diesem Browser. Unter Android legt ihr Hefta von hier auf den Startbildschirm.',
+            : 'Ohne Installation. Eure Daten bleiben in diesem Browser.',
       );
     // DP32: „ein PDF“, nie „eine PDF“, „einer PDF“ oder „die PDF“.
     expect(await page.locator('body').innerText()).not.toMatch(/\b(eine|einer|die) PDF\b/);

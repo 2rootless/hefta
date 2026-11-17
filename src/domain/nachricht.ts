@@ -112,19 +112,6 @@ export function mailZeilen(text: string): string {
   return text.replace(/\r\n|\r|\n/g, '\r\n');
 }
 
-/**
- * PC64, Punkt 2 (W14): Gmail unter iOS liest geteilten Text wie HTML und fasst Zeilenumbrüche zusammen,
- * auch als CRLF (PC8 A7). Nur für Gmail im Teilen-Blatt geht der Text darum als HTML hinaus: Zeichen
- * maskiert, jeder Umbruch ein `<br>`. Andere Apps bekommen weiter reinen Text, damit dort kein „<br>“ steht.
- */
-export function gmailHtml(text: string): string {
-  return mailZeilen(text)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\r\n/g, '<br>');
-}
-
 /** Für den Test W14: Stellen im Mail-Link, an denen ein Umbruch nicht als CRLF kodiert ist. */
 export function blankeUmbrueche(link: string): number {
   const body = link.split('&body=')[1] ?? '';
