@@ -31,6 +31,7 @@ Dazu, ohne npm: **Archivo statische Schnitte** in `src/pdf/fonts/` (Regular, Bol
 | eslint, @eslint/js, typescript-eslint, eslint-plugin-svelte, globals | MIT | Lint. |
 | prettier, prettier-plugin-svelte | MIT | Formatierung. |
 | @types/node | MIT | Typen für Build-Skripte. |
+| ajv | MIT | Prüft in Tests jede Lesehilfe `hefta.json` gegen ihr JSON Schema (Fassung 4, PC100/E207). Nur in Tests, nie in der App und nie im Paket `hefta-json`. |
 | fonttools (Python, nicht im Projekt installiert) | MIT | Einmalig für die statischen PDF-Schriftschnitte. |
 | pypdf, cryptography (Python, nicht im Projekt installiert) | BSD-3-Clause, Apache-2.0/BSD | Einmalig für `tests/fixtures/portal-*.pdf` (`scripts/make-test-pdfs.py`): PDFs, die wie bei Lohnportalen ohne Passwort aufgehen, aber verschlüsselt sind. |
 

@@ -12,7 +12,15 @@ function tag(iso: string): string | null {
 export function deckZeilen(
   heft: Pick<Heft, 'angaben' | 'quelle' | 'einzug' | 'spur'>,
   heute: Date,
-): { deckInserat?: string; deckEinzug?: string; deckFassung?: string } {
+): {
+  deckInserat?: string;
+  deckEinzug?: string;
+  deckFassung?: string;
+  /** Für die Lesehilfe (Fassung 4): dieselben Angaben als Werte. */
+  deckPortal?: string;
+  deckEinzugTag?: string;
+  deckFassungNr: number;
+} {
   const portal = (heft.angaben?.portal ?? heft.quelle ?? '').trim();
   const einzug = heft.einzug ? tag(heft.einzug) : null;
   // Die wievielte Mappe an diese Wohnung: die nächste nach denen in der Datenspur.
@@ -21,5 +29,8 @@ export function deckZeilen(
     ...(portal ? { deckInserat: `Zu Ihrem Inserat auf ${portal}` } : {}),
     ...(einzug ? { deckEinzug: `Einzug möglich ab ${einzug}` } : {}),
     deckFassung: `Fassung ${fassung} vom ${DATUM.format(heute)}`,
+    ...(portal ? { deckPortal: portal } : {}),
+    ...(einzug ? { deckEinzugTag: heft.einzug!.slice(0, 10) } : {}),
+    deckFassungNr: fassung,
   };
 }

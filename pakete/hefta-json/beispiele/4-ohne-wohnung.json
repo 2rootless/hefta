@@ -1,0 +1,39 @@
+{
+  "hefta": 4,
+  "erstellt": "2026-11-18T21:07:30+01:00",
+  "fassung": 1,
+  "seitenzahl": 4,
+  "bewerbung": {
+    "kennung": "9a41c6d2-3e85-4f17-b0a9-6c2e8d1f5b74",
+    "wohnung": null
+  },
+  "haushalt": {
+    "personen": [
+      {
+        "name": "Paul Beispiel",
+        "vorname": "Paul",
+        "nachname": "Beispiel",
+        "rolle": "hauptmieter",
+        "kontakt": true,
+        "email": "paul.beispiel@example.com",
+        "unterlagen": [
+          { "typ": "selbstauskunft", "seiten_mappe": { "von": 2, "bis": 2 } },
+          {
+            "typ": "einkommen_ausbildung",
+            "seiten_mappe": { "von": 3, "bis": 3 },
+            "vom": "2026-09-01"
+          }
+        ]
+      },
+      {
+        "name": "Mia Beispiel",
+        "vorname": "Mia",
+        "nachname": "Beispiel",
+        "rolle": "mitmieter",
+        "unterlagen": [{ "typ": "selbstauskunft", "seiten_mappe": { "von": 4, "bis": 4 } }]
+      }
+    ],
+    "mitziehende": []
+  },
+  "modus": "eigene_auswahl"
+}

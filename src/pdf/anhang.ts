@@ -1,83 +1,59 @@
+import {
+  ANHANG_NAME,
+  FASSUNG,
+  lesen,
+  telefonE164,
+  type Lesehilfe,
+  type Person,
+  type Unterlage,
+} from '../../pakete/hefta-json/src/index';
 import type { Mitziehend } from '../domain/mappeWoerter';
 import type { Rolle, Tag } from '../domain/modell';
-import { adresseTeile, wohnungTeile, type WohnungTeile } from '../domain/adresse';
+import { adresseTeile, wohnungTeile } from '../domain/adresse';
 import type { ExportModus } from '../domain/export';
 import type { Schritt } from '../domain/selbstauskunft';
 
-// Die Lesehilfe für Vermieter: eine kleine JSON-Datei als Anhang in der Mappe (docs/format-hefta-json.md,
-// Etappe 1 des Masterplans). Regel 1: Nur, was auf dem Deckblatt oder im Inhalt ohnehin lesbar steht.
+// Die Lesehilfe für Vermieter: eine kleine JSON-Datei als Anhang in der Mappe. Fassung 4 (PC98 bis PC100, E205 bis
+// E207); Beschreibung, Typen, Lesen und Prüfen stehen im Paket `pakete/hefta-json/` (Apache-2.0).
+// Regel 1: Nur, was auf dem Deckblatt, im Verzeichnis oder in den Eigenschaften der PDF ohnehin steht.
 // Regel 2: Ein Bonus, nie eine Voraussetzung; eine Mappe ohne Anhang ist dieselbe Mappe.
-// Läuft ohne Browser-APIs, damit es unter Node getestet werden kann.
+// Regel 3: Kein Echtheitsnachweis. Läuft ohne Browser-APIs, damit es unter Node getestet werden kann.
 
-export const ANHANG_NAME = 'hefta.json';
-/**
- * Fassung 2 seit dem 6.11.2026 (E6): Kennung der Bewerbung, Adresse in Teilen. Fassung 3 (E17, Aufgabe 51):
- * Telefon und Mail der Kontaktperson, wie auf dem Deckblatt. Bis zur ersten fremden Mappe ohne Rücksicht auf
- * ältere Fassungen (E21).
- */
-export const ANHANG_FASSUNG = 3;
-export interface AnhangPerson {
-  name: string;
-  rolle: Rolle;
-  /** Diese Person steht als Kontakt auf dem Deckblatt. */
-  kontakt?: true;
-}
-
-export interface AnhangKontakt {
-  telefon?: string;
-  email?: string;
-}
-
-export interface AnhangUnterlage {
-  /** Index in `haushalt.personen`. */
-  person: number;
-  /** Kennung des Unterlagentyps aus dem Regelkatalog. */
-  typ: string;
-  /** Erste und letzte Seite in der Mappe. */
-  seiten: [number, number];
-  /** Bei Serien: die Monate, wie im Inhalt genannt. */
-  monate?: string[];
-  /** Ausstellungstag, wie im Inhalt genannt. */
-  vom?: Tag;
-  /** Wie ein Vermieter die Echtheit prüfen kann; aus dem Regelkatalog. */
-  pruefweg?: 'pruefcode';
-}
-
-export interface HeftaAnhang {
-  hefta: number;
-  erstellt: Tag;
-  bewerbung: {
-    /** Seit Fassung 2: zufällige Kennung, gleich in jeder Fassung dieser Bewerbung um diese Wohnung. */
-    kennung?: string;
-    wohnung: { strasse: string; rest: string; teile?: WohnungTeile } | null;
-  };
-  haushalt: {
-    personen: AnhangPerson[];
-    /** Kinder und weitere Personen ohne Vertrag, wie auf dem Deckblatt. */
-    mitziehende: Mitziehend[];
-    /** Seit Fassung 3: Telefon und Mail der Person mit `kontakt`, genau wie auf dem Deckblatt. */
-    kontakt?: AnhangKontakt;
-  };
-  unterlagen: AnhangUnterlage[];
-  /** Gesamtzahl der Seiten: So fällt auf, wenn jemand Seiten entfernt hat. */
-  seitenzahl?: number;
-  modus?: ExportModus;
-  schritt?: Schritt;
-  loeschwunsch?: string;
-}
+export { ANHANG_NAME };
+export const ANHANG_FASSUNG = FASSUNG;
+export type HeftaAnhang = Lesehilfe;
+export type AnhangPerson = Person;
+export type AnhangUnterlage = Unterlage;
+export const anhangLesen = lesen;
 
 /** Was der Anhang aus dem Auftrag und den fertigen Seitenzahlen braucht. */
 export interface AnhangQuelle {
+  /** Zeitpunkt der Mappe; derselbe steht als Erstelldatum in den Eigenschaften der PDF. */
   datum: Date;
   /** Kennung der Bewerbung (E6). */
   kennung?: string;
+  /** Nummer der Fassung, wie auf dem Deckblatt („Fassung 2 vom …“). */
+  fassung?: number;
   adresse: string[];
-  personen: { name: string; rolle?: Rolle; buerge?: boolean }[];
+  /** Das Portal aus „Zu Ihrem Inserat auf …“ auf dem Deckblatt. */
+  portal?: string;
+  /** Frühester Einzug aus „Einzug möglich ab …“, `JJJJ-MM-TT`. */
+  einzug?: Tag;
+  personen: {
+    name: string;
+    /** Vor- und Nachname wie auf dem Deckblatt (nameImPdf); fehlen sie, steht der Name ganz im Vornamen. */
+    vorname?: string;
+    nachname?: string;
+    rolle?: Rolle;
+    buerge?: boolean;
+  }[];
+  /** Die erste Person steht als Kontakt auf dem Deckblatt. */
   kontakt: boolean;
-  /** Telefon und Mail, wie sie auf dem Deckblatt stehen (Fassung 3). */
-  kontaktwege?: AnhangKontakt;
+  /** Telefon und Mail, wie sie auf dem Deckblatt stehen. */
+  kontaktwege?: { telefon?: string; email?: string };
   mitziehende: Mitziehend[];
   unterlagen: {
+    /** Stelle der Person in `personen`. */
     person: number;
     typ?: string;
     von: number;
@@ -86,49 +62,82 @@ export interface AnhangQuelle {
     vom?: Tag;
     pruefweg?: 'pruefcode';
   }[];
-  seitenzahl?: number;
+  seitenzahl: number;
   modus?: ExportModus;
   schritt?: Schritt;
   loeschwunsch?: string;
 }
 
-const tagAus = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const zwei = (n: number) => String(n).padStart(2, '0');
+
+/** „2026-11-18T19:02:55+01:00“: der Zeitpunkt in der Zeit des Geräts, mit Zeitzone, auf die Sekunde. */
+export function zeitpunktAus(d: Date): string {
+  const versatz = -d.getTimezoneOffset();
+  const vz = versatz >= 0 ? '+' : '-';
+  const a = Math.abs(versatz);
+  return (
+    `${d.getFullYear()}-${zwei(d.getMonth() + 1)}-${zwei(d.getDate())}` +
+    `T${zwei(d.getHours())}:${zwei(d.getMinutes())}:${zwei(d.getSeconds())}` +
+    `${vz}${zwei(Math.floor(a / 60))}:${zwei(a % 60)}`
+  );
+}
 
 export function anhangBauen(q: AnhangQuelle): HeftaAnhang {
-  const personen: AnhangPerson[] = q.personen.map((p, i) => ({
-    name: p.name,
-    rolle: p.rolle ?? (p.buerge ? 'buerge' : i === 0 ? 'hauptmieter' : 'mitmieter'),
-    ...(q.kontakt && i === 0 ? { kontakt: true as const } : {}),
-  }));
   // Im Format gewöhnliche Leerzeichen; das geschützte ist nur für den Umbruch auf dem Papier.
+  const nb = (s: string) => s.replace(/\u00a0/g, ' ');
   const teile = q.adresse.length ? adresseTeile(q.adresse) : null;
   const getrennt = q.adresse.length ? wohnungTeile(q.adresse.join('\n')) : null;
   const wohnung = teile && {
-    ...teile,
-    rest: teile.rest.replace(/\u00a0/g, ' '),
-    ...(getrennt ? { teile: getrennt } : {}),
+    strasse: teile.strasse,
+    rest: nb(teile.rest),
+    ...(getrennt ? { teile: { ...getrennt, land: 'DE' } } : {}),
   };
   const telefon = q.kontakt ? q.kontaktwege?.telefon?.trim() : undefined;
   const email = q.kontakt ? q.kontaktwege?.email?.trim() : undefined;
-  const kontakt: AnhangKontakt | null =
-    telefon || email ? { ...(telefon ? { telefon } : {}), ...(email ? { email } : {}) } : null;
+  const e164 = telefon ? telefonE164(telefon) : null;
+  const personen: Person[] = q.personen.map((p, i) => {
+    const vorname = (p.vorname ?? p.name).trim();
+    const nachname = p.vorname === undefined ? '' : (p.nachname ?? '').trim();
+    return {
+      name: `${vorname} ${nachname}`.trim(),
+      vorname,
+      nachname,
+      rolle: p.rolle ?? (p.buerge ? 'buerge' : i === 0 ? 'hauptmieter' : 'mitmieter'),
+      ...(q.kontakt && i === 0
+        ? {
+            kontakt: true as const,
+            ...(telefon ? { telefon } : {}),
+            ...(e164 ? { telefon_e164: e164 } : {}),
+            ...(email ? { email } : {}),
+          }
+        : {}),
+      unterlagen: [],
+    };
+  });
+  for (const u of q.unterlagen) {
+    const p = personen[u.person];
+    if (!p || !u.typ) continue;
+    p.unterlagen.push({
+      typ: u.typ,
+      seiten_mappe: { von: u.von, bis: u.bis },
+      ...(u.monate?.length ? { monate: u.monate } : {}),
+      ...(u.vom ? { vom: u.vom } : {}),
+      ...(u.pruefweg ? { pruefweg: u.pruefweg } : {}),
+    });
+  }
+  const portal = q.portal?.trim();
   return {
     hefta: ANHANG_FASSUNG,
-    erstellt: tagAus(q.datum),
-    bewerbung: { ...(q.kennung ? { kennung: q.kennung } : {}), wohnung },
-    haushalt: { personen, mitziehende: q.mitziehende, ...(kontakt ? { kontakt } : {}) },
-    unterlagen: q.unterlagen
-      .filter((u) => u.typ)
-      .map((u) => ({
-        person: u.person,
-        typ: u.typ!,
-        seiten: [u.von, u.bis] as [number, number],
-        ...(u.monate?.length ? { monate: u.monate } : {}),
-        ...(u.vom ? { vom: u.vom } : {}),
-        ...(u.pruefweg ? { pruefweg: u.pruefweg } : {}),
-      })),
-    ...(q.seitenzahl ? { seitenzahl: q.seitenzahl } : {}),
+    erstellt: zeitpunktAus(q.datum),
+    fassung: q.fassung ?? 1,
+    seitenzahl: q.seitenzahl,
+    bewerbung: {
+      ...(q.kennung ? { kennung: q.kennung } : {}),
+      wohnung,
+      ...(portal ? { inserat: { portal } } : {}),
+      ...(q.einzug ? { einzug: q.einzug } : {}),
+    },
+    haushalt: { personen, mitziehende: q.mitziehende },
     ...(q.modus ? { modus: q.modus } : {}),
     ...(q.modus === 'datensparsam' && q.schritt ? { schritt: q.schritt } : {}),
     ...(q.loeschwunsch?.trim() ? { loeschwunsch: q.loeschwunsch.trim() } : {}),
@@ -139,34 +148,23 @@ export function anhangBytes(anhang: HeftaAnhang): Uint8Array {
   return new TextEncoder().encode(JSON.stringify(anhang, null, 1));
 }
 
-/**
- * Liest einen Anhang. Neuere Fassungen werden angenommen, soweit die bekannten Felder stimmen; was
- * nicht nach einem Anhang aussieht, ergibt null. Nie eine Ausnahme: Ein PDF ohne Anhang ist normal.
- */
-export function anhangLesen(bytes: Uint8Array): HeftaAnhang | null {
-  try {
-    const roh: unknown = JSON.parse(new TextDecoder().decode(bytes));
-    if (!roh || typeof roh !== 'object') return null;
-    const a = roh as Record<string, unknown>;
-    if (typeof a.hefta !== 'number' || a.hefta < 1) return null;
-    const haushalt = a.haushalt as Record<string, unknown> | undefined;
-    if (!Array.isArray(haushalt?.personen) || !Array.isArray(a.unterlagen)) return null;
-    return a as unknown as HeftaAnhang;
-  } catch {
-    return null;
-  }
-}
-
-/** Alle Texte des Anhangs, für die Prüfung „nur, was sichtbar ist“. */
+/** Alle Texte des Anhangs, für die Prüfung „nur, was sichtbar ist“ (Regel 1). */
 export function anhangTexte(anhang: HeftaAnhang): string[] {
   const texte: string[] = [];
   const w = anhang.bewerbung.wohnung;
   if (w) texte.push(w.strasse, w.rest);
-  if (w?.teile) texte.push(...Object.values(w.teile));
-  for (const p of anhang.haushalt.personen) texte.push(p.name);
+  if (w?.teile) {
+    const { land: _land, ...sichtbar } = w.teile;
+    void _land;
+    texte.push(...Object.values(sichtbar));
+  }
+  if (anhang.bewerbung.inserat) texte.push(anhang.bewerbung.inserat.portal);
+  for (const p of anhang.haushalt.personen) {
+    texte.push(p.name, p.vorname ?? '', p.nachname ?? '');
+    if (p.telefon) texte.push(p.telefon);
+    if (p.email) texte.push(p.email);
+  }
   for (const m of anhang.haushalt.mitziehende) texte.push(m.text);
-  if (anhang.haushalt.kontakt?.telefon) texte.push(anhang.haushalt.kontakt.telefon);
-  if (anhang.haushalt.kontakt?.email) texte.push(anhang.haushalt.kontakt.email);
   if (anhang.loeschwunsch) texte.push(anhang.loeschwunsch);
   return texte.filter(Boolean);
 }

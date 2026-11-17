@@ -1,24 +1,64 @@
 import { describe, expect, it } from 'vitest';
-import type { HeftaAnhang } from '../pdf/anhang';
+import { anhangLesen, type AnhangPerson, type AnhangUnterlage } from '../pdf/anhang';
+import * as regel from './regel';
 import {
   datumText,
-  fehlendeGruppe,
   groesseText,
-  gruppe,
-  haushaltTitel,
-  lesehilfePasst,
   mailEmpfaenger,
   telefonLink,
   monateText,
-  pruefPunkte,
   seitenText,
-  standText,
   unterlageText,
-  vollstaendigkeit,
-  werKurz,
 } from './regel';
 
-const M1: HeftaAnhang = {
+// Fassung 4 (PC100): Die Testdaten bleiben in Fassung 3. Jede Prüfung bekommt sie so, wie die Vermieterseite sie
+// liest: über lesen() aus dem Paket hefta-json, das Fassung 1 bis 3 in das Bild von Fassung 4 überträgt (F11).
+interface AltUnterlage {
+  person: number;
+  typ: string;
+  seiten: number[];
+  vom?: string;
+  monate?: string[];
+  pruefweg?: string;
+}
+interface AltPerson {
+  name: string;
+  rolle: string;
+  kontakt?: true;
+}
+interface Alt {
+  hefta: number;
+  erstellt?: string;
+  bewerbung: { kennung?: string; wohnung: { strasse: string; rest: string } | null };
+  haushalt: { personen: AltPerson[]; mitziehende: { text: string; anzahl: number; art: string }[] };
+  unterlagen: AltUnterlage[];
+  seitenzahl?: number;
+  modus?: string;
+  schritt?: string;
+  loeschwunsch?: string;
+}
+const bild = (x: unknown) => anhangLesen(JSON.stringify(x));
+const sicher = (x: unknown) => {
+  const b = bild(x);
+  if (!b) throw new Error('Testdaten sind keine Lesehilfe');
+  return b;
+};
+const lesehilfePasst = (x: unknown, seiten: number, text: string) => {
+  const b = bild(x);
+  return !!b && regel.lesehilfePasst(b, seiten, text);
+};
+const haushaltTitel = (x: unknown) => regel.haushaltTitel(sicher(x));
+const werKurz = (x: unknown) => regel.werKurz(sicher(x));
+const vollstaendigkeit = (x: unknown) => regel.vollstaendigkeit(sicher(x));
+const standText = (x: unknown) => regel.standText(sicher(x));
+const pruefPunkte = (x: unknown) => regel.pruefPunkte(sicher(x));
+const person = (p: AltPerson) => ({ ...p, unterlagen: [] }) as unknown as AnhangPerson;
+const unterlage = (u: AltUnterlage): AnhangUnterlage =>
+  ({ ...u, seiten_mappe: { von: u.seiten[0], bis: u.seiten[1] } }) as unknown as AnhangUnterlage;
+const gruppe = (u: AltUnterlage, p: AltPerson) => regel.gruppe(unterlage(u), person(p));
+const fehlendeGruppe = (f: regel.Fehlend, p: AltPerson) => regel.fehlendeGruppe(f, person(p));
+
+const M1: Alt = {
   hefta: 3,
   erstellt: '2026-11-02',
   bewerbung: {
@@ -49,10 +89,10 @@ const M1: HeftaAnhang = {
 };
 const ERSTE = 'Beispielstraße 1 Max Mustermann Lea Mustermann Petra Mustermann';
 
-function mit(teil: Partial<HeftaAnhang>): HeftaAnhang {
+function mit(teil: Partial<Alt>): Alt {
   return { ...M1, ...teil };
 }
-const allein = (personen: HeftaAnhang['haushalt']['personen'], mitziehende = 0) =>
+const allein = (personen: AltPerson[], mitziehende = 0) =>
   mit({
     unterlagen: [],
     haushalt: {
@@ -158,7 +198,7 @@ describe('Vollständigkeit nach Schritten', () => {
   });
 
   it('Bezeichnungen nur aus dem Katalog, auch bei erfundenen Typen', () => {
-    expect(unterlageText({ person: 0, typ: 'erfunden <b>', seiten: [1, 1] })).toBe(
+    expect(unterlageText(unterlage({ person: 0, typ: 'erfunden <b>', seiten: [1, 1] }))).toBe(
       'Weitere Unterlage',
     );
   });
@@ -224,21 +264,29 @@ describe('Passt die Lesehilfe zur Mappe?', () => {
     ['Schritt erfunden', { schritt: 'irgendwann' }],
     ['Bitte zu lang', { loeschwunsch: 'x'.repeat(501) }],
   ])('%s', (_, teil) => {
-    expect(lesehilfePasst(mit(teil as unknown as Partial<HeftaAnhang>), 18, ERSTE)).toBe(false);
+    expect(lesehilfePasst(mit(teil as unknown as Partial<Alt>), 18, ERSTE)).toBe(false);
   });
 
-  it('Name überlang, Rolle erfunden, niemand im Vertrag', () => {
+  it('Name überlang, Rolle keine Kennung, niemand im Vertrag', () => {
     const name = 'x'.repeat(201);
     expect(
       lesehilfePasst(allein([{ name, rolle: 'hauptmieter' }]), 18, name + ' Beispielstraße 1'),
     ).toBe(false);
     expect(
       lesehilfePasst(
-        allein([{ name: 'Max Mustermann', rolle: 'chef' as 'hauptmieter' }]),
+        allein([{ name: 'Max Mustermann', rolle: 'Chef!' as 'hauptmieter' }]),
         18,
         ERSTE,
       ),
     ).toBe(false);
+    // U1 (PC101): Eine neue Rolle mit gültiger Kennung wird gelesen; die Seite zeigt sie neutral.
+    expect(
+      lesehilfePasst(
+        allein([{ name: 'Max Mustermann', rolle: 'untermieter' as 'hauptmieter' }]),
+        18,
+        ERSTE,
+      ),
+    ).toBe(true);
     expect(lesehilfePasst(allein([{ name: 'Petra Mustermann', rolle: 'buerge' }]), 18, ERSTE)).toBe(
       false,
     );
@@ -248,7 +296,7 @@ describe('Passt die Lesehilfe zur Mappe?', () => {
 describe('Kontakt in der Lesehilfe (Fassung 3, E17)', () => {
   const KONTAKT = { telefon: '0171 3920001', email: 'max.mustermann@example.com' };
   const mitKontakt = (kontakt: unknown) =>
-    ({ ...M1, haushalt: { ...M1.haushalt, kontakt } }) as unknown as HeftaAnhang;
+    ({ ...M1, haushalt: { ...M1.haushalt, kontakt } }) as unknown as Alt;
   const SEITE = `${ERSTE} Kontakt Max Mustermann 0171 3920001 max.mustermann@example.com`;
 
   it('gilt, wenn Telefon und Mail wörtlich auf Seite 1 stehen, auch über einen Zeilenumbruch', () => {
@@ -275,7 +323,7 @@ describe('Kontakt in der Lesehilfe (Fassung 3, E17)', () => {
         personen: M1.haushalt.personen.map((p) => ({ name: p.name, rolle: p.rolle })),
         kontakt: KONTAKT,
       },
-    } as HeftaAnhang;
+    } as Alt;
     expect(lesehilfePasst(ohneKontaktperson, 18, SEITE)).toBe(false);
   });
 
@@ -295,10 +343,12 @@ describe('Schreibweisen', () => {
   it('Datum, Monate, Seiten, Größe', () => {
     expect(datumText('2026-11-02')).toBe('2.\u00a0November 2026');
     expect(datumText('2026-11-02', false)).toBe('2.\u00a0November');
+    // Fassung 4: Zeitpunkt mit Uhrzeit und Zeitzone; es zählt der Tag am Ort der Mappe.
+    expect(datumText('2026-11-18T23:30:00+01:00')).toBe('18.\u00a0November 2026');
     expect(monateText(['2026-07', '2026-08', '2026-09'])).toBe('Juli bis September 2026');
     expect(monateText(['2025-12', '2026-01'])).toBe('Dezember 2025 bis Januar 2026');
-    expect(seitenText([2, 2])).toBe('Seite\u00a02');
-    expect(seitenText([3, 6])).toBe('Seiten\u00a03\u2060–\u20606');
+    expect(seitenText({ von: 2, bis: 2 })).toBe('Seite\u00a02');
+    expect(seitenText({ von: 3, bis: 6 })).toBe('Seiten\u00a03\u2060–\u20606');
     expect(groesseText(2_516_582)).toBe('2,4\u00a0MB');
     expect(groesseText(240 * 1024)).toBe('240\u00a0KB');
   });

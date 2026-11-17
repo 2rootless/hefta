@@ -6,7 +6,7 @@
   import type { HeftaAnhang } from '../pdf/anhang';
   import { absage } from './absage';
   import { mailLink } from './nachforderung';
-  import { haushaltTitel, mailEmpfaenger, ORIENTIERUNGSHILFE } from './regel';
+  import { haushaltTitel, kontaktwege, mailEmpfaenger, ORIENTIERUNGSHILFE } from './regel';
   import { t } from './texte';
 
   let {
@@ -24,7 +24,7 @@
   let geloescht = $state<boolean | null>(null);
   const mail = $derived(absage(anhang, geloescht === true));
   const link = $derived(
-    mailLink(mail.betreff, mail.text, mailEmpfaenger(anhang.haushalt.kontakt?.email)),
+    mailLink(mail.betreff, mail.text, mailEmpfaenger(kontaktwege(anhang)?.email)),
   );
   let meldung = $state('');
   const knoepfe: HTMLButtonElement[] = [];

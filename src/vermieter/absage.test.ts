@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { LANG, M1, M2, M4, M6, type Probe } from '../../tests/e2e/vermieter-hilfe';
-import type { HeftaAnhang } from '../pdf/anhang';
+import { anhangLesen, type HeftaAnhang } from '../pdf/anhang';
 import { aufMusteradressen } from '../test/musteradressen';
 import { absage, absageBefunde } from './absage';
 
-const anhang = (p: Probe) => p.anhang as unknown as HeftaAnhang;
+// Fassung 4: Die Testdaten sind Fassung 3 und gehen über lesen() in das neue Bild, wie auf der Vermieterseite.
+const anhang = (p: Probe) => anhangLesen(JSON.stringify(p.anhang)) as HeftaAnhang;
 
 // Die Mails aus den Testdaten des Designs: design/bildschirme/vermieter/absage-mails.md.
 const VORBILD = readFileSync('design/bildschirme/vermieter/absage-mails.md', 'utf8').replaceAll(

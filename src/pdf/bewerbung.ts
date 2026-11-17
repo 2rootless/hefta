@@ -67,6 +67,9 @@ export interface MappenPerson {
   buerge?: boolean;
   /** Rolle als Kennung, für die Lesehilfe. */
   rolleId?: Rolle;
+  /** Vor- und Nachname wie auf dem Deckblatt, für die Lesehilfe (Fassung 4). */
+  vorname?: string;
+  nachname?: string;
 }
 
 export interface MappenQuelle {
@@ -116,6 +119,8 @@ export interface BewerbungAuftrag {
   einzug?: string;
   /** B14, E39: „Fassung 2 vom 8. November 2026“, leise unten in der Leiste. */
   fassung?: string;
+  /** Dieselben Angaben als Werte für die Lesehilfe (Fassung 4): Portal, Einzug `JJJJ-MM-TT`, Nummer. */
+  lesehilfeWerte?: { portal?: string; einzug?: string; fassung?: number };
   /** Kinder und weitere Personen ohne Vertrag, je Art ein Eintrag: „Zwei Kinder“. */
   mitziehende: Mitziehend[];
   /** „Erstellt mit …“ klein auf dem Deckblatt, dazu die Lesehilfe als Anhang. */
@@ -1053,8 +1058,17 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
       datum,
       kennung: a.kennung,
       adresse: a.adresse.map(s.ersetzen),
+      fassung: a.lesehilfeWerte?.fassung,
+      portal: a.lesehilfeWerte?.portal && s.ersetzen(a.lesehilfeWerte.portal),
+      einzug: a.lesehilfeWerte?.einzug,
       personen: a.bloecke.map((b) => ({
         name: s.ersetzen(b.person.name),
+        ...(b.person.vorname !== undefined
+          ? {
+              vorname: s.ersetzen(b.person.vorname),
+              nachname: s.ersetzen(b.person.nachname ?? ''),
+            }
+          : {}),
         rolle: b.person.rolleId,
         buerge: b.person.buerge,
       })),

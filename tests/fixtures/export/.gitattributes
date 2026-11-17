@@ -1,0 +1,2 @@
+# Erwarteter Export mit BOM und CRLF; Git ändert die Datei nicht.
+*.csv -text

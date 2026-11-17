@@ -13,6 +13,7 @@ import {
   M5,
   M6,
   M7,
+  M8,
   NB,
   pdf,
   type Datei,
@@ -454,4 +455,45 @@ test('Eine Mappe aus der Liste nehmen: nur diese, die nächste rückt nach (Wuns
   await expect(page.locator('.vs-row').first()).toContainText('Olena Kovalenko');
   await expect(page.locator('.vs-row')).not.toContainText(['Max und Lea Mustermann']);
   await expect(page.locator('.vs-nr')).toHaveText(['1', '2']);
+});
+
+test('Export als CSV (PC100): Fassung 4 dabei, Fassung 3 nicht; Hinweis zum Löschen; nichts geht hinaus', async ({
+  page,
+}) => {
+  const fremd: string[] = [];
+  page.on('request', (r) => {
+    if (
+      !r.url().startsWith('http://localhost:4174') &&
+      !r.url().startsWith('blob:') &&
+      !r.url().startsWith('data:')
+    )
+      fremd.push(r.url());
+  });
+  await page.goto('/');
+  await laden(page, await pdf(M8), await pdf(M1));
+  const bereich = page.getByRole('region', { name: 'Für Ihre Software exportieren' });
+  await expect(bereich).toContainText('CSV für Tabellen und Software.');
+  await expect(bereich).toContainText('Dabei sind 1 von 2 Mappen.');
+  await expect(bereich).toContainText('Nicht dabei: Mappe 2 (Lesehilfe vor Hefta 2.0).');
+  await expect(bereich).toContainText(
+    'Die Datei enthält Namen und Kontaktdaten. Löschen Sie sie mit der Mappe, wenn die Wohnung vergeben ist.',
+  );
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    bereich.getByRole('button', { name: 'Für Ihre Software exportieren' }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^hefta-export-\d{4}-\d{2}-\d{2}\.csv$/);
+  const bytes = readFileSync((await download.path())!);
+  expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+  const zeilen = bytes.subarray(3).toString('utf8').split('\r\n').filter(Boolean);
+  expect(zeilen).toHaveLength(4);
+  expect(zeilen[0]!.startsWith('kennung;fassung;erstellt;')).toBe(true);
+  expect(zeilen[1]).toContain(';Max;Mustermann;Max Mustermann;ja;0171 3920001;');
+  expect(zeilen[3]).toContain(';buerge;Petra;Mustermann;Petra Mustermann;');
+  expect(fremd).toEqual([]);
+
+  // Gegenprobe: nur Mappen ohne Fassung 4, dann gibt es nichts zu exportieren.
+  await page.getByRole('button', { name: 'Liste leeren' }).click();
+  await laden(page, await pdf(M1));
+  await expect(page.getByRole('button', { name: 'Für Ihre Software exportieren' })).toBeDisabled();
 });

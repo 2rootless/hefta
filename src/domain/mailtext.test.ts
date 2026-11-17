@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { M1, M2, M4, type Probe } from '../../tests/e2e/vermieter-hilfe';
-import type { HeftaAnhang } from '../pdf/anhang';
+import { anhangLesen, type HeftaAnhang } from '../pdf/anhang';
 import { absage } from '../vermieter/absage';
 import { mailLink as vermieterMailLink, nachforderung } from '../vermieter/nachforderung';
 import { anschreibenText, loeschbitteText, nachfassText } from './bewerben';
@@ -32,7 +32,8 @@ const auftrag = {
   namen: ['Max Mustermann', 'Lea Mustermann'],
   heute,
 };
-const anhang = (p: Probe) => p.anhang as unknown as HeftaAnhang;
+// Fassung 4: Die Testdaten sind Fassung 3 und gehen über lesen() in das neue Bild, wie auf der Vermieterseite.
+const anhang = (p: Probe) => anhangLesen(JSON.stringify(p.anhang)) as HeftaAnhang;
 
 /** Alle Mails, die Hefta baut, mit Musterdaten; je Name Betreff und Text. */
 function alleMails(): [string, { betreff: string; text: string }][] {

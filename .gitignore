@@ -11,3 +11,6 @@ ausgabe/
 
 # Pakete für das Design (aus docs/ erzeugt, nicht einchecken)
 design-sync/
+
+# Python-Cache aus den Tests (DP72)
+__pycache__/

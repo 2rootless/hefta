@@ -1,0 +1,36 @@
+{
+  "name": "hefta-json",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lesehilfe hefta.json aus PDF-Mappen von Hefta lesen und prüfen (Format Fassung 4, liest auch 1 bis 3).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schema.json": "./schema.json"
+  },
+  "files": [
+    "dist",
+    "schema.json",
+    "beispiele",
+    "FORMAT.md",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "keywords": [
+    "hefta",
+    "wohnungsbewerbung",
+    "mietbewerbung",
+    "pdf",
+    "json-schema"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  }
+}

@@ -23,7 +23,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1600,
   },
   test: {
-    include: ['src/**/*.test.ts', 'build/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'build/**/*.test.ts', 'pakete/**/src/**/*.test.ts'],
     // Die Website liegt nur im Hauptrepository (web/); im öffentlichen Repository der App fehlt ihr Test.
     exclude: existsSync('web') ? [] : ['build/webseite.test.ts'],
     environment: 'node',

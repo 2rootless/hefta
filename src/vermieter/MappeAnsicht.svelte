@@ -17,6 +17,7 @@
     NB,
     ORIENTIERUNGSHILFE,
     personenGesamt,
+    kontaktwege,
     pruefPunkte,
     rolleText,
     seitenText,
@@ -63,7 +64,7 @@
     return null;
   });
   // Fassung 3 (E17): Telefon und Mail der Kontaktperson, nur geprüft gegen Seite 1 (lesehilfePasst).
-  const kontakt = $derived(a?.haushalt.kontakt ?? null);
+  const kontakt = $derived(a ? kontaktwege(a) : null);
   const liste = (teile: string[]) =>
     teile.length > 1
       ? `${teile.slice(0, -1).join(', ')} und ${teile[teile.length - 1]}`
@@ -121,12 +122,12 @@
   {@const angabe = unterlageAngabe(u)}
   {@const hinweis = unterlageHinweis(u, u === ersteDsk)}
   {@const quelle = unterlageQuelle(u)}
-  <button type="button" class="vs-d" onclick={() => oeffnen(u.seiten[0])}>
+  <button type="button" class="vs-d" onclick={() => oeffnen(u.seiten_mappe.von)}>
     <span class="vs-dl">
       <b class="vs-db">{unterlageText(u)}</b>
       {#if angabe}<small class="vs-ds">{angabe}</small>{/if}
     </span>
-    <span class="vs-dp">{seitenText(u.seiten)}</span>
+    <span class="vs-dp">{seitenText(u.seiten_mappe)}</span>
     <span class="vs-ch"><Symbol name="weiter" groesse={16} /></span>
   </button>
   {#if hinweis}<p class="vs-dh">{hinweis}</p>{/if}

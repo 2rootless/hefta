@@ -53,7 +53,7 @@ export function verstoesse(text: string): string[] {
 
 const dateien = execFileSync(
   'git',
-  ['ls-files', 'tests', 'scripts', 'src', 'data', 'docs/format-hefta-json.md'],
+  ['ls-files', 'tests', 'scripts', 'src', 'data', 'pakete', 'docs/format-hefta-json.md'],
   {
     encoding: 'utf8',
   },

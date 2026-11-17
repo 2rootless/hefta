@@ -120,10 +120,53 @@ export const M4z: Probe = {
     ],
   },
 };
+/**
+ * Fassung 4 aus Testdaten in Fassung 3 (PC100): Unterlagen zur Person, Seiten als von/bis, Kontakt bei der Person,
+ * Vor- und Nachname am ersten Leerzeichen getrennt (nur für diese Musternamen), Zeitpunkt statt Tag.
+ */
+export function alsFassung4(alt: Record<string, unknown>, fassung = 4): Record<string, unknown> {
+  type AltU = { person: number; seiten: [number, number] } & Record<string, unknown>;
+  const haushalt = alt.haushalt as {
+    personen: ({ name: string } & Record<string, unknown>)[];
+    mitziehende: unknown[];
+    kontakt?: Record<string, string>;
+  };
+  const personen = haushalt.personen.map((p, i) => {
+    const [vorname = '', ...rest] = p.name.split(' ');
+    return {
+      ...p,
+      vorname,
+      nachname: rest.join(' '),
+      ...(p.kontakt ? (haushalt.kontakt ?? {}) : {}),
+      unterlagen: (alt.unterlagen as AltU[])
+        .filter((u) => u.person === i)
+        .map((x) => {
+          const { person, seiten, ...u } = x;
+          void person;
+          return { ...u, seiten_mappe: { von: seiten[0], bis: seiten[1] } };
+        }),
+    };
+  });
+  const { unterlagen, ...oben } = alt;
+  void unterlagen;
+  return {
+    ...oben,
+    hefta: fassung,
+    erstellt: `${String(alt.erstellt)}T10:00:00+01:00`,
+    fassung: 1,
+    haushalt: { personen, mitziehende: haushalt.mitziehende },
+  };
+}
 export const M5: Probe = {
   ...M1,
   datei: 'Bewerbung_Mustermann_neu.pdf',
-  anhang: { ...M1.anhang, hefta: 4, erstellt: '2026-11-04', zusatz: 'unbekannt' },
+  anhang: { ...alsFassung4(M1.anhang!, 5), x_zusatz: 'unbekannt' },
+};
+/** Fassung 4 (PC100): für den Export als CSV. */
+export const M8: Probe = {
+  ...M1,
+  datei: 'Bewerbung_Mustermann_Fassung_4.pdf',
+  anhang: alsFassung4(M1.anhang!),
 };
 export const M6: Probe = {
   datei: 'Bewerbung_Nguyen.pdf',
@@ -211,18 +254,21 @@ export async function pdf(p: Probe): Promise<Datei> {
   const a = p.anhang as
     | {
         bewerbung: { wohnung: { strasse: string } | null };
-        haushalt: { personen: { name: string }[]; kontakt?: { telefon?: string; email?: string } };
+        haushalt: {
+          personen: { name: string; telefon?: string; email?: string }[];
+          kontakt?: { telefon?: string; email?: string };
+        };
       }
     | undefined;
+  // Fassung 4: Telefon und Mail stehen bei der Kontaktperson.
+  const kontakt = a?.haushalt.kontakt ?? a?.haushalt.personen.find((x) => x.telefon || x.email);
   const zeilen = p.ersteSeite
     ? [p.ersteSeite]
     : a
       ? [
           a.bewerbung.wohnung?.strasse ?? '',
           ...a.haushalt.personen.map((x) => x.name),
-          ...[a.haushalt.kontakt?.telefon, a.haushalt.kontakt?.email].filter(
-            (x) => x !== undefined,
-          ),
+          ...[kontakt?.telefon, kontakt?.email].filter((x) => x !== undefined),
         ]
       : [p.datei];
   for (let i = 1; i <= p.seiten; i++) {

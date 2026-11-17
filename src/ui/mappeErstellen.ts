@@ -79,6 +79,9 @@ function mappenPerson(s: PersonStand): MappenPerson {
       : '');
   return {
     name: nameText(nameImPdf(s.person)),
+    // Fassung 4 der Lesehilfe: Vor- und Nachname wie auf dem Deckblatt, von Hefta nie selbst geteilt.
+    vorname: nameImPdf(s.person).vorname,
+    nachname: nameImPdf(s.person).nachname,
     rolle: rollenText(s.rolle, s.bezeichnung),
     beruf: taetigkeit,
     farbe: farbe(s.farbe),
@@ -323,6 +326,11 @@ export async function mappeErstellen(
     inserat: bewerbung?.deckInserat,
     einzug: bewerbung?.deckEinzug,
     fassung: bewerbung?.deckFassung,
+    lesehilfeWerte: {
+      portal: bewerbung?.deckPortal,
+      einzug: bewerbung?.deckEinzugTag,
+      fassung: bewerbung?.deckFassungNr,
+    },
     mitziehende,
     // Nur für die Lesehilfe; die Vorschau mit Platzhaltern braucht keine.
     kennung:
