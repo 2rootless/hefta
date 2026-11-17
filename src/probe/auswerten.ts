@@ -101,8 +101,14 @@ const ALS_ZIFFER: Record<string, string> = {
  * Form ergänzen oder kürzen, in reinen Ziffernfeldern Buchstaben, die wie Ziffern aussehen, zu Ziffern,
  * einzelne Zeichen zwischen Füllzeichen zu Füllzeichen. Das Ergebnis gilt nur, wenn danach alle Prüfziffern
  * stimmen (das prüft der Aufrufer mit `mrzLesen`).
+ *
+ * `buchstaben`: dazu Ziffern in reinen Buchstabenfeldern zu Buchstaben (PC77). PC79 (E160, Offen 2): Die
+ * Prüfziffern decken Art, Staat, Geschlecht und Name nicht ab (ICAO 9303). „Alle Prüfziffern stimmen“
+ * bestätigt dort nichts, und „gelöst“ ändert sich dadurch nie. Die Probe weist darum „genau gelesen“ ohne und
+ * mit dieser Berichtigung getrennt aus; „deutlich besser“ (CP49) gilt ohne sie. Im Produkt gilt ein so
+ * berichtigtes Buchstabenfeld als „gelesen“, nie als „geprüft“ (W10).
  */
-export function berichtigen(zeilen: string[], form: MrzForm): string[] {
+export function berichtigen(zeilen: string[], form: MrzForm, buchstaben = true): string[] {
   const laenge = LAENGE[form];
   const aus = zeilen.map((z) => {
     if (z.length < laenge && /<$/.test(z)) return z.padEnd(laenge, '<');
@@ -117,7 +123,7 @@ export function berichtigen(zeilen: string[], form: MrzForm): string[] {
   }
   // Umgekehrt (PC77, Probe mit echter OCR-B): In reinen Buchstabenfeldern (Art, Staat, Geschlecht, Name)
   // sind Ziffern Lesefehler.
-  for (const [zeile, von, bis] of BUCHSTABEN[form]) {
+  for (const [zeile, von, bis] of buchstaben ? BUCHSTABEN[form] : []) {
     const z = aus[zeile];
     if (!z || z.length !== laenge) continue;
     const teil = [...z.slice(von, bis)].map((c) => ALS_BUCHSTABE[c] ?? c).join('');
@@ -153,12 +159,11 @@ const BUCHSTABEN: Record<MrzForm, [number, number, number][]> = {
     [1, 20, 21],
   ],
 };
-const ALS_BUCHSTABE: Record<string, string> = {
+/** PC79: nur die Paare, die in der Norm eindeutig sind; 2→Z und 6→G nicht. */
+export const ALS_BUCHSTABE: Record<string, string> = {
   '0': 'O',
   '1': 'I',
-  '2': 'Z',
   '5': 'S',
-  '6': 'G',
   '8': 'B',
 };
 
@@ -183,6 +188,10 @@ export interface MrzAuswertung {
   geloestBerichtigt: boolean;
   /** Gelesen ist genau das Soll. */
   exakt: boolean;
+  /** Nach der Berichtigung ohne Buchstabenfelder genau das Soll (zählt, PC79). */
+  genauBerichtigt: boolean;
+  /** Ebenso mit Buchstabenfeldern (PC79: steht nur daneben). */
+  genauBuchstaben: boolean;
 }
 
 function abweichung(ist: string[], soll: string[]): number {
@@ -209,17 +218,22 @@ export function mrzAuswerten(kandidaten: string[], soll: string[]): MrzAuswertun
   let bestes = fenster[0]!;
   for (const f of fenster) if (abweichung(f, soll) < abweichung(bestes, soll)) bestes = f;
   const geloest = fenster.some((f) => f.length === n && mrzLesen(f).ok);
+  // Ohne Buchstabenfelder: Dort ändert die Berichtigung an den Prüfziffern ohnehin nichts (PC79).
   const geloestBerichtigt = fenster.some((f) => {
     if (f.length !== n) return false;
     const form = mrzForm(f) ?? mrzFormNachSoll(soll);
-    return form ? mrzLesen(berichtigen(f, form)).ok : false;
+    return form ? mrzLesen(berichtigen(f, form, false)).ok : false;
   });
+  const gleich = (f: string[]) => f.length === n && f.every((z, i) => z === soll[i]);
+  const form = bestes.length === n ? (mrzForm(bestes) ?? mrzFormNachSoll(soll)) : null;
   return {
     zeilen: bestes,
     falsch: abweichung(bestes, soll),
     geloest,
     geloestBerichtigt,
-    exakt: bestes.length === n && bestes.every((z, i) => z === soll[i]),
+    exakt: gleich(bestes),
+    genauBerichtigt: form ? gleich(berichtigen(bestes, form, false)) : false,
+    genauBuchstaben: form ? gleich(berichtigen(bestes, form, true)) : false,
   };
 }
 
@@ -255,6 +269,8 @@ export function berichtZeile(foto: Foto, lauf: Lauf): string {
       ` | unten: ${m.exakt ? 'genau' : `${m.falsch} Zeichen falsch`}` +
       `, Prüfziffern ${m.geloest ? 'gelöst' : 'nicht gelöst'}` +
       `, berichtigt ${m.geloestBerichtigt ? 'gelöst' : 'nicht gelöst'}` +
+      `, danach ${m.genauBerichtigt ? 'genau' : 'nicht genau'}` +
+      `, mit Buchstabenfeldern ${m.genauBuchstaben ? 'genau' : 'nicht genau'}` +
       ` | gelesen: ${m.zeilen.join(' / ') || '–'}`;
   }
   return z;
@@ -268,6 +284,8 @@ export function summen(ergebnisse: { foto: Foto; laeufe: Lauf[] }[]): {
   zahl: number;
   mrzGeloest: number;
   mrzBerichtigt: number;
+  mrzGenau: number;
+  mrzGenauBuchstaben: number;
   mrzZahl: number;
   ms: number;
 }[] {
@@ -280,6 +298,8 @@ export function summen(ergebnisse: { foto: Foto; laeufe: Lauf[] }[]): {
       zahl: number;
       mrzGeloest: number;
       mrzBerichtigt: number;
+      mrzGenau: number;
+      mrzGenauBuchstaben: number;
       mrzZahl: number;
       ms: number;
     }
@@ -297,6 +317,8 @@ export function summen(ergebnisse: { foto: Foto; laeufe: Lauf[] }[]): {
         zahl: 0,
         mrzGeloest: 0,
         mrzBerichtigt: 0,
+        mrzGenau: 0,
+        mrzGenauBuchstaben: 0,
         mrzZahl: 0,
         ms: 0,
       };
@@ -310,6 +332,8 @@ export function summen(ergebnisse: { foto: Foto; laeufe: Lauf[] }[]): {
         s.mrzZahl++;
         if (m.geloest) s.mrzGeloest++;
         if (m.geloestBerichtigt) s.mrzBerichtigt++;
+        if (m.genauBerichtigt) s.mrzGenau++;
+        if (m.genauBuchstaben) s.mrzGenauBuchstaben++;
       }
       tabelle.set(schluessel, s);
     }
@@ -324,14 +348,21 @@ export function satz(foto: Foto): string {
   return 'Lucida (CP40)';
 }
 
+interface MrzSumme {
+  satz: string;
+  weg: string;
+  geloest: number;
+  berichtigt: number;
+  /** Genau gelesen nach der Berichtigung ohne Buchstabenfelder (PC79). */
+  genau: number;
+  /** Genau gelesen nach der Berichtigung mit Buchstabenfeldern (PC79, nur daneben). */
+  genauBuchstaben: number;
+  zahl: number;
+}
+
 /** Zeilen unten über alle Varianten: je Satz und Weg die Fotos mit gelösten Prüfziffern (CP49, Grenze 2). */
-export function mrzGesamt(
-  ergebnisse: { foto: Foto; laeufe: Lauf[] }[],
-): { satz: string; weg: string; geloest: number; berichtigt: number; zahl: number }[] {
-  const tabelle = new Map<
-    string,
-    { satz: string; weg: string; geloest: number; berichtigt: number; zahl: number }
-  >();
+export function mrzGesamt(ergebnisse: { foto: Foto; laeufe: Lauf[] }[]): MrzSumme[] {
+  const tabelle = new Map<string, MrzSumme>();
   for (const { foto, laeufe } of ergebnisse) {
     if (!foto.mrz) continue;
     for (const lauf of laeufe) {
@@ -342,12 +373,16 @@ export function mrzGesamt(
         weg: lauf.weg,
         geloest: 0,
         berichtigt: 0,
+        genau: 0,
+        genauBuchstaben: 0,
         zahl: 0,
       };
       const m = mrzAuswerten(mrzKandidaten(lauf.zeilen), foto.mrz);
       s.zahl++;
       if (m.geloest) s.geloest++;
       if (m.geloestBerichtigt) s.berichtigt++;
+      if (m.genauBerichtigt) s.genau++;
+      if (m.genauBuchstaben) s.genauBuchstaben++;
       tabelle.set(schluessel, s);
     }
   }
@@ -360,9 +395,17 @@ export function mrzGesamt(
 export function bericht(ergebnisse: { foto: Foto; laeufe: Lauf[] }[], geraet: string): string {
   const zeilen = [`Probe Vision gegen Tesseract (PC75), ${geraet}`, ''];
   zeilen.push('Zeilen unten gesamt (Fotos mit gelösten Prüfziffern, ohne und mit Berichtigung):');
+  zeilen.push(
+    '„Deutlich besser“ zählt ohne Buchstabenfelder. Dort berichtigt nur ' +
+      Object.entries(ALS_BUCHSTABE)
+        .map(([z, b]) => `${z}→${b}`)
+        .join(', ') +
+      '; die Prüfziffern decken sie nicht ab (PC79).',
+  );
   for (const g of mrzGesamt(ergebnisse))
     zeilen.push(
-      `${g.satz} | ${g.weg} | ${g.geloest}/${g.zahl}, berichtigt ${g.berichtigt}/${g.zahl}`,
+      `${g.satz} | ${g.weg} | ${g.geloest}/${g.zahl}, berichtigt ${g.berichtigt}/${g.zahl}` +
+        ` | genau ${g.genau}/${g.zahl}, mit Buchstabenfeldern ${g.genauBuchstaben}/${g.zahl}`,
     );
   zeilen.push('');
   zeilen.push(
@@ -374,7 +417,8 @@ export function bericht(ergebnisse: { foto: Foto; laeufe: Lauf[] }[], geraet: st
     zeilen.push(
       `${s.variante} | ${s.weg} | Treffer ${s.gefunden}/${s.zahl} (${prozent(s.gefunden, s.zahl)} %)` +
         (s.mrzZahl
-          ? ` | unten gelöst ${s.mrzGeloest}/${s.mrzZahl}, berichtigt ${s.mrzBerichtigt}/${s.mrzZahl}`
+          ? ` | unten gelöst ${s.mrzGeloest}/${s.mrzZahl}, berichtigt ${s.mrzBerichtigt}/${s.mrzZahl}` +
+            `, genau ${s.mrzGenau}/${s.mrzZahl}, mit Buchstabenfeldern ${s.mrzGenauBuchstaben}/${s.mrzZahl}`
           : '') +
         ` | ${s.ms} ms`,
     );

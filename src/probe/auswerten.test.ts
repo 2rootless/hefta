@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { td1Bauen, td3Bauen, mrzLesen } from '../domain/mrz';
 import {
+  ALS_BUCHSTABE,
   berichtigen,
   bericht,
   mrzAuswerten,
@@ -50,7 +51,14 @@ describe('Treffer gegen Sollwerte', () => {
 describe('Zeilen unten', () => {
   it('genau gelesen: gelöst und exakt', () => {
     const m = mrzAuswerten(mrzKandidaten(z('Anschrift Musterweg 7', ...AUSWEIS)), AUSWEIS);
-    expect(m).toMatchObject({ geloest: true, geloestBerichtigt: true, exakt: true, falsch: 0 });
+    expect(m).toMatchObject({
+      geloest: true,
+      geloestBerichtigt: true,
+      exakt: true,
+      genauBerichtigt: true,
+      genauBuchstaben: true,
+      falsch: 0,
+    });
   });
   it('Leerzeichen und « aus Vision werden zu Zeichen der Norm', () => {
     const vision = AUSWEIS.map((l) => l.replace(/<</g, '«').replace(/MUSTER/, 'MUS TER'));
@@ -61,6 +69,7 @@ describe('Zeilen unten', () => {
     const m = mrzAuswerten(mrzKandidaten(z(...falsch)), AUSWEIS);
     expect(m.geloest).toBe(false);
     expect(m.geloestBerichtigt).toBe(true);
+    expect(m.genauBerichtigt).toBe(true);
     expect(m.falsch).toBe(1);
   });
   it('Berichtigung ergänzt Füllzeichen am Ende, aber eine falsche Prüfziffer bleibt falsch', () => {
@@ -76,6 +85,27 @@ describe('Zeilen unten', () => {
     expect(mrzLesen(berichtigen(staat, 'TD3')).ok).toBe(true);
     const nummer = [PASS[0]!, PASS[1]!.replace('MUSTER0P2', 'MUSTEROP2')];
     expect(mrzLesen(berichtigen(nummer, 'TD3')).ok).toBe(false);
+  });
+  it('PC79: „UT0“ ist schon ohne Berichtigung gelöst (Staat ohne Prüfziffer), genau erst mit Buchstabenfeldern', () => {
+    const staat = [PASS[0]!, PASS[1]!.slice(0, 12) + '0' + PASS[1]!.slice(13)];
+    expect(berichtigen(staat, 'TD3', false)[1]!.slice(10, 13)).toBe('UT0');
+    const m = mrzAuswerten(mrzKandidaten(z(...staat)), PASS);
+    expect(m).toMatchObject({
+      geloest: true,
+      geloestBerichtigt: true,
+      exakt: false,
+      genauBerichtigt: false,
+      genauBuchstaben: true,
+    });
+  });
+  it('PC79: nur 0→O, 1→I, 5→S, 8→B; Gegenprobe: 2 und 6 im Namen bleiben Ziffern', () => {
+    expect(ALS_BUCHSTABE).toEqual({ '0': 'O', '1': 'I', '5': 'S', '8': 'B' });
+    for (const ziffer of ['2', '6']) {
+      const name = [PASS[0]!.slice(0, 5) + ziffer + PASS[0]!.slice(6), PASS[1]!];
+      expect(berichtigen(name, 'TD3')[0]!.slice(5, 6)).toBe(ziffer);
+    }
+    const acht = [PASS[0]!.slice(0, 5) + '8' + PASS[0]!.slice(6), PASS[1]!];
+    expect(berichtigen(acht, 'TD3')[0]!.slice(5, 6)).toBe('B');
   });
   it('Gegenprobe: eine verschluckte Prüfziffer am Ende ist nicht gelöst', () => {
     const ohne = [AUSWEIS[0]!, AUSWEIS[1]!.slice(0, 29), AUSWEIS[2]!];
@@ -108,8 +138,15 @@ describe('Zeilen unten gesamt, je Satz (PC77)', () => {
       },
     ];
     const text = bericht(ergebnisse, 'Test');
-    expect(text).toContain('Lucida (CP40) | Tesseract | 0/1, berichtigt 0/1');
-    expect(text).toContain('OCR-B | Tesseract OCR-B | 1/1, berichtigt 1/1');
+    expect(text).toContain(
+      'Lucida (CP40) | Tesseract | 0/1, berichtigt 0/1 | genau 0/1, mit Buchstabenfeldern 0/1',
+    );
+    expect(text).toContain(
+      'OCR-B | Tesseract OCR-B | 1/1, berichtigt 1/1 | genau 1/1, mit Buchstabenfeldern 1/1',
+    );
+    expect(text).toContain(
+      '„Deutlich besser“ zählt ohne Buchstabenfelder. Dort berichtigt nur 0→O, 1→I, 5→S, 8→B;',
+    );
     expect(text).not.toContain('OCR-B | Vision |');
     expect(text).toContain('gerade (OCR-B) | Tesseract OCR-B |');
   });
@@ -141,7 +178,7 @@ describe('Bericht zum Kopieren', () => {
       'iPhone',
     );
     expect(text).toContain(
-      'gerade | Vision | Treffer 2/2 (100 %) | unten gelöst 1/1, berichtigt 1/1 | 812 ms',
+      'gerade | Vision | Treffer 2/2 (100 %) | unten gelöst 1/1, berichtigt 1/1, genau 1/1, mit Buchstabenfeldern 1/1 | 812 ms',
     );
     expect(text).toContain('ausweis-hinten-gerade.jpg | Vision | Treffer 2/2 (100 %)');
     expect(text).toContain('Prüfziffern gelöst');
