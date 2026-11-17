@@ -42,6 +42,7 @@ import {
   BOGEN_SEITE,
   EINZUG,
   GRAU,
+  TINTE,
   LINIE_PUNKTE,
   VERZEICHNIS_ZEILEN,
   ZEICHEN,
@@ -302,7 +303,7 @@ function kopfzeile(
 }
 
 /**
- * Fußzeile (DP30): links „Bewerbung {Straße}, {Namen}“, rechts „Seite {n} von {N}“, 8 pt grau, darüber eine
+ * Fußzeile (DP30): links „Bewerbung {Straße}, {Namen}“, rechts „Seite {n} von {N}“, 8 pt in Tinte (DP71), darüber eine
  * feine Linie. Auf dem Briefbogen (Deckblatt, Selbstauskunft) mit dessen Rändern, sonst wie bisher.
  */
 function fussleiste(
@@ -337,7 +338,7 @@ function fussleiste(
       y: FUSS_TEXT + (zeilen.length - 1) * 3.5 - i * 7.5,
       size: groesse,
       font: s.regular,
-      color: GRAU,
+      color: TINTE,
     }),
   );
   seite.drawText(rechts, {
@@ -345,7 +346,7 @@ function fussleiste(
     y: FUSS_TEXT,
     size: 8,
     font: s.regular,
-    color: GRAU,
+    color: TINTE,
   });
 }
 
@@ -500,7 +501,7 @@ function deckblattSetzen(
   // 1. Kopf: „Bewerbung um die Wohnung“, die Straße, darunter Geschoss und Ort.
   let y = H - BOGEN_OBEN - 12 * MM;
   if (strasse) {
-    text('Bewerbung um die Wohnung', x0, y - 9, 9, s.regular, GRAU);
+    text('Bewerbung um die Wohnung', x0, y - 9, 9, s.regular, TINTE);
     y -= 9 * 1.35 + 2;
     const g = passendeGroesse(strasse, s.bold, 22, 15, breite, s);
     const zeilen = umbrechen(zeichenbar(strasse, s), s.bold, g, breite);
@@ -521,7 +522,7 @@ function deckblattSetzen(
   for (const zeile of [a.inserat, a.einzug].filter((z): z is string => !!z?.trim()))
     for (const teil of umbrechen(zeichenbar(zeile, s), s.regular, 9, breite)) {
       y -= 9 * 1.35;
-      text(teil, x0, y, 9, s.regular, GRAU);
+      text(teil, x0, y, 9, s.regular, TINTE);
     }
 
   // 2. und 3. Leitsatz und Satz der Bewerber.
@@ -548,7 +549,7 @@ function deckblattSetzen(
   const farbeVon = (person: MappenPerson) => hex(deckFarbe(aussehen, person.farbe));
   const spaltenUnten: number[] = [];
   const etikett = (t: string, x: number, yy: number) => {
-    text(t, x, yy - 8.5, 8.5, s.regular, GRAU);
+    text(t, x, yy - 8.5, 8.5, s.regular, TINTE);
     return yy - 8.5 * 1.35 - 2 * MM;
   };
   const person = (
@@ -569,7 +570,7 @@ function deckblattSetzen(
     if (unter)
       for (const zeile of umbrechen(zeichenbar(unter, s), s.regular, 8.5, w)) {
         zy -= 8.5 * 1.35;
-        text(zeile, x + EINZUG, zy, 8.5, s.regular, GRAU);
+        text(zeile, x + EINZUG, zy, 8.5, s.regular, TINTE);
       }
     return zy - 3 * MM;
   };
@@ -751,7 +752,7 @@ function deckblattSetzen(
       }
       if (erste) {
         y -= 5 * MM;
-        text('Bürgschaft', x0, y - 8.5, 8.5, s.regular, GRAU);
+        text('Bürgschaft', x0, y - 8.5, 8.5, s.regular, TINTE);
         y -= 8.5 * 1.35;
       }
       block(b);
@@ -764,7 +765,7 @@ function deckblattSetzen(
     const unten = FUSS_LINIE + 6 * MM;
     bitteZeilen.forEach((t, i) => {
       const yy = unten + (bitteZeilen.length - 1 - i) * 8 * 1.35;
-      schreiben(erste, t, s, { x: x0, y: yy, size: 8, font: s.regular, color: GRAU });
+      schreiben(erste, t, s, { x: x0, y: yy, size: 8, font: s.regular, color: TINTE });
     });
   }
   if (a.hinweis && erste) {
@@ -778,7 +779,15 @@ function deckblattSetzen(
     ];
     zeilen.forEach((t, i) => {
       const yy = unten + (zeilen.length - 1 - i) * 8 * 1.35;
-      schreiben(erste, t, s, { x: x0, y: yy, size: 8, font: s.regular, color: GRAU });
+      // DP71: Fassung und Bitte in Tinte; „Erstellt mit …“ und die Lesehilfe dürfen grau bleiben.
+      const leise = t === `Erstellt mit ${APP_NAME}` || t === lesehilfe;
+      schreiben(erste, t, s, {
+        x: x0,
+        y: yy,
+        size: 8,
+        font: s.regular,
+        color: leise ? GRAU : TINTE,
+      });
     });
     links.push({
       seite: 0,

@@ -4,7 +4,7 @@ import { rgb, setCharacterSpacing, type Color, type PDFFont, type PDFPage } from
 // für Deckblatt und Selbstauskunft. Läuft ohne Browser-APIs.
 
 const MM = 72 / 25.4;
-const TINTE = rgb(0x26 / 255, 0x22 / 255, 0x1e / 255);
+export const TINTE = rgb(0x26 / 255, 0x22 / 255, 0x1e / 255);
 
 /** Bricht an Leerzeichen um, so dass jede Zeile in die Breite passt. */
 function zeilen(text: string, schrift: PDFFont, groesse: number, breite: number): string[] {
@@ -25,6 +25,11 @@ function zeilen(text: string, schrift: PDFFont, groesse: number, breite: number)
 export const BOGEN_OBEN = 16 * MM;
 export const BOGEN_SEITE = 22 * MM;
 /** Grau der Etiketten und der Fußzeile, Linien (DP30, Liste für Code). */
+/**
+ * Grau nur noch für Sätze, die man nach einer Kopie nicht braucht (PC95, DP71, E200): „Erstellt mit Hefta“,
+ * „Lesehilfe“ und der Erklärsatz unten auf der Selbstauskunft. In einer Schwarzweiß-Kopie verschwindet es bei
+ * 8 bis 9 pt fast ganz; alles, was man lesen können muss, steht in Tinte.
+ */
 export const GRAU = rgb(0x6b / 255, 0x62 / 255, 0x58 / 255);
 export const LINIE_ABSCHNITT = rgb(0x8c / 255, 0x83 / 255, 0x78 / 255);
 export const LINIE_PUNKTE = rgb(0xb9 / 255, 0xb0 / 255, 0xa5 / 255);
@@ -54,7 +59,7 @@ export function gesperrt(
  */
 const LAUFWEITE = 0.09;
 
-/** Abschnitt: Etikett in Versalien, 8 pt fett, Laufweite 0,12 em, grau; darunter eine feine Linie. */
+/** Abschnitt: Etikett in Versalien, 8 pt fett, Laufweite 0,12 em, in Tinte (DP71); darunter eine feine Linie. */
 export function abschnittKopf(
   seite: PDFPage | null,
   titel: string,
@@ -64,7 +69,7 @@ export function abschnittKopf(
   schrift: PDFFont,
 ): number {
   if (seite) {
-    gesperrt(seite, titel.toUpperCase(), { x, y, size: 8, font: schrift, color: GRAU }, LAUFWEITE);
+    gesperrt(seite, titel.toUpperCase(), { x, y, size: 8, font: schrift, color: TINTE }, LAUFWEITE);
     seite.drawLine({
       start: { x, y: y - 3 - 2 },
       end: { x: x + breite, y: y - 3 - 2 },
@@ -136,11 +141,11 @@ export function briefkopf(
   const nachFett = x0 + s.bold.widthOfTextAtSize(fett.at(-1) ?? '', g);
   if (rest) {
     if (nachFett + s.regular.widthOfTextAtSize(rest, g) <= x0 + platz)
-      seite.drawText(rest, { x: nachFett, y, size: g, font: s.regular, color: GRAU });
+      seite.drawText(rest, { x: nachFett, y, size: g, font: s.regular, color: TINTE });
     else {
       y -= g * 1.35;
       for (const z of zeilen(rest.replace(/^, /, ''), s.regular, g, platz)) {
-        seite.drawText(z, { x: x0, y, size: g, font: s.regular, color: GRAU });
+        seite.drawText(z, { x: x0, y, size: g, font: s.regular, color: TINTE });
         y -= g * 1.35;
       }
       y += g * 1.35;
@@ -151,7 +156,7 @@ export function briefkopf(
     y: H - BOGEN_OBEN - g,
     size: g,
     font: s.regular,
-    color: GRAU,
+    color: TINTE,
   });
   const linie = y - 4 * MM;
   seite.drawLine({

@@ -206,17 +206,9 @@ export function selbstauskunftZeichnen(
         reihen.forEach((reihe, i) => {
           reihe.forEach((f, k) => {
             const x = f.breit ? x0 : x0 + k * (spalte + 10 * MM);
-            zeichnen(seite, f.etikett, x, o - 8, 8, s.regular, GRAU);
+            zeichnen(seite, f.etikett, x, o - 8, 8, s.regular, INK);
             f.werte.forEach((t, j) =>
-              zeichnen(
-                seite,
-                t,
-                x,
-                o - 8 * 1.3 - 10.5 - j * 10.5 * 1.3,
-                10.5,
-                s.regular,
-                f.leise ? GRAU : INK,
-              ),
+              zeichnen(seite, t, x, o - 8 * 1.3 - 10.5 - j * 10.5 * 1.3, 10.5, s.regular, INK),
             );
           });
           o -= reihenHoehe[i]! + 5 * MM;
@@ -266,7 +258,7 @@ export function selbstauskunftZeichnen(
                 grund - j * 8.5 * 1.3,
                 8.5,
                 s.regular,
-                GRAU,
+                INK,
               ),
             );
           } else if (r.z.art === 'janein') {
@@ -295,12 +287,12 @@ export function selbstauskunftZeichnen(
                 grund - 10.5 * 1.3,
                 8,
                 s.regular,
-                GRAU,
+                INK,
               );
           }
           if (r.erkl.length) {
             const eo = grund - (r.frage.length - 1) * 10.5 * 1.3 - 2 * MM - 8;
-            zeichnen(seite, 'Erläuterung', x0 + EINZUG, eo, 8, s.regular, GRAU);
+            zeichnen(seite, 'Erläuterung', x0 + EINZUG, eo, 8, s.regular, INK);
             r.erkl.forEach((t, j) =>
               zeichnen(seite, t, x0 + EINZUG, eo - 8 * 0.3 - 9.5 - j * 9.5 * 1.35, 9.5, s.regular),
             );
@@ -345,7 +337,7 @@ export function selbstauskunftZeichnen(
     });
     for (const t of inSpalte(unter, s.regular, 9, breite)) {
       y -= 9 * 1.35 + 1;
-      zeichnen(seite, t, x0, y, 9, s.regular, GRAU);
+      zeichnen(seite, t, x0, y, 9, s.regular, INK);
     }
     return y - 2;
   };
@@ -368,7 +360,7 @@ export function selbstauskunftZeichnen(
         thickness: 0.5,
         color: INK,
       });
-      zeichnen(seite, etikett, x, linie - 2 - 8, 8, s.regular, GRAU);
+      zeichnen(seite, etikett, x, linie - 2 - 8, 8, s.regular, INK);
       return linie - 2 - 8 * 1.3;
     };
     const nachFeld = feld(x0, a.ortDatum, a.ortLabel ?? 'Ort, Datum');
@@ -390,7 +382,7 @@ export function selbstauskunftZeichnen(
     if (!weiter) return titelZeichnen(seite, linie);
     // Folgeseite: der Name klein, kein „Fortsetzung“.
     const y = linie - 8 * MM - 9;
-    zeichnen(seite, s.ersetzen(`Selbstauskunft von ${a.name}`), x0, y, 9, s.regular, GRAU);
+    zeichnen(seite, s.ersetzen(`Selbstauskunft von ${a.name}`), x0, y, 9, s.regular, INK);
     return y - 2;
   };
   let oben = neueSeite(false);
