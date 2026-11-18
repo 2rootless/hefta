@@ -1,5 +1,6 @@
 import { VERGABE } from '../domain/personenfarben';
 import { alteNummerUmsetzen } from '../domain/telefon';
+import { ohneZaehlmarken } from '../domain/zaehlmarken';
 import { wohnungsSchluessel } from '../domain/adresse';
 import { sortieren } from '../domain/bewerbungen';
 import { hefteAusVersion1Einordnen } from '../domain/hefte';
@@ -1101,6 +1102,10 @@ export async function heftAendern(
   const neu: Heft = {
     ...alt,
     ...aenderung,
+    // PC120: Zählmarken fallen beim Speichern aus dem Link.
+    ...('link' in aenderung
+      ? { link: aenderung.link ? ohneZaehlmarken(aenderung.link) : null }
+      : {}),
     id: alt.id,
     createdAt: alt.createdAt,
     updatedAt: jetzt(),
@@ -1150,6 +1155,8 @@ export async function heftAnlegen(
     ereignisse: { ...KEINE_EREIGNISSE },
     notiz: '',
     ...entwurf,
+    // PC120: Zählmarken (utm_…, fbclid, …) fallen beim Speichern aus dem Link.
+    link: entwurf.link ? ohneZaehlmarken(entwurf.link) || null : null,
   };
   if (!heft.angaben) delete heft.angaben;
   if (foto) heft.foto = await dateiSpeichern(db, foto);

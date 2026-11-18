@@ -34,7 +34,8 @@ function heft(id: string, titel: string, ereignisse: Record<string, unknown>) {
     kennung: `k-${id}`,
     ereignisse: { ...leer, ...ereignisse },
     notiz: '',
-    angaben: { titel, stadtteil: 'Altona', warm: 1000, zimmer: 2, flaeche: 50 },
+    // E236: Mit Adresse hieße das Heft nach der Straße; der Name für die Prüfungen steht darum als Merkmal.
+    angaben: { merkmal: titel, stadtteil: 'Altona', warm: 1000, zimmer: 2, flaeche: 50 },
   };
 }
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fremder Leser für hefta.json, Fassung 1 (DP78, Design). Grundlage: leser76.py (DP76), davor leser72.py aus CP66.
+"""Fremder Leser für hefta.json, Fassung 1 (DP78, Design). Stand des Lesers: Fassung 3 (DP81). Grundlage: leser76.py (DP76), davor leser72.py aus CP66.
 
 Geschrieben nach FORMAT.md (CP66), dem Stresskatalog aus PD116 und E216 bis E220. Die acht Regeln aus E220 (PC110)
 liegen Design nicht vor. Gebaut ist darum nach der Spalte „soll“ des Katalogs. Jede Stelle, an der ich raten musste,
@@ -23,6 +23,17 @@ Neu in DP78 (nach E222 bis E224, PD118, PD119):
   - `schritt` (V23, DP78): gebunden an den festen Satz je Schritt, direkt unter dem Satz zum Haushalt auf dem
     Deckblatt. Ein Satz zum Schritt ohne passendes `schritt` passt nicht.
   Neue Stellen, an denen ich raten musste, tragen LESART L78-1 bis L78-4 (DP78, Abschnitt 4).
+
+Protokoll, Fassung 2 des Lesers (DP80, nach PD122 und CP71):
+  - D1: Verzeichnis nach V6, die Seiten in derselben Zeile („Selbstauskunft – Seite 2“). Die Zahl allein gilt weiter.
+    LESART L78-5, bis ich die 95 Mappen aus CP71 habe.
+  - D2: Text, der nicht in NFC steht, wird abgelehnt (V16). S11 heißt jetzt „nicht gezeigt“.
+  Sonst unverändert. Die Fassung 1 des Lesers liegt als leser78-fassung1.py daneben.
+
+Protokoll, Fassung 3 des Lesers (DP81, nach PD123, F1):
+  - Das Verzeichnis kennt in Fassung 1 genau zwei Formen (V6): „Selbstauskunft – Seite 2“ und
+    „Gehaltsnachweise, September bis November – Seiten 3 bis 5“. Nur diese bindet der Leser.
+  - Die Lesart L78-5 entfällt: „Seiten 2–3“ und die Zahl allein passen nicht mehr. Fassung 2 liegt als leser78-fassung2.py daneben.
 
 Aufruf:
   python3 -I leser76.py DATEI.pdf          (liest den Anhang hefta.json und prüft alles, auch gegen das Papier)
@@ -140,6 +151,8 @@ def _text(s, feld, name=False, leer=False):
         raise Abgelehnt(f'{feld}: Steuer- oder unsichtbares Zeichen (U+{ord(next(c for c in s if UNSICHTBAR(c))):04X})')
     if s != s.strip() or s.strip() == '':
         raise Abgelehnt(f'{feld}: Leerzeichen am Rand oder nur Leerzeichen')
+    if not unicodedata.is_normalized('NFC', s):
+        raise Abgelehnt(f'{feld}: nicht in NFC (V16, PD122 D2)')           # S11 jetzt abgelehnt
     if name and re.search(r'\s\s', s):
         raise Abgelehnt(f'{feld}: zwei Leerzeichen hintereinander')       # LESART V17: S27 abgelehnt
     if name and _schriften(s) > 1:
@@ -344,6 +357,14 @@ def _seitenangabe(u):
     return f'{v}' if v == b else f'{v}–{b}'
 
 
+def _seiten_re(u):
+    """V6 (PD123, F1): genau zwei Formen, „– Seite 2“ und „– Seiten 3 bis 5“, in derselben Zeile wie die Unterlage."""
+    v, b = u['seiten_mappe']['von'], u['seiten_mappe']['bis']
+    if v == b:
+        return r'–[ \t]+seite[ \t]+' + str(v)
+    return r'–[ \t]+seiten[ \t]+' + f'{v}' + r' bis ' + f'{b}'
+
+
 class _Text:
     """Text einer Lesart: normierte Zeilen (V4) und daraus flache Fassungen. Überschriften erkennt der Leser nur als
     ganze Zeile (LESART V5), sonst trifft „Zwei im Mietvertrag, … Eine Person bürgt.“ auf dem Deckblatt."""
@@ -484,13 +505,13 @@ def papier(lh, pdf):
                         rest = t[m.end():]
                         ende = min([k for k in (rest.find(namen[j]) for j in range(len(ps)) if j != i) if k >= 0] + [len(rest)])
                         block = rest[:ende]
-                        if soll is None and re.search(r'(?<![\d–])' + re.escape(seiten) + r'(?![\d–])', block):
+                        if soll is None and re.search(_seiten_re(u) + r'(?![\d–]| bis \d)', block):
                             return True
-                        if soll is not None and re.search(r'(?<![\w])' + re.escape(soll) + r'\s+' + re.escape(seiten) + r'(?![\d–])', block):
+                        if soll is not None and re.search(r'(?<![\w])' + re.escape(soll) + r'[ \t]+' + _seiten_re(u) + r'(?![\d–]| bis \d)', block):
                             return True
                 return False
             if not irgendwo(unterlage_ok, f"unterlage:{p['name']}:{u['typ']}:{seiten}"):
-                g.append(f"{p['name']}: „{VERZEICHNIS.get(u['typ'], 'Unterlage')}{zus and ' …'}“ auf Seite {seiten} steht so nicht im Verzeichnis")   # S18, A7–A9
+                g.append(f"{p['name']}: „{VERZEICHNIS.get(u['typ'], 'Unterlage')}{zus and ' …'} – {_seiten(u)}“ steht so nicht im Verzeichnis (V6)")   # S18, A7–A9
             for vm in u.get('vermerke') or []:
                 if not irgendwo(lambda x, vm=vm: _norm(_vermerk(vm)) in x.flach, 'vermerk'):
                     g.append(f"{p['name']}: Vermerk „{_vermerk(vm)}“ steht nicht im Verzeichnis")         # A10

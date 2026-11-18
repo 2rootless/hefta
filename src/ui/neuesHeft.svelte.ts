@@ -29,6 +29,11 @@ export const entwurf = $state<{
    * Er kommt vor der Seite; nur was darin fehlt, liest Hefta aus der Seite.
    */
   geteilterText: string;
+  /**
+   * DP79: Woraus die Angaben stammen. `inserat`: Seite oder eingesetzter Text des Inserats (dazu vielleicht der
+   * geteilte Text); `geteilt`: nur der geteilte Text; `nichts`: Hefta hat nichts gelesen („Selbst ausfüllen“).
+   */
+  lesung: Lesung;
 }>({
   text: '',
   link: '',
@@ -41,7 +46,10 @@ export const entwurf = $state<{
   bildHoch: false,
   geteilt: false,
   geteilterText: '',
+  lesung: 'nichts',
 });
+
+export type Lesung = 'inserat' | 'geteilt' | 'nichts';
 
 /**
  * Stand der Vorschau (B23 Bildschirm 2) für genau einen Link: Zurück aus der Kontrolle zeigt ihn wieder,
@@ -52,12 +60,20 @@ export const zuletzt = $state<{ heftId: string | null }>({ heftId: null });
 
 export const vorschauStand = $state<{
   link: string;
-  /** `weg`: Die Seite sagt, dass es das Inserat nicht mehr gibt (404, 410); `leer`: nichts gelesen (F8b). */
-  zustand: 'laden' | 'ok' | 'zeit' | 'netz' | 'leer' | 'weg' | 'liste' | 'schon';
+  /** Die Fälle aus DP79, Abschnitt 2 (siehe `VorschauZustand`). */
+  zustand: VorschauZustand;
   roh: InseratGelesen | null;
   /** PC19 A4: Uhrzeit des letzten Versuchs, damit „Noch einmal versuchen“ sichtbar etwas tut. */
   versuchtUm?: Date;
 }>({ link: '', zustand: 'laden', roh: null });
+
+/**
+ * DP79 (E235), Abschnitt 2: `weg` A (404, 410), `gesperrt` B (401, 403, 429, 451, Roboterprüfung), `nichts` C (Seite
+ * da, keine Eckdaten), `netz` D (das Gerät ist offline), `offen` F (zu lange, 5xx, anderer Fehler, Verbindungsfehler
+ * bei Netz). E ist `ok` mit `entwurf.lesung` `geteilt`: Die Eckdaten kommen aus dem geteilten Text, die Seite war B, C, D oder F.
+ */
+export type VorschauZustand =
+  'laden' | 'ok' | 'weg' | 'gesperrt' | 'nichts' | 'netz' | 'offen' | 'liste' | 'schon';
 
 /** Liest den eingefügten Text. Einmal: „Heft anlegen“ übernimmt nur, was hier gelesen ist (E72). */
 export function entwurfLesen(): void {
@@ -70,6 +86,7 @@ export function entwurfLesen(): void {
   entwurf.adresse = adresseAus(a);
   entwurf.gelesenAngaben = { ...angabenAus(g, a, null, link || null), anbieter };
   entwurf.gelesenAdresse = entwurf.adresse;
+  entwurf.lesung = 'inserat';
 }
 
 export function entwurfVergessen(): void {
@@ -84,6 +101,7 @@ export function entwurfVergessen(): void {
   entwurf.bildHoch = false;
   entwurf.geteilt = false;
   entwurf.geteilterText = '';
+  entwurf.lesung = 'nichts';
   vorschauStand.link = '';
   vorschauStand.roh = null;
 }
@@ -113,6 +131,31 @@ export function entwurfAusVorschau(g: InseratGelesen, link: string): void {
   entwurf.gelesenAdresse = entwurf.adresse;
   entwurf.bild = g.bild ?? null;
   entwurf.bildHoch = !!g.bildHoch;
+  // DP79: Nur eine Seite, die ankam (Status unter 400), zählt als gelesenes Inserat.
+  const seiteGelesen = g.zustand === 'ok' && (g.http ?? 200) < 400 && !!seite.trim();
+  entwurf.lesung = seiteGelesen ? 'inserat' : geteilt ? 'geteilt' : 'nichts';
+}
+
+/**
+ * DP79, Fall B: Merkmale einer Roboterprüfung, aus der Teilen-Probe vom 11.11. (PC120, Abschnitt 4). Echte Inserate
+ * ruft Hefta dafür nicht ab.
+ */
+export function istRoboterpruefung(text: string | undefined): boolean {
+  return /ich bin kein roboter|gleich geht[’']s weiter/i.test(text ?? '');
+}
+
+/** DP79, Abschnitt 2: der Fall aus dem, was der Leser liefert (`zustand`, `http`, `text`), ohne den geteilten Text. */
+export function vorschauFall(
+  g: InseratGelesen,
+  online = typeof navigator === 'undefined' || navigator.onLine !== false,
+): Exclude<VorschauZustand, 'laden' | 'liste' | 'schon'> {
+  if (g.zustand === 'netz') return online ? 'offen' : 'netz';
+  if (g.zustand !== 'ok') return 'offen';
+  const http = g.http ?? 200;
+  if (http === 404 || http === 410) return 'weg';
+  if ([401, 403, 429, 451].includes(http) || istRoboterpruefung(g.text)) return 'gesperrt';
+  if (http >= 400) return 'offen';
+  return 'ok';
 }
 
 /** Was der geteilte Text sagt, gilt vor der Seite; die Seite füllt nur Lücken. */

@@ -317,3 +317,52 @@ describe('hefta-json: Telefon und Listen', () => {
     expect(typText('neu_erfunden')).toBe('Unterlage');
   });
 });
+
+describe('hefta-json: die Zeile im Verzeichnis, genau die zwei Formen aus V6 (PC121, PC122)', () => {
+  const l = lesen(beispiele[0]![1])!;
+  const zeilen = deckblattZeilen(l);
+  const eine = zeilen.findIndex((z) => / – Seite \d+$/.test(z));
+  const mehrere = zeilen.findIndex((z) => / – Seiten \d+ bis \d+$/.test(z));
+  const mit = (i: number, neu: string) => pruefen(l, musterMappe(l, zeilen.with(i, neu)));
+
+  it('„– Seite n“ und „– Seiten n bis m“ passen', () => {
+    expect(eine).toBeGreaterThanOrEqual(0);
+    expect(mehrere).toBeGreaterThanOrEqual(0);
+    expect(pruefen(l, musterMappe(l, zeilen))).toEqual([]);
+  });
+
+  it('Gegenproben: „Seiten n–m“, die Zahl allein, „Seite n bis m“ und ein Bindestrich passen nicht', () => {
+    const [, wort, von, bis] = / ?(.*) – Seiten (\d+) bis (\d+)$/.exec(zeilen[mehrere]!)!;
+    const [, wort1, s] = / ?(.*) – Seite (\d+)$/.exec(zeilen[eine]!)!;
+    const falsch = [
+      [mehrere, `${wort} – Seiten ${von}–${bis}`],
+      [mehrere, `${wort} ${von}–${bis}`],
+      [eine, `${wort1} ${s}`],
+      [eine, `${wort1} – Seite ${s} bis ${Number(s) + 1}`],
+      [eine, `${wort1} - Seite ${s}`],
+    ] as const;
+    for (const [i, neu] of falsch)
+      expect(
+        mit(i, neu).some((g) => g.endsWith('steht so nicht im Verzeichnis')),
+        neu,
+      ).toBe(true);
+  });
+
+  it('unbekannte Art (V10): gebunden werden nur die Seiten, aber mit „– “ davor', () => {
+    const u = kopie(l);
+    const p = u.haushalt.personen.find((x) => x.unterlagen.length)!;
+    const unt = p.unterlagen[0]!;
+    unt.typ = 'kuenftige_art';
+    const z = deckblattZeilen(u);
+    const seiten =
+      unt.seiten_mappe.von === unt.seiten_mappe.bis
+        ? `Seite ${unt.seiten_mappe.von}`
+        : `Seiten ${unt.seiten_mappe.von} bis ${unt.seiten_mappe.bis}`;
+    const i = z.findIndex((x) => x.endsWith(` – ${seiten}`));
+    expect(i).toBeGreaterThanOrEqual(0);
+    expect(pruefen(u, musterMappe(u, z.with(i, `Neue Unterlage – ${seiten}`)))).toEqual([]);
+    expect(
+      pruefen(u, musterMappe(u, z.with(i, `Neue Unterlage ${seiten}`))).length,
+    ).toBeGreaterThan(0);
+  });
+});

@@ -1,5 +1,6 @@
 import type { DateiEintrag, Zeitpunkt } from '../domain/modell';
 import { neueUnterlagen } from '../domain/zeit';
+import { linksOhneZaehlmarken } from '../domain/zaehlmarken';
 import {
   BackupFehler,
   backupErstellen,
@@ -146,6 +147,8 @@ export async function sicherungEinspielen(
   const m = await manifestLesen(leser);
   // Vor dem ersten Schreiben: Lassen sich die Angaben umrechnen, und ist jede Datei da?
   let daten = datenMigrieren(m.daten, m.schemaVersion);
+  // PC120: Auch aus eingespielten Heften fallen die Zählmarken im Link weg.
+  if (daten.hefte) daten = { ...daten, hefte: linksOhneZaehlmarken(daten.hefte) };
   if (m.dateien.some((d) => !leser.pfade.includes(`dateien/${d.id}`))) {
     throw new BackupFehler('beschaedigt');
   }

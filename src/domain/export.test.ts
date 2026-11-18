@@ -268,6 +268,20 @@ describe('Dateinamen (06-export.md)', () => {
     expect(strassenteil('Große Beispielstraße 1a')).toBe('GrosseBeispielstr1a');
   });
 
+  it('PC120 (§8, 5): eine Spanne von Hausnummern behält ihren Strich', () => {
+    expect(mappenDateiname(['Mustermann'], 'Musterweg 7–9\n00100 Musterstadt')).toBe(
+      'Bewerbung_Mustermann_Musterweg7-9.pdf',
+    );
+    expect(strassenteil('Musterweg 7-9')).toBe('Musterweg7-9');
+    expect(strassenteil('Musterweg 7 – 9a, 2. OG')).toBe('Musterweg7-9a');
+    expect(strassenteil('Musterweg 7/9')).toBe('Musterweg7-9');
+    expect(strassenteil('Muster-Beispiel-Straße 1')).toBe('MusterBeispielstr1');
+    expect(strassenteil('Musterweg 7')).toBe('Musterweg7');
+    expect(strassenteil('')).toBe('');
+    // Gegenprobe: die alte Fassung machte aus 7–9 die Zahl 79.
+    expect(strassenteil('Musterweg 7–9')).not.toBe('Musterweg79');
+  });
+
   it('ohne Wohnung, zwei Nachnamen, Umlaute', () => {
     expect(mappenDateiname(['Müller', 'Öztürk'], '')).toBe('Bewerbung_Mueller-Oeztuerk.pdf');
   });

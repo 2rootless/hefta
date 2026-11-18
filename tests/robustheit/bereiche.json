@@ -1,0 +1,111 @@
+{
+  "stand": "2026-11-18",
+  "quelle": "PC120, Abschnitt 5 (E232): ab 2.0 ein Korpus je Bereich; für 2.0 angelegt und mit dem gefüllt, was es schon gibt",
+  "bereiche": [
+    {
+      "bereich": "I",
+      "name": "Inserat lesen: Vorschau, Fälle A bis F, geteilter Text",
+      "quote": null,
+      "quellen": [
+        {
+          "datei": "tests/e2e/dp79-inserat.spec.ts",
+          "was": "DP79, IL1 bis IL14: 18 Läufe je Anrede und Ansicht, dazu die Gegenproben",
+          "faelle": 18
+        },
+        {
+          "datei": "tests/fixtures/inserate/katalog-pc117.json",
+          "was": "PC117: 42 erfundene Inserate, gelesen wie aus der Vorschau",
+          "faelle": 42
+        }
+      ]
+    },
+    {
+      "bereich": "N",
+      "name": "Name, Adresse, Betreff, Anschreiben und Dateiname aus dem Inserat",
+      "quote": null,
+      "quellen": [
+        {
+          "datei": "tests/fixtures/inserate/katalog-pc117.json",
+          "was": "PC117: Name, Betreff, erster Satz, Deckblatt, Dateiname (E236: Straße zuerst)",
+          "faelle": 42
+        },
+        {
+          "datei": "tests/robustheit/n/strassenarten.json",
+          "was": "PC120 (§8, 5): Präposition nach der Straßenart und Spanne der Hausnummer",
+          "faelle": 21
+        }
+      ]
+    },
+    {
+      "bereich": "P",
+      "name": "noch ohne Fälle",
+      "quote": null,
+      "quellen": []
+    },
+    {
+      "bereich": "T",
+      "name": "Telefon nach E222",
+      "quote": null,
+      "quellen": [
+        {
+          "datei": "src/domain/telefon.test.ts",
+          "was": "TL1 bis TL28 (DP77)",
+          "faelle": 28
+        },
+        {
+          "datei": "src/vermieter/stress.test.ts",
+          "was": "TR1 bis TR12: die Regel für Leser",
+          "faelle": 12
+        }
+      ]
+    },
+    {
+      "bereich": "U",
+      "name": "noch ohne Fälle",
+      "quote": null,
+      "quellen": []
+    },
+    {
+      "bereich": "L",
+      "name": "Lesehilfe der Mappe: Stresstest und Angriffe",
+      "quote": null,
+      "quellen": [
+        {
+          "datei": "tests/stress/katalog.ts",
+          "was": "DP76, DP78: 95 echte PDF-Mappen, Vermieterseite, Paket und leser78 Fassung 3 (DP81) urteilen gleich",
+          "faelle": 95
+        },
+        {
+          "datei": "tests/e2e/vermieter-angriffe.spec.ts",
+          "was": "A1 bis A21 und S13 an der echten Vermieterseite, in Chromium und WebKit",
+          "faelle": 22
+        }
+      ]
+    },
+    {
+      "bereich": "M",
+      "name": "noch ohne Fälle",
+      "quote": null,
+      "quellen": []
+    },
+    {
+      "bereich": "B",
+      "name": "Bedienung: nichts springt beim Hochladen (W8)",
+      "quote": null,
+      "quellen": [
+        {
+          "datei": "tests/e2e/hochladen-ruhig.spec.ts",
+          "was": "PC121, Regel 1 (DP80, D4) mit Gegenprobe",
+          "faelle": 2
+        }
+      ]
+    }
+  ],
+  "spaeter": [
+    {
+      "bereich": "K",
+      "name": "Gebiete der Stadtkarte",
+      "wann": "sobald die Karte gebaut ist (PC120, Abschnitt 5, 3)"
+    }
+  ]
+}

@@ -122,7 +122,7 @@
     padding-left: 32px;
   }
 
-  .vorschau:has(:global(.mass)) {
+  .vorschau:has(:global(.mass:not(.frei))) {
     margin-top: 0;
   }
 

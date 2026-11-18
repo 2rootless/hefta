@@ -1256,7 +1256,8 @@ const BILDER: Bild[] = [
         (url) => (window as never as { __einsetzen: (x: unknown) => void }).__einsetzen({ url }),
         IS24.url,
       );
-      await page.getByRole('heading', { level: 2, name: KATALOG_TITEL }).waitFor();
+      // E236: Die Karte heißt nach Straße und Hausnummer.
+      await page.getByRole('heading', { level: 2, name: 'Musterweg 7' }).waitFor();
       await page.locator('.punkte li').first().waitFor();
     },
   },

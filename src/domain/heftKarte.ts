@@ -21,20 +21,23 @@ function ortAusAdresse(adresse: string): string {
 }
 
 /**
- * Der Name des Hefts (E78): Merkmal, sonst Titel des Inserats, sonst die Straße, sonst gebaut aus dem,
- * was bekannt ist: „2-Zimmer-Wohnung in Eimsbüttel“, „Wohnung in Eimsbüttel“, „2-Zimmer-Wohnung bei
- * ImmoScout24“, „Inserat bei ImmoScout24“, „Wohnung vom 11. Nov.“. Der gebaute Titel steht wie ein
- * normaler Titel; ein Merkmal ersetzt ihn.
+ * Der Name des Hefts (E236, hebt E78 in diesem Punkt auf): das eigene Merkmal, sonst Straße und Hausnummer,
+ * sonst der Titel des Inserats, sonst gebaut aus dem, was bekannt ist: „2-Zimmer-Wohnung in Eimsbüttel“,
+ * „Wohnung in Eimsbüttel“, „2-Zimmer-Wohnung bei ImmoScout24“, „Inserat bei ImmoScout24“, „Wohnung vom
+ * 11. Nov.“. Die Lage nach dem Komma („Lindenring 3, EG“) gehört nicht zum Namen. Der gebaute Titel steht wie
+ * ein normaler Titel; ein Merkmal ersetzt ihn.
  */
 export function heftTitel(h: Pick<Heft, 'adresse' | 'angaben'> & { createdAt?: string }): {
   text: string;
   strasse: boolean;
 } {
   const a = h.angaben;
-  const name = (a?.merkmal ?? '').trim() || (a?.titel ?? '').trim();
-  if (name) return { text: name, strasse: false };
-  const strasse = zeilen(h.adresse)[0] || h.adresse.trim();
+  const merkmal = (a?.merkmal ?? '').trim();
+  if (merkmal) return { text: merkmal, strasse: false };
+  const strasse = ((zeilen(h.adresse)[0] || h.adresse.trim()).split(',')[0] ?? '').trim();
   if (strasse) return { text: strasse, strasse: true };
+  const titel = (a?.titel ?? '').trim();
+  if (titel) return { text: titel, strasse: false };
   return { text: gebauterTitel(a ?? null, h.createdAt), strasse: false };
 }
 

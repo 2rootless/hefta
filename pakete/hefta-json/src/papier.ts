@@ -337,11 +337,13 @@ function unterlageImVerzeichnis(
         const rest = t.slice(ende);
         const andere = namen.map((n, j) => (j === i ? -1 : rest.indexOf(n))).filter((k) => k >= 0);
         const block = rest.slice(0, Math.min(...andere, rest.length));
+        // V6 (PC121): genau die zwei Formen „– Seite n“ und „– Seiten n bis m“, auch bei unbekannter Art (V10);
+        // „Seiten 2–3“, die Zahl allein und „Seite 3 bis 5“ passen nicht.
         const muster =
           soll === null
-            ? new RegExp(`(?<![\\d–])${maskiert(seiten)}(?![\\d–])`, 'u')
+            ? new RegExp(`– ${maskiert(seiten)}(?![\\d–]| bis \\d)`, 'u')
             : new RegExp(
-                `(?<!${WORTZEICHEN})${maskiert(soll)} – ${maskiert(seiten)}(?![\\d–])`,
+                `(?<!${WORTZEICHEN})${maskiert(soll)} – ${maskiert(seiten)}(?![\\d–]| bis \\d)`,
                 'u',
               );
         if (muster.test(block)) return true;

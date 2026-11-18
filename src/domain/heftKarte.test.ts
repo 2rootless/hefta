@@ -24,12 +24,22 @@ const mit = {
 };
 
 describe('Kopf eines Hefts', () => {
-  it('nimmt das Merkmal, sonst den Titel, sonst die Straße', () => {
+  it('E236: nimmt das Merkmal, sonst Straße und Hausnummer, sonst den Titel des Inserats', () => {
     expect(heftTitel(mit)).toEqual({ text: 'Altbau mit Garten', strasse: false });
-    expect(heftTitel({ ...mit, angaben: { ...mit.angaben, merkmal: null } }).text).toBe(
+    // Straße und Hausnummer ohne die Lage nach dem Komma, vor dem Titel des Inserats.
+    expect(heftTitel({ ...mit, angaben: { ...mit.angaben, merkmal: null } })).toEqual({
+      text: 'Lindenring 3',
+      strasse: true,
+    });
+    expect(heftTitel(ohne)).toEqual({ text: 'Musterweg 7', strasse: true });
+    // Ohne Adresse der Titel des Inserats.
+    expect(heftTitel({ adresse: '', angaben: { ...mit.angaben, merkmal: null } as never })).toEqual(
+      { text: 'Helle 3-Zimmer-Wohnung', strasse: false },
+    );
+    // Gegenprobe: Die alte Reihenfolge (E78, Titel vor der Straße) wäre hier rot.
+    expect(heftTitel({ ...mit, angaben: { ...mit.angaben, merkmal: null } }).text).not.toBe(
       'Helle 3-Zimmer-Wohnung',
     );
-    expect(heftTitel(ohne)).toEqual({ text: 'Musterweg 7', strasse: true });
   });
 
   it('Titel ohne Titel und ohne Straße: gebaut nach E78', () => {

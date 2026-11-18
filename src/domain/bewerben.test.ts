@@ -48,6 +48,59 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
     expect(inDerStrasse('Planten un Blomen 1')).toBe('');
   });
 
+  it('PC120 (§8, 5): „am“ an Platz, Markt, Kai, Ufer, Hang, Damm und Verwandten; „im“ bleibt bei Weg und Ring', () => {
+    expect(inDerStrasse('Musterplatz 1')).toBe('am Musterplatz 1');
+    expect(inDerStrasse('Am Musterplatz 1')).toBe('Am Musterplatz 1');
+    expect(inDerStrasse('Mustermarkt 2, 00100 Musterstadt')).toBe(
+      'am Mustermarkt 2, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterkai 3, 00100 Musterstadt')).toBe(
+      'am Musterkai 3, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterufer 4, 00100 Musterstadt')).toBe(
+      'am Musterufer 4, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterhang 5, 00100 Musterstadt')).toBe(
+      'am Musterhang 5, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterdamm 6, 00100 Musterstadt')).toBe(
+      'am Musterdamm 6, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterwall 7, 00100 Musterstadt')).toBe(
+      'am Musterwall 7, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterdeich 8, 00100 Musterstadt')).toBe(
+      'am Musterdeich 8, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterberg 9, 00100 Musterstadt')).toBe(
+      'am Musterberg 9, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Mustergraben 10, 00100 Musterstadt')).toBe(
+      'am Mustergraben 10, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterstieg 11, 00100 Musterstadt')).toBe(
+      'am Musterstieg 11, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Mustersteig 12, 00100 Musterstadt')).toBe(
+      'am Mustersteig 12, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterbrücke 13, 00100 Musterstadt')).toBe(
+      'an der Musterbrücke 13, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterweg 7–9')).toBe('im Musterweg 7–9');
+    expect(inDerStrasse('Lindenring 3')).toBe('im Lindenring 3');
+    expect(inDerStrasse('Musterhof 2, 00100 Musterstadt')).toBe(
+      'im Musterhof 2, 00100 Musterstadt',
+    );
+    // Erfundene Straßen mit Postleitzahl 00100 (W7, Fassung 25).
+    // Zwei Wörter: das Grundwort entscheidet, ein Adjektiv auf „-er“ beugt sich nicht.
+    expect(inDerStrasse('Musterstädter Ufer 4, 00100 Musterstadt')).toBe(
+      'am Musterstädter Ufer 4, 00100 Musterstadt',
+    );
+    // Gegenprobe: das alte „im“ vor einem Platz wäre falsch.
+    expect(inDerStrasse('Musterplatz 1')).not.toBe('im Musterplatz 1');
+  });
+
   it('schreibt das Anschreiben wie B23, allein und zu mehreren', () => {
     expect(
       anschreibenText({

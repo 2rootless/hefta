@@ -31,10 +31,12 @@ export function anrede(anbieter: string | null | undefined): string {
 }
 
 /**
- * „im Lindenring 3“, „im Lindenring 8“: die Präposition nach dem Geschlecht des Straßennamens.
- * Beginnt der Name schon mit einer („Am Markt 4“), bleibt er, wie er ist. Ist das Geschlecht unbekannt
+ * „im Lindenring 3“, „am Musterplatz 1“: die Präposition nach dem Grundwort des Straßennamens.
+ * Beginnt der Name schon mit einer („Am Markt 4“), bleibt er, wie er ist. Ist das Grundwort unbekannt
  * oder steht ein gebeugtes Adjektiv davor („Lange Reihe“ hieße „in der Langen Reihe“), gibt es keine:
  * Dann steht „die Wohnung Lange Reihe 5“, ungelenk, aber nie falsch.
+ * PC120 (§8, 5): An einem Platz, Markt, Kai, Ufer, Hang, Damm, Wall, Deich, Berg, Graben, Stieg oder Steig
+ * wohnt man „am“, an einer Brücke „an der“; „im“ bleibt für Weg, Ring, Hof und die übrigen.
  */
 export function inDerStrasse(strasse: string): string {
   const s = strasse.trim();
@@ -42,9 +44,10 @@ export function inDerStrasse(strasse: string): string {
   const name = s.replace(/\s+\d+\s*[a-z]?(?:[-–/]\d+\s*[a-z]?)?(?:,.*)?$/i, '').trim();
   const letztes = name.split(/[\s-]/).pop()?.toLowerCase() ?? '';
   const weiblich =
-    /(straße|strasse|str\.|allee|gasse|chaussee|promenade|zeile|twiete|aue|reihe|koppel|brücke|höhe)$/;
-  const maennlich =
-    /(weg|ring|damm|platz|stieg|steig|kamp|deich|wall|markt|graben|berg|hof|pfad|gang|park|kai|winkel|grund)$/;
+    /(straße|strasse|str\.|allee|gasse|chaussee|promenade|zeile|twiete|aue|reihe|koppel|höhe)$/;
+  const anDer = /brücke$/;
+  const am = /(platz|markt|kai|ufer|hang|damm|wall|deich|berg|graben|stieg|steig)$/;
+  const im = /(weg|ring|kamp|hof|pfad|gang|park|winkel|grund)$/;
   if (
     /^(am|an der|an den|auf der|auf dem|im|in der|zum|zur|beim|hinter der|hinter dem|unter den)\b/i.test(
       name,
@@ -54,8 +57,10 @@ export function inDerStrasse(strasse: string): string {
   // Ein Wort davor, das auf „e“ endet, ist ein Adjektiv, das sich beugen müsste.
   const davor = name.split(/\s+/).slice(0, -1);
   if (davor.some((w) => /e$/i.test(w))) return '';
+  if (anDer.test(letztes)) return `an der ${s}`;
   if (weiblich.test(letztes)) return `in der ${s}`;
-  if (maennlich.test(letztes)) return `im ${s}`;
+  if (am.test(letztes)) return `am ${s}`;
+  if (im.test(letztes)) return `im ${s}`;
   return '';
 }
 

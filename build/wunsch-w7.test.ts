@@ -35,6 +35,21 @@ export const MUSTERADRESSEN = [
 /** Die Anschrift des Anbieters im Impressum ist echt und gehört nicht zu den Mustern. */
 const ANBIETER = ['Friedensallee 378'];
 
+/**
+ * Wunschliste Fassung 25 (E233): Für erzeugte Varianten sind erfundene Straßen erlaubt, wenn ihre Postleitzahl
+ * zwischen 00000 und 00999 liegt; die gibt es in Deutschland nicht. Gesucht wird die erste fünfstellige Zahl
+ * hinter der Straße, in derselben oder der nächsten Zeile (auch „\n“ in JSON und Vorlagen).
+ */
+function mitPlzOhneOrt(text: string, ende: number): boolean {
+  const danach = text
+    .slice(ende, ende + 80)
+    .split(/\n|\\n/)
+    .slice(0, 2)
+    .join(' ');
+  const plz = /(?<!\d)(\d{5})(?!\d)/.exec(danach)?.[1];
+  return !!plz && /^00\d{3}$/.test(plz);
+}
+
 /** Fundstellen, die nicht nach Musterdaten aussehen. */
 export function verstoesse(text: string): string[] {
   const aus: string[] = [];
@@ -48,7 +63,8 @@ export function verstoesse(text: string): string[] {
     // Hausnummern ab vier Stellen sind Grenzfälle der Erkennung („Beispielstraße 12345“), keine Adresse.
     const grenzfall =
       m[2]!.length >= 4 && MUSTERADRESSEN.some((a) => a.startsWith(adresse.split(' ')[0]!));
-    if (!MUSTERADRESSEN.includes(adresse) && !ANBIETER.includes(adresse) && !grenzfall)
+    const erfunden = mitPlzOhneOrt(text, (m.index ?? 0) + m[0].length);
+    if (!MUSTERADRESSEN.includes(adresse) && !ANBIETER.includes(adresse) && !grenzfall && !erfunden)
       aus.push(adresse);
   }
   return aus;
@@ -110,5 +126,18 @@ describe('wunsch-W7: nur Musterdaten', () => {
         'Lindenring 3, Erdgeschoss; Lindenring 8, 2. OG, 20259 Hamburg; Musterweg 7, Beispielstr. 1, 12345 Musterstadt',
       ),
     ).toEqual([]);
+  });
+
+  it('Fassung 25 (E233): erfundene Straße mit Postleitzahl 00000 bis 00999 ist erlaubt, mit 12346 schlägt sie an', () => {
+    expect(verstoesse('Mustermarkt 2, 00100 Musterstadt')).toEqual([]);
+    expect(verstoesse('Musterdamm 6\n00999 Musterstadt')).toEqual([]);
+    expect(verstoesse('"adresse": "Musterufer 4, 2. OG\\n00000 Musterstadt"')).toEqual([]);
+    // Gegenproben: andere Postleitzahl, keine Postleitzahl, Postleitzahl erst weit danach.
+    expect(verstoesse('Mustermarkt 2, 12346 Musterstadt')).toEqual(['Mustermarkt 2']);
+    expect(verstoesse('Mustermarkt 2, 01000 Musterstadt')).toEqual(['Mustermarkt 2']);
+    expect(verstoesse('Mustermarkt 2')).toEqual(['Mustermarkt 2']);
+    expect(verstoesse(`Mustermarkt 2\nZeile\nZeile\n00100 Musterstadt`)).toEqual(['Mustermarkt 2']);
+    // Die echte Lindenallee bleibt verboten, auch mit erfundener Postleitzahl nicht in der Liste.
+    expect(verstoesse('Lindenallee 3, 20259 Hamburg')).toEqual(['Lindenallee 3']);
   });
 });

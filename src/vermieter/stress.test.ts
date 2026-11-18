@@ -22,9 +22,11 @@ const ZEILE = String.fromCharCode(10);
 // echte PDF-Mappe mit Anhang `hefta.json`. Zwei Leser urteilen über dieselbe Datei:
 //   - die Vermieter-Seite: PDF.js, `papierLesen()`, das Paket `hefta-json` (`lesenMitGrund`, `pruefen`) und
 //     `lesehilfePasst()` der Seite, die zum selben Ergebnis kommen muss;
-//   - Designs fremder Leser `leser78.py` (pypdf und pdfplumber), unverändert, über `urteil78.py`.
-// Die Vermieter-Seite muss jeden Fall so entscheiden wie die Spalte „soll“ des Katalogs. Wo leser78 anders
-// entscheidet, braucht es einen bekannten Grund (abweichung78); jede neue Abweichung macht den Test rot.
+//   - Designs fremder Leser `leser78.py` (pypdf und pdfplumber), unverändert in Fassung 3 (DP81, PC122), über
+//     `urteil78.py`.
+// Die Vermieter-Seite muss jeden Fall so entscheiden wie die Spalte „soll“ des Katalogs. Seit Fassung 3 kennt leser78
+// die Zeile im Verzeichnis nach V6; die Ausnahme dafür ist weg (PC121): Paket und leser78 urteilen in jedem Fall
+// gleich, jede Abweichung macht den Test rot.
 //
 // Die Mappen baut dieser Test selbst, mit Deckblatt in Fassung 1 (V5 bis V9: Verzeichnis „– Seite n“, „Fassung n
 // vom …“). Designs Proben aus DP76 und DP78 haben das alte Deckblatt von 2.0 und gehen darum hier nicht ein; ihre
@@ -32,6 +34,7 @@ const ZEILE = String.fromCharCode(10);
 // Beispiel-Mappe (Max, Lea, Petra, ein Kind). SE1 und SE2 nutzen Designs echte 2.0-Mappe aus DP78, Lauf B.
 //
 // STRESS_TABELLE=<pfad> schreibt die Tabelle aller Fälle als Markdown (für den Bericht an Planung).
+// STRESS_MAPPEN=<ordner> legt dort jede gebaute Mappe als <Nr>.pdf ab (für Design, PC122 und CP71 D3).
 
 interface Ergebnis {
   urteil: Urteil;
@@ -62,32 +65,6 @@ async function unserUrteil(bytes: Uint8Array): Promise<Ergebnis> {
   } finally {
     await aufgabe.destroy();
   }
-}
-
-/**
- * Fälle, in denen leser78 nur wegen V6 „passt nicht“ sagt; dort prüft sein Urteil nichts, bis er V6 kennt.
- * S18, A8, A9, A10: Der Angriff ändert eine Zeile im Verzeichnis; der Grund ist darum derselbe wie bei V6.
- * S11: leser78 nimmt einen Namen in NFD an (Katalog DP76: „gelesen“); die Seite lehnt ihn ab (E223, V16: nur NFC).
- */
-const NUR_V6 = ['S18', 'A8', 'A9', 'A10', 'S11'];
-
-/**
- * Warum leser78 anders entscheidet als die Spalte „soll“; null, wenn kein bekannter Grund passt. Die Vermieter-Seite
- * folgt der Planung (E223); Design bekommt jeden Grund im Bericht.
- */
-function abweichung78(z: { f: Fall; fremd?: [Urteil, string] }): string | null {
-  const [u, grund] = z.fremd ?? ['ABSTURZ', ''];
-  const teile = grund.split('; ').filter(Boolean);
-  // V6: leser78 erwartet die Seitenzahl als eigene Zeile („Selbstauskunft“, darunter „2“), wie im Deckblatt von 2.0.
-  // Fassung 1 setzt „Selbstauskunft – Seite 2“ in eine Zeile (E223, V6).
-  if (
-    z.f.soll === 'gezeigt' &&
-    u === 'passt nicht' &&
-    teile.length &&
-    teile.every((t) => t.endsWith('steht so nicht im Verzeichnis'))
-  )
-    return 'V6';
-  return null;
 }
 
 // ---------------------------------------------------------------- Lauf
@@ -123,6 +100,8 @@ describe('Stresstest der Lesehilfe, Fassung 1 (DP76, DP78)', () => {
       const bytes = await mappeBauen(f);
       const datei = join(ordner, `${f.nr}.pdf`);
       writeFileSync(datei, bytes);
+      if (process.env.STRESS_MAPPEN)
+        writeFileSync(join(process.env.STRESS_MAPPEN, `${f.nr}.pdf`), bytes);
       zeilen.push({ f, datei, unser: await unserUrteil(bytes) });
     }
     if (PY) {
@@ -174,25 +153,29 @@ describe('Stresstest der Lesehilfe, Fassung 1 (DP76, DP78)', () => {
     expect(offen).toEqual({ S21: 'abgelehnt', S30b: 'passt nicht' });
   });
 
-  it.skipIf(!PY)('leser78 stürzt nie ab und weicht nur aus bekanntem Grund ab', () => {
-    expect(
-      zeilen.filter((z) => z.fremd?.[0] === 'ABSTURZ').map((z) => `${z.f.nr}: ${z.fremd![1]}`),
-    ).toEqual([]);
-    const ohneGrund = zeilen
-      .filter((z) => z.f.soll !== '?' && gez(z.fremd![0]) !== z.f.soll && !abweichung78(z))
-      .map(
-        (z) => `${z.f.nr} soll ${z.f.soll}, leser78 ${z.fremd![0]}: ${z.fremd![1].slice(0, 200)}`,
-      );
-    expect(ohneGrund).toEqual([]);
-    // Wo leser78 richtig „passt nicht“ sagt, nicht nur wegen V6: sonst wäre sein Urteil Zufall.
-    const nurV6 = zeilen
-      .filter((z) => z.f.soll === 'nicht' && z.fremd![0] === 'passt nicht')
-      .filter((z) =>
-        z.fremd![1].split('; ').every((t) => t.endsWith('steht so nicht im Verzeichnis')),
-      )
-      .map((z) => z.f.nr);
-    expect(nurV6, 'leser78 sagt hier nur wegen V6 „passt nicht“').toEqual(NUR_V6);
-  });
+  it.skipIf(!PY)(
+    'leser78 (Fassung 3) stürzt nie ab und urteilt in jedem Fall wie die Seite (PC121)',
+    () => {
+      expect(
+        zeilen.filter((z) => z.fremd?.[0] === 'ABSTURZ').map((z) => `${z.f.nr}: ${z.fremd![1]}`),
+      ).toEqual([]);
+      expect(zeilen.filter((z) => !z.fremd).map((z) => z.f.nr)).toEqual([]);
+      const anders = zeilen
+        .filter((z) => gez(z.fremd![0]) !== gez(z.unser.urteil))
+        .map(
+          (z) =>
+            `${z.f.nr} Seite ${z.unser.urteil}, leser78 ${z.fremd![0]}: ${z.fremd![1].slice(0, 200)}`,
+        );
+      expect(anders).toEqual([]);
+      // Gegenprobe der Ausnahme: Wo leser78 „passt nicht“ sagt, nennt er nie nur die Form der Zeile, wenn die Seite
+      // die Mappe zeigt.
+      expect(
+        zeilen
+          .filter((z) => z.unser.urteil === 'gezeigt' && z.fremd![0] !== 'gezeigt')
+          .map((z) => z.f.nr),
+      ).toEqual([]);
+    },
+  );
 });
 
 describe('Stresstest, Teil F: Telefon nach E222 und Tabelle nach V20', () => {
@@ -229,12 +212,12 @@ describe('Stresstest, Teil F: Telefon nach E222 und Tabelle nach V20', () => {
 
 function tabelle(zeilen: Zeile[]): string {
   const z = [
-    '| Nr. | Fall | soll | Vermieter-Seite | leser78 | Abweichung leser78 | Grund (Seite) |',
+    '| Nr. | Fall | soll | Vermieter-Seite | leser78 | leser78 anders | Grund (Seite) |',
     '|---|---|---|---|---|---|---|',
   ];
   for (const x of zeilen)
     z.push(
-      `| ${x.f.nr} | ${x.f.was.replaceAll('|', '/')} | ${x.f.soll} | ${x.unser.urteil} | ${x.fremd?.[0] ?? '–'} | ${x.fremd && x.f.soll !== '?' && gez(x.fremd[0]) !== x.f.soll ? (abweichung78(x) ?? 'ohne Grund') : ''} | ${x.unser.grund.slice(0, 140).replaceAll('|', '/')} |`,
+      `| ${x.f.nr} | ${x.f.was.replaceAll('|', '/')} | ${x.f.soll} | ${x.unser.urteil} | ${x.fremd?.[0] ?? '–'} | ${x.fremd && gez(x.fremd[0]) !== gez(x.unser.urteil) ? 'anders' : ''} | ${x.unser.grund.slice(0, 140).replaceAll('|', '/')} |`,
     );
   return z.join(ZEILE) + ZEILE;
 }

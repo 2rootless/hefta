@@ -219,10 +219,19 @@ export function hinweise(staende: PersonStand[], e: ExportEinstellungen): Hinwei
   return liste;
 }
 
-/** Straße und Nummer für den Dateinamen: „Beispielstraße 1, 3. OG“ → „Beispielstr1“. */
+/**
+ * Straße und Nummer für den Dateinamen: „Beispielstraße 1, 3. OG“ → „Beispielstr1“. Eine Spanne von
+ * Hausnummern behält ihren Strich (PC120, §8, 5): „Musterweg 7–9“ → „Musterweg7-9“, nicht „Musterweg79“.
+ */
 export function strassenteil(adresse: string): string {
-  const erste = adresse.split(/[,\n]/)[0] ?? '';
-  return namensteil(erste.replace(/stra(ß|ss)e\b/gi, 'str').replace(/\s+/g, '')).replace(/-/g, '');
+  const erste = (adresse.split(/[,\n]/)[0] ?? '').trim();
+  const spanne = /^(.*?)(\d+\s*[a-z]?)\s*[-–—/]\s*(\d+\s*[a-z]?)$/i.exec(erste);
+  const name = spanne ? `${spanne[1]}${spanne[2]}` : erste;
+  const teil = namensteil(name.replace(/stra(ß|ss)e\b/gi, 'str').replace(/\s+/g, '')).replace(
+    /-/g,
+    '',
+  );
+  return spanne ? `${teil}-${namensteil(spanne[3]!.replace(/\s+/g, ''))}` : teil;
 }
 
 /** „Bewerbung_Mustermann_Beispielstr1.pdf“, bei zwei Nachnamen beide mit Bindestrich. */
