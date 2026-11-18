@@ -1,9 +1,7 @@
-// Das Bild einer Lesehilfe `hefta.json` nach Fassung 4 (Beschreibung: README.md und docs/format-hefta-json.md).
-// Fassung 1 bis 3 liest `lesen()` in dasselbe Bild; dann fehlen `vorname`, `nachname` und `fassung`.
+// Das Bild einer Lesehilfe `hefta.json` nach Fassung 1 (E218; Beschreibung: FORMAT.md und README.md).
 
 export type Rolle = 'hauptmieter' | 'mitmieter' | 'buerge';
 export type MitziehendArt = 'kind' | 'erwachsen';
-export type Modus = 'alles' | 'marktueblich' | 'datensparsam' | 'eigene_auswahl';
 export type Schritt = 'besichtigung' | 'will_wohnung' | 'zusage';
 
 /** Wie eine Unterlage in die Mappe übernommen wurde (DP64). Seiten zählen im Original. */
@@ -30,15 +28,15 @@ export interface Unterlage {
 export interface Person {
   /** Der volle Name wie auf dem Deckblatt; gleich `vorname`, Leerzeichen, `nachname`. */
   name: string;
-  /** Ab Fassung 4. */
+  /** Pflicht in Fassung 1. */
   vorname?: string;
-  /** Ab Fassung 4; darf leer sein. */
+  /** Pflicht in Fassung 1; darf leer sein. */
   nachname?: string;
   rolle: Rolle;
   /** Diese Person steht als Kontakt auf dem Deckblatt; höchstens eine. */
   kontakt?: true;
   telefon?: string;
-  /** Dasselbe Telefon international, nur wenn eindeutig (Fassung 4). */
+  /** Dasselbe Telefon international; steht genau dann, wenn `telefon` steht (E222, L78-2). */
   telefon_e164?: string;
   email?: string;
   unterlagen: Unterlage[];
@@ -56,7 +54,7 @@ export interface WohnungTeile {
   plz: string;
   ort: string;
   lage: string;
-  /** Ab Fassung 4: ISO 3166-1, zwei Buchstaben; Hefta schreibt `DE`. */
+  /** ISO 3166-1, zwei Buchstaben; Hefta schreibt `DE`. */
   land?: string;
 }
 
@@ -69,13 +67,13 @@ export interface Wohnung {
 export interface Lesehilfe {
   /** Fassung des Formats. */
   hefta: number;
-  /** Ab Fassung 4 Zeitpunkt mit Zeitzone, davor nur der Tag. */
+  /** Zeitpunkt mit Zeitzone, gleich dem Erstelldatum der PDF (V11). */
   erstellt: string;
-  /** Ab Fassung 4: Nummer der Fassung, wie auf dem Deckblatt. */
-  fassung?: number;
-  seitenzahl?: number;
+  /** Nummer der Fassung der Mappe, wie auf dem Deckblatt (V7). */
+  fassung: number;
+  seitenzahl: number;
   bewerbung: {
-    kennung?: string;
+    kennung: string;
     wohnung: Wohnung | null;
     inserat?: { portal: string };
     einzug?: string;
@@ -84,7 +82,7 @@ export interface Lesehilfe {
     personen: Person[];
     mitziehende: Mitziehend[];
   };
-  modus?: Modus;
+  /** E227: nur mit dem festen Satz auf dem Deckblatt; 2.0 schreibt es nicht. */
   schritt?: Schritt;
   loeschwunsch?: string;
 }

@@ -1,4 +1,7 @@
 <script lang="ts">
+  import TelefonFeld from './TelefonFeld.svelte';
+  import { daten } from '../app/daten.svelte';
+  import { telefonPruefen, type Land } from '../domain/telefon';
   // Selbstauskunft als Akkordeon aus vier Teilen (Entwürfe A1 bis A4): Kontakt, Einkommen, Fragen,
   // Für euren ganzen Haushalt. Fertige Teile zeigen eine Zusammenfassung mit „Ändern“, offene ihren
   // Stand. Bürgen haben keinen Haushaltsteil. Ja/Nein ohne Vorauswahl.
@@ -12,7 +15,6 @@
     betragText,
     emailSiehtGutAus,
     felderFuer,
-    telefonSiehtGutAus,
     teile,
     type JaNein,
     type TeilId,
@@ -71,9 +73,18 @@
   let offen = $state<TeilId | null>(null);
   // Der Hinweis zum Format wartet, bis man das Feld verlassen hat: Beim Tippen stimmt es noch nicht.
   let imFeld = $state<'telefon' | 'email' | null>(null);
-  const telefonHinweis = $derived(
-    imFeld !== 'telefon' && !!eingabe.telefon.trim() && !telefonSiehtGutAus(eingabe.telefon),
+  // DP77, Abschnitt 2: Unter „Oft gewählt“ stehen auch die Länder, die im Haushalt schon gewählt sind.
+  const haushaltLaender = $derived(
+    (daten.ansicht?.mitglieder ?? [])
+      .map((m) => m.person.kontakt.telefonLand)
+      .filter((l): l is string => !!l),
   );
+  // E222 (DP77, TL26): Nachfrage nach W33 nur noch für gültige Sonderrufnummern; alles andere ist ein Fehler im Feld.
+  const sonderNummer = $derived.by(() => {
+    const r = telefonPruefen(eingabe.telefon, eingabe.telefonLand as Land);
+    return r.art === 'gut' && r.ungewoehnlich;
+  });
+  const telefonHinweis = $derived(imFeld !== 'telefon' && sonderNummer);
   const emailHinweis = $derived(
     imFeld !== 'email' && !!eingabe.email.trim() && !emailSiehtGutAus(eingabe.email),
   );
@@ -113,7 +124,7 @@
   // Zweifel am Format im Kontakt (Rückmeldung 12.11.: „E-Mail warnt nicht“): Der Knopf „Weiter“ und die
   // Taste im letzten Feld schlossen den Teil, bevor der Hinweis erscheinen konnte. Jetzt zeigt der erste
   // Schritt weiter den Hinweis, der zweite geht weiter („Du kannst es trotzdem so lassen“).
-  const zweifelTelefon = $derived(!!eingabe.telefon.trim() && !telefonSiehtGutAus(eingabe.telefon));
+  const zweifelTelefon = $derived(sonderNummer);
   const zweifelEmail = $derived(!!eingabe.email.trim() && !emailSiehtGutAus(eingabe.email));
   const zweifelKontakt = $derived(zweifelTelefon || zweifelEmail);
   let gewarntBei = $state<string | null>(null);
@@ -140,7 +151,12 @@
       if (e.key !== 'Enter') return;
       e.preventDefault();
       const feld = e.currentTarget as HTMLInputElement;
-      const felder = [...(feld.closest('section')?.querySelectorAll('input') ?? [])];
+      // Die Suche im Blatt „Land der Nummer“ liegt im Teil, gehört aber nicht zur Reihe der Felder.
+      const felder = [
+        ...(feld
+          .closest('section')
+          ?.querySelectorAll<HTMLInputElement>('input:not(dialog input)') ?? []),
+      ];
       const danach = felder[felder.indexOf(feld) + 1];
       if (danach) danach.focus();
       else
@@ -433,19 +449,16 @@
         </h3>
 
         {#if teil.id === 'kontakt'}
-          <label class="eingabe">
-            {t('selbstauskunft.telefon')}
-            <input
-              data-feld="telefon"
-              bind:value={eingabe.telefon}
-              type="tel"
-              autocomplete="tel"
-              inputmode="tel"
-              onfocus={() => (imFeld = 'telefon')}
-              onblur={() => (imFeld = null)}
-              {...weiterTaste(teil.id)}
-            />
-          </label>
+          <!-- E222, DP77: Telefon mit Land; Gruppen und Fehler erst beim Verlassen. -->
+          <TelefonFeld
+            bind:wert={eingabe.telefon}
+            bind:land={eingabe.telefonLand}
+            {allein}
+            gewaehlte={haushaltLaender}
+            feld={{ 'data-feld': 'telefon', ...weiterTaste(teil.id) }}
+            onfocus={() => (imFeld = 'telefon')}
+            onblur={() => (imFeld = null)}
+          />
           {#if telefonHinweis}<p class="format" role="status">
               {t('selbstauskunft.telefonHinweis')}
             </p>{/if}

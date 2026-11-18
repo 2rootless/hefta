@@ -29,6 +29,7 @@
   import { einstellungenAendern } from '../storage/speicher';
   import { stillLaden } from '../app/daten.svelte';
   import SchalterZeile from '../ui/SchalterZeile.svelte';
+  import MitUmbruch from '../ui/MitUmbruch.svelte';
 
   const meldung = einstellungenZustand.meldung;
   einstellungenZustand.meldung = '';
@@ -301,7 +302,7 @@
           <span class="tx"
             ><b>{mehrVor}</b><span
               ><a class="adresse" href={rueckmeldungLink(t('einstellungen.rueckmeldungBetreff'))}
-                >{RUECKMELDUNG_ADRESSE.replace('@', '@​')}</a
+                ><MitUmbruch text={RUECKMELDUNG_ADRESSE} nach="@" /></a
               >{mehrNach}</span
             ></span
           >

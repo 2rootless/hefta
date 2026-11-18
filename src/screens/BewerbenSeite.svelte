@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { telefonFuerMappe } from '../domain/telefon';
   import { zurueckZumHeft } from '../domain/heftKarte';
   // Bewerben in einer Minute (Zeile 8, B23 `s=bewerben`, B12a, Planung 11i): Weg wählen (Portal, Mail,
   // Website), dann vier Schritte als Angebot: Anschreiben, was das Inserat wissen will, Mappe, Abschicken.
@@ -115,7 +116,7 @@
         text: vorschlag.text,
         angaben,
         name: person ? `${person.vorname} ${person.nachname}`.trim() : '',
-        telefon: person?.kontakt.telefon ?? '',
+        telefon: (person && telefonFuerMappe(person.kontakt)?.anzeige) ?? '',
         mail: person?.kontakt.email ?? '',
       }),
   );

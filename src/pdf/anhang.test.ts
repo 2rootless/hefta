@@ -3,7 +3,9 @@ import Ajv from 'ajv';
 import { describe, expect, it } from 'vitest';
 import katalog from '../../data/regelkatalog.de.json';
 import schema from '../../pakete/hefta-json/schema.json';
-import { passt, TYPEN } from '../../pakete/hefta-json/src/index';
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { pruefen, TYPEN, type Mappe } from '../../pakete/hefta-json/src/index';
+import { papierLesen } from '../vermieter/papier';
 import { BITTE_MAX, BITTE_VORSCHLAG } from '../domain/export';
 import { pdfSchriften, textJeSeite, testJpeg } from '../test/hilfen';
 import {
@@ -17,8 +19,9 @@ import {
 } from './anhang';
 import { bewerbungBauen, type BewerbungAuftrag, type MappenPerson } from './bewerbung';
 
-// Lesehilfe hefta.json, Fassung 4 (PC98 bis PC100, E205 bis E207), am echten PDF: Jede Lesehilfe, die Hefta baut,
-// besteht das Schema, passt zur eigenen Mappe (passt() aus dem Paket hefta-json) und hält Regel 1 ein.
+// Lesehilfe hefta.json, Fassung 1 (E218, E222, E223, E227), am echten PDF: Jede Lesehilfe, die Hefta baut, besteht
+// das Schema und passt zur eigenen Mappe, Punkte 1 bis 7 mit dem Papier, so wie die Vermieter-Seite es liest
+// (`papierLesen()` mit PDF.js, `pruefen()` aus dem Paket hefta-json).
 
 const schemaPruefen = new Ajv({ allErrors: true }).compile(schema);
 const DATUM = new Date(2026, 10, 4, 18, 30, 15);
@@ -62,7 +65,11 @@ async function auftrag(teil: Partial<BewerbungAuftrag> = {}): Promise<BewerbungA
     lesehilfeWerte: { portal: 'ImmoScout24', einzug: '2027-01-01', fassung: 2 },
     mitziehende: [{ text: 'Ein Kind', anzahl: 1, art: 'kind' }],
     kontakt: ['Max Mustermann', '0171 3920001', 'max@example.com'],
-    kontaktwege: { telefon: '0171 3920001', email: 'max@example.com' },
+    kontaktwege: {
+      telefon: '0171 3920001',
+      telefonE164: '+491713920001',
+      email: 'max@example.com',
+    },
     bloecke: [
       {
         person: MAX,
@@ -121,13 +128,31 @@ async function gebaut(teil: Partial<BewerbungAuftrag> = {}) {
   const a = (await anhangAus(e.bytes))!;
   const pdf = await PDFDocument.load(e.bytes, { updateMetadata: false });
   const [seite1] = await textJeSeite(e.bytes);
-  return { e, a, seiten: pdf.getPageCount(), seite1: seite1!, erstellt: pdf.getCreationDate() };
+  return {
+    e,
+    a,
+    seiten: pdf.getPageCount(),
+    seite1: seite1!,
+    erstellt: pdf.getCreationDate(),
+    mappe: await mappeAus(e.bytes, a),
+  };
 }
 
-describe('Lesehilfe hefta.json, Fassung 4', () => {
+/** Die Mappe, wie die Vermieter-Seite sie sieht: Seitenzahl und Papier aus PDF.js. */
+async function mappeAus(bytes: Uint8Array, a: HeftaAnhang): Promise<Mappe> {
+  const aufgabe = pdfjs.getDocument({ data: bytes.slice(), verbosity: 0 });
+  const dok = await aufgabe.promise;
+  try {
+    return { ...(await papierLesen(dok, a)), seiten: dok.numPages };
+  } finally {
+    await aufgabe.destroy();
+  }
+}
+
+describe('Lesehilfe hefta.json, Fassung 1', () => {
   it('beschreibt die Mappe: Personen mit ihren Unterlagen, Kontakt bei der Person, Fassung, Einzug, Portal', async () => {
     const { a, e, seiten, erstellt } = await gebaut();
-    expect(a.hefta).toBe(4);
+    expect(a.hefta).toBe(1);
     expect(a.erstellt).toBe(zeitpunktAus(DATUM));
     // Der Zeitpunkt ist das Erstelldatum in den Eigenschaften der PDF (Regel 1, E207).
     expect(new Date(a.erstellt).getTime()).toBe(erstellt!.getTime());
@@ -186,7 +211,9 @@ describe('Lesehilfe hefta.json, Fassung 4', () => {
     expect(a.haushalt.mitziehende).toEqual([{ text: 'Ein Kind', anzahl: 1, art: 'kind' }]);
     expect('kontakt' in a.haushalt).toBe(false);
     expect('unterlagen' in a).toBe(false);
-    expect(a.modus).toBe('marktueblich');
+    // V23: kein `modus`; E227: kein `schritt`.
+    expect('modus' in a).toBe(false);
+    expect('schritt' in a).toBe(false);
     expect(a.loeschwunsch).toBe(BITTE_VORSCHLAG);
     // Die Seiten stimmen mit dem Inhalt überein.
     expect(e.inhalt[0]!.teile.map((t) => [t.seite, t.bis])).toEqual([
@@ -196,12 +223,23 @@ describe('Lesehilfe hefta.json, Fassung 4', () => {
     ]);
   });
 
-  it('besteht das Schema und passt zur eigenen Mappe (passt() aus dem Paket)', async () => {
-    const { a, seiten, seite1 } = await gebaut();
+  it('besteht das Schema und passt zur eigenen Mappe, Punkte 1 bis 7 mit dem Papier', async () => {
+    const { a, mappe } = await gebaut();
     expect(schemaPruefen(a), JSON.stringify(schemaPruefen.errors)).toBe(true);
-    expect(passt(a, { seiten, textSeite1: seite1 })).toBe(true);
-    // Gegenprobe: dieselbe Lesehilfe passt nicht zu einer Mappe mit einer Seite mehr.
-    expect(passt(a, { seiten: seiten + 1, textSeite1: seite1 })).toBe(false);
+    expect(pruefen(a, mappe)).toEqual([]);
+    // Gegenproben: eine Seite mehr; das Deckblatt ohne Max.
+    expect(pruefen(a, { ...mappe, seiten: mappe.seiten + 1 })).not.toEqual([]);
+    const ohneMax = mappe.text.replaceAll('Max Mustermann', 'Erika Fremd');
+    expect(pruefen(a, { ...mappe, seite1: ohneMax, text: ohneMax })).not.toEqual([]);
+  });
+
+  it('V8: ohne Kopf- und Fußzeile trägt das Deckblatt „Seite 1 von N“, die Mappe passt; ohne Lesehilfe kein Fuß', async () => {
+    const { a, mappe, seite1 } = await gebaut({ fusszeile: false });
+    expect(seite1.replace(/\s+/g, ' ')).toContain(`Seite 1 von ${mappe.seiten}`);
+    expect(pruefen(a, mappe)).toEqual([]);
+    // Gegenprobe: Ohne Hinweis gibt es keine Lesehilfe und auf dem Deckblatt keinen Fuß.
+    const ohne = await bewerbungBauen(await auftrag({ fusszeile: false, hinweis: false }));
+    expect((await textJeSeite(ohne.bytes))[0]).not.toMatch(/Seite 1 von/);
   });
 
   it('Regel 1: Jeder Text der Lesehilfe steht auf dem Deckblatt, auch Vor- und Nachname und das Portal', async () => {
@@ -233,11 +271,11 @@ describe('Lesehilfe hefta.json, Fassung 4', () => {
     expect(seite1).not.toContain('张');
   });
 
-  it('Kontakt: nur, was auf dem Deckblatt steht; E.164 nur, wenn eindeutig', async () => {
+  it('Kontakt: nur, was auf dem Deckblatt steht; Telefon nur in fester Form mit telefon_e164 (E222)', async () => {
     const nurTelefon = (
       await gebaut({
         kontakt: ['Max Mustermann', '0171 3920005'],
-        kontaktwege: { telefon: '0171 3920005' },
+        kontaktwege: { telefon: '0171 3920005', telefonE164: '+491713920005' },
       })
     ).a.haushalt.personen[0]!;
     expect(nurTelefon).toMatchObject({
@@ -249,7 +287,8 @@ describe('Lesehilfe hefta.json, Fassung 4', () => {
     const ohneVorwahl = (
       await gebaut({ kontakt: ['Max Mustermann', '3920001'], kontaktwege: { telefon: '3920001' } })
     ).a.haushalt.personen[0]!;
-    expect(ohneVorwahl.telefon).toBe('3920001');
+    // Ohne Vorwahl ist die Nummer nicht eindeutig: Die Lesehilfe nennt sie gar nicht, das Deckblatt schon.
+    expect('telefon' in ohneVorwahl).toBe(false);
     expect('telefon_e164' in ohneVorwahl).toBe(false);
     const ohne = (await gebaut({ kontakt: ['Max Mustermann'], kontaktwege: undefined })).a;
     expect(ohne.haushalt.personen[0]!.kontakt).toBe(true);
@@ -277,15 +316,15 @@ describe('Lesehilfe hefta.json, Fassung 4', () => {
       },
       teile: [{ ...q }],
     }));
-    const { a, seiten, seite1 } = await gebaut({ bloecke, kontakt: [], kontaktwege: undefined });
+    const { a, mappe } = await gebaut({ bloecke, kontakt: [], kontaktwege: undefined });
     expect(a.haushalt.personen.map((p) => [p.vorname, p.nachname, p.name])).toEqual(
       faelle.map(([v, n]) => [v, n, `${v} ${n}`.trim()]),
     );
     expect(schemaPruefen(a), JSON.stringify(schemaPruefen.errors)).toBe(true);
-    expect(passt(a, { seiten, textSeite1: seite1 })).toBe(true);
+    expect(pruefen(a, mappe)).toEqual([]);
   });
 
-  it('Datensparsam nennt den Schritt; ohne Bitte und ohne Wohnung fehlen die Felder', async () => {
+  it('E227: auch mit Schritt im Auftrag kein schritt; ohne Bitte und ohne Wohnung fehlen die Felder', async () => {
     const { a } = await gebaut({
       modus: 'datensparsam',
       schritt: 'besichtigung',
@@ -293,7 +332,7 @@ describe('Lesehilfe hefta.json, Fassung 4', () => {
       adresse: [],
       lesehilfeWerte: { fassung: 1 },
     });
-    expect(a.schritt).toBe('besichtigung');
+    expect('schritt' in a).toBe(false);
     expect('loeschwunsch' in a).toBe(false);
     expect(a.bewerbung.wohnung).toBeNull();
     expect('inserat' in a.bewerbung).toBe(false);
@@ -340,6 +379,7 @@ describe('Lesehilfe hefta.json, Fassung 4', () => {
       mitziehende: [],
       unterlagen: [{ person: 0, typ: 'selbstauskunft', von: 2, bis: 2 }],
       seitenzahl: 2,
+      kennung: '3b7c2f1e-8d4a-4c6b-9e2f-1a5d7c9b0e42',
     });
     expect(a.bewerbung.wohnung).toBeNull();
     expect(a.haushalt.personen[0]!.rolle).toBe('hauptmieter');

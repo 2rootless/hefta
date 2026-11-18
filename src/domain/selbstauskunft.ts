@@ -1,4 +1,5 @@
 import katalogDaten from '../../data/regelkatalog.de.json' with { type: 'json' };
+import { telefonFuerMappe } from './telefon';
 import type { AusbildungArt, Haushalt, Lebenssituation, Person, Rolle } from './modell';
 import { nameImPdf, nameText } from './namen';
 
@@ -196,7 +197,9 @@ export function fehlendeAngaben(
   const sa = selbstauskunftVon(person);
   const fehlt: string[] = [];
   for (const f of felderFuer(rolle, person.lebenssituation)) {
-    if (f.id === 'kontakt' && !person.kontakt.telefon.trim() && !person.kontakt.email.trim())
+    // E222 (DP77, Abschnitt 5): „Eine Angabe reicht“. Eine Nummer, die sich nicht umsetzen lässt, zählt dabei nicht;
+    // sie ist ein eigener offener Punkt im Überblick, und nur sie fehlt in der Mappe, nicht die Selbstauskunft.
+    if (f.id === 'kontakt' && !telefonFuerMappe(person.kontakt) && !person.kontakt.email.trim())
       fehlt.push(f.id);
     if (f.id === 'nettoeinkommen' && !(person.nettoeinkommen && person.nettoeinkommen > 0))
       fehlt.push(f.id);
@@ -343,7 +346,9 @@ export function selbstauskunftBloecke(
         text(
           'kontakt',
           feld('kontakt').pdfText,
-          [person.kontakt.telefon.trim(), person.kontakt.email.trim()].filter(Boolean).join(' · '),
+          [telefonFuerMappe(person.kontakt)?.anzeige ?? '', person.kontakt.email.trim()]
+            .filter(Boolean)
+            .join(' · '),
         ),
         beruf || !taetigkeit
           ? text('beruf', namen.beruf, beruf)
@@ -444,7 +449,7 @@ export function angabenZumUebertragen(
         : '';
   const zeilen = [
     { etikett: 'Name', wert: nameText(nameImPdf(person)) },
-    { etikett: 'Telefon', wert: person.kontakt.telefon.trim() },
+    { etikett: 'Telefon', wert: telefonFuerMappe(person.kontakt)?.anzeige ?? '' },
     { etikett: 'E-Mail', wert: person.kontakt.email.trim() },
     { etikett: namen.beruf, wert: person.beruf.trim() },
     { etikett: namen.arbeitgeber, wert: person.arbeitgeber.trim() },

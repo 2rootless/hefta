@@ -169,7 +169,12 @@ describe('Stand einer Person', () => {
     const doks = ['selbstauskunft', 'gehaltsnachweis', 'bonitaet'].map((t) => dokument(t));
     const versionen = doks.flatMap((d) => version(d.id, 3));
     const ausgefuellt = person({
-      kontakt: { telefon: '0171 3920001', email: '' },
+      kontakt: {
+        telefon: '0171 3920001',
+        telefonLand: 'DE',
+        telefonE164: '+491713920001',
+        email: '',
+      },
       nettoeinkommen: 2800,
       selbstauskunft: {
         ...leereSelbstauskunft(),

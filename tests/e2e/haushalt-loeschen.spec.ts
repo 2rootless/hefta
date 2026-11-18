@@ -71,7 +71,7 @@ test('„Haushalt löschen“: erst nach dem Blatt, Hefte bleiben, Hinweis führ
   await expect(page.getByText('Lindenring 3').first()).toBeVisible();
 });
 
-test('Nachname fehlt: eigener Punkt im Kasten, führt zum Ändern und zurück zur Mappe', async ({
+test('Nachname offen (DP74 C3): eigener Punkt im Kasten, führt zum Ändern und zurück zur Mappe', async ({
   page,
 }) => {
   await erstePerson(page, { vorname: 'Max', nachname: '', bezeichnung: 'Hauptmieter' });
@@ -83,14 +83,14 @@ test('Nachname fehlt: eigener Punkt im Kasten, führt zum Ändern und zurück zu
   await appHinweisNochmal(page);
   await page.getByRole('button', { name: 'Später', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Eure Mappe' })).toBeVisible();
-  const punkt = page.getByRole('link', { name: /Nachname von Max fehlt/ });
+  const punkt = page.getByRole('link', { name: /^Nachname von Max / });
   await expect(punkt).toBeVisible();
-  await expect(page.getByRole('link', { name: /Nachname von Lea fehlt/ })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /^Nachname von Lea / })).toHaveCount(0);
   await punkt.click();
-  await page.getByLabel('Nachname').fill('Muster');
+  await page.getByLabel('Nachname', { exact: true }).fill('Muster');
   await page.getByRole('button', { name: 'Speichern', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Eure Mappe' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Nachname von Max fehlt/ })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /^Nachname von Max / })).toHaveCount(0);
 });
 
 test('Schwelle oben (13.11.): frisch angelegt höchstens drei Aufgaben, der Rest unten', async ({

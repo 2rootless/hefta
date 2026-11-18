@@ -1,20 +1,26 @@
 import Ajv from 'ajv';
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { deckblattZeilen, musterMappe } from '../test/deckblatt.js';
 import {
   lesen,
+  lesenMitGrund,
   MITZIEHENDE,
   passt,
+  pruefen,
   ROLLEN,
-  telefonE164,
+  SCHRITT_SATZ,
+  telefonPasst,
   typText,
   UNBEKANNT,
   VERZEICHNIS,
   type Lesehilfe,
+  type Mappe,
 } from './index.js';
 
-// Das Paket hefta-json (PC98 bis PC100, E205 bis E207): Beispiele gegen Schema und Prüfung, Gegenproben, Lesen von
-// Fassung 1 bis 3, Telefonregel. Die Beispiele sind dieselben, die im Paket liegen.
+// Das Paket hefta-json in Fassung 1 (E216 bis E218, E222, E223, E227): Beispiele gegen Schema, lesen() und passt()
+// mit ihrem Deckblatt, Gegenproben, Satz zum Schritt, Telefon. Die Beispiele sind dieselben, die im Paket liegen.
+// Den ganzen Stresskatalog (DP76, DP78) prüft stress.test.ts gegen den fremden Leser.
 
 const ORDNER = new URL('../beispiele/', import.meta.url);
 const schema = JSON.parse(
@@ -26,48 +32,50 @@ const beispiele = readdirSync(ORDNER)
   .sort()
   .map((n) => [n, readFileSync(new URL(n, ORDNER), 'utf8')] as const);
 
-/** Seite 1 so, wie ein PDF-Leser sie liefern könnte: alle Namen, Straße und Kontaktdaten, umbrochen. */
-function seite1(l: Lesehilfe): string {
-  const teile = [l.bewerbung.wohnung?.strasse ?? '', l.bewerbung.wohnung?.rest ?? ''];
-  for (const p of l.haushalt.personen) teile.push(p.name, p.telefon ?? '', p.email ?? '');
-  return teile.join('\n');
-}
-const mappe = (l: Lesehilfe) => ({ seiten: l.seitenzahl ?? 0, textSeite1: seite1(l) });
 const kopie = (l: Lesehilfe): Lesehilfe => JSON.parse(JSON.stringify(l)) as Lesehilfe;
+/** Wie ein Leser urteilt: erst streng lesen, dann gegen das Papier prüfen. */
+const gezeigt = (l: unknown, mappe: Mappe): boolean => {
+  const x = lesen(JSON.stringify(l));
+  return x !== null && passt(x, mappe);
+};
 
 describe('hefta-json: die Beispiele', () => {
-  it('gibt es fünf, und jedes besteht Schema, lesen() und passt()', () => {
+  it('gibt es fünf, und jedes besteht Schema, lesen() und passt() mit seinem Deckblatt', () => {
     expect(beispiele.map(([n]) => n)).toHaveLength(5);
     for (const [name, text] of beispiele) {
       expect(
         schemaPruefen(JSON.parse(text)),
         `${name}: ${JSON.stringify(schemaPruefen.errors)}`,
       ).toBe(true);
-      const l = lesen(text);
-      expect(l, name).not.toBeNull();
-      expect(passt(l!, mappe(l!)), name).toBe(true);
+      const g = lesenMitGrund(text);
+      expect(g.grund, name).toBeNull();
+      expect(pruefen(g.lesehilfe!, musterMappe(g.lesehilfe!)), name).toEqual([]);
+      expect(JSON.parse(text).hefta, name).toBe(1);
+      expect('modus' in JSON.parse(text), name).toBe(false);
     }
   });
 
-  it('Fassung 5 und ein anderes Land bleiben gültig (PC100)', () => {
+  it('eine neuere Fassung (2) wird gelesen (E218); ein anderes Land erfüllt das Schema, passt aber nicht (V19)', () => {
     const l = lesen(beispiele[1]![1])!;
-    const neu = { ...kopie(l), hefta: 5 };
+    const neu = { ...kopie(l), hefta: 2 };
     expect(schemaPruefen(neu)).toBe(true);
-    expect(passt(neu, mappe(neu))).toBe(true);
+    expect(gezeigt(neu, musterMappe(l))).toBe(true);
     const at = kopie(l);
     at.bewerbung.wohnung!.teile!.land = 'AT';
     expect(schemaPruefen(at)).toBe(true);
-    expect(passt(at, mappe(at))).toBe(true);
+    // V19: Leser rechnen `teile` aus `strasse` und `rest` nach, mit `land` „DE“; Hefta schreibt nur Deutschland.
+    expect(gezeigt(at, musterMappe(at))).toBe(false);
   });
 });
 
-describe('hefta-json: Gegenproben, jede passt nicht', () => {
+describe('hefta-json: Gegenproben, jede wird nicht gezeigt', () => {
   const basis = () => kopie(lesen(beispiele[1]![1])!);
+  type P = Lesehilfe['haushalt']['personen'][0];
   const faelle: [string, (l: Lesehilfe) => void, { schema?: boolean }?][] = [
-    ['Fassung 3 mit Feldern von 4', (l) => (l.hefta = 3)],
+    ['Fassung 0', (l) => (l.hefta = 0)],
     ['erstellt nur als Tag', (l) => (l.erstellt = '2026-11-18')],
     ['Seitenzahl stimmt nicht', (l) => (l.seitenzahl = 17), { schema: false }],
-    ['Fassung fehlt', (l) => delete l.fassung],
+    ['Fassung fehlt', (l) => delete (l as Partial<Lesehilfe>).fassung],
     [
       'Name passt nicht zu Vor- und Nachname',
       (l) => (l.haushalt.personen[1]!.name = 'Lea M.'),
@@ -75,7 +83,11 @@ describe('hefta-json: Gegenproben, jede passt nicht', () => {
     ],
     [
       'Name nicht auf Seite 1',
-      (l) => (l.haushalt.personen[1]!.name = 'Lea Fremd'),
+      (l) => {
+        const p = l.haushalt.personen[1]!;
+        p.name = 'Lea Fremd';
+        p.nachname = 'Fremd';
+      },
       { schema: false },
     ],
     [
@@ -91,11 +103,26 @@ describe('hefta-json: Gegenproben, jede passt nicht', () => {
     ['zwei Kontaktpersonen', (l) => (l.haushalt.personen[1]!.kontakt = true), { schema: false }],
     [
       'Telefon bei einer Person ohne Kontakt',
-      (l) => (l.haushalt.personen[1]!.telefon = '0171 3920001'),
+      (l) => {
+        const p = l.haushalt.personen[1]!;
+        p.telefon = '0171 3920001';
+        p.telefon_e164 = '+491713920001';
+      },
+    ],
+    ['Telefon ohne telefon_e164 (E222)', (l) => delete l.haushalt.personen[0]!.telefon_e164],
+    ['telefon_e164 ohne Telefon (E222)', (l) => delete l.haushalt.personen[0]!.telefon],
+    [
+      'telefon_e164 nicht dieselbe Nummer',
+      (l) => (l.haushalt.personen[0]!.telefon_e164 = '+491713920009'),
+      { schema: false },
     ],
     [
-      'E.164 falsch abgeleitet',
-      (l) => (l.haushalt.personen[0]!.telefon_e164 = '+4901713920001'),
+      'Telefon nicht in fester Form (+49 (0)…)',
+      (l) => {
+        const p = l.haushalt.personen[0]!;
+        p.telefon = '+49 (0)171 3920001';
+        p.telefon_e164 = '+491713920001';
+      },
       { schema: false },
     ],
     ['Land mit drei Buchstaben', (l) => (l.bewerbung.wohnung!.teile!.land = 'DEU')],
@@ -104,13 +131,12 @@ describe('hefta-json: Gegenproben, jede passt nicht', () => {
       'weggelassene Seiten ohne Seitenzahlen',
       (l) => delete l.haushalt.personen[0]!.unterlagen[2]!.vermerke![0]!.seiten_original,
     ],
-    ['Schritt ohne datensparsam', (l) => (l.schritt = 'zusage'), { schema: false }],
     [
-      'Rolle keine Kennung',
-      (l) =>
-        (l.haushalt.personen[1]!.rolle =
-          'Mit Mieter' as Lesehilfe['haushalt']['personen'][0]['rolle']),
+      'Schritt ohne seinen Satz auf dem Deckblatt (E227)',
+      (l) => (l.schritt = 'zusage'),
+      { schema: false },
     ],
+    ['Rolle keine Kennung', (l) => (l.haushalt.personen[1]!.rolle = 'Mit Mieter' as P['rolle'])],
     ['zwei Hauptmieter', (l) => (l.haushalt.personen[1]!.rolle = 'hauptmieter'), { schema: false }],
     ['Bürgin vor jemandem im Mietvertrag', (l) => l.haushalt.personen.reverse(), { schema: false }],
     [
@@ -127,16 +153,71 @@ describe('hefta-json: Gegenproben, jede passt nicht', () => {
       },
     ],
     ['Kennung keine UUID', (l) => (l.bewerbung.kennung = 'abc')],
+    [
+      'Mitziehende nicht in fester Form (V22)',
+      (l) => (l.haushalt.mitziehende[0]!.text = 'Unser Sohn'),
+      { schema: false },
+    ],
+    [
+      'Monat 13',
+      (l) => (l.haushalt.personen[0]!.unterlagen[1]!.monate![0] = '2026-13'),
+      { schema: false },
+    ],
   ];
   for (const [name, aendern, o] of faelle)
     it(name, () => {
+      const papier = musterMappe(basis());
+      expect(gezeigt(basis(), papier)).toBe(true);
       const l = basis();
-      const seite = seite1(basis());
       aendern(l);
-      expect(passt(l, { seiten: 16, textSeite1: seite })).toBe(false);
+      expect(gezeigt(l, papier)).toBe(false);
       // Was das Schema allein erkennt, fällt dort auch auf.
       if (o?.schema !== false) expect(schemaPruefen(l)).toBe(false);
     });
+});
+
+describe('hefta-json: Satz zum Schritt (E227, L78-3, L78-4)', () => {
+  it('Beispiel 3 trägt schritt „zusage“ und seinen Satz; ohne den Satz wird es nicht gezeigt', () => {
+    const l = lesen(beispiele[2]![1])!;
+    expect(l.schritt).toBe('zusage');
+    const zeilen = deckblattZeilen(l);
+    expect(zeilen).toContain(SCHRITT_SATZ.zusage);
+    expect(gezeigt(l, musterMappe(l))).toBe(true);
+    expect(
+      gezeigt(
+        l,
+        musterMappe(
+          l,
+          zeilen.filter((z) => z !== SCHRITT_SATZ.zusage),
+        ),
+      ),
+    ).toBe(false);
+  });
+
+  it('der Satz steht unter dem Satz zum Haushalt und vor „Im Mietvertrag“', () => {
+    const z = deckblattZeilen(lesen(beispiele[2]![1])!);
+    const i = z.indexOf(SCHRITT_SATZ.zusage!);
+    expect(z[i - 1]).toBe('Ein Haushalt bewirbt sich.');
+    expect(z[i + 1]).toBe('Im Mietvertrag');
+  });
+
+  it('ein Satz auf dem Deckblatt ohne schritt in der Lesehilfe passt nicht, ein fremder Satz auch nicht', () => {
+    const l = lesen(beispiele[1]![1])!;
+    const mitSatz = (satz: string) => {
+      const z = deckblattZeilen(l);
+      z.splice(z.indexOf('Im Mietvertrag'), 0, satz);
+      return musterMappe(l, z);
+    };
+    for (const satz of Object.values(SCHRITT_SATZ))
+      expect(gezeigt(l, mitSatz(satz)), satz).toBe(false);
+    const zusage = { ...kopie(l), schritt: 'zusage' as const };
+    expect(gezeigt(zusage, mitSatz(SCHRITT_SATZ.zusage!))).toBe(true);
+    expect(gezeigt(zusage, mitSatz(SCHRITT_SATZ.besichtigung!))).toBe(false);
+  });
+
+  it('es gibt genau drei feste Sätze, je Schritt einen', () => {
+    expect(Object.keys(SCHRITT_SATZ).sort()).toEqual(['besichtigung', 'will_wohnung', 'zusage']);
+  });
 });
 
 describe('hefta-json: offene Listen (U1, PC101)', () => {
@@ -146,7 +227,7 @@ describe('hefta-json: offene Listen (U1, PC101)', () => {
     l.haushalt.personen[1]!.rolle = 'untermieter' as Lesehilfe['haushalt']['personen'][0]['rolle'];
     l.haushalt.mitziehende[0]!.art = 'pflegekind' as Lesehilfe['haushalt']['mitziehende'][0]['art'];
     expect(schemaPruefen(l)).toBe(true);
-    expect(passt(l, mappe(l))).toBe(true);
+    expect(gezeigt(l, musterMappe(l))).toBe(true);
     const zeige = (rolle: string) => (rolle in ROLLEN ? rolle : UNBEKANNT.rolle);
     expect(zeige(l.haushalt.personen[1]!.rolle)).toBe('Person');
     expect(l.haushalt.mitziehende[0]!.art in MITZIEHENDE ? 'bekannt' : UNBEKANNT.mitziehend).toBe(
@@ -157,7 +238,7 @@ describe('hefta-json: offene Listen (U1, PC101)', () => {
   it('Nachname leer: Name gleich Vorname (U2); BOM wird überlesen (U10)', () => {
     const l = lesen(beispiele[4]![1])!;
     expect(l.haushalt.personen[1]).toMatchObject({ name: 'Aylin', vorname: 'Aylin', nachname: '' });
-    expect(passt(l, mappe(l))).toBe(true);
+    expect(passt(l, musterMappe(l))).toBe(true);
     expect(lesen(String.fromCharCode(0xfeff) + beispiele[0]![1])).toEqual(lesen(beispiele[0]![1]));
     expect(
       lesen(new Uint8Array([0xef, 0xbb, 0xbf, ...new TextEncoder().encode(beispiele[0]![1])])),
@@ -170,103 +251,64 @@ describe('hefta-json: offene Listen (U1, PC101)', () => {
 });
 
 describe('hefta-json: lesen()', () => {
-  // Die Lesehilfe der Beispiel-Mappe auf hefta.de, Fassung 3 (gekürzt um zwei Unterlagen).
-  const fassung3 = {
-    hefta: 3,
-    erstellt: '2026-11-06',
-    bewerbung: {
-      kennung: 'd2e0f734-0b59-41ea-95f4-c9715acbe034',
-      wohnung: { strasse: 'Lindenring 3', rest: 'Erdgeschoss, 20259 Hamburg' },
-    },
-    haushalt: {
-      personen: [
-        { name: 'Max Mustermann', rolle: 'hauptmieter', kontakt: true },
-        { name: 'Lea Mustermann', rolle: 'mitmieter' },
-      ],
-      mitziehende: [{ text: 'Ein Kind', anzahl: 1, art: 'kind' }],
-      kontakt: { telefon: '0171 3920001', email: 'max.mustermann@example.com' },
-    },
-    unterlagen: [
-      { person: 0, typ: 'selbstauskunft', seiten: [2, 2] },
-      {
-        person: 0,
-        typ: 'gehaltsnachweis',
-        seiten: [3, 5],
-        monate: ['2026-08', '2026-09', '2026-10'],
-      },
-      { person: 1, typ: 'selbstauskunft', seiten: [6, 6] },
-    ],
-    seitenzahl: 6,
-    modus: 'marktueblich',
-  };
-
-  it('überträgt Fassung 3 in das Bild von Fassung 4', () => {
-    const l = lesen(JSON.stringify(fassung3))!;
-    expect(l.hefta).toBe(3);
-    expect(l.haushalt.personen[0]).toEqual({
-      name: 'Max Mustermann',
-      rolle: 'hauptmieter',
-      kontakt: true,
-      telefon: '0171 3920001',
-      email: 'max.mustermann@example.com',
-      unterlagen: [
-        { typ: 'selbstauskunft', seiten_mappe: { von: 2, bis: 2 } },
-        {
-          typ: 'gehaltsnachweis',
-          seiten_mappe: { von: 3, bis: 5 },
-          monate: ['2026-08', '2026-09', '2026-10'],
-        },
-      ],
-    });
-    expect(l.haushalt.personen[1]!.unterlagen).toEqual([
-      { typ: 'selbstauskunft', seiten_mappe: { von: 6, bis: 6 } },
-    ]);
-    expect('kontakt' in l.haushalt).toBe(false);
-    expect('unterlagen' in l).toBe(false);
-    expect(passt(l, mappe(l))).toBe(true);
-  });
-
-  it('nimmt Bytes und überliest Unbekanntes; ergibt null für alles, was keine Lesehilfe ist, und wirft nie', () => {
+  it('nimmt Bytes und überliest x_-Felder; ergibt null für alles, was keine Lesehilfe ist, und wirft nie', () => {
     const text = beispiele[0]![1];
     expect(lesen(new TextEncoder().encode(text))).toEqual(lesen(text));
-    expect(lesen(text.replace('"hefta": 4,', '"hefta": 4, "x_fremd": 1,'))).not.toBeNull();
+    expect(lesen(text.replace('"hefta": 1,', '"hefta": 1, "x_fremd": 1,'))).not.toBeNull();
     for (const kaputt of [
       '',
       'null',
       '[]',
       '{}',
-      '{"hefta":"4"}',
+      '{"hefta":"1"}',
       '{"hefta":0,"haushalt":{"personen":[]}}',
       '{',
-      '\u0000',
+      String.fromCharCode(0),
     ])
       expect(lesen(kaputt), kaputt).toBeNull();
     expect(lesen(new Uint8Array([0xff, 0xfe, 0x00]))).toBeNull();
-    // Fassung 3 mit falscher Nummer der Person oder Kontakt ohne Kontaktperson.
-    const falsch = JSON.parse(JSON.stringify(fassung3)) as typeof fassung3;
-    falsch.unterlagen[0]!.person = 7;
-    expect(lesen(JSON.stringify(falsch))).toBeNull();
-    const ohne = JSON.parse(JSON.stringify(fassung3)) as {
-      haushalt: { personen: { kontakt?: boolean }[] };
+  });
+
+  it('die alte Form mit Unterlagen oben und Kontakt beim Haushalt ist keine Lesehilfe (E216)', () => {
+    const alt = {
+      hefta: 3,
+      erstellt: '2026-11-06',
+      bewerbung: { kennung: 'd2e0f734-0b59-41ea-95f4-c9715acbe034', wohnung: null },
+      haushalt: {
+        personen: [{ name: 'Max Mustermann', rolle: 'hauptmieter', kontakt: true }],
+        mitziehende: [],
+        kontakt: { telefon: '0171 3920001' },
+      },
+      unterlagen: [{ person: 0, typ: 'selbstauskunft', seiten: [2, 2] }],
+      seitenzahl: 2,
     };
-    delete ohne.haushalt.personen[0]!.kontakt;
-    expect(lesen(JSON.stringify(ohne))).toBeNull();
+    expect(lesen(JSON.stringify(alt))).toBeNull();
+    expect(schemaPruefen(alt)).toBe(false);
+  });
+
+  it('ein doppelter Schlüssel macht die Lesehilfe unlesbar', () => {
+    const text = beispiele[0]![1].replace('"hefta": 1,', '"hefta": 1, "hefta": 1,');
+    expect(lesenMitGrund(text).lesehilfe).toBeNull();
   });
 });
 
 describe('hefta-json: Telefon und Listen', () => {
-  it('telefonE164 nach Abschnitt 8', () => {
-    const faelle: [string, string | null][] = [
-      ['0171 3920001', '+491713920001'],
-      ['+49 171 3920001', '+491713920001'],
-      ['0049 (0)171 39 200 01', '+491713920001'],
-      ['+49 (0)171 3920006', '+491713920006'],
-      ['0171/3920007', '+491713920007'],
-      ['+44 20 7946 0018', '+442079460018'],
-      ['3920001', null],
-      ['0171 BEISPIEL', null],
+  it('telefonPasst nach Abschnitt 8 (E222): feste Form, dieselbe Nummer', () => {
+    const faelle: [string, string, boolean][] = [
+      ['0171 3920001', '+491713920001', true],
+      ['040 66969123', '+494066969123', true],
+      ['+44 20 7946 0018', '+442079460018', true],
+      ['+43 1 5880000', '+4315880000', true],
+      ['0171 3920001', '+491713920002', false],
+      ['+49 171 3920001', '+491713920001', false],
+      ['+49 (0)171 3920006', '+491713920006', false],
+      ['0049 171 3920001', '+491713920001', false],
+      ['0171/3920007', '+491713920007', false],
+      ['040/66969123', '+494066969123', false],
+      ['0171  3920001', '+491713920001', false],
+      ['0171 BEISPIEL', '+491713920001', false],
     ];
-    for (const [ein, soll] of faelle) expect(telefonE164(ein), ein).toBe(soll);
+    for (const [t, e, soll] of faelle) expect(telefonPasst(t, e), `${t} / ${e}`).toBe(soll);
   });
 
   it('typText: bekannte Arten mit Bedeutung, Unbekanntes neutral', () => {

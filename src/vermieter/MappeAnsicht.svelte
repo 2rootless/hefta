@@ -31,6 +31,7 @@
     vollstaendigkeit,
   } from './regel';
   import { t } from './texte';
+  import { SCHRITT_SATZ } from '../../pakete/hefta-json/src/index';
 
   let {
     mappe,
@@ -242,7 +243,8 @@
 
       <section class="vs-was sec">
         <h3 class="vs-h3">{t('mappe.beiliegt')}</h3>
-        {#if a.modus === 'datensparsam'}
+        <!-- E227: nur mit einem bekannten Schritt, dessen fester Satz auf dem Deckblatt steht (V23: kein `modus`). -->
+        {#if a.schritt && a.schritt in SCHRITT_SATZ}
           <p class="vs-note">
             <span class="vs-info" aria-hidden="true">i</span>
             <span>{t('mappe.sparsam', { gehoert: gehoertText(stand.ziel) })}</span>

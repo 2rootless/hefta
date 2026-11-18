@@ -29,6 +29,7 @@ import {
   haushaltAnlegen,
   haushaltLaden,
   haushaltZaehlen,
+  hauptmieterSichern,
   hefteAusVersion1EinordnenEinmal,
   mitgliedEntfernen,
   mitgliedHerausnehmen,
@@ -624,6 +625,78 @@ describe('Kennung der Bewerbung (E6)', () => {
     ).toBe(a);
     const bewerbung = await bewerbungLaden(db, haushalt.id);
     expect(Object.values(bewerbung!.kennungen!)).toEqual([a, b]);
+  });
+});
+
+describe('Hauptmieter rückt nach (PC102, E209, Frage 1)', () => {
+  const rollen = async (db: HeftaDb) =>
+    (await haushaltLaden(db))!.mitglieder.map((m) => [m.person.vorname, m.zugehoerigkeit.rolle]);
+
+  it('Herausnehmen: Lea rückt nach; kommt Max zurück, steht er als Mitmieter im Vertrag', async () => {
+    const db = await neueDb();
+    await haushaltDesAuftraggebers(db);
+    const max = (await haushaltLaden(db))!.mitglieder[0]!;
+    await mitgliedHerausnehmen(db, max.zugehoerigkeit.id);
+    expect(await rollen(db)).toEqual([
+      ['Lea', 'hauptmieter'],
+      ['Petra', 'buerge'],
+    ]);
+    await mitgliedZurueckholen(db, max.zugehoerigkeit.id);
+    expect(await rollen(db)).toEqual([
+      ['Lea', 'hauptmieter'],
+      ['Petra', 'buerge'],
+      ['Max', 'mitmieter'],
+    ]);
+  });
+
+  it('Entfernen und ganz Löschen: Lea rückt nach', async () => {
+    const db = await neueDb();
+    await haushaltDesAuftraggebers(db);
+    await mitgliedEntfernen(db, (await haushaltLaden(db))!.mitglieder[0]!.zugehoerigkeit.id);
+    expect(await rollen(db)).toEqual([
+      ['Lea', 'hauptmieter'],
+      ['Petra', 'buerge'],
+    ]);
+    const db2 = await neueDb();
+    await haushaltDesAuftraggebers(db2);
+    await personGanzLoeschen(db2, (await haushaltLaden(db2))!.mitglieder[0]!.person.id);
+    expect(await rollen(db2)).toEqual([
+      ['Lea', 'hauptmieter'],
+      ['Petra', 'buerge'],
+    ]);
+  });
+
+  it('Bürgin rückt nicht nach: Ist niemand mehr im Vertrag, bleibt sie Bürgin', async () => {
+    const db = await neueDb();
+    await haushaltDesAuftraggebers(db);
+    const [max, lea] = (await haushaltLaden(db))!.mitglieder;
+    await mitgliedHerausnehmen(db, lea!.zugehoerigkeit.id);
+    await mitgliedHerausnehmen(db, max!.zugehoerigkeit.id);
+    expect(await rollen(db)).toEqual([['Petra', 'buerge']]);
+  });
+
+  it('beim Start: Ein Haushalt, aus dem 2.0 den Hauptmieter nahm, bekommt Lea als Hauptmieterin', async () => {
+    const db = await neueDb();
+    await haushaltDesAuftraggebers(db);
+    const max = (await haushaltLaden(db))!.mitglieder[0]!;
+    // So hinterließ es 2.0: herausgenommen, niemand rückte nach.
+    await db.put('zugehoerigkeiten', {
+      ...max.zugehoerigkeit,
+      herausgenommenAm: '2026-11-18T09:00:00.000Z',
+    });
+    expect(await rollen(db)).toEqual([
+      ['Lea', 'mitmieter'],
+      ['Petra', 'buerge'],
+    ]);
+    await hauptmieterSichern(db);
+    expect(await rollen(db)).toEqual([
+      ['Lea', 'hauptmieter'],
+      ['Petra', 'buerge'],
+    ]);
+    // Ein zweites Mal ändert nichts.
+    const vorher = await db.getAll('zugehoerigkeiten');
+    await hauptmieterSichern(db);
+    expect(await db.getAll('zugehoerigkeiten')).toEqual(vorher);
   });
 });
 

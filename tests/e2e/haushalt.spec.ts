@@ -311,7 +311,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await page.getByRole('link', { name: /Weitere Person im Vertrag|Mitmieter hinzufügen/ }).click();
   await page.getByRole('button', { name: /Neue Person anlegen/ }).click();
   await page.getByLabel('Vorname').fill('lea');
-  await page.getByLabel('Nachname').fill('mustermann');
+  await page.getByLabel('Nachname', { exact: true }).fill('mustermann');
   await expect(page.getByRole('status')).toContainText('ist schon in Hefta');
   await page.getByRole('button', { name: 'Nehmen' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Lea kommt dazu' })).toBeVisible();

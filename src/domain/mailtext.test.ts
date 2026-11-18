@@ -32,7 +32,7 @@ const auftrag = {
   namen: ['Max Mustermann', 'Lea Mustermann'],
   heute,
 };
-// Fassung 4: Die Testdaten sind Fassung 3 und gehen über lesen() in das neue Bild, wie auf der Vermieterseite.
+// Die Testdaten stehen in Fassung 1 (tests/e2e/vermieter-hilfe.ts) und gehen über lesen(), wie auf der Vermieterseite.
 const anhang = (p: Probe) => anhangLesen(JSON.stringify(p.anhang)) as HeftaAnhang;
 
 /** Alle Mails, die Hefta baut, mit Musterdaten; je Name Betreff und Text. */

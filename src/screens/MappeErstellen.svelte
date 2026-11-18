@@ -54,6 +54,7 @@
   import { bauSchluessel, gebauteMappen, schaetzungen, vorschauen } from '../ui/mappeSpeicher';
   import type { PdfDokument } from '../pdf/pdfjs';
   import { standText } from '../ui/texte';
+  import MitUmbruch from '../ui/MitUmbruch.svelte';
 
   const GRENZE = 5 * 1024 * 1024;
   let warumTyp = $state<Dokumenttyp | null>(null);
@@ -191,11 +192,13 @@
       })),
       // E96, 3: Ohne Nachname geht es trotzdem; Hefta sagt es hier noch einmal, sperrt aber nicht.
       ...dabei
-        .filter((s) => !s.person.nachname.trim() && !ohneLatein.includes(s))
+        .filter(
+          (s) => !s.person.nachname.trim() && !s.person.ohneNachname && !ohneLatein.includes(s),
+        )
         .map((s) => ({
           id: `nachname-${s.person.id}`,
-          titel: t('uebersicht.nachnameFehlt', { name: s.person.rufname || s.person.vorname }),
-          sub: t('uebersicht.nachnameWozu'),
+          titel: t('uebersicht.nachnameOffen', { name: s.person.rufname || s.person.vorname }),
+          sub: t('uebersicht.nachnameWozu', { name: s.person.rufname || s.person.vorname }),
           href: `#/person-aendern/${s.person.id}`,
         })),
       ...fehlendeUnterlagen(dabei, e).map(({ person, unterlage }) => ({
@@ -978,7 +981,7 @@
             void ansehen(d);
           }}
         >
-          <span>{d.name.replaceAll('_', '_​')}</span>
+          <span><MitUmbruch text={d.name} nach="_" /></span>
           <Symbol name="weiter" groesse={16} />
         </button>
       </li>

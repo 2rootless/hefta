@@ -5,6 +5,9 @@ import { SZENARIEN, datensaetze } from './szenarien';
 
 // Rückmeldungen aus dem ersten Test am iPhone (4. November 2026). Läuft auch in WebKit.
 
+/** Eine Sonderrufnummer (0900, Mehrwertdienst) ohne echt wirkende Ziffern (W7): Die Ziffern entstehen hier. */
+const SONDER = `0900 ${'1'.repeat(7)}`;
+
 async function pdfMit(seiten: string[]): Promise<Buffer> {
   const doc = await PDFDocument.create();
   const f = await doc.embedFont(StandardFonts.Helvetica);
@@ -224,7 +227,14 @@ test('Selbstauskunft: Hinweis zum Format, Knopf zum nächsten Teil, von wem der 
   await page.getByLabel('Telefon').click();
   await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toBeVisible();
   await email.fill('max@example.com');
+  // DP77 (TL26): Die Nachfrage gibt es nur noch für gültige Sonderrufnummern; Buchstaben sind ein Fehler im Feld.
   await page.getByLabel('Telefon').fill('abc');
+  await email.click();
+  await expect(
+    page.getByText('In der Nummer stehen Buchstaben. Möglich sind nur Ziffern.'),
+  ).toBeVisible();
+  await expect(page.getByText(/Die Telefonnummer sieht ungewöhnlich aus/)).toHaveCount(0);
+  await page.getByLabel('Telefon').fill(SONDER);
   await email.click();
   await expect(page.getByText(/Die Telefonnummer sieht ungewöhnlich aus/)).toBeVisible();
   // Nur ein Hinweis: Es wird trotzdem gespeichert, und der Knopf führt weiter.
@@ -250,7 +260,7 @@ test('Selbstauskunft: Hinweis zum Format, Knopf zum nächsten Teil, von wem der 
   await page.getByLabel('E-Mail').press('Enter');
   await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toBeVisible();
   // Beide zweifelhaft: ein Satz für beide (Planung 12r).
-  await page.getByLabel('Telefon').fill('abc');
+  await page.getByLabel('Telefon').fill(SONDER);
   await page.getByRole('button', { name: /^Weiter: / }).click();
   await page.getByRole('button', { name: /^Weiter: / }).click();
   await expect(page.getByRole('button', { name: /^Kontakt/ })).toContainText(
@@ -323,6 +333,20 @@ test('Monat direkt im großen Bild wählen; danach steht man, wo man war', async
   // Erst messen, wenn das Lesen ganz fertig ist: „Einen Moment …“ geht oft erst nach dem Monat, und die
   // Seite wird dabei 35 px kürzer. Sonst misst der Test eine Lage, die es beim Öffnen nicht mehr gibt (CP44).
   await expect(page.getByText('Einen Moment …')).toHaveCount(0);
+  // Auf dem langsamen Rechner von GitHub wurde die Seite nach dem Messen noch 16 px kürzer (zwei Reihen am 18.11.),
+  // und die Scrollstelle rutschte mit. Darum erst messen, wenn die Höhe der Seite eine Sekunde lang gleich bleibt.
+  let hoehe = -1;
+  await expect
+    .poll(
+      async () => {
+        const jetzt = await page.evaluate(() => document.documentElement.scrollHeight);
+        const ruhig = jetzt === hoehe;
+        hoehe = jetzt;
+        return ruhig;
+      },
+      { intervals: [1000], timeout: 30_000 },
+    )
+    .toBe(true);
   await page.getByLabel('Monat von Seite 3').scrollIntoViewIfNeeded();
   const vorher = await page.evaluate(() => window.scrollY);
   expect(vorher).toBeGreaterThan(0);

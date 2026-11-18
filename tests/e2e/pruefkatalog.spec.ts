@@ -516,7 +516,7 @@ const BILDER: Bild[] = [
     pfad: '/einrichtung',
     vorher: async (page) => {
       await page.getByLabel('Vorname').fill('Max');
-      await page.getByLabel('Nachname').fill('Mustermann');
+      await page.getByLabel('Nachname', { exact: true }).fill('Mustermann');
       await page.getByRole('radio', { name: 'Hauptmieter', exact: true }).click();
     },
   },
@@ -591,7 +591,7 @@ const BILDER: Bild[] = [
     vorher: async (page) => {
       await page.getByRole('button', { name: /Neue Person anlegen/ }).click();
       await page.getByLabel('Vorname').fill('Jonas');
-      await page.getByLabel('Nachname').fill('Becker');
+      await page.getByLabel('Nachname', { exact: true }).fill('Becker');
       await page.getByRole('status').waitFor();
     },
   },

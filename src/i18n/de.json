@@ -153,8 +153,8 @@
       "titel": "Willkommen."
     },
     "hallo": "Hallo {name}.",
-    "nachnameFehlt": "Nachname von {name} fehlt",
-    "nachnameWozu": "Für Deckblatt und Selbstauskunft",
+    "nachnameOffen": "Nachname von {name}",
+    "nachnameWozu": "Für Deckblatt und Selbstauskunft. Hat {name} keinen, reicht ein Haken.",
     "offenIhr": {
       "one": "Noch ein Ding, dann seid ihr startklar.",
       "other": "Noch {zahl} Dinge, dann seid ihr startklar."
@@ -213,7 +213,9 @@
     "haushaltBearbeiten": "Haushalt bearbeiten",
     "haushaltZeile": "Haushalt bearbeiten: {liste}",
     "pruefen": "{unterlage} prüfen",
-    "pruefenAnsage": "{unterlage}. {grund}."
+    "pruefenAnsage": "{unterlage}. {grund}.",
+    "telefonPruefen": "Telefonnummer von {name} prüfen",
+    "telefonSoSteht": "So steht sie da: „{nummer}“. Bis dahin steht sie nicht in der Mappe."
   },
   "backupZeile": {
     "nie": "Noch kein Backup",
@@ -356,13 +358,9 @@
     "lizenz": "Freie Software",
     "lizenzWert": "{app} steht unter der AGPL-3.0, die Schrift Archivo unter der OFL-1.1. Die Postleitzahlen für die Luftlinie stammen von GeoNames (geonames.org) unter CC BY 4.0. Alle Lizenztexte liegen der App als lizenzen.txt bei. Der Quellcode steht offen auf GitHub.",
     "quellcode": "Quellcode ansehen",
-    "rueckmeldung": {
-      "ihr": "Was fehlt euch? Schreibt an {adresse}.",
-      "du": "Was fehlt dir? Schreib an {adresse}."
-    },
+    "rueckmeldung": "Rückmeldung geben",
     "rueckmeldungBetreff": "Rückmeldung zu {app}",
     "ueber": "Über {app}",
-    "rueckmeldung": "Rückmeldung geben",
     "rueckmeldungUnter": "Freiwillig, {Zahl} kurze Fragen",
     "rueckmeldungDanke": "Danke, beantwortet am {datum}",
     "mehrereGeraete": {
@@ -898,7 +896,11 @@
     },
     "ausHaushaltNehmen": "Aus diesem Haushalt nehmen",
     "ganzLoeschenLink": "{name} ganz löschen",
-    "zurueck": "Zurück"
+    "zurueck": "Zurück",
+    "ohneNachname": "{name} hat keinen Nachnamen",
+    "ohneNachnameOhneName": "Hat keinen Nachnamen",
+    "ohneNachnameSatz": "Dann fragt {app} nicht mehr danach.",
+    "keinNachname": "kein Nachname"
   },
   "rutsch": {
     "bandSatz": "Schritt {schritt} von {gesamt}: {unterlage} für {name}",
@@ -2112,6 +2114,7 @@
     "trotzdemEinlesen": "Trotzdem einlesen",
     "leerTitel": "{app} konnte nichts lesen.",
     "leerText": "Vielleicht ist das Inserat nicht mehr online.",
+    "leerNeutral": "Auf der Seite hat {app} keine Angaben zur Wohnung gefunden.",
     "trotzdemAnlegen": "Trotzdem anlegen",
     "netzTitel": "Gerade kein Netz.",
     "netzIhr": "{app} hat das Inserat noch nicht geöffnet. Versucht es gleich noch einmal.",
@@ -2608,5 +2611,31 @@
   },
   "personAendern": {
     "inDerMappe": "In der Mappe:"
+  },
+  "telefon": {
+    "landKnopf": "Land der Nummer: {land}",
+    "blattTitel": "Land der Nummer",
+    "suche": "Land oder Vorwahl suchen",
+    "oft": "Oft gewählt",
+    "alle": "Alle Länder",
+    "einLand": "1 Land",
+    "laender": "{zahl} Länder",
+    "keinLand": "Kein Land gefunden. Gesucht wird nach Name oder Vorwahl.",
+    "zeile": "{land}, {vorwahl}",
+    "zeileGewaehlt": "{land}, {vorwahl}, ausgewählt",
+    "plus": "plus ",
+    "wirdZu": "Wird zu {nummer}.",
+    "umgestellt": "Das Land hat {app} nach der Vorwahl {vorwahl} gestellt.",
+    "fehlerVorspann": "Fehler: ",
+    "fehler": {
+      "buchstaben": "In der Nummer stehen Buchstaben. Möglich sind nur Ziffern.",
+      "durchwahlIhr": "Eine Durchwahl („-12“) kann {app} nicht übernehmen. Tragt die Nummer ohne sie ein.",
+      "durchwahlDu": "Eine Durchwahl („-12“) kann {app} nicht übernehmen. Trag die Nummer ohne sie ein.",
+      "vorwahl": "Die Vorwahl fehlt. In Deutschland beginnt sie mit 0.",
+      "kurz": "Die Nummer ist zu kurz. Fehlt eine Ziffer?",
+      "lang": "Die Nummer ist zu lang. Steht eine Ziffer doppelt?",
+      "land": "Mit {vorwahl} ergibt das keine gültige Nummer. Stimmt das Land?",
+      "unbekannt": "Die Ländervorwahl {vorwahl} gibt es nicht."
+    }
   }
 }

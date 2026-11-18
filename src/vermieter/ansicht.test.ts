@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { alsFassung1 } from '../../tests/e2e/vermieter-hilfe';
 import katalogRoh from '../../data/regelkatalog.de.json';
 import { anhangLesen, type AnhangUnterlage, type HeftaAnhang } from '../pdf/anhang';
 import { ansicht as ansichtNeu, bonitaetFrist as fristNeu, etikettVon } from './ansicht';
 
-// Fassung 4 (PC100): Die Testdaten bleiben in Fassung 3 und gehen über lesen() in das Bild von Fassung 4 (F11).
+// Fassung 1 (E218): Die Testdaten gehen über alsFassung1() und lesen(), wie auf der Vermieterseite (F11).
 type AltUnterlage = {
   person: number;
   typ: string;
@@ -16,7 +17,7 @@ const unterlage = (u: AltUnterlage): AnhangUnterlage =>
   ({ ...u, seiten_mappe: { von: u.seiten[0], bis: u.seiten[1] } }) as unknown as AnhangUnterlage;
 const bonitaetFrist = (u: AltUnterlage, heute: Date) => fristNeu(unterlage(u), heute);
 const ansicht = (x: unknown, heute: Date) => {
-  const b = anhangLesen(JSON.stringify(x));
+  const b = anhangLesen(JSON.stringify(alsFassung1(x as Record<string, unknown>)));
   if (!b) throw new Error('Testdaten sind keine Lesehilfe');
   return ansichtNeu(b as HeftaAnhang, heute);
 };
@@ -146,17 +147,18 @@ describe('Ansicht aus der Lesehilfe', () => {
     expect(JSON.stringify(a)).not.toMatch(/€|Euro|netto|brutto|\d\.\d{3},\d{2}/i);
   });
 
-  it('ohne Kennung und ohne Bürgen', () => {
+  // Fassung 1: Die Kennung ist Pflicht (E21); ohne sie gibt es keine Lesehilfe. Geprüft wird hier: ohne Wohnung und
+  // ohne Bürgen.
+  it('ohne Wohnung und ohne Bürgen', () => {
     const b = ansicht(
       {
         ...M1,
-        bewerbung: { wohnung: null },
+        bewerbung: { kennung: M1.bewerbung.kennung, wohnung: null },
         haushalt: { personen: [M1.haushalt.personen[0]!], mitziehende: [] },
         unterlagen: [M1.unterlagen[0]!],
       },
       HEUTE,
     );
-    expect(b.kennung).toBeNull();
     expect(b.rahmen).toBe('Eine Person im Mietvertrag.');
     expect(b.register).toHaveLength(2);
   });

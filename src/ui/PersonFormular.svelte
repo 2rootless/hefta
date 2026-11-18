@@ -11,6 +11,8 @@
     bezeichnung: Bezeichnung | null;
     lebenssituation: Lebenssituation;
     ausbildungArt?: AusbildungArt | null;
+    /** DP74 C3: hat keinen Nachnamen (nur unter „… ändern“). */
+    ohneNachname?: boolean;
   }
 </script>
 
@@ -40,6 +42,7 @@
     rollenWahl,
     gespeichert,
     gespeicherteTypen = [],
+    nachnameWahl = false,
   }: {
     werte: PersonEingabe;
     rolle: Rolle;
@@ -54,6 +57,8 @@
     /** Stand vor dem Ändern: Ändert sich die Lebenslage, steht darunter, was das bedeutet (HA2). */
     gespeichert?: Pick<import('../domain/modell').Person, 'lebenssituation' | 'ausbildungArt'>;
     gespeicherteTypen?: string[];
+    /** DP74 C3: das Kästchen „… hat keinen Nachnamen“ unter dem Nachnamen. */
+    nachnameWahl?: boolean;
   } = $props();
 
   const optionen = situationOptionen();
@@ -81,6 +86,17 @@
     vornameVorher = werte.vorname;
   }
 
+  // DP74 C3: Mit Haken ist der Nachname leer; ein schon getippter bleibt bis „Speichern“ und kommt zurück, wenn der
+  // Haken wegfällt.
+  let nachnameGetippt = '';
+  function ohneNachnameSetzen(an: boolean) {
+    if (an) {
+      nachnameGetippt = werte.nachname;
+      werte.nachname = '';
+    } else werte.nachname = nachnameGetippt;
+    werte.ohneNachname = an;
+  }
+
   function fokussieren(element: HTMLInputElement) {
     if (fokus) element.focus();
   }
@@ -101,8 +117,43 @@
     </label>
     <label class="eingabe">
       {t('personSeite.nachname')}
-      <input bind:value={werte.nachname} autocomplete="family-name" enterkeyhint="done" />
+      <input
+        bind:value={werte.nachname}
+        autocomplete="family-name"
+        enterkeyhint="done"
+        readonly={nachnameWahl && !!werte.ohneNachname}
+        placeholder={nachnameWahl && werte.ohneNachname ? t('personSeite.keinNachname') : undefined}
+        class:ohne={nachnameWahl && !!werte.ohneNachname}
+      />
     </label>
+    {#if nachnameWahl}
+      <label class="ohne-nachname">
+        <input
+          type="checkbox"
+          checked={!!werte.ohneNachname}
+          onchange={(e) => ohneNachnameSetzen(e.currentTarget.checked)}
+          aria-describedby="{id}-ohne"
+        />
+        <span class="kaestchen" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 14 14"
+            ><path
+              d="M2.5 7.4l3 3 6-6.6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            /></svg
+          >
+        </span>
+        <span class="ohne-text"
+          >{werte.vorname.trim()
+            ? t('personSeite.ohneNachname', { name: rufname })
+            : t('personSeite.ohneNachnameOhneName')}</span
+        >
+      </label>
+      <p class="ohne-satz" id="{id}-ohne">{t('personSeite.ohneNachnameSatz')}</p>
+    {/if}
     {@render nachName?.()}
     {#if rufname}
       {#if rufnameOffen}
@@ -307,6 +358,77 @@
     border-bottom: 2.2px solid var(--ink);
     transform: translateY(-70%) rotate(45deg);
     pointer-events: none;
+  }
+
+  /* DP74 C3, Abschnitt 1: Zeile 44 px, Kästchen 24 px in --radius-sm, Rand 1,5 px --control-border; gesetzt Tinte mit
+     Haken in --surface; Lücke 12 px; Satz 13 px, 36 px eingerückt. Abstände 8 (Feld zur Zeile), 4 (Zeile zum Satz),
+     8 (Satz zur nächsten Zeile); das Raster des Formulars ist 12 px, darum die Ausgleiche. Fokus als Ring wie bei
+     Knöpfen, nie als Tintenrand innen (W33). */
+  .ohne-nachname {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    margin-top: -4px;
+    font-size: calc(15 * var(--px));
+    line-height: calc(20 * var(--px));
+    color: var(--ink);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Das Feld liegt unsichtbar genau über dem Kästchen: Tippen trifft es, Vorleser und Tastatur finden es. */
+  .ohne-nachname input {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    margin: -12px 0 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 1;
+  }
+  .kaestchen {
+    flex: none;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: 24px;
+    height: 24px;
+    border: 1.5px solid var(--control-border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--surface);
+    pointer-events: none;
+  }
+  .kaestchen svg {
+    opacity: 0;
+  }
+  .ohne-nachname input:checked + .kaestchen {
+    border-color: var(--ink);
+    background: var(--ink);
+  }
+  .ohne-nachname input:checked + .kaestchen svg {
+    opacity: 1;
+  }
+  .ohne-nachname input:focus-visible + .kaestchen {
+    outline: 3px solid var(--ink);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--surface);
+  }
+  .ohne-satz {
+    margin: -8px 0 0 36px;
+    font-size: calc(13 * var(--px));
+    line-height: calc(18 * var(--px));
+    color: var(--ink-muted);
+  }
+  .eingabe input.ohne::placeholder {
+    color: var(--ink-muted);
+    opacity: 1;
+  }
+  .eingabe input {
+    transition: color var(--bw-blende);
   }
 
   .hinweis {

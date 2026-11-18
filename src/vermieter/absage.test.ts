@@ -5,7 +5,7 @@ import { anhangLesen, type HeftaAnhang } from '../pdf/anhang';
 import { aufMusteradressen } from '../test/musteradressen';
 import { absage, absageBefunde } from './absage';
 
-// Fassung 4: Die Testdaten sind Fassung 3 und gehen über lesen() in das neue Bild, wie auf der Vermieterseite.
+// Die Testdaten stehen in Fassung 1 (tests/e2e/vermieter-hilfe.ts) und gehen über lesen(), wie auf der Vermieterseite.
 const anhang = (p: Probe) => anhangLesen(JSON.stringify(p.anhang)) as HeftaAnhang;
 
 // Die Mails aus den Testdaten des Designs: design/bildschirme/vermieter/absage-mails.md.

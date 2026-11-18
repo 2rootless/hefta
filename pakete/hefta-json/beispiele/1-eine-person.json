@@ -1,5 +1,5 @@
 {
-  "hefta": 4,
+  "hefta": 1,
   "erstellt": "2026-11-18T09:41:07+01:00",
   "fassung": 1,
   "seitenzahl": 6,
@@ -17,7 +17,9 @@
         "land": "DE"
       }
     },
-    "inserat": { "portal": "ImmoScout24" },
+    "inserat": {
+      "portal": "ImmoScout24"
+    },
     "einzug": "2027-02-01"
   },
   "haushalt": {
@@ -32,15 +34,27 @@
         "telefon_e164": "+491713920002",
         "email": "jonas.muster@example.com",
         "unterlagen": [
-          { "typ": "selbstauskunft", "seiten_mappe": { "von": 2, "bis": 2 } },
+          {
+            "typ": "selbstauskunft",
+            "seiten_mappe": {
+              "von": 2,
+              "bis": 2
+            }
+          },
           {
             "typ": "gehaltsnachweis",
-            "seiten_mappe": { "von": 3, "bis": 5 },
+            "seiten_mappe": {
+              "von": 3,
+              "bis": 5
+            },
             "monate": ["2026-08", "2026-09", "2026-10"]
           },
           {
             "typ": "bonitaet",
-            "seiten_mappe": { "von": 6, "bis": 6 },
+            "seiten_mappe": {
+              "von": 6,
+              "bis": 6
+            },
             "vom": "2026-10-28",
             "pruefweg": "pruefcode"
           }
@@ -48,6 +62,5 @@
       }
     ],
     "mitziehende": []
-  },
-  "modus": "marktueblich"
+  }
 }

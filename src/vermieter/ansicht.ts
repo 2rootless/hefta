@@ -156,7 +156,7 @@ export function ansicht(a: HeftaAnhang, heute: Date): Ansicht {
     imVertrag: imVertrag(p),
     zeilen: [],
   }));
-  // Fassung 4: Die Unterlagen stehen bei ihrer Person; `index` zählt sie in der Reihenfolge der Seiten.
+  // Fassung 1: Die Unterlagen stehen bei ihrer Person; `index` zählt sie in der Reihenfolge der Seiten.
   const alle = alleUnterlagen(a);
   alle.forEach(({ u, person: roh, index: pi }, index) => {
     const p = personen[pi];

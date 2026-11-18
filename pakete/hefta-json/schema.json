@@ -1,15 +1,15 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://hefta.de/format/hefta-json-4.schema.json",
-  "title": "hefta.json, Fassung 4",
+  "$id": "https://hefta.de/format/hefta-json-1.schema.json",
+  "title": "hefta.json, Fassung 1",
   "description": "Lesehilfe als Anhang einer PDF-Mappe aus Hefta. Beschreibung: README.md des Pakets hefta-json und docs/format-hefta-json.md. Lizenz Apache-2.0.",
   "type": "object",
   "required": ["hefta", "erstellt", "fassung", "seitenzahl", "bewerbung", "haushalt"],
   "properties": {
     "hefta": {
       "type": "integer",
-      "minimum": 4,
-      "description": "Fassung des Formats; Leser nehmen jede Fassung ab 4 an."
+      "minimum": 1,
+      "description": "Fassung des Formats; Leser nehmen jede Fassung ab 1 an (E218)."
     },
     "erstellt": {
       "type": "string",
@@ -32,15 +32,10 @@
     "haushalt": {
       "$ref": "#/definitions/haushalt"
     },
-    "modus": {
-      "type": "string",
-      "pattern": "^[a-z][a-z0-9_]*$",
-      "description": "Feste Liste, offen (Abschnitt 6)."
-    },
     "schritt": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]*$",
-      "description": "Nur bei modus „datensparsam“; diese Regel prüft Abschnitt 11, nicht das Schema."
+      "description": "Nur mit seinem festen Satz auf dem Deckblatt (E227, L78-3); diese Regel prüft Abschnitt 11, nicht das Schema."
     },
     "loeschwunsch": {
       "type": "string",
@@ -214,7 +209,7 @@
         }
       },
       "dependencies": {
-        "telefon": ["kontakt"],
+        "telefon": ["kontakt", "telefon_e164"],
         "email": ["kontakt"],
         "telefon_e164": ["telefon"]
       },

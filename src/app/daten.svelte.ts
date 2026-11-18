@@ -5,6 +5,8 @@ import { datenbankOeffnen, type HeftaDb } from '../storage/db';
 import {
   einstellungenLaden,
   haushaltLaden,
+  hauptmieterSichern,
+  telefoneUmsetzen,
   hefteLaden,
   hefteAusVersion1EinordnenEinmal,
   type HaushaltAnsicht,
@@ -56,9 +58,23 @@ function verbindungVerloren(e: unknown): boolean {
   );
 }
 
+// PC102 (E209): einmal je Start prüfen, dass jeder Haushalt genau eine hauptmietende Person hat.
+let hauptmieterGeprueft = false;
+let telefoneGeprueft = false;
+
 async function laden(): Promise<void> {
   const verbindung = await db();
   if (!daten.einstellungen?.version1Eingeordnet) await hefteAusVersion1EinordnenEinmal(verbindung);
+  if (!hauptmieterGeprueft) {
+    await hauptmieterSichern(verbindung);
+    hauptmieterGeprueft = true;
+  }
+  // E222 (DP77, Abschnitt 5): einmal je Start; ein eingespieltes Backup setzt `sicherungEinspielen` selbst um.
+  // Nicht bei jedem Laden: Die Schreibtransaktion nach jedem Speichern verzögerte das Neuzeichnen (NN8, WebKit).
+  if (!telefoneGeprueft) {
+    await telefoneUmsetzen(verbindung);
+    telefoneGeprueft = true;
+  }
   const einstellungen = await einstellungenLaden(verbindung);
   const ansicht = await haushaltLaden(verbindung, einstellungen.aktiverHaushalt);
   const hefte = await hefteLaden(verbindung, ansicht?.haushalt.id ?? null);

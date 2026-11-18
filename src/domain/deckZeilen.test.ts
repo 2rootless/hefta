@@ -19,7 +19,7 @@ describe('Zeilen fürs Deckblatt (B14, E39)', () => {
       deckInserat: 'Zu Ihrem Inserat auf ImmoScout24',
       deckEinzug: 'Einzug möglich ab 1. Februar 2027',
       deckFassung: 'Fassung 2 vom 13. November 2026',
-      // Fassung 4 der Lesehilfe: dieselben Angaben als Werte.
+      // Fassung 1 der Lesehilfe: dieselben Angaben als Werte.
       deckPortal: 'ImmoScout24',
       deckEinzugTag: '2027-02-01',
       deckFassungNr: 2,

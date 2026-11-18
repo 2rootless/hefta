@@ -1,3 +1,4 @@
+import { telefonOffen } from '../domain/telefon';
 import { mappenDateiname } from '../domain/export';
 import type { Bewerbung } from '../domain/modell';
 import { haushaltsZeile, imPdfSchreibbar, nameImPdf } from '../domain/namen';
@@ -65,6 +66,9 @@ export function zeichenFunde(
     const namen = berufBezeichnungen(s.person);
     const sa = selbstauskunftVon(s.person);
     pruefen(s.person.kontakt.telefon, bei(t('mappe.feldTelefon')), `${ziel}/telefon`);
+    // E222 (DP77, Abschnitt 5): Eine Nummer, die sich nicht umsetzen lässt, fehlt in der Mappe: „Telefon bei Lea“.
+    if (telefonOffen(s.person.kontakt))
+      funde.push({ feld: bei(t('mappe.feldTelefon')), ziel: `${ziel}/telefon` });
     pruefen(s.person.kontakt.email, bei(t('mappe.feldEmail')), `${ziel}/email`);
     pruefen(s.person.beruf, bei(namen.beruf), `${ziel}/beruf`);
     pruefen(s.person.arbeitgeber, bei(namen.arbeitgeber), `${ziel}/arbeitgeber`);

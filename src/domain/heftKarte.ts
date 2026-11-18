@@ -14,9 +14,10 @@ function zeilen(adresse: string): [string, string] {
   return [a, b];
 }
 
-/** Ort aus der zweiten Adresszeile, ohne Postleitzahl: „20259 Hamburg“ → „Hamburg“. */
+/** Ort aus der zweiten Adresszeile, ohne Postleitzahl und Lage: „2. OG, 20259 Hamburg“ → „Hamburg“ (DP73 B2). */
 function ortAusAdresse(adresse: string): string {
-  return zeilen(adresse)[1].replace(/^\d{5}\s*/, '');
+  const letztes = zeilen(adresse)[1].split(',').at(-1) ?? '';
+  return letztes.trim().replace(/^\d{5}\s*/, '');
 }
 
 /**

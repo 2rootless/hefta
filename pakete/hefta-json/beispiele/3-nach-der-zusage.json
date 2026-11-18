@@ -1,5 +1,5 @@
 {
-  "hefta": 4,
+  "hefta": 1,
   "erstellt": "2026-12-03T11:15:42+01:00",
   "fassung": 3,
   "seitenzahl": 15,
@@ -138,7 +138,6 @@
       }
     ]
   },
-  "modus": "datensparsam",
   "schritt": "zusage",
   "loeschwunsch": "Falls die Wohnung an jemand anderen geht, löschen Sie diese Unterlagen bitte. Vielen Dank."
 }

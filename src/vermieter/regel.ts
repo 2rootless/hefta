@@ -1,5 +1,5 @@
 import katalogRoh from '../../data/regelkatalog.de.json';
-import { passt } from '../../pakete/hefta-json/src/index';
+import { passt, type Papier } from '../../pakete/hefta-json/src/index';
 import type { AnhangPerson, AnhangUnterlage, HeftaAnhang } from '../pdf/anhang';
 
 // Die Regeln der Vermieter-Seite (design/vermieter-seite.md, Abschnitt „Die Regel“). Reine Logik ohne
@@ -197,9 +197,8 @@ export interface PersonStand {
 /** Bezugsfassung: vollstaendigkeit() in design/werkzeug/vs_bau.py. */
 export function vollstaendigkeit(a: HeftaAnhang): { ziel: SchrittId; personen: PersonStand[] } {
   const ziel: SchrittId =
-    a.modus === 'datensparsam' && a.schritt && a.schritt in RANG
-      ? (a.schritt as SchrittId)
-      : 'will_wohnung';
+    // E227: `schritt` allein, gebunden an seinen festen Satz auf dem Deckblatt (V23: kein `modus` mehr).
+    a.schritt && a.schritt in RANG ? (a.schritt as SchrittId) : 'will_wohnung';
   const personen = a.haushalt.personen.map((person, index) => {
     const da = [...person.unterlagen].sort((x, y) => x.seiten_mappe.von - y.seiten_mappe.von);
     const typen = new Set(da.map((u) => u.typ));
@@ -326,10 +325,10 @@ export function mailEmpfaenger(email: string | undefined): string | null {
 
 /**
  * Passt die Lesehilfe zu dieser Mappe? Sonst wird sie gar nicht gezeigt, auch nicht teilweise (VS5b).
- * Seit Fassung 4 die Prüfung aus dem Paket hefta-json (FORMAT.md, Abschnitt 11), für Fassung 1 bis 4.
+ * Die Prüfung aus dem Paket hefta-json (FORMAT.md, Abschnitt 11, Punkte 1 bis 7), mit der Bindung an das Papier.
  */
-export function lesehilfePasst(a: HeftaAnhang, seiten: number, ersteSeite: string): boolean {
-  return passt(a, { seiten, textSeite1: ersteSeite });
+export function lesehilfePasst(a: HeftaAnhang, seiten: number, papier: Papier): boolean {
+  return passt(a, { seiten, ...papier });
 }
 
 /** Alle Unterlagen der Mappe mit ihrer Person, in der Reihenfolge der Seiten. */

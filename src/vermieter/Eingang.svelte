@@ -46,12 +46,10 @@
   );
   const dieserTag = new Date().getFullYear();
 
-  // Export als CSV (PC99, PC100): nur Lesehilfen ab Fassung 4, die zur Mappe passen. Läuft hier im Browser.
+  // Export als CSV (PC99, PC100): nur Lesehilfen, die zur Mappe passen (Fassung 1). Läuft hier im Browser.
   const exportMappen = $derived(mappen.filter((m) => exportierbar(m.anhang)));
   const nichtDabei = $derived(
-    mappen.flatMap((m, i) =>
-      exportierbar(m.anhang) ? [] : [t(m.anhang ? 'export.alt' : 'export.ohne', { nummer: i + 1 })],
-    ),
+    mappen.flatMap((m, i) => (exportierbar(m.anhang) ? [] : [t('export.ohne', { nummer: i + 1 })])),
   );
   function exportieren() {
     const text = csvText(exportMappen.map((m) => m.anhang!));

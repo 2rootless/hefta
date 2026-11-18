@@ -47,6 +47,7 @@
   import DatumAuswahl from './DatumAuswahl.svelte';
   import SeitenAnsicht from './SeitenAnsicht.svelte';
   import Symbol from './Symbol.svelte';
+  import MitUmbruch from './MitUmbruch.svelte';
 
   let {
     person,
@@ -375,6 +376,10 @@
   // Datum: von Hefta gefunden (Vorschlag), und ob man es schon selbst angefasst hat.
   let erkannt = $state<{ tag: string; seite: number } | null>(null);
   let datumAngefasst = false;
+  // Wie beim Datum: Hat man nach dem Einsetzen der Datei selbst einen Monat gewählt, überschreibt der Vorschlag aus
+  // dem Text ihn nicht mehr. Das Lesen dauert auf langsamen Geräten länger als ein Tipp (erste Reihe in GitHub,
+  // 18.11.: „Juli“ getippt, danach setzte der gefundene Monat die Wahl zurück).
+  let monatAngefasst = false;
   let monatErkannt = $state<string | null>(null);
   // Viele Seiten (D2, ab 10): erst drei und „+9“; aufgeklappt alle, mit denselben Kreisen.
   let vieleEntschieden = $state(false);
@@ -471,6 +476,7 @@
     erkannt = null;
     datum = '';
     datumAngefasst = false;
+    monatAngefasst = false;
     if (monatErkannt) {
       monat = vorbelegterMonat ?? auswahl.vorbelegt;
       monate.clear();
@@ -488,7 +494,7 @@
     try {
       if (typ.datum === 'abrechnungsmonat') {
         const m = monatFinden(await seitenStuecke(d.dokument, 1), heute);
-        if (!m || lauf !== ladeLauf) return;
+        if (!m || lauf !== ladeLauf || (!mehrere && monatAngefasst)) return;
         if (mehrere) {
           // Mehrere Dateien: Der Dateiname hat Vorrang, sonst der Text.
           if (!monatAusDateiname(d.name, heute) && !dateiMonate.includes(m))
@@ -1108,13 +1114,13 @@
           {#each dateien as d, i (i)}
             <li>
               {#if dateiSeiten[i]}
-                <span class="dateiname">{d.name.replaceAll('_', '_\u200b')}</span>
+                <span class="dateiname"><MitUmbruch text={d.name} nach="_" /></span>
                 <p class="hinweis">{t('hochladen.seitenEinerDatei')}</p>
               {:else}
                 <!-- W16 (DP39, 1.5): Name und Seiten in einer Zeile, der Kopf der ersten Seite lesbar, Lupe
                      zum Vergrößern; darunter die Monatswahl. Nur Dateinamen reichen nicht. -->
                 <div class="w16-kopf">
-                  <span class="dateiname">{d.name.replaceAll('_', '_\u200b')}</span>
+                  <span class="dateiname"><MitUmbruch text={d.name} nach="_" /></span>
                   {#if d.dokument}<small
                       >{t('unterlage.seitenZahl', { anzahl: d.dokument.numPages })}</small
                     >{/if}
@@ -1203,6 +1209,7 @@
               role="radio"
               aria-checked={monate.has(m)}
               onclick={() => {
+                monatAngefasst = true;
                 monate.clear();
                 monate.add(m);
               }}
@@ -1227,6 +1234,7 @@
               max={serienAuswahl[3]}
               onchange={(e) => {
                 if (e.currentTarget.value) {
+                  monatAngefasst = true;
                   monate.clear();
                   monate.add(e.currentTarget.value);
                 }
@@ -1251,6 +1259,7 @@
               role="radio"
               aria-checked={!andererMonat && monat === m}
               onclick={() => {
+                monatAngefasst = true;
                 monat = m;
                 andererMonat = false;
               }}>{monatName(m, heute)}</button
@@ -1262,6 +1271,7 @@
             role="radio"
             aria-checked={andererMonat}
             onclick={() => {
+              monatAngefasst = true;
               andererMonat = true;
               monat = null;
             }}>{t('hochladen.andererMonat')}</button
@@ -1273,7 +1283,10 @@
             <input
               type="month"
               max={auswahl.monate[2]}
-              onchange={(e) => (monat = e.currentTarget.value || null)}
+              onchange={(e) => {
+                monatAngefasst = true;
+                monat = e.currentTarget.value || null;
+              }}
             />
           </label>
         {/if}

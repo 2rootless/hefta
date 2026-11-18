@@ -32,7 +32,6 @@
   "export.keine": "Keine Mappe hat eine passende Lesehilfe ab Hefta 2.0.",
   "export.nichtDabei": "Nicht dabei: {liste}.",
   "export.ohne": "Mappe {nummer} (ohne passende Lesehilfe)",
-  "export.alt": "Mappe {nummer} (Lesehilfe vor Hefta 2.0)",
   "export.loeschen": "Die Datei enthält Namen und Kontaktdaten. Löschen Sie sie mit der Mappe, wenn die Wohnung vergeben ist.",
   "stand.ohne": "Ohne Lesehilfe",
   "stand.passtNicht": "Lesehilfe passt nicht zur Mappe",

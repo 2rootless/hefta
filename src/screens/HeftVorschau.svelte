@@ -27,6 +27,7 @@
   import {
     entwurf,
     entwurfAusVorschau,
+    geteilterTextReicht,
     entwurfVergessen,
     hatEckdaten,
     vorschauStand,
@@ -63,6 +64,14 @@
     vorschauStand.link = link;
     vorschauStand.zustand = 'laden';
     vorschauStand.roh = null;
+    // PC118 (F8a): Sagt der geteilte Text schon alles, lädt Hefta die Seite nicht. Ein Abruf weniger.
+    if (geteilterTextReicht()) {
+      const ohneSeite: InseratGelesen = { zustand: 'ok' };
+      vorschauStand.roh = ohneSeite;
+      entwurfAusVorschau(ohneSeite, link);
+      vorschauStand.zustand = 'ok';
+      return;
+    }
     // PC19 A4: Ohne Netz kommt die Antwort sofort. Der Ladezustand steht trotzdem kurz da, damit man
     // sieht, dass es noch einmal versucht wurde; danach die Meldung neu, mit der Uhrzeit.
     const [g] = await Promise.all([
@@ -72,11 +81,25 @@
     vorschauStand.versuchtUm = new Date();
     if (vorschauStand.link !== link) return;
     vorschauStand.roh = g;
+    // F8b: „nicht mehr online“ nur, wenn die Seite es sagt (404, 410). Ein Status ab 400 sonst, etwa 403 oder
+    // 429 einer Prüfung auf Roboter, ist „nichts gelesen“.
+    const weg = g.http === 404 || g.http === 410;
     if (g.zustand === 'ok') {
       entwurfAusVorschau(g, link);
       const nichtDa = (g.http ?? 200) >= 400 || !hatEckdaten(entwurf.angaben);
-      vorschauStand.zustand = nichtDa ? 'leer' : 'ok';
+      vorschauStand.zustand = !nichtDa ? 'ok' : weg ? 'weg' : 'leer';
     } else vorschauStand.zustand = g.zustand === 'fehler' ? 'leer' : g.zustand;
+    // F8a: Ließ sich die Seite nicht lesen, trägt der geteilte Text, was er hat.
+    if (
+      vorschauStand.zustand !== 'ok' &&
+      vorschauStand.zustand !== 'weg' &&
+      entwurf.geteilterText
+    ) {
+      // Von einer gesperrten Seite (Status ab 400) kommt nichts, auch kein Titel („Zugriff verweigert“).
+      const seiteGut = g.zustand === 'ok' && (g.http ?? 200) < 400;
+      entwurfAusVorschau(seiteGut ? g : { zustand: 'fehler' }, link);
+      if (hatEckdaten(entwurf.angaben)) vorschauStand.zustand = 'ok';
+    }
   }
 
   onMount(() => {
@@ -391,14 +414,15 @@
           <p class="fs">{t(ihr ? 'vorschau.listeIhr' : 'vorschau.listeDu')}</p>
         {:else}
           <p class="fh">{t('vorschau.leerTitel')}</p>
-          <p class="fs">{t('vorschau.leerText')}</p>
+          <!-- F8b: „nicht mehr online“ nur bei 404 oder 410; sonst ein Satz ohne Vermutung (Wortlaut: PD121). -->
+          <p class="fs">{t(zustand === 'weg' ? 'vorschau.leerText' : 'vorschau.leerNeutral')}</p>
         {/if}
       </div>
     </div>
     <div class="cta">
       {#if zustand === 'zeit'}
         <Hauptbutton text={t('vorschau.trotzdemEinlesen')} onclick={weiter} />
-      {:else if zustand === 'leer'}
+      {:else if zustand === 'leer' || zustand === 'weg'}
         <Hauptbutton text={t('vorschau.trotzdemAnlegen')} onclick={weiter} />
       {:else if zustand === 'netz'}
         <Hauptbutton text={t('vorschau.nochmal')} onclick={laden} />

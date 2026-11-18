@@ -1,6 +1,6 @@
 # Format `hefta.json`
 
-Die Beschreibung des Formats steht seit Fassung 4 (18. November 2026, E205 bis E208) an einer Stelle:
+Die Beschreibung des Formats steht an einer Stelle (Fassung 1, 18. November 2026, E205 bis E208, E216 bis E227):
 **`pakete/hefta-json/FORMAT.md`**, zusammen mit dem JSON Schema (`schema.json`), den Beispielen (`beispiele/`) und
 dem Paket `hefta-json` zum Lesen und Prüfen. Alles dort steht unter Apache-2.0.
 

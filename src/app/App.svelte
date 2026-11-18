@@ -19,6 +19,7 @@
   import { anrede, anredeFuer } from '../i18n/anrede.svelte';
   import { linkWegDa } from './plattform';
   import { wechselArt, wechselEnde } from '../ui/wechsel';
+  import { stelleNachsetzen } from '../ui/scrollMerken';
 
   // Der Technik-Test (M0-Spike) wird nur bei Bedarf geladen, damit PDF.js nicht im Start-Bundle steckt.
   const technikTest = () => import('../spike/TechnikTest.svelte');
@@ -126,12 +127,13 @@
     route.pfad.match(/^\/person-neu\/(mitmieter|buerge)(\/einrichtung)?$/),
   );
   const personAendern = $derived(
-    route.pfad.match(/^\/person-aendern\/([\w-]+)(\/einrichtung|\/person|\/mappe)?$/),
+    route.pfad.match(/^\/person-aendern\/([\w-]+)(\/einrichtung|\/person|\/mappe|\/nachname)?$/),
   );
   function zurueckZu(zusatz: string | undefined, id?: string): string {
     if (zusatz === '/einrichtung') return '/einrichtung/2';
     if (zusatz === '/person' && id) return `/person/${id}`;
-    if (zusatz === '/mappe') return '/';
+    // DP74 C3: „/nachname“ kommt vom offenen Punkt im Überblick und geht dorthin zurück.
+    if (zusatz === '/mappe' || zusatz === '/nachname') return '/';
     return '/haushalt';
   }
 
@@ -171,15 +173,7 @@
     // Zurück an die Stelle, an der man war. Die Seite baut sich erst auf: so lange nachsetzen.
     const ziel = untrack(() => route.scrollZiel);
     // PC29 (A2): gleich an die alte Stelle, nicht erst nach oben und ein Bild später zurück.
-    window.scrollTo(0, ziel);
-    if (ziel && Math.abs(window.scrollY - ziel) > 1) {
-      let runden = 0;
-      const nachsetzen = () => {
-        window.scrollTo(0, ziel);
-        if (Math.abs(window.scrollY - ziel) > 1 && ++runden < 40) requestAnimationFrame(nachsetzen);
-      };
-      requestAnimationFrame(nachsetzen);
-    }
+    stelleNachsetzen(ziel);
     if (ersterBildschirm) {
       ersterBildschirm = false;
       return;
@@ -319,6 +313,7 @@
           <m.default
             personId={personAendern[1]}
             zurueckZu={zurueckZu(personAendern[2], personAendern[1])}
+            ziel={personAendern[2] === '/nachname' ? 'ueber' : null}
           />
         {/await}
       {/key}

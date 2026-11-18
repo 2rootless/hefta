@@ -1,4 +1,5 @@
 import { hatPruefcode } from '../domain/pruefhinweise';
+import { telefonFuerMappe } from '../domain/telefon';
 import { AUSSEHEN_STANDARD, type MappenAussehen } from '../domain/modell';
 import { bauSchluessel, gebauteMappen, kleineDateien, type MappenAnlass } from './mappeSpeicher';
 import { serienQuellen } from '../domain/aufteilen';
@@ -79,7 +80,7 @@ function mappenPerson(s: PersonStand): MappenPerson {
       : '');
   return {
     name: nameText(nameImPdf(s.person)),
-    // Fassung 4 der Lesehilfe: Vor- und Nachname wie auf dem Deckblatt, von Hefta nie selbst geteilt.
+    // Fassung 1 der Lesehilfe: Vor- und Nachname wie auf dem Deckblatt, von Hefta nie selbst geteilt.
     vorname: nameImPdf(s.person).vorname,
     nachname: nameImPdf(s.person).nachname,
     rolle: rollenText(s.rolle, s.bezeichnung),
@@ -339,13 +340,22 @@ export async function mappeErstellen(
         : undefined,
     hinweis: e.hinweis !== false,
     modus: e.modus,
-    schritt: e.schritt,
+    // E227 (PC116): Die datensparsame Mappe kommt nicht in 2.0; das Deckblatt liest den Schritt nicht aus dem
+    // gespeicherten Stand. So steht weder der Satz zum Schritt auf dem Papier noch `schritt` in der Lesehilfe.
+    schritt: undefined,
     bitte: e.bitte && e.deckblatt ? bitteSatzAus(bewerbung) : undefined,
+    // E222 (DP77, Abschnitt 5): nur eine umgesetzte Nummer, in fester Form, mit ihrer internationalen Nummer.
     kontakt: haupt
-      ? [hauptName ?? '', haupt.kontakt.telefon, haupt.kontakt.email].filter(Boolean)
+      ? [hauptName ?? '', telefonFuerMappe(haupt.kontakt)?.anzeige, haupt.kontakt.email].filter(
+          (x): x is string => !!x,
+        )
       : [],
     kontaktwege: haupt
-      ? { telefon: haupt.kontakt.telefon || undefined, email: haupt.kontakt.email || undefined }
+      ? {
+          telefon: telefonFuerMappe(haupt.kontakt)?.anzeige,
+          telefonE164: telefonFuerMappe(haupt.kontakt)?.e164,
+          email: haupt.kontakt.email || undefined,
+        }
       : undefined,
     bloecke: mappenBloecke,
     deckblatt: e.deckblatt,

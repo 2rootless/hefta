@@ -80,9 +80,12 @@ async function mappenBauen(page) {
         // Bundesnetzagentur für Medienproduktionen freihält („Drama Numbers“: 0171 3920000 bis 0171 3920099).
         if (m.person.kontakt?.telefon?.trim())
           await sp.personAendern(db, m.person.id, {
+            // E222: mit Land und passender internationaler Nummer, sonst fehlte sie in der Mappe.
             kontakt: {
               ...m.person.kontakt,
               telefon: `0171 39200${String(i + 1).padStart(2, '0')}`,
+              telefonLand: 'DE',
+              telefonE164: `+4917139200${String(i + 1).padStart(2, '0')}`,
             },
           });
       }

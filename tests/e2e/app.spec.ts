@@ -269,7 +269,7 @@ test('erster Start: „Später“ fragt höchstens noch einmal, „Ich habe ein 
   await page.getByRole('button', { name: /^Wer zieht ein\?/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Wer bist du?' })).toBeVisible();
   await page.getByLabel('Vorname').fill('Max');
-  await page.getByLabel('Nachname').fill('Mustermann');
+  await page.getByLabel('Nachname', { exact: true }).fill('Mustermann');
   await page.getByRole('radio', { name: 'Hauptmieter', exact: true }).click();
   await page.getByRole('button', { name: 'Weiter', exact: true }).click();
   await page.getByRole('link', { name: 'Haushalt anlegen' }).click();

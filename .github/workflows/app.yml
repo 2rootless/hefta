@@ -6,6 +6,8 @@
 #   oder app/hefta-2, und nur
 #   in der geschützten Umgebung „store“: Jeder Lauf wartet auf die Freigabe des Auftraggebers.
 #   Geheime Werte der Umgebung: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (Inhalt der .p8-Datei), APPLE_TEAM_ID.
+#   Riegel (E221, PC111): Vorher prüft „riegel“ auf einem Linux-Rechner, dass der Ablauf „Tests“ (tests.yml) auf
+#   demselben Commit grün ist. Sonst startet kein Mac und nichts wird hochgeladen.
 # - „play“ läuft nur von Hand (Haken „AAB für Google Play bauen“), ebenfalls in „store“ (E64): baut ein
 #   signiertes Android App Bundle und legt es als Datei am Lauf ab, von main oder app/hefta-2 (E97).
 #   Hochladen in die Play Console von Hand.
@@ -101,10 +103,29 @@ jobs:
         working-directory: android
         run: ./gradlew --no-daemon assembleDebug
 
+  # Riegel (E221): TestFlight nur, wenn die volle Reihe (tests.yml) auf genau diesem Commit grün ist.
+  riegel:
+    if: github.event_name == 'workflow_dispatch' && inputs.testflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    steps:
+      - name: Tests auf diesem Commit grün?
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gruen=$(gh api "repos/${{ github.repository }}/actions/workflows/tests.yml/runs?head_sha=${{ github.sha }}&status=success&per_page=1" --jq '.total_count')
+          echo "Grüne Läufe von „Tests“ auf ${{ github.sha }}: ${gruen}"
+          if [ "${gruen}" = "0" ]; then
+            echo "::error::Der Ablauf „Tests“ ist auf ${{ github.sha }} nicht grün. Ohne grüne Tests lädt Hefta nichts zu TestFlight hoch (E221)."
+            exit 1
+          fi
+
   testflight:
     # Auch vom Zweig app/hefta-2 (E79): Testversion nur intern (E62), eingereicht wird nur von main.
     if: github.event_name == 'workflow_dispatch' && inputs.testflight && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/app/hefta-2')
-    needs: pruefen-ios
+    needs: [riegel, pruefen-ios]
     runs-on: macos-15
     timeout-minutes: 45
     environment: store

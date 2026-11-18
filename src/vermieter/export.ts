@@ -1,7 +1,7 @@
 // Export der Vermieterseite als CSV (PC99, PC100; E206, E207): „Für Ihre Software exportieren“. Läuft im Browser,
 // ohne Server. Regel 1: Exportiert wird nur, was die Lesehilfe enthält, und nur Lesehilfen ab Fassung 4, die zu
 // ihrer Mappe passen. Beschreibung: docs/hefta-json-4/export-entwurf.md (Hefta 2), Abschnitt 2.
-import { typText } from '../../pakete/hefta-json/src/index';
+import { SCHRITT_SATZ, typText } from '../../pakete/hefta-json/src/index';
 import type { HeftaAnhang } from '../pdf/anhang';
 
 export const SPALTEN = [
@@ -31,7 +31,6 @@ export const SPALTEN = [
   'weitere_erwachsene',
   'unterlagen',
   'unterlagen_text',
-  'modus',
   'schritt',
   'loeschwunsch',
 ] as const;
@@ -43,16 +42,19 @@ const BOM = String.fromCharCode(0xfeff);
  * Ein Feld der CSV (RFC 4180, Semikolon). Beginnt ein Wert mit =, +, -, @, Tab oder Zeilenumbruch, steht ein
  * Apostroph davor: Sonst liefe ein präparierter Wert in einem Tabellenprogramm als Formel.
  */
-export function zelle(wert: string | number | null | undefined): string {
+export function zelle(wert: string | number | null | undefined, spalte = ''): string {
   let s = wert === null || wert === undefined ? '' : String(wert);
-  if (/^[=+\-@\t\r\n]/.test(s)) s = `'${s}`;
+  // T5, V20: `telefon_e164` in geprüfter Form kann keine Formel sein und steht ohne Apostroph; sonst lesen
+  // Programme eine falsche Nummer. Alle anderen Zellen behalten den Schutz, auch `telefon` mit „+“.
+  const nummer = spalte === 'telefon_e164' && /^\+[1-9]\d{6,14}$/.test(s);
+  if (!nummer && /^[=+\-@\t\r\n]/.test(s)) s = `'${s}`;
   if (/[;"\r\n]/.test(s)) s = `"${s.replace(/"/g, '""')}"`;
   return s;
 }
 
-/** Ab Fassung 4 mit getrennten Namen; ältere Fassungen fehlen im Export. */
+/** Jede gelesene, passende Lesehilfe (Fassung 1, E218). */
 export function exportierbar(a: HeftaAnhang | null): a is HeftaAnhang {
-  return !!a && a.hefta >= 4 && a.haushalt.personen.every((p) => typeof p.vorname === 'string');
+  return !!a && a.hefta >= 1 && a.haushalt.personen.every((p) => typeof p.vorname === 'string');
 }
 
 /** Die CSV-Datei für alle exportierbaren Lesehilfen: eine Zeile je Person. */
@@ -92,11 +94,11 @@ export function csvText(lesehilfen: HeftaAnhang[]): string {
         weitere_erwachsene: summe('erwachsen'),
         unterlagen: typen.join('|'),
         unterlagen_text: typen.map(typText).join(' | '),
-        modus: a.modus,
-        schritt: a.schritt,
+        // V23: kein `modus`. E227: `schritt` nur mit festem Satz, sonst leer.
+        schritt: a.schritt && a.schritt in SCHRITT_SATZ ? a.schritt : '',
         loeschwunsch: a.loeschwunsch,
       };
-      zeilen.push(SPALTEN.map((s) => zelle(werte[s])).join(';'));
+      zeilen.push(SPALTEN.map((s) => zelle(werte[s], s)).join(';'));
     });
   }
   return `${BOM}${zeilen.join('\r\n')}\r\n`;

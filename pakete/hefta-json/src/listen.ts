@@ -4,7 +4,7 @@
 export const ANHANG_NAME = 'hefta.json';
 
 /** Die Fassung, die dieses Paket schreibt und vollständig kennt. */
-export const FASSUNG = 4;
+export const FASSUNG = 1;
 
 export const ROLLEN = {
   hauptmieter: 'steht im Mietvertrag, als erste Person des Haushalts',
@@ -68,13 +68,6 @@ export const UNBEKANNT = {
 export const PRUEFWEGE: Readonly<Record<string, string>> = {
   pruefcode: 'Die Unterlage trägt einen Code, mit dem man sie beim Aussteller prüfen kann',
 };
-
-export const MODI = {
-  alles: 'alles Übliche und alles, was helfen kann',
-  marktueblich: 'was der Markt üblicherweise verlangt',
-  datensparsam: 'nur, was der Schritt in `schritt` braucht',
-  eigene_auswahl: 'Unterlage für Unterlage selbst gewählt',
-} as const;
 
 export const SCHRITTE = {
   besichtigung: 'Anfrage oder Besichtigung',

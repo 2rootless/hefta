@@ -282,6 +282,9 @@ test('schwierige Dateien: viele Seiten auswählen (D2, D3), Word-Datei (D7), ohn
   await expect(blatt.getByRole('button', { name: 'Alle 12 Seiten ansehen' })).toHaveText('+9');
   await expect(blatt.getByRole('checkbox')).toHaveCount(3);
 
+  // Die Prüfung des Texts meldet sich spät, über dem Kasten, und schiebt „Seiten auswählen“ nach unten. Der Tipp
+  // landete sonst daneben (Wackler vom 18.11., WebKit; Sprung als Befund an Design, CP71).
+  await expect(blatt.getByText(/findet Hefta den Namen Mustermann nicht/)).toBeVisible();
   // D3: drei auswählen, in derselben Ansicht: Kreis unter der Seite, Tipp auf die Seite macht sie groß.
   await blatt.getByRole('button', { name: 'Seiten auswählen' }).click();
   await expect(blatt.getByText('Tipp die Seiten an, die der Vermieter sehen soll.')).toBeVisible();

@@ -16,7 +16,7 @@ export function deckZeilen(
   deckInserat?: string;
   deckEinzug?: string;
   deckFassung?: string;
-  /** Für die Lesehilfe (Fassung 4): dieselben Angaben als Werte. */
+  /** Für die Lesehilfe (Fassung 1): dieselben Angaben als Werte. */
   deckPortal?: string;
   deckEinzugTag?: string;
   deckFassungNr: number;

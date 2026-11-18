@@ -28,7 +28,12 @@ function person(id: string, teil: Partial<Person> = {}): Person {
     vorname: id,
     nachname: 'Mustermann',
     rufname: id,
-    kontakt: { telefon: '0170', email: '' },
+    kontakt: {
+      telefon: '0171 3920001',
+      telefonLand: 'DE',
+      telefonE164: '+491713920001',
+      email: '',
+    },
     lebenssituation: 'angestellt',
     beruf: '',
     arbeitgeber: '',

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { Lesehilfe as AnhangLesehilfe } from '../../pakete/hefta-json/src/index';
+import { alsFassung1, deckblattZeilen } from '../../tests/e2e/vermieter-hilfe';
 import { anhangLesen, type AnhangPerson, type AnhangUnterlage } from '../pdf/anhang';
 import * as regel from './regel';
 import {
@@ -37,15 +39,11 @@ interface Alt {
   schritt?: string;
   loeschwunsch?: string;
 }
-const bild = (x: unknown) => anhangLesen(JSON.stringify(x));
+const bild = (x: unknown) => anhangLesen(JSON.stringify(alsFassung1(x as Record<string, unknown>)));
 const sicher = (x: unknown) => {
   const b = bild(x);
   if (!b) throw new Error('Testdaten sind keine Lesehilfe');
   return b;
-};
-const lesehilfePasst = (x: unknown, seiten: number, text: string) => {
-  const b = bild(x);
-  return !!b && regel.lesehilfePasst(b, seiten, text);
 };
 const haushaltTitel = (x: unknown) => regel.haushaltTitel(sicher(x));
 const werKurz = (x: unknown) => regel.werKurz(sicher(x));
@@ -87,7 +85,6 @@ const M1: Alt = {
   seitenzahl: 18,
   modus: 'marktueblich',
 };
-const ERSTE = 'Beispielstraße 1 Max Mustermann Lea Mustermann Petra Mustermann';
 
 function mit(teil: Partial<Alt>): Alt {
   return { ...M1, ...teil };
@@ -226,107 +223,7 @@ describe('Prüfen', () => {
   });
 });
 
-describe('Passt die Lesehilfe zur Mappe?', () => {
-  it('nimmt eine stimmige Lesehilfe an, auch wenn die Zeilen anders brechen', () => {
-    expect(lesehilfePasst(M1, 18, ERSTE)).toBe(true);
-    expect(lesehilfePasst(M1, 18, 'Beispiel\nstraße\u00a01 Max\nMustermann Lea Petra')).toBe(true);
-  });
-
-  it('seit der Veröffentlichung nur mit Kennung der Bewerbung (E21)', () => {
-    const ohne = { ...M1, bewerbung: { wohnung: M1.bewerbung.wohnung } };
-    expect(lesehilfePasst(ohne, 18, ERSTE)).toBe(false);
-    const falsch = { ...M1, bewerbung: { ...M1.bewerbung, kennung: 'keine-uuid' } };
-    expect(lesehilfePasst(falsch, 18, ERSTE)).toBe(false);
-  });
-
-  it('Seite entfernt: Die Gesamtzahl stimmt nicht mehr', () => {
-    expect(lesehilfePasst(M1, 17, ERSTE)).toBe(false);
-  });
-
-  it('ohne Gesamtzahl gilt der Bereich der Seiten', () => {
-    expect(lesehilfePasst(mit({ seitenzahl: undefined }), 18, ERSTE)).toBe(true);
-    expect(lesehilfePasst(mit({ seitenzahl: undefined }), 17, ERSTE)).toBe(false);
-  });
-
-  it('Namen und Straße müssen auf Seite 1 stehen', () => {
-    expect(lesehilfePasst(M1, 18, 'Beispielstraße 1 Max Mustermann Lea')).toBe(false);
-    expect(lesehilfePasst(M1, 18, 'Max Mustermann Lea Petra')).toBe(false);
-  });
-
-  it.each([
-    ['Person ins Leere', { unterlagen: [{ person: 9, typ: 'wbs', seiten: [1, 1] }] }],
-    ['Seite verkehrt', { unterlagen: [{ person: 0, typ: 'wbs', seiten: [5, 2] }] }],
-    ['Seite null', { unterlagen: [{ person: 0, typ: 'wbs', seiten: [0, 1] }] }],
-    ['Seite kein Bereich', { unterlagen: [{ person: 0, typ: 'wbs', seiten: [1] }] }],
-    ['Datum falsch', { unterlagen: [{ person: 0, typ: 'wbs', seiten: [1, 1], vom: 'gestern' }] }],
-    ['Monat falsch', { unterlagen: [{ person: 0, typ: 'wbs', seiten: [1, 1], monate: ['x'] }] }],
-    ['Erstellt fehlt', { erstellt: undefined }],
-    ['Schritt erfunden', { schritt: 'irgendwann' }],
-    ['Bitte zu lang', { loeschwunsch: 'x'.repeat(501) }],
-  ])('%s', (_, teil) => {
-    expect(lesehilfePasst(mit(teil as unknown as Partial<Alt>), 18, ERSTE)).toBe(false);
-  });
-
-  it('Name überlang, Rolle keine Kennung, niemand im Vertrag', () => {
-    const name = 'x'.repeat(201);
-    expect(
-      lesehilfePasst(allein([{ name, rolle: 'hauptmieter' }]), 18, name + ' Beispielstraße 1'),
-    ).toBe(false);
-    expect(
-      lesehilfePasst(
-        allein([{ name: 'Max Mustermann', rolle: 'Chef!' as 'hauptmieter' }]),
-        18,
-        ERSTE,
-      ),
-    ).toBe(false);
-    // U1 (PC101): Eine neue Rolle mit gültiger Kennung wird gelesen; die Seite zeigt sie neutral.
-    expect(
-      lesehilfePasst(
-        allein([{ name: 'Max Mustermann', rolle: 'untermieter' as 'hauptmieter' }]),
-        18,
-        ERSTE,
-      ),
-    ).toBe(true);
-    expect(lesehilfePasst(allein([{ name: 'Petra Mustermann', rolle: 'buerge' }]), 18, ERSTE)).toBe(
-      false,
-    );
-  });
-});
-
-describe('Kontakt in der Lesehilfe (Fassung 3, E17)', () => {
-  const KONTAKT = { telefon: '0171 3920001', email: 'max.mustermann@example.com' };
-  const mitKontakt = (kontakt: unknown) =>
-    ({ ...M1, haushalt: { ...M1.haushalt, kontakt } }) as unknown as Alt;
-  const SEITE = `${ERSTE} Kontakt Max Mustermann 0171 3920001 max.mustermann@example.com`;
-
-  it('gilt, wenn Telefon und Mail wörtlich auf Seite 1 stehen, auch über einen Zeilenumbruch', () => {
-    expect(lesehilfePasst(mitKontakt(KONTAKT), 18, SEITE)).toBe(true);
-    const umbrochen = `${ERSTE} 0171 3920001 max.mustermann
-@example.com`;
-    expect(lesehilfePasst(mitKontakt(KONTAKT), 18, umbrochen)).toBe(true);
-    expect(lesehilfePasst(mitKontakt({ telefon: '0171 3920001' }), 18, SEITE)).toBe(true);
-  });
-
-  it('passt nicht, wenn eine Nummer oder Mail nicht auf Seite 1 steht: Schutz vor Fälschung', () => {
-    expect(lesehilfePasst(mitKontakt({ ...KONTAKT, telefon: '0171 3920011' }), 18, SEITE)).toBe(
-      false,
-    );
-    expect(lesehilfePasst(mitKontakt({ ...KONTAKT, email: 'betrug@example.org' }), 18, SEITE)).toBe(
-      false,
-    );
-    expect(lesehilfePasst(mitKontakt({}), 18, SEITE)).toBe(false);
-    expect(lesehilfePasst(mitKontakt('0171 3920001'), 18, SEITE)).toBe(false);
-    const ohneKontaktperson = {
-      ...M1,
-      haushalt: {
-        ...M1.haushalt,
-        personen: M1.haushalt.personen.map((p) => ({ name: p.name, rolle: p.rolle })),
-        kontakt: KONTAKT,
-      },
-    } as Alt;
-    expect(lesehilfePasst(ohneKontaktperson, 18, SEITE)).toBe(false);
-  });
-
+describe('Links zum Anrufen und Schreiben', () => {
   it('Links nur aus sauberen Werten', () => {
     expect(telefonLink('0171 3920001')).toBe('tel:01713920001');
     expect(telefonLink('+49 (0)40 123-456')).toBe('tel:+49040123456');
@@ -336,6 +233,53 @@ describe('Kontakt in der Lesehilfe (Fassung 3, E17)', () => {
     expect(mailEmpfaenger('max@example.com?bcc=x@example.com')).toBeNull();
     expect(mailEmpfaenger('max mustermann@example.com')).toBeNull();
     expect(mailEmpfaenger(undefined)).toBeNull();
+  });
+});
+
+describe('Passt die Lesehilfe zur Mappe? (Fassung 1, Punkte 1 bis 7)', () => {
+  // Die Einzelfälle prüft das Paket (pakete/hefta-json, Stresstest PC110, PC113). Hier: die Seite nutzt die Prüfung
+  // mit dem Papier der Mappe, wie papierLesen() es liefert.
+  const papier = (l: AnhangLesehilfe, zeilen = deckblattZeilen(l)) => ({
+    seite1: zeilen.join(String.fromCharCode(10)),
+    text: zeilen.join(String.fromCharCode(10)),
+    leereSeiten: [] as number[],
+    erstellt: new Date(l.erstellt),
+  });
+
+  it('nimmt eine stimmige Lesehilfe mit ihrem Deckblatt an', () => {
+    const l = sicher(M1);
+    expect(regel.lesehilfePasst(l, 18, papier(l))).toBe(true);
+  });
+
+  it('Seite entfernt: Die Gesamtzahl stimmt nicht mehr', () => {
+    const l = sicher(M1);
+    expect(regel.lesehilfePasst(l, 17, papier(l))).toBe(false);
+  });
+
+  it('Was die Lesehilfe zeigt, steht auf dem Papier: ohne Petra auf dem Deckblatt passt sie nicht', () => {
+    const l = sicher(M1);
+    const ohnePetra = deckblattZeilen(l).filter((z) => !z.includes('Petra'));
+    expect(regel.lesehilfePasst(l, 18, papier(l, ohnePetra))).toBe(false);
+  });
+
+  it('ohne Kennung der Bewerbung keine Lesehilfe (E21, Fassung 1)', () => {
+    const ohne = { ...M1, bewerbung: { wohnung: M1.bewerbung.wohnung } };
+    expect(bild(ohne)).toBeNull();
+  });
+
+  it('Kontakt: Telefon und Mail stehen unter „Kontakt“; eine andere Mail passt nicht', () => {
+    const l = sicher({
+      ...M1,
+      haushalt: {
+        ...M1.haushalt,
+        kontakt: { telefon: '0171 3920001', email: 'max.mustermann@example.com' },
+      },
+    });
+    expect(regel.lesehilfePasst(l, 18, papier(l))).toBe(true);
+    const anders = deckblattZeilen(l).map((z) =>
+      z === 'max.mustermann@example.com' ? 'lea.mustermann@example.com' : z,
+    );
+    expect(regel.lesehilfePasst(l, 18, papier(l, anders))).toBe(false);
   });
 });
 

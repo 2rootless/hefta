@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { telefonFuerMappe } from '../domain/telefon';
   // Eigene Seite zum Hinzufügen und Ändern einer Person (Entscheidung F; design/person-und-haushalt.md).
   // Hinzufügen: gibt es Herausgenommene, zuerst „Schon in Hefta“ (K1); beim Eintippen ein Namensabgleich
   // (K1b); eine bekannte Person kommt nach einer Bestätigung mit allen Unterlagen dazu (K2).
@@ -38,10 +39,13 @@
     neueRolle = null,
     personId = null,
     zurueckZu,
+    ziel = null,
   }: {
     neueRolle?: Extract<Rolle, 'mitmieter' | 'buerge'> | null;
     personId?: string | null;
     zurueckZu: string;
+    /** DP74 C3: `ueber` öffnet beim Kasten „Über …“. */
+    ziel?: 'ueber' | null;
   } = $props();
 
   const mitglied = $derived(
@@ -110,8 +114,25 @@
         bezeichnung: mitglied.zugehoerigkeit.bezeichnung,
         lebenssituation: mitglied.person.lebenssituation ?? 'angestellt',
         ausbildungArt: mitglied.person.ausbildungArt ?? null,
+        ohneNachname: !!mitglied.person.ohneNachname,
       };
     }
+  });
+
+  // DP74 C3: Vom offenen Punkt „Nachname von …“ aus öffnet das Blatt beim Kasten „Über …“. Den Fokus bekommt die
+  // Überschrift, nicht das Feld; sonst ginge die Tastatur auf und verdeckte das Kästchen.
+  let ueberKopf = $state<HTMLElement | null>(null);
+  let zielGesetzt = false;
+  $effect(() => {
+    if (ziel !== 'ueber' || zielGesetzt || !ueberKopf) return;
+    zielGesetzt = true;
+    const kopf = ueberKopf;
+    requestAnimationFrame(() => {
+      kopf.tabIndex = -1;
+      kopf.scrollIntoView({ block: 'start' });
+      window.scrollBy(0, -8);
+      kopf.focus({ preventScroll: true });
+    });
   });
 
   // Die Folgen stehen vor dem Speichern da (HA1).
@@ -258,7 +279,7 @@
     } else {
       const angaben = {
         vorname: werte.vorname.trim(),
-        nachname: werte.nachname.trim(),
+        nachname: mitglied && werte.ohneNachname ? '' : werte.nachname.trim(),
         rufname: werte.rufname.trim(),
         nameMappe: nameMappeAus(werte),
         lebenssituation: werte.lebenssituation,
@@ -268,6 +289,7 @@
         await personAendern(verbindung, mitglied.person.id, {
           ...angaben,
           rufname: rufnameFolgt(mitglied.person.vorname, angaben.vorname, angaben.rufname),
+          ohneNachname: !!werte.ohneNachname,
         });
         await zugehoerigkeitAendern(verbindung, mitglied.zugehoerigkeit.id, {
           bezeichnung: werte.bezeichnung,
@@ -305,9 +327,9 @@
   }
 </script>
 
-{#snippet abschnitt(titelText: string, hinweis: string)}
+{#snippet abschnitt(titelText: string, hinweis: string, ueber = false)}
   <div class="abschnitt-kopf">
-    <h2>{titelText}</h2>
+    {#if ueber}<h2 bind:this={ueberKopf}>{titelText}</h2>{:else}<h2>{titelText}</h2>{/if}
     <small>{hinweis}</small>
   </div>
 {/snippet}
@@ -379,6 +401,7 @@
         {@render abschnitt(
           t('personSeite.ueber', { name: mitglied.person.vorname }),
           t('personSeite.giltUeberall'),
+          true,
         )}
         <div class="kasten">
           <PersonFormular
@@ -386,6 +409,7 @@
             {rolle}
             teil="person"
             fokus={false}
+            nachnameWahl
             gespeichert={mitglied.person}
             gespeicherteTypen={unterlagenVon(mitglied.person.id).map((d) => d.typ)}
           />
@@ -450,7 +474,7 @@
               gewaehlt.person.lebenssituation
                 ? situationText(gewaehlt.person.lebenssituation, gewaehlt.person.ausbildungArt)
                 : '',
-              gewaehlt.person.kontakt.email || gewaehlt.person.kontakt.telefon,
+              gewaehlt.person.kontakt.email || telefonFuerMappe(gewaehlt.person.kontakt)?.anzeige,
             ]
               .filter(Boolean)
               .join(' · ')}</small

@@ -1,164 +1,110 @@
-// Passt eine Lesehilfe zu ihrer Mappe? (Abschnitt 11 der Beschreibung.) Eine Lesehilfe ist eine Angabe der
-// Bewerber und kein Echtheitsnachweis: Jeder kann sie ändern. Ein Leser zeigt sie darum nur, wenn alles passt,
-// und sonst gar nicht, auch nicht zum Teil.
-import { telefonE164 } from './telefon.js';
-import type { Lesehilfe, Person, Unterlage } from './typen.js';
+// Passt eine Lesehilfe zu ihrer Mappe? (Abschnitt 11 der Beschreibung, Punkte 1 bis 7.) Eine Lesehilfe ist eine
+// Angabe der Bewerber und kein Echtheitsnachweis: Jeder kann sie ändern. Ein Leser zeigt sie darum nur, wenn alles
+// passt, und sonst gar nicht, auch nicht zum Teil. Dieselben Regeln wie Designs fremder Leser `leser78.py`.
+import { papierGruende, type Papier } from './papier.js';
+import type { Lesehilfe } from './typen.js';
 
-/** Kennung einer offenen Liste (U1): Neue Kennungen kommen ohne neue Fassung dazu. */
-const KENNUNG_LISTE = /^[a-z][a-z0-9_]*$/;
-const listenKennung = (v: unknown): v is string => typeof v === 'string' && KENNUNG_LISTE.test(v);
-const TAG = /^\d{4}-\d{2}-\d{2}$/;
-const ZEITPUNKT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/;
-const MONAT = /^\d{4}-\d{2}$/;
-const KENNUNG = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const LAND = /^[A-Z]{2}$/;
-const MAX_TEXT = 200;
-const MAX_BITTE = 500;
-const MAX_KONTAKT = 254;
-
-const text = (v: unknown, max = MAX_TEXT): v is string =>
-  typeof v === 'string' && v.trim().length > 0 && v.length <= max;
-const ganz = (v: unknown, von: number, bis: number): v is number =>
-  Number.isInteger(v) && (v as number) >= von && (v as number) <= bis;
-
-/** Text vergleichbar machen: Das PDF trennt Zeilen und Wörter anders als die Lesehilfe. */
-export function vergleichbar(s: string): string {
-  return s
-    .normalize('NFC')
-    .replace(/[\s\u00a0\u00ad\u2060]/g, '')
-    .toLowerCase();
-}
-
-export interface Mappe {
+/** Was ein Leser über die Mappe weiß: Seitenzahl und Text vor der ersten Unterlage (Punkt 7). */
+export interface Mappe extends Papier {
   /** Zahl der Seiten der PDF. */
   seiten: number;
-  /** Der Text von Seite 1, so wie ein PDF-Leser ihn liefert. */
-  textSeite1: string;
 }
 
-export function passt(l: Lesehilfe, mappe: Mappe): boolean {
-  const ab4 = l.hefta >= 4;
-  const personen = l.haushalt?.personen;
-  const mitziehende = l.haushalt?.mitziehende;
-  if (!Array.isArray(personen) || !personen.length || !Array.isArray(mitziehende)) return false;
-  if (!text(l.erstellt) || !(ab4 ? ZEITPUNKT : TAG).test(l.erstellt)) return false;
-  const kennung = l.bewerbung?.kennung;
-  if (typeof kennung !== 'string' || !KENNUNG.test(kennung)) return false;
+const ZAHLWORT = [
+  '',
+  '',
+  'zwei',
+  'drei',
+  'vier',
+  'fünf',
+  'sechs',
+  'sieben',
+  'acht',
+  'neun',
+  'zehn',
+  'elf',
+  'zwölf',
+];
+
+/** V22: die feste Form der Mitziehenden; unbekannte Art: keine feste Form (L78-1). */
+export function mitziehendText(anzahl: number, art: string): string | null {
+  if (art !== 'kind' && art !== 'erwachsen') return null;
+  const [eins, viele] =
+    art === 'kind' ? ['Ein Kind', 'Kinder'] : ['Eine weitere Person', 'weitere Personen'];
+  if (anzahl === 1) return eins;
+  const w = `${anzahl < ZAHLWORT.length ? ZAHLWORT[anzahl] : anzahl} ${viele}`;
+  return w.charAt(0).toUpperCase() + w.slice(1);
+}
+
+/** Gründe, warum die Lesehilfe nicht zur Mappe passt; leer heißt: passt. */
+export function pruefen(l: Lesehilfe, mappe: Mappe): string[] {
+  // Punkt 7: Bindung an das Papier.
+  return [...punkteOhnePapier(l, mappe.seiten), ...papierGruende(l, mappe)];
+}
+
+/**
+ * Punkte 1 bis 6, ohne das Papier. Nur für Vergleiche mit Lesern, die keinen Text der PDF lesen (Tests); ein Leser
+ * zeigt eine Lesehilfe nie ohne Punkt 7.
+ */
+export function punkteOhnePapier(l: Lesehilfe, seiten: number): string[] {
+  const g: string[] = [];
+  const personen = l.haushalt.personen;
   // Punkt 1: die Seitenzahl.
-  if (
-    ab4
-      ? l.seitenzahl !== mappe.seiten
-      : l.seitenzahl !== undefined && l.seitenzahl !== mappe.seiten
-  )
-    return false;
-  if (ab4 && !ganz(l.fassung, 1, 9999)) return false;
-  if (l.modus !== undefined && !listenKennung(l.modus)) return false;
-  // `schritt` nur bei `datensparsam` (Regel aus Abschnitt 11, nicht im Schema).
-  if (l.schritt !== undefined && (!listenKennung(l.schritt) || l.modus !== 'datensparsam'))
-    return false;
-  if (l.loeschwunsch !== undefined && !text(l.loeschwunsch, MAX_BITTE)) return false;
-  if (
-    l.bewerbung.einzug !== undefined &&
-    !(text(l.bewerbung.einzug) && TAG.test(l.bewerbung.einzug))
-  )
-    return false;
-  if (l.bewerbung.inserat !== undefined && !text(l.bewerbung.inserat?.portal)) return false;
-  if (!personen.some((p) => p && p.rolle !== 'buerge')) return false;
-
-  // Punkte 3 und 4: Namen, Straße und Kontaktdaten stehen auf Seite 1.
-  const seite = vergleichbar(mappe.textSeite1);
-  const steht = (s: string) =>
-    s
-      .trim()
-      .split(/\s+/)
-      .every((w) => seite.includes(vergleichbar(w)));
-  // Punkt 6: höchstens eine Kontaktperson; höchstens ein Hauptmieter, und der steht zuerst; Bürgen nach allen
-  // im Mietvertrag. Genau einen Hauptmieter garantiert Hefta nicht (CP65).
-  if (personen.filter((p) => p?.kontakt).length > 1) return false;
-  const haupt = personen.filter((p) => p?.rolle === 'hauptmieter').length;
-  if (haupt > 1 || (haupt === 1 && personen[0]?.rolle !== 'hauptmieter')) return false;
-  const ersterBuerge = personen.findIndex((p) => p?.rolle === 'buerge');
-  if (ersterBuerge >= 0 && personen.slice(ersterBuerge).some((p) => p?.rolle !== 'buerge'))
-    return false;
-  const bereiche: [number, number][] = [];
-  for (const p of personen) {
-    if (!personPasst(p, ab4, steht, seite)) return false;
+  if (l.seitenzahl !== seiten) g.push(`Punkt 1: seitenzahl ${l.seitenzahl}, PDF hat ${seiten}`);
+  // Punkt 2: Bereiche in der Mappe, ohne Überschneidung; E220 Regel 4: Monate streng aufsteigend.
+  const bereiche: [number, number, string][] = [];
+  for (const p of personen)
     for (const u of p.unterlagen) {
-      if (!unterlagePasst(u, mappe.seiten)) return false;
-      bereiche.push([u.seiten_mappe.von, u.seiten_mappe.bis]);
+      const { von, bis } = u.seiten_mappe;
+      if (!(von >= 2 && von <= bis && bis <= l.seitenzahl))
+        g.push(`Punkt 2: ${p.name}, ${u.typ} auf Seite ${von} bis ${bis} liegt nicht in der Mappe`);
+      bereiche.push([von, bis, `${p.name}, ${u.typ}`]);
+      const m = u.monate ?? [];
+      if (m.some((x, i) => i > 0 && x <= m[i - 1]!))
+        g.push(`Monate bei ${p.name}, ${u.typ}: nicht aufsteigend oder doppelt`);
     }
-  }
-  // Punkt 2: Die Bereiche überschneiden sich nicht.
-  bereiche.sort((a, b) => a[0] - b[0]);
+  bereiche.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   for (let i = 1; i < bereiche.length; i++)
-    if (bereiche[i]![0] <= bereiche[i - 1]![1]) return false;
-
-  for (const m of mitziehende) {
-    if (!m || !text(m.text) || !ganz(m.anzahl, 1, 50)) return false;
-    if (!listenKennung(m.art)) return false;
+    if (bereiche[i]![0] <= bereiche[i - 1]![1])
+      g.push(`Punkt 2: ${bereiche[i - 1]![2]} überschneidet ${bereiche[i]![2]}`);
+  // Punkt 5: `name` ist `vorname`, ein Leerzeichen, `nachname`; ohne Nachnamen gleich `vorname`.
+  for (const p of personen) {
+    const v = p.vorname ?? '';
+    const n = p.nachname ?? '';
+    const soll = n === '' ? v : `${v} ${n}`;
+    if (v === '' || p.name.normalize('NFC') !== soll.normalize('NFC'))
+      g.push(`Punkt 5: name „${p.name}“ ist nicht vorname + nachname`);
   }
-  const w = l.bewerbung?.wohnung;
-  if (w) {
-    if (
-      !text(w.strasse) ||
-      typeof w.rest !== 'string' ||
-      w.rest.length > MAX_TEXT ||
-      !steht(w.strasse)
-    )
-      return false;
-    if (w.teile?.land !== undefined && !LAND.test(w.teile.land)) return false;
+  // Punkt 6: höchstens eine Kontaktperson; genau ein Hauptmieter, und er steht zuerst (E216); Bürgen nach allen im
+  // Mietvertrag. Unbekannte Rollen zählen weder als im Vertrag noch als Bürge (E220, Regel 6).
+  if (personen.filter((p) => p.kontakt === true).length > 1)
+    g.push('Punkt 6: mehr als eine Kontaktperson');
+  const haupt = personen.flatMap((p, i) => (p.rolle === 'hauptmieter' ? [i] : []));
+  if (haupt.length !== 1 || haupt[0] !== 0)
+    g.push('Punkt 6: nicht genau ein Hauptmieter an erster Stelle');
+  const buerge = personen.map((p) => p.rolle === 'buerge');
+  const erster = buerge.indexOf(true);
+  if (erster >= 0 && buerge.slice(erster).includes(false))
+    g.push('Punkt 6: Bürgin vor jemandem im Mietvertrag');
+  // V22: Mitziehende in fester Form, jede bekannte Art höchstens einmal.
+  const arten = l.haushalt.mitziehende
+    .map((m) => m.art)
+    .filter((a) => a === 'kind' || a === 'erwachsen');
+  if (new Set(arten).size !== arten.length)
+    g.push('Punkt 6: Mitziehende derselben Art zweimal (V22)');
+  for (const m of l.haushalt.mitziehende) {
+    const soll = mitziehendText(m.anzahl, m.art);
+    if (soll !== null && m.text.normalize('NFC') !== soll)
+      g.push(`Punkt 6: Mitziehende „${m.text}“ ist nicht „${soll}“ (V22)`);
   }
-  return true;
+  return g;
 }
 
-function personPasst(
-  p: Person,
-  ab4: boolean,
-  steht: (s: string) => boolean,
-  seite: string,
-): boolean {
-  if (!p || !text(p.name) || !listenKennung(p.rolle) || !steht(p.name)) return false;
-  if (!Array.isArray(p.unterlagen)) return false;
-  // Punkt 5 (U2): `name` ist `vorname`, ein Leerzeichen, `nachname`; ist `nachname` leer, gleich `vorname`.
-  // Verglichen wird nach NFC (U10).
-  if (ab4) {
-    if (!text(p.vorname) || typeof p.nachname !== 'string') return false;
-    const soll = p.nachname === '' ? p.vorname : `${p.vorname} ${p.nachname}`;
-    if (p.name.normalize('NFC') !== soll.normalize('NFC')) return false;
+/** Passt die Lesehilfe zur Mappe? Gleich `pruefen(l, mappe).length === 0`. */
+export function passt(l: Lesehilfe, mappe: Mappe): boolean {
+  try {
+    return pruefen(l, mappe).length === 0;
+  } catch {
+    return false;
   }
-  if (!p.kontakt && (p.telefon !== undefined || p.email !== undefined)) return false;
-  for (const wert of [p.telefon, p.email])
-    if (wert !== undefined && (!text(wert, MAX_KONTAKT) || !seite.includes(vergleichbar(wert))))
-      return false;
-  if (p.telefon_e164 !== undefined) {
-    if (p.telefon === undefined || p.telefon_e164 !== telefonE164(p.telefon)) return false;
-  }
-  return true;
-}
-
-function unterlagePasst(u: Unterlage, seiten: number): boolean {
-  if (!u || !text(u.typ)) return false;
-  const s = u.seiten_mappe;
-  // Punkt 2 (U3): 2 ≤ von ≤ bis ≤ seitenzahl; Seite 1 ist das Deckblatt.
-  if (!s || !ganz(s.von, 2, seiten) || !ganz(s.bis, s.von, seiten)) return false;
-  if (u.vom !== undefined && !(text(u.vom) && TAG.test(u.vom))) return false;
-  if (u.monate !== undefined) {
-    if (!Array.isArray(u.monate) || !u.monate.length) return false;
-    if (!u.monate.every((m) => typeof m === 'string' && MONAT.test(m))) return false;
-  }
-  if (u.pruefweg !== undefined && !text(u.pruefweg)) return false;
-  if (u.vermerke !== undefined) {
-    if (!Array.isArray(u.vermerke) || !u.vermerke.length) return false;
-    for (const v of u.vermerke) {
-      if (!v || !text(v.art)) return false;
-      if (v.seiten_original !== undefined) {
-        if (!Array.isArray(v.seiten_original) || !v.seiten_original.length) return false;
-        if (!v.seiten_original.every((n) => ganz(n, 1, 100_000))) return false;
-      }
-      if (v.art === 'seiten_weggelassen' && v.seiten_original === undefined) return false;
-      if (v.datei !== undefined && !ganz(v.datei, 1, 1000)) return false;
-      if (v.monat !== undefined && !(text(v.monat) && MONAT.test(v.monat))) return false;
-    }
-  }
-  return true;
 }

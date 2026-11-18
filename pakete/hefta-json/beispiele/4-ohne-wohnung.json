@@ -1,5 +1,5 @@
 {
-  "hefta": 4,
+  "hefta": 1,
   "erstellt": "2026-11-18T21:07:30+01:00",
   "fassung": 1,
   "seitenzahl": 4,
@@ -17,10 +17,19 @@
         "kontakt": true,
         "email": "paul.beispiel@example.com",
         "unterlagen": [
-          { "typ": "selbstauskunft", "seiten_mappe": { "von": 2, "bis": 2 } },
+          {
+            "typ": "selbstauskunft",
+            "seiten_mappe": {
+              "von": 2,
+              "bis": 2
+            }
+          },
           {
             "typ": "einkommen_ausbildung",
-            "seiten_mappe": { "von": 3, "bis": 3 },
+            "seiten_mappe": {
+              "von": 3,
+              "bis": 3
+            },
             "vom": "2026-09-01"
           }
         ]
@@ -30,10 +39,17 @@
         "vorname": "Mia",
         "nachname": "Beispiel",
         "rolle": "mitmieter",
-        "unterlagen": [{ "typ": "selbstauskunft", "seiten_mappe": { "von": 4, "bis": 4 } }]
+        "unterlagen": [
+          {
+            "typ": "selbstauskunft",
+            "seiten_mappe": {
+              "von": 4,
+              "bis": 4
+            }
+          }
+        ]
       }
     ],
     "mitziehende": []
-  },
-  "modus": "eigene_auswahl"
+  }
 }

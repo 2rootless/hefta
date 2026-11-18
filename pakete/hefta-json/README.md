@@ -10,22 +10,27 @@ Paket liest sie und prüft, ob sie zur Mappe passt. Das Format ist in `FORMAT.md
 ## Benutzen
 
 ```ts
-import { lesen, passt, typText } from 'hefta-json';
+import { lesen, pruefen, typText } from 'hefta-json';
 
-// Die Datei `hefta.json` aus dem Anhang der PDF, etwa mit PDF.js: getAttachments().
+// Aus der PDF, etwa mit PDF.js: der Anhang `hefta.json`, die Seitenzahl, der Text der Seiten vor der ersten
+// Unterlage in der Reihenfolge des Inhalts, die leeren Seiten und das Erstelldatum (FORMAT.md, Abschnitt 11).
 const lesehilfe = lesen(bytes);
-if (lesehilfe && passt(lesehilfe, { seiten: anzahlSeiten, textSeite1 })) {
+const gruende = lesehilfe ? pruefen(lesehilfe, { seiten, seite1, text, leereSeiten, erstellt }) : null;
+if (lesehilfe && gruende?.length === 0) {
   for (const person of lesehilfe.haushalt.personen)
     for (const u of person.unterlagen)
       console.log(person.name, typText(u.typ), u.seiten_mappe.von, u.seiten_mappe.bis);
 }
 ```
 
-- `lesen()` nimmt Text oder Bytes und gibt Fassung 1 bis 4 als ein Bild nach Fassung 4 zurück. Was keine Lesehilfe
-  ist, ergibt `null`. Die Funktion wirft nie.
-- `passt()` prüft, ob die Lesehilfe zur Mappe passt: Seitenzahl, Namen und Kontaktdaten auf Seite 1, Seitenbereiche.
-  Eine Lesehilfe ist kein Echtheitsnachweis; passt sie nicht, zeigen Sie sie nicht.
-- Das Paket liest keine PDF. Den Anhang holen Sie mit einer PDF-Bibliothek Ihrer Wahl (`FORMAT.md`, Abschnitt 2).
+- `lesen()` nimmt Text oder Bytes und liest streng nach Fassung 1: Schema, echte Daten, sauberer Text, Grenzen, keine
+  doppelten Schlüssel. Was keine Lesehilfe ist, ergibt `null`. Die Funktion wirft nie.
+- `pruefen()` prüft, ob die Lesehilfe zur Mappe passt, Punkte 1 bis 7: Seitenzahl, Seitenbereiche, Rollen und
+  Reihenfolge, und dass alles, was Sie zeigen würden, auf dem Deckblatt oder im Verzeichnis steht. `passt()` sagt
+  nur ja oder nein. Eine Lesehilfe ist kein Echtheitsnachweis; passt sie nicht, zeigen Sie sie nicht, auch nicht zum
+  Teil.
+- Das Paket liest keine PDF. Den Anhang und den Text holen Sie mit einer PDF-Bibliothek Ihrer Wahl (`FORMAT.md`,
+  Abschnitt 2 und 11).
 
 ## Was nicht drinsteht
 

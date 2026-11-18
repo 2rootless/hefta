@@ -2,7 +2,7 @@ import {
   ANHANG_NAME,
   FASSUNG,
   lesen,
-  telefonE164,
+  telefonPasst,
   type Lesehilfe,
   type Person,
   type Unterlage,
@@ -13,8 +13,8 @@ import { adresseTeile, wohnungTeile } from '../domain/adresse';
 import type { ExportModus } from '../domain/export';
 import type { Schritt } from '../domain/selbstauskunft';
 
-// Die Lesehilfe für Vermieter: eine kleine JSON-Datei als Anhang in der Mappe. Fassung 4 (PC98 bis PC100, E205 bis
-// E207); Beschreibung, Typen, Lesen und Prüfen stehen im Paket `pakete/hefta-json/` (Apache-2.0).
+// Die Lesehilfe für Vermieter: eine kleine JSON-Datei als Anhang in der Mappe. Fassung 1 (E218; PC98 bis PC116,
+// E205 bis E227); Beschreibung, Typen, Lesen und Prüfen stehen im Paket `pakete/hefta-json/` (Apache-2.0).
 // Regel 1: Nur, was auf dem Deckblatt, im Verzeichnis oder in den Eigenschaften der PDF ohnehin steht.
 // Regel 2: Ein Bonus, nie eine Voraussetzung; eine Mappe ohne Anhang ist dieselbe Mappe.
 // Regel 3: Kein Echtheitsnachweis. Läuft ohne Browser-APIs, damit es unter Node getestet werden kann.
@@ -31,7 +31,7 @@ export interface AnhangQuelle {
   /** Zeitpunkt der Mappe; derselbe steht als Erstelldatum in den Eigenschaften der PDF. */
   datum: Date;
   /** Kennung der Bewerbung (E6). */
-  kennung?: string;
+  kennung: string;
   /** Nummer der Fassung, wie auf dem Deckblatt („Fassung 2 vom …“). */
   fassung?: number;
   adresse: string[];
@@ -50,7 +50,8 @@ export interface AnhangQuelle {
   /** Die erste Person steht als Kontakt auf dem Deckblatt. */
   kontakt: boolean;
   /** Telefon und Mail, wie sie auf dem Deckblatt stehen. */
-  kontaktwege?: { telefon?: string; email?: string };
+  /** E222: `telefon` in fester Form, dazu die internationale Nummer aus der Eingabe (DP77). */
+  kontaktwege?: { telefon?: string; telefonE164?: string; email?: string };
   mitziehende: Mitziehend[];
   unterlagen: {
     /** Stelle der Person in `personen`. */
@@ -94,7 +95,10 @@ export function anhangBauen(q: AnhangQuelle): HeftaAnhang {
   };
   const telefon = q.kontakt ? q.kontaktwege?.telefon?.trim() : undefined;
   const email = q.kontakt ? q.kontaktwege?.email?.trim() : undefined;
-  const e164 = telefon ? telefonE164(telefon) : null;
+  // E222: Die Lesehilfe trägt die Nummer nur zusammen mit `telefon_e164` und nur in fester Form. Beide kommen aus
+  // der Eingabe mit Land (DP77); passen sie nicht nach der Regel für Leser, bleibt die Nummer aus der Lesehilfe.
+  const e164 = q.kontakt ? q.kontaktwege?.telefonE164?.trim() : undefined;
+  const mitTelefon = !!telefon && !!e164 && telefonPasst(telefon, e164);
   const personen: Person[] = q.personen.map((p, i) => {
     const vorname = (p.vorname ?? p.name).trim();
     const nachname = p.vorname === undefined ? '' : (p.nachname ?? '').trim();
@@ -106,8 +110,7 @@ export function anhangBauen(q: AnhangQuelle): HeftaAnhang {
       ...(q.kontakt && i === 0
         ? {
             kontakt: true as const,
-            ...(telefon ? { telefon } : {}),
-            ...(e164 ? { telefon_e164: e164 } : {}),
+            ...(mitTelefon ? { telefon, telefon_e164: e164 } : {}),
             ...(email ? { email } : {}),
           }
         : {}),
@@ -132,14 +135,13 @@ export function anhangBauen(q: AnhangQuelle): HeftaAnhang {
     fassung: q.fassung ?? 1,
     seitenzahl: q.seitenzahl,
     bewerbung: {
-      ...(q.kennung ? { kennung: q.kennung } : {}),
+      kennung: q.kennung,
       wohnung,
       ...(portal ? { inserat: { portal } } : {}),
       ...(q.einzug ? { einzug: q.einzug } : {}),
     },
     haushalt: { personen, mitziehende: q.mitziehende },
-    ...(q.modus ? { modus: q.modus } : {}),
-    ...(q.modus === 'datensparsam' && q.schritt ? { schritt: q.schritt } : {}),
+    // V23: `modus` gehört nicht zu Fassung 1. E227: 2.0 schreibt keinen `schritt`.
     ...(q.loeschwunsch?.trim() ? { loeschwunsch: q.loeschwunsch.trim() } : {}),
   };
 }

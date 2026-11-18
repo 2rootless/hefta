@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { telefonOffen } from '../domain/telefon';
   // Tab „Mappe“ (B12b, B18 Fassung 2 und 3, Nachricht 10.11. k): „Eure Mappe“ mit dem Rahmen-Satz aus E25,
   // Haushaltszeile, Aufgaben, je Person ein Blatt mit Reiter, Kinder, Bürgen, Hauptaktion und Backup.
   // Gegrüßt wird im Tab „Wohnungen“. Ohne Haushalt beginnt alles dort.
@@ -113,10 +114,19 @@
   );
 
   // Nachname freiwillig beim Anlegen (E96, 3), fehlt er, ist er ein eigener Punkt im Kasten.
-  const ohneNachname = $derived([...vertrag, ...buergen].filter((s) => !s.person.nachname.trim()));
+  // DP74 C3: Wer keinen Nachnamen hat (Haken unter „… ändern“), ist kein offener Punkt.
+  const ohneNachname = $derived(
+    [...vertrag, ...buergen].filter((s) => !s.person.nachname.trim() && !s.person.ohneNachname),
+  );
   // PC65: Nach einer Zusage ist die Frage nach Mietrückständen offen, solange die Antwort fehlt.
   const mietOffen = $derived(vertrag.filter((s) => mietFrageOffen(s.person, s.rolle, daten.hefte)));
-  const offen = $derived(offeneDinge(staende) + ohneNachname.length + mietOffen.length);
+  // E222 (DP77, Abschnitt 5): eine gespeicherte Nummer, die sich nicht umsetzen lässt.
+  const telefonPruefen = $derived(
+    [...vertrag, ...buergen].filter((s) => telefonOffen(s.person.kontakt)),
+  );
+  const offen = $derived(
+    offeneDinge(staende) + ohneNachname.length + mietOffen.length + telefonPruefen.length,
+  );
   // Schwelle (Auftraggeber 13.11.): Oben höchstens drei Aufgaben; der Rest steht ohnehin unten bei den
   // Personen. Frisch angelegt wären es sonst zehn und mehr, oben und unten doppelt.
   const OBEN = 3;
@@ -317,15 +327,43 @@
           <ul class="namen">
             {#each ohneNachname as s (s.person.id)}
               <li>
-                <a class="aufgabe" href="#/person-aendern/{s.person.id}/mappe">
+                <a class="aufgabe" href="#/person-aendern/{s.person.id}/nachname">
                   <span class="sym" aria-hidden="true"><Symbol name="person" groesse={20} /></span>
                   <span class="tx">
                     <b
-                      >{t('uebersicht.nachnameFehlt', {
+                      >{t('uebersicht.nachnameOffen', {
                         name: s.person.rufname || s.person.vorname,
                       })}</b
                     >
-                    <small>{t('uebersicht.nachnameWozu')}</small>
+                    <small
+                      >{t('uebersicht.nachnameWozu', {
+                        name: s.person.rufname || s.person.vorname,
+                      })}</small
+                    >
+                  </span>
+                  <Symbol name="weiter" groesse={16} />
+                </a>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+        {#if telefonPruefen.length}
+          <ul class="namen telefon-offen">
+            {#each telefonPruefen as s (s.person.id)}
+              <li>
+                <a class="aufgabe" href="#/selbstauskunft/{s.person.id}/feld/telefon">
+                  <span class="sym" aria-hidden="true"
+                    ><Symbol name="selbstauskunft" groesse={20} /></span
+                  >
+                  <span class="tx">
+                    <b
+                      >{t('uebersicht.telefonPruefen', {
+                        name: s.person.rufname || s.person.vorname,
+                      })}</b
+                    >
+                    <small
+                      >{t('uebersicht.telefonSoSteht', { nummer: s.person.kontakt.telefon })}</small
+                    >
                   </span>
                   <Symbol name="weiter" groesse={16} />
                 </a>
@@ -453,11 +491,16 @@
     padding: 6px 0 0;
   }
 
+  /* DP73 C1 (PC106): wie der Gruß auf „Wohnungen“: 16 px vom Rand (die Übersicht rückt 20 px ein, die Überschrift
+     hebt 4 px auf wie der Kopf, W36), 14 px unter dem Kopf, 30 px, 700, Breite 108 %. */
   .titel {
-    margin: 10px 0 4px;
-    font-size: calc(34 * var(--px));
-    line-height: calc(38 * var(--px));
-    font-weight: 800;
+    margin: 8px 0 4px calc(var(--space-4) - var(--space-5));
+    font-size: calc(30 * var(--px));
+    font-weight: 700;
+    font-stretch: 108%;
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
   }
 
   .rahmen {

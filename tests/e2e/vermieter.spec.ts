@@ -165,13 +165,13 @@ test('Lesehilfe passt nicht: gar nicht zeigen. Neuere Fassung: zeigen, was die S
     await pdf({ ...M2, datei: 'Fremd.pdf', ersteSeite: 'Ganz andere Leute' }),
     await pdf(M5),
     await pdf(M3),
-    // Eine ältere Fassung ist keine neuere (Fehler vom 6.11.2026).
+    // Fassung 1 mit anderer Kennung ist keine neuere Fassung (Fehler vom 6.11.2026).
     await pdf({
       ...M1,
       datei: 'Bewerbung_Mustermann_Fassung_2.pdf',
       anhang: {
         ...M1.anhang,
-        hefta: 2,
+        hefta: 1,
         bewerbung: {
           ...(M1.anhang?.bewerbung as Record<string, unknown>),
           kennung: '6f1c2b9e-4d7a-4c1e-9b2f-3a5d8e7c1f40',
@@ -211,22 +211,21 @@ test('Fassung der echten App: Die Mappe aus Hefta wird gelesen', async ({ page }
   await expect(haupt(page)).toContainText('Beispielstraße 1');
 });
 
-// E60: Seit dem Start von Version 1 im Store gibt es Mappen bei Fremden. Diese Mappe hat der Code von
-// Version 1 gebaut (Stand 31e7436, Lesehilfe Fassung 3, scripts/muster-mappen.mjs). Sie wird nie neu
-// erzeugt; für jede neue Fassung kommt eine eigene dazu, und alle müssen lesbar bleiben.
-test('Mappe aus Version 1 (E60): Die Lesehilfe passt und wird ganz gezeigt', async ({ page }) => {
+// PC107 (E216): Die Mappe aus Version 1 (Stand 31e7436, Lesehilfe in alter Form, scripts/muster-mappen.mjs) öffnet
+// wie eine Mappe ohne Lesehilfe: ohne Fehlermeldung und ohne Hinweis auf alte Fassungen. Gegenprobe: Würde die
+// Lesehilfe gelesen, stünde die Rolle („Hauptmietpartei“) da, und der Test würde rot.
+test('Mappe aus Version 1 (PC107): öffnet ohne Lesehilfe und ohne Meldung', async ({ page }) => {
   await page.goto('/');
   await laden(page, 'tests/fixtures/mappe/version1-familie.pdf');
   await expect(page.locator('.vs-row')).toHaveCount(1);
-  await expect(page.locator('.vs-rt')).toContainText('Max und Lea Mustermann');
+  await expect(page.locator('.vs-row')).not.toContainText('passt nicht');
   const d = haupt(page);
+  await expect(d).toContainText('keine Lesehilfe');
   const text = (await d.innerText()).replaceAll('­', '');
-  expect(text).toContain('Hauptmietpartei');
-  expect(text).toContain('Hefta prüft sie nicht');
-  expect(text).toContain('Bitte der Bewerber');
-  await expect(d.getByRole('button', { name: 'Deckblatt mit Kontakt ansehen' })).toBeVisible();
-  await d.getByRole('button', { name: 'Deckblatt mit Kontakt ansehen' }).click();
-  await expect(page.getByRole('heading', { name: /Seite 1 von \d+/ })).toBeVisible();
+  expect(text).not.toContain('Hauptmietpartei');
+  expect(text).not.toContain('passt nicht');
+  expect(text).not.toContain('Fassung 3');
+  await expect(d.locator('.vs-was')).toHaveCount(0);
 });
 
 test('Hineinziehen: Die ganze Seite nimmt an und zeigt es', async ({ page }) => {
@@ -457,7 +456,7 @@ test('Eine Mappe aus der Liste nehmen: nur diese, die nächste rückt nach (Wuns
   await expect(page.locator('.vs-nr')).toHaveText(['1', '2']);
 });
 
-test('Export als CSV (PC100): Fassung 4 dabei, Fassung 3 nicht; Hinweis zum Löschen; nichts geht hinaus', async ({
+test('Export als CSV (PC100, PC107): Fassung 1 dabei, alte Form nicht; Hinweis zum Löschen; nichts geht hinaus', async ({
   page,
 }) => {
   const fremd: string[] = [];
@@ -470,11 +469,26 @@ test('Export als CSV (PC100): Fassung 4 dabei, Fassung 3 nicht; Hinweis zum Lös
       fremd.push(r.url());
   });
   await page.goto('/');
-  await laden(page, await pdf(M8), await pdf(M1));
+  // Eine Lesehilfe in alter Form (Version 1) ist keine Lesehilfe; Seite 1 trägt den Namen.
+  const ALT = {
+    ...M1,
+    datei: 'Bewerbung_Mustermann_alt.pdf',
+    ersteSeite: 'Max Mustermann',
+    anhang: {
+      hefta: 3,
+      erstellt: '2026-11-06',
+      bewerbung: { kennung: 'd2e0f734-0b59-41ea-95f4-c9715acbe034', wohnung: null },
+      haushalt: { personen: [{ name: 'Max Mustermann', rolle: 'hauptmieter' }], mitziehende: [] },
+      unterlagen: [],
+      seitenzahl: M1.seiten,
+    },
+  };
+  await laden(page, await pdf(M8), await pdf(ALT));
   const bereich = page.getByRole('region', { name: 'Für Ihre Software exportieren' });
   await expect(bereich).toContainText('CSV für Tabellen und Software.');
   await expect(bereich).toContainText('Dabei sind 1 von 2 Mappen.');
-  await expect(bereich).toContainText('Nicht dabei: Mappe 2 (Lesehilfe vor Hefta 2.0).');
+  await expect(bereich).toContainText('Nicht dabei: Mappe 2 (ohne passende Lesehilfe).');
+  await expect(bereich).not.toContainText('vor Hefta');
   await expect(bereich).toContainText(
     'Die Datei enthält Namen und Kontaktdaten. Löschen Sie sie mit der Mappe, wenn die Wohnung vergeben ist.',
   );
@@ -492,8 +506,8 @@ test('Export als CSV (PC100): Fassung 4 dabei, Fassung 3 nicht; Hinweis zum Lös
   expect(zeilen[3]).toContain(';buerge;Petra;Mustermann;Petra Mustermann;');
   expect(fremd).toEqual([]);
 
-  // Gegenprobe: nur Mappen ohne Fassung 4, dann gibt es nichts zu exportieren.
+  // Gegenprobe: nur eine Mappe in alter Form, dann gibt es nichts zu exportieren.
   await page.getByRole('button', { name: 'Liste leeren' }).click();
-  await laden(page, await pdf(M1));
+  await laden(page, await pdf(ALT));
   await expect(page.getByRole('button', { name: 'Für Ihre Software exportieren' })).toBeDisabled();
 });

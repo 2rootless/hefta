@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { anhangLesen, type HeftaAnhang } from '../pdf/anhang';
 import { csvText, dateiname, exportierbar, SPALTEN, zelle } from './export';
 
-// Export als CSV (PC99, PC100): gegen das Beispiel aus dem Entwurf (export-entwurf.md, Abschnitt 2), Zeichen für
-// Zeichen; dazu die Gegenproben aus Abschnitt 5.
+// Export als CSV (PC99, PC100; Fassung 1: E218, V20, V23): gegen das Beispiel aus dem Entwurf (export-entwurf.md,
+// Abschnitt 2), Zeichen für Zeichen, ohne `modus`; dazu die Gegenproben aus Abschnitt 5.
 
 const lesehilfe = (datei: string) =>
   anhangLesen(readFileSync(`pakete/hefta-json/beispiele/${datei}`, 'utf8')) as HeftaAnhang;
@@ -41,13 +41,17 @@ describe('Export als CSV', () => {
       expect(z[spalte('vorname')]).toBe(p.vorname);
       expect(z[spalte('nachname')]).toBe(p.nachname);
       expect(z[spalte('email')]).toBe(p.email ?? '');
-      expect(z[spalte('telefon_e164')]).toBe(p.telefon_e164 ? `'${p.telefon_e164}` : '');
+      // T5, V20: `telefon_e164` in geprüfter Form ohne Apostroph, damit Programme die Nummer richtig lesen.
+      expect(z[spalte('telefon_e164')]).toBe(p.telefon_e164 ?? '');
     });
   });
 
   it('Gegenproben: Formel, Semikolon, Anführungszeichen, Zeilenumbruch', () => {
     expect(zelle('=SUMME(A1:A9)')).toBe("'=SUMME(A1:A9)");
     expect(zelle('+491713920001')).toBe("'+491713920001");
+    expect(zelle('+491713920001', 'telefon')).toBe("'+491713920001");
+    expect(zelle('+491713920001', 'telefon_e164')).toBe('+491713920001');
+    expect(zelle('+49=1', 'telefon_e164')).toBe("'+49=1");
     expect(zelle('-1')).toBe("'-1");
     expect(zelle('@kurz')).toBe("'@kurz");
     expect(zelle('Muster;Beispiel')).toBe('"Muster;Beispiel"');
@@ -58,7 +62,7 @@ describe('Export als CSV', () => {
     expect(zelle('Lindenring 3')).toBe('Lindenring 3');
   });
 
-  it('nur Lesehilfen ab Fassung 4 mit getrennten Namen', () => {
+  it('nur gelesene Lesehilfen; die alte Form vor Fassung 1 ist keine (E216)', () => {
     expect(exportierbar(lesehilfe('1-eine-person.json'))).toBe(true);
     const alt = anhangLesen(
       JSON.stringify({
@@ -69,9 +73,21 @@ describe('Export als CSV', () => {
         unterlagen: [],
       }),
     );
-    expect(alt).not.toBeNull();
+    expect(alt).toBeNull();
     expect(exportierbar(alt)).toBe(false);
     expect(exportierbar(null)).toBe(false);
+  });
+
+  it('V23, E227: keine Spalte modus; schritt nur mit festem Satz', () => {
+    expect(SPALTEN).not.toContain('modus');
+    const a = lesehilfe('3-nach-der-zusage.json');
+    expect(a.schritt).toBe('zusage');
+    const kopf = csvText([a]).slice(1).split('\r\n')[0]!.split(';');
+    const zeile = csvText([a]).slice(1).split('\r\n')[1]!.split(';');
+    expect(zeile[kopf.indexOf('schritt')]).toBe('zusage');
+    const fremd = { ...a, schritt: 'vorab' } as unknown as HeftaAnhang;
+    const zeileFremd = csvText([fremd]).slice(1).split('\r\n')[1]!.split(';');
+    expect(zeileFremd[kopf.indexOf('schritt')]).toBe('');
   });
 
   it('Dateiname nach dem Tag des Exports', () => {

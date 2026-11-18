@@ -24,6 +24,11 @@ export const entwurf = $state<{
   bildHoch: boolean;
   /** Aus einer Portal-App an Hefta geteilt (E81, B23 `quelle=teilen`). */
   geteilt: boolean;
+  /**
+   * PC118 (F8a): der Text, den die Portal-App beim Teilen mitschickt (ImmoScout24: Miete, Fläche, Zimmer, Adresse).
+   * Er kommt vor der Seite; nur was darin fehlt, liest Hefta aus der Seite.
+   */
+  geteilterText: string;
 }>({
   text: '',
   link: '',
@@ -35,6 +40,7 @@ export const entwurf = $state<{
   bild: null,
   bildHoch: false,
   geteilt: false,
+  geteilterText: '',
 });
 
 /**
@@ -46,7 +52,8 @@ export const zuletzt = $state<{ heftId: string | null }>({ heftId: null });
 
 export const vorschauStand = $state<{
   link: string;
-  zustand: 'laden' | 'ok' | 'zeit' | 'netz' | 'leer' | 'liste' | 'schon';
+  /** `weg`: Die Seite sagt, dass es das Inserat nicht mehr gibt (404, 410); `leer`: nichts gelesen (F8b). */
+  zustand: 'laden' | 'ok' | 'zeit' | 'netz' | 'leer' | 'weg' | 'liste' | 'schon';
   roh: InseratGelesen | null;
   /** PC19 A4: Uhrzeit des letzten Versuchs, damit „Noch einmal versuchen“ sichtbar etwas tut. */
   versuchtUm?: Date;
@@ -76,6 +83,7 @@ export function entwurfVergessen(): void {
   entwurf.bild = null;
   entwurf.bildHoch = false;
   entwurf.geteilt = false;
+  entwurf.geteilterText = '';
   vorschauStand.link = '';
   vorschauStand.roh = null;
 }
@@ -85,11 +93,15 @@ export function entwurfVergessen(): void {
  * Titel nach Probe 3: die Überschrift der Seite vor `og:title`, dann der Titel des Dokuments.
  */
 export function entwurfAusVorschau(g: InseratGelesen, link: string): void {
-  const text = g.text ?? '';
+  const seite = g.text ?? '';
   const url = g.url || link;
-  const gelesen = lesen({ text, url });
-  const a = adresseLesen(text);
+  // PC118 (F8a): Der geteilte Text kommt zuerst; die Seite ergänzt nur, was darin fehlt.
+  const geteilt = entwurf.geteilterText;
+  const ausText = geteilt ? lesen({ text: geteilt, url: link }) : null;
+  const gelesen = mitText(lesen({ text: seite, url }), ausText);
+  const a = (geteilt ? adresseLesen(geteilt) : null) ?? adresseLesen(seite);
   const titel = (g.h1 || g.ogTitle || g.titel || '').trim() || null;
+  const text = [geteilt, seite].filter(Boolean).join('\n\n');
   entwurf.text = text;
   entwurf.link = link;
   entwurf.gelesen = gelesen;
@@ -101,6 +113,31 @@ export function entwurfAusVorschau(g: InseratGelesen, link: string): void {
   entwurf.gelesenAdresse = entwurf.adresse;
   entwurf.bild = g.bild ?? null;
   entwurf.bildHoch = !!g.bildHoch;
+}
+
+/** Was der geteilte Text sagt, gilt vor der Seite; die Seite füllt nur Lücken. */
+function mitText(seite: Gelesen, text: Gelesen | null): Gelesen {
+  if (!text) return seite;
+  const aus: Record<string, unknown> = { ...seite };
+  for (const [k, v] of Object.entries(text)) if (v !== undefined && v !== false) aus[k] = v;
+  return aus as Gelesen;
+}
+
+/**
+ * PC118 (F8a): Reicht der geteilte Text allein? Dann lädt Hefta die Seite gar nicht. Nötig sind Adresse, Kaltmiete,
+ * Warmmiete, Fläche und Zimmer.
+ */
+export function geteilterTextReicht(): boolean {
+  const t = entwurf.geteilterText;
+  if (!t) return false;
+  const g = lesen({ text: t, url: entwurf.link || undefined });
+  return (
+    !!adresseLesen(t) &&
+    g.kalt !== undefined &&
+    g.warm !== undefined &&
+    g.flaeche !== undefined &&
+    g.zimmer !== undefined
+  );
 }
 
 /** Hat das Lesen etwas gefunden, das im Kopf eines Hefts steht? */
@@ -117,10 +154,11 @@ export function zurKontrolle(): void {
   gehe('/wohnung-neu/kontrolle');
 }
 
-export function geteiltOeffnen(link: string): void {
+export function geteiltOeffnen(link: string, text = ''): void {
   entwurfVergessen();
   entwurf.link = link;
   entwurf.geteilt = true;
+  entwurf.geteilterText = text.trim();
   if (linkWegDa()) gehe('/wohnung-neu/vorschau');
   else {
     // Android: Die unsichtbare Vorschau gibt es bisher nur auf dem iPhone. Dann gleich zur Kontrolle, mit

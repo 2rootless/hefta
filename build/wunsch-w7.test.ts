@@ -8,8 +8,11 @@ import { describe, expect, it } from 'vitest';
 // Musteradressen nur aus der Liste, die die Planung geprüft hat (PC52, PC53, Wunschliste Fassung 10).
 
 // Eine Vorlage wie „0171 39200${…}“ ist keine Nummer.
-const RUFNUMMER = /(?<![\d.,-])0(?:1[5-7]\d|[2-9]\d{1,3})[ /-]?\d{2,4}[ -]?\d{2,6}(?![\d.,]|\$\{)/g;
-const ERLAUBT_NUMMER = /^0171[ /-]?3920\d{3}$/;
+const RUFNUMMER =
+  /(?<![\d.,-])0(?:1[5-7]\d|[2-9]\d{1,3})[ /-]?\d{2,5}[ -]?\d{2,6}(?:[ -]\d{3,6})?(?![\d.,]|\$\{)/g;
+// Wunschliste Fassung 24 (E224): dazu Festnetz Hamburg 040 66969 000 bis 999, ebenfalls Medienproduktionen; der
+// britische Bereich +44 20 7946 0xxx (E214) erscheint hier als „020 7946 0xxx“ hinter der Landesvorwahl.
+const ERLAUBT_NUMMER = /^(?:0171[ /-]?3920\d{3}|040[ /-]?66969 ?\d{3}|020 7946 0\d{3})$/;
 const MAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
 const ERLAUBT_MAIL =
   /@(?:(?:[\w-]+\.)*example\.(?:com|org)|hefta\.de|users\.noreply\.github\.com)$/;
@@ -86,6 +89,14 @@ describe('wunsch-W7: nur Musterdaten', () => {
       'max@gmx.de',
     ]);
     expect(verstoesse("telefon: '0171 3920001', email: 'max.mustermann@example.com'")).toEqual([]);
+  });
+
+  it('Fassung 24: Festnetz Hamburg 040 66969xxx ist erlaubt, 040 66968 000 schlägt an (PC114)', () => {
+    expect(verstoesse("'040 66969123', '040/66969000', '04066969999', '040 66969 123'")).toEqual(
+      [],
+    );
+    expect(verstoesse("telefon: '040 66968000'")).toEqual(['040 66968000']);
+    expect(verstoesse("telefon: '040 66968 000'")).toEqual(['040 66968 000']);
   });
 
   it('Gegenprobe Adresse: die echte Lindenallee schlägt an, die geprüften Musteradressen nicht', () => {

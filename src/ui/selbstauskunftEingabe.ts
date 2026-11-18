@@ -1,3 +1,4 @@
+import { DEUTSCHLAND, telefonSpeichern, type Land } from '../domain/telefon';
 import {
   ERKLAERUNG,
   fehlendeAngaben,
@@ -15,6 +16,8 @@ import type { HaushaltAnsicht } from '../storage/speicher';
 
 export interface SelbstauskunftEingabe {
   telefon: string;
+  /** E222: Land der Nummer, ISO 3166-1; vorgewählt ist Deutschland. */
+  telefonLand: string;
   email: string;
   /** Wird hier nicht bearbeitet, bleibt aber erhalten. */
   anschrift?: string;
@@ -39,6 +42,7 @@ export function haushaltsAngabenAus(ansicht: HaushaltAnsicht | null): HaushaltsA
 export function eingabeAus(person: Person, hh: HaushaltsAngaben): SelbstauskunftEingabe {
   return {
     telefon: person.kontakt.telefon,
+    telefonLand: person.kontakt.telefonLand ?? DEUTSCHLAND,
     email: person.kontakt.email,
     ...(person.kontakt.anschrift ? { anschrift: person.kontakt.anschrift } : {}),
     beruf: person.beruf,
@@ -60,7 +64,7 @@ export function angabenAus(e: SelbstauskunftEingabe): Partial<Person> {
     e.sa[f] === 'ja' ? (e.sa[ERKLAERUNG[f]] ?? '').trim() : '';
   return {
     kontakt: {
-      telefon: e.telefon.trim(),
+      ...telefonSpeichern(e.telefon, e.telefonLand as Land),
       email: e.email.trim(),
       ...(e.anschrift ? { anschrift: e.anschrift } : {}),
     },

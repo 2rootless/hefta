@@ -13,7 +13,7 @@ export interface NeuePerson {
 
 async function personAusfuellen(page: Page, p: NeuePerson) {
   await page.getByLabel('Vorname').fill(p.vorname);
-  await page.getByLabel('Nachname').fill(p.nachname ?? 'Mustermann');
+  await page.getByLabel('Nachname', { exact: true }).fill(p.nachname ?? 'Mustermann');
   await page.getByRole('radio', { name: p.bezeichnung, exact: true }).click();
   if (p.einkommen) await page.getByLabel(/Einkommen\?$/).selectOption({ label: p.einkommen });
 }

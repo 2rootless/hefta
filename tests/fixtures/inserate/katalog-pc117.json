@@ -1,0 +1,344 @@
+{
+  "_kommentar": "PC117, Abschnitt 2: Katalog erfundener Inserate. Von Hand geschrieben, Aufbau der Portale nachgeahmt; Adressen nur aus\nW7 (Lindenring 3 und 8 in 20259 Hamburg, Musterweg 7, Beispielstraße 1, Musterplatz 1 in 12345 Musterstadt), Rufnummern enthält der Katalog keine. Ausgabe: tests/fixtures/inserate/katalog-pc117.json",
+  "faelle": [
+    {
+      "nr": "N01",
+      "art": "Titel mit Werbung",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000001",
+      "h1": "Helle 3-Zimmer-Wohnung mit Balkon – ruhig gelegen!",
+      "text": "Helle 3-Zimmer-Wohnung mit Balkon – ruhig gelegen!\nWohnung zur Miete\nMusterweg 7, 12345 Musterstadt\n\nKaltmiete 650 €\nNebenkosten 120 €\nHeizkosten 80 €\nWarmmiete 850 €\nZimmer 2\nWohnfläche ca. 58 m²\n\nObjektbeschreibung\nRuhige Lage, gute Anbindung."
+    },
+    {
+      "nr": "N02",
+      "art": "Titel mit Werbung",
+      "portal": "Immowelt",
+      "url": "https://www.immowelt.de/expose/000000002-aaaa-4bbb-8ccc-dddddddddddd",
+      "h1": "TRAUMWOHNUNG!!! Erstbezug nach Sanierung",
+      "text": "TRAUMWOHNUNG!!! Erstbezug nach Sanierung\nBeispielstraße 1, 12345 Musterstadt\n\n850 € Warmmiete · 2 Zimmer · 58 m²\n\nKaltmiete\n650 €\nNebenkosten\n120 €\nHeizkosten\n80 €\n\nBeschreibung\nSchöne Wohnung, frei ab sofort."
+    },
+    {
+      "nr": "N03",
+      "art": "Titel mit Werbung",
+      "portal": "Kleinanzeigen",
+      "url": "https://www.kleinanzeigen.de/s-anzeige/wohnung/100000003-203-0000",
+      "h1": "Super schöne Wohnung – provisionsfrei!!",
+      "text": "Super schöne Wohnung – provisionsfrei!!\n650 € VB\n12345 Musterstadt - Neustadt\n\nDetails\nWohnfläche 58 m²\nZimmer 2\nWarmmiete 850 €\n\nBeschreibung\nNachmieter gesucht."
+    },
+    {
+      "nr": "N04",
+      "art": "Titel mit Werbung",
+      "portal": "Hausverwaltung",
+      "url": "https://www.muster-hausverwaltung.de/angebote/04",
+      "h1": "Exklusives Wohnen am Lindenring",
+      "text": "Exklusives Wohnen am Lindenring\nLindenring 8\n20259 Hamburg\n\nMietpreis kalt: 650,00 EUR\nNebenkosten: 120,00 EUR\nHeizkosten: 80,00 EUR\nGesamtmiete: 850,00 EUR\nZimmer: 2\nWohnfläche: 58,00 m²\n\nBitte bewerben Sie sich über das Kontaktformular."
+    },
+    {
+      "nr": "N05",
+      "art": "Stadtteil im Titel, ohne Straße",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000005",
+      "h1": "2-Zimmer-Wohnung in Eimsbüttel",
+      "text": "2-Zimmer-Wohnung in Eimsbüttel\nWohnung zur Miete\n20259 Hamburg, Eimsbüttel\n\nKaltmiete 650 €\nNebenkosten 120 €\nHeizkosten 80 €\nWarmmiete 850 €\nZimmer 2\nWohnfläche ca. 58 m²\n\nObjektbeschreibung\nRuhige Lage, gute Anbindung."
+    },
+    {
+      "nr": "N06",
+      "art": "Stadtteil im Titel, ohne Straße",
+      "portal": "Immowelt",
+      "url": "https://www.immowelt.de/expose/000000006-aaaa-4bbb-8ccc-dddddddddddd",
+      "h1": "Wohnung in Neustadt, 2 Zimmer",
+      "text": "Wohnung in Neustadt, 2 Zimmer\n12345 Musterstadt (Neustadt)\n\n850 € Warmmiete · 2 Zimmer · 58 m²\n\nKaltmiete\n650 €\nNebenkosten\n120 €\nHeizkosten\n80 €\n\nBeschreibung\nSchöne Wohnung, frei ab sofort."
+    },
+    {
+      "nr": "N07",
+      "art": "Stadtteil im Titel, ohne Straße",
+      "portal": "Kleinanzeigen",
+      "url": "https://www.kleinanzeigen.de/s-anzeige/wohnung/100000007-203-0000",
+      "h1": "Musterstadt-Neustadt: 2 Zi., Balkon",
+      "text": "Musterstadt-Neustadt: 2 Zi., Balkon\n650 € VB\n12345 Musterstadt - Neustadt\n\nDetails\nWohnfläche 58 m²\nZimmer 2\nWarmmiete 850 €\n\nBeschreibung\nNachmieter gesucht."
+    },
+    {
+      "nr": "N08",
+      "art": "Stadtteil im Titel, ohne Straße",
+      "portal": "Genossenschaft",
+      "url": "https://www.beispiel-genossenschaft.de/wohnungen/08",
+      "h1": "Wohnung im Quartier Nord",
+      "text": "Wohnung im Quartier Nord\nQuartier Nord\n12345 Musterstadt\n\nMietpreis kalt: 650,00 EUR\nNebenkosten: 120,00 EUR\nHeizkosten: 80,00 EUR\nGesamtmiete: 850,00 EUR\nZimmer: 2\nWohnfläche: 58,00 m²\n\nBitte bewerben Sie sich über das Kontaktformular."
+    },
+    {
+      "nr": "N09",
+      "art": "Adresse nur im Text",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000009",
+      "h1": "Gemütliche Wohnung nahe Park",
+      "text": "Gemütliche Wohnung nahe Park\nWohnung zur Miete\n12345 Musterstadt\n\nKaltmiete 650 €\nNebenkosten 120 €\nHeizkosten 80 €\nWarmmiete 850 €\nZimmer 2\nWohnfläche ca. 58 m²\n\nObjektbeschreibung\nDie Wohnung liegt im Musterweg 7, zweites Obergeschoss."
+    },
+    {
+      "nr": "N10",
+      "art": "Adresse nur im Text",
+      "portal": "Kleinanzeigen",
+      "url": "https://www.kleinanzeigen.de/s-anzeige/wohnung/100000010-203-0000",
+      "h1": "2 Zimmer zu vermieten",
+      "text": "2 Zimmer zu vermieten\n650 € VB\n12345 Musterstadt\n\nDetails\nWohnfläche 58 m²\nZimmer 2\nWarmmiete 850 €\n\nBeschreibung\nAdresse: Beispielstraße 1, 12345 Musterstadt"
+    },
+    {
+      "nr": "N11",
+      "art": "Adresse nur im Text",
+      "portal": "Hausverwaltung",
+      "url": "https://www.muster-hausverwaltung.de/angebote/11",
+      "h1": "Wohnung 4711",
+      "text": "Wohnung 4711\n\nMietpreis kalt: 650,00 EUR\nNebenkosten: 120,00 EUR\nHeizkosten: 80,00 EUR\nGesamtmiete: 850,00 EUR\nZimmer: 2\nWohnfläche: 58,00 m²\n\nObjekt: Lindenring 3, Erdgeschoss, 20259 Hamburg"
+    },
+    {
+      "nr": "N12",
+      "art": "„Adresse auf Anfrage“",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000012",
+      "h1": "Schöne 2-Zimmer-Wohnung",
+      "text": "Schöne 2-Zimmer-Wohnung\nWohnung zur Miete\nAdresse auf Anfrage\n12345 Musterstadt\n\nKaltmiete 650 €\nNebenkosten 120 €\nHeizkosten 80 €\nWarmmiete 850 €\nZimmer 2\nWohnfläche ca. 58 m²\n\nObjektbeschreibung\nRuhige Lage, gute Anbindung."
+    },
+    {
+      "nr": "N13",
+      "art": "„Adresse auf Anfrage“",
+      "portal": "Immowelt",
+      "url": "https://www.immowelt.de/expose/000000013-aaaa-4bbb-8ccc-dddddddddddd",
+      "h1": "Neubauwohnung mit Aufzug",
+      "text": "Neubauwohnung mit Aufzug\nDie vollständige Adresse erhalten Sie vom Anbieter\n\n850 € Warmmiete · 2 Zimmer · 58 m²\n\nKaltmiete\n650 €\nNebenkosten\n120 €\nHeizkosten\n80 €\n\nBeschreibung\nSchöne Wohnung, frei ab sofort."
+    },
+    {
+      "nr": "N14",
+      "art": "„Adresse auf Anfrage“",
+      "portal": "Kleinanzeigen",
+      "url": "https://www.kleinanzeigen.de/s-anzeige/wohnung/100000014-203-0000",
+      "h1": "Wohnung in ruhiger Lage",
+      "text": "Wohnung in ruhiger Lage\n650 € VB\nAdresse wird bei Besichtigung mitgeteilt\n\nDetails\nWohnfläche 58 m²\nZimmer 2\nWarmmiete 850 €\n\nBeschreibung\nNachmieter gesucht."
+    },
+    {
+      "nr": "N15",
+      "art": "Straße ohne Hausnummer",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000015",
+      "h1": "Wohnung am Lindenring",
+      "text": "Wohnung am Lindenring\nWohnung zur Miete\nLindenring, 20259 Hamburg\n\nKaltmiete 650 €\nNebenkosten 120 €\nHeizkosten 80 €\nWarmmiete 850 €\nZimmer 2\nWohnfläche ca. 58 m²\n\nObjektbeschreibung\nRuhige Lage, gute Anbindung."
+    },
+    {
+      "nr": "N16",
+      "art": "Straße ohne Hausnummer",
+      "portal": "Immowelt",
+      "url": "https://www.immowelt.de/expose/000000016-aaaa-4bbb-8ccc-dddddddddddd",
+      "h1": "2 Zimmer Musterweg",
+      "text": "2 Zimmer Musterweg\nMusterweg, 12345 Musterstadt\n\n850 € Warmmiete · 2 Zimmer · 58 m²\n\nKaltmiete\n650 €\nNebenkosten\n120 €\nHeizkosten\n80 €\n\nBeschreibung\nSchöne Wohnung, frei ab sofort."
+    },
+    {
+      "nr": "N17",
+      "art": "Straße ohne Hausnummer",
+      "portal": "Hausverwaltung",
+      "url": "https://www.muster-hausverwaltung.de/angebote/17",
+      "h1": "Beispielstraße – 2 Zimmer",
+      "text": "Beispielstraße – 2 Zimmer\nBeispielstraße\n12345 Musterstadt\n\nMietpreis kalt: 650,00 EUR\nNebenkosten: 120,00 EUR\nHeizkosten: 80,00 EUR\nGesamtmiete: 850,00 EUR\nZimmer: 2\nWohnfläche: 58,00 m²\n\nBitte bewerben Sie sich über das Kontaktformular."
+    },
+    {
+      "nr": "N18",
+      "art": "Hausnummer mit Zusatz („a“)",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000018",
+      "h1": "Wohnung mit Garten",
+      "text": "Wohnung mit Garten\nWohnung zur Miete\nLindenring 3a, 20259 Hamburg\n\nKaltmiete 650 €\nNebenkosten 120 €\nHeizkosten 80 €\nWarmmiete 850 €\nZimmer 2\nWohnfläche ca. 58 m²\n\nObjektbeschreibung\nRuhige Lage, gute Anbindung."
+    },
+    {
+      "nr": "N19",
+      "art": "Hausnummer mit Zusatz („7–9“)",
+      "portal": "Genossenschaft",
+      "url": "https://www.beispiel-genossenschaft.de/wohnungen/19",
+      "h1": "Wohnanlage Musterweg",
+      "text": "Wohnanlage Musterweg\nMusterweg 7–9\n12345 Musterstadt\n\nMietpreis kalt: 650,00 EUR\nNebenkosten: 120,00 EUR\nHeizkosten: 80,00 EUR\nGesamtmiete: 850,00 EUR\nZimmer: 2\nWohnfläche: 58,00 m²\n\nBitte bewerben Sie sich über das Kontaktformular."
+    },
+    {
+      "nr": "N20",
+      "art": "Hausnummer mit Zusatz („HH“)",
+      "portal": "Hausverwaltung",
+      "url": "https://www.muster-hausverwaltung.de/angebote/20",
+      "h1": "Hinterhaus, ruhig",
+      "text": "Hinterhaus, ruhig\nBeispielstraße 1 Hinterhaus\n12345 Musterstadt\n\nMietpreis kalt: 650,00 EUR\nNebenkosten: 120,00 EUR\nHeizkosten: 80,00 EUR\nGesamtmiete: 850,00 EUR\nZimmer: 2\nWohnfläche: 58,00 m²\n\nBitte bewerben Sie sich über das Kontaktformular."
+    },
+    {
+      "nr": "N21",
+      "art": "Adresse im Titel anders als im Text",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000021",
+      "h1": "Wohnung Musterweg 7",
+      "text": "Wohnung Musterweg 7\nWohnung zur Miete\nBeispielstraße 1, 12345 Musterstadt\n\nKaltmiete 650 €\nNebenkosten 120 €\nHeizkosten 80 €\nWarmmiete 850 €\nZimmer 2\nWohnfläche ca. 58 m²\n\nObjektbeschreibung\nRuhige Lage, gute Anbindung."
+    },
+    {
+      "nr": "N22",
+      "art": "Adresse im Titel anders als im Text",
+      "portal": "Kleinanzeigen",
+      "url": "https://www.kleinanzeigen.de/s-anzeige/wohnung/100000022-203-0000",
+      "h1": "Lindenring 8 – 2 Zimmer",
+      "text": "Lindenring 8 – 2 Zimmer\n650 € VB\n20259 Hamburg\n\nDetails\nWohnfläche 58 m²\nZimmer 2\nWarmmiete 850 €\n\nBeschreibung\nDie Wohnung ist im Lindenring 3."
+    },
+    {
+      "nr": "N23",
+      "art": "Adresse im Titel anders als im Text",
+      "portal": "Immowelt",
+      "url": "https://www.immowelt.de/expose/000000023-aaaa-4bbb-8ccc-dddddddddddd",
+      "h1": "Beispielstraße 1: Altbau",
+      "text": "Beispielstraße 1: Altbau\nMusterweg 7, 12345 Musterstadt\n\n850 € Warmmiete · 2 Zimmer · 58 m²\n\nKaltmiete\n650 €\nNebenkosten\n120 €\nHeizkosten\n80 €\n\nBeschreibung\nSchöne Wohnung, frei ab sofort."
+    },
+    {
+      "nr": "N24",
+      "art": "ein Inserat für mehrere Wohnungen",
+      "portal": "Genossenschaft",
+      "url": "https://www.beispiel-genossenschaft.de/wohnungen/24",
+      "h1": "Neubau: 12 Wohnungen mit 2 bis 4 Zimmern",
+      "text": "Neubau: 12 Wohnungen mit 2 bis 4 Zimmern\nMusterplatz 1\n12345 Musterstadt\n\nMietpreis kalt: 650,00 EUR\nNebenkosten: 120,00 EUR\nHeizkosten: 80,00 EUR\nGesamtmiete: 850,00 EUR\nZimmer: 2\nWohnfläche: 58,00 m²\n\nWohnungen von 45 bis 95 m², Kaltmieten von 550 bis 1.150 €."
+    },
+    {
+      "nr": "N25",
+      "art": "ein Inserat für mehrere Wohnungen",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000025",
+      "h1": "Mehrere Wohnungen im Neubau verfügbar",
+      "text": "Mehrere Wohnungen im Neubau verfügbar\nWohnung zur Miete\nMusterplatz 1, 12345 Musterstadt\n\nKaltmiete 650 €\nNebenkosten 120 €\nHeizkosten 80 €\nWarmmiete 850 €\nZimmer 2\nWohnfläche ca. 58 m²\n\nObjektbeschreibung\nWE 1 bis WE 8, verschiedene Größen."
+    },
+    {
+      "nr": "N26",
+      "art": "ein Inserat für mehrere Wohnungen",
+      "portal": "Hausverwaltung",
+      "url": "https://www.muster-hausverwaltung.de/angebote/26",
+      "h1": "Freie Wohnungen",
+      "text": "Freie Wohnungen\n\nLindenring 3, 20259 Hamburg: 2 Zimmer, 650 € kalt\nLindenring 8, 20259 Hamburg: 3 Zimmer, 890 € kalt"
+    },
+    {
+      "nr": "N27",
+      "art": "Inserat auf Englisch",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000027",
+      "h1": "Bright 2-room flat with balcony",
+      "text": "Bright 2-room flat with balcony\nMusterweg 7, 12345 Musterstadt\n\nCold rent 650 €\nWarm rent 850 €\nRooms 2\nLiving space 58 m²"
+    },
+    {
+      "nr": "N28",
+      "art": "Inserat auf Englisch",
+      "portal": "WG-Gesucht",
+      "url": "https://www.wg-gesucht.de/10000028.html",
+      "h1": "Room in friendly flatshare",
+      "text": "Room in friendly flatshare\nMusterstadt Neustadt\n\nGröße 18 m²\nGesamtmiete 480 €\nfrei ab: 01.01.2027\n\nWG-Details\nWe are a friendly international flat."
+    },
+    {
+      "nr": "N29",
+      "art": "Inserat auf Englisch",
+      "portal": "Kleinanzeigen",
+      "url": "https://www.kleinanzeigen.de/s-anzeige/wohnung/100000029-203-0000",
+      "h1": "Furnished apartment for expats",
+      "text": "Furnished apartment for expats\n650 € VB\n12345 Musterstadt\n\nDetails\nWohnfläche 58 m²\nZimmer 2\nWarmmiete 850 €\n\nBeschreibung\nNachmieter gesucht."
+    },
+    {
+      "nr": "N30",
+      "art": "WG-Zimmer",
+      "portal": "WG-Gesucht",
+      "url": "https://www.wg-gesucht.de/10000030.html",
+      "h1": "Helles Zimmer in 3er-WG",
+      "text": "Helles Zimmer in 3er-WG\nMusterstadt Neustadt\n\nGröße 18 m²\nGesamtmiete 480 €\nfrei ab: 01.01.2027\n\nWG-Details\nWir sind eine nette 3er-WG."
+    },
+    {
+      "nr": "N31",
+      "art": "WG-Zimmer",
+      "portal": "WG-Gesucht",
+      "url": "https://www.wg-gesucht.de/10000031.html",
+      "h1": "WG-Zimmer im Lindenring",
+      "text": "WG-Zimmer im Lindenring\nHamburg Eimsbüttel, Lindenring 8\n\nGröße 18 m²\nGesamtmiete 480 €\nfrei ab: 01.01.2027\n\nWG-Details\nWir sind eine nette 3er-WG."
+    },
+    {
+      "nr": "N32",
+      "art": "WG-Zimmer",
+      "portal": "Kleinanzeigen",
+      "url": "https://www.kleinanzeigen.de/s-anzeige/wohnung/100000032-203-0000",
+      "h1": "Zimmer in Wohngemeinschaft frei",
+      "text": "Zimmer in Wohngemeinschaft frei\n650 € VB\n12345 Musterstadt\n\nDetails\nWohnfläche 58 m²\nZimmer 2\nWarmmiete 850 €\n\nBeschreibung\nNachmieter gesucht."
+    },
+    {
+      "nr": "N33",
+      "art": "Tausch-Inserat",
+      "portal": "Kleinanzeigen",
+      "url": "https://www.kleinanzeigen.de/s-anzeige/wohnung/100000033-203-0000",
+      "h1": "Tausche 2 Zimmer gegen 3 Zimmer",
+      "text": "Tausche 2 Zimmer gegen 3 Zimmer\n650 € VB\n12345 Musterstadt\n\nDetails\nWohnfläche 58 m²\nZimmer 2\nWarmmiete 850 €\n\nBeschreibung\nBiete 2 Zimmer im Musterweg 7, suche 3 Zimmer."
+    },
+    {
+      "nr": "N34",
+      "art": "Tausch-Inserat",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000034",
+      "h1": "Wohnungstausch: Biete Hamburg, suche Musterstadt",
+      "text": "Wohnungstausch: Biete Hamburg, suche Musterstadt\nWohnung zur Miete\nLindenring 8, 20259 Hamburg\n\nKaltmiete 650 €\nNebenkosten 120 €\nHeizkosten 80 €\nWarmmiete 850 €\nZimmer 2\nWohnfläche ca. 58 m²\n\nObjektbeschreibung\nRuhige Lage, gute Anbindung."
+    },
+    {
+      "nr": "N35",
+      "art": "gar kein Inserat",
+      "portal": "Hausverwaltung",
+      "url": "https://www.muster-hausverwaltung.de/angebote/35",
+      "h1": "Über uns",
+      "text": "Über uns\nWir verwalten seit 1990 Wohnungen.\nImpressum"
+    },
+    {
+      "nr": "N36",
+      "art": "gar kein Inserat",
+      "portal": "Immowelt",
+      "url": "https://www.immowelt.de/expose/000000036-aaaa-4bbb-8ccc-dddddddddddd",
+      "h1": "Wohnungen in Musterstadt – 128 Treffer",
+      "text": "Wohnungen in Musterstadt – 128 Treffer\nSortieren\nNeueste zuerst"
+    },
+    {
+      "nr": "N37",
+      "art": "gar kein Inserat",
+      "portal": "Kleinanzeigen",
+      "url": "https://www.kleinanzeigen.de/s-anzeige/wohnung/100000037-203-0000",
+      "h1": "Die Anzeige ist nicht mehr verfügbar",
+      "text": "Die Anzeige ist nicht mehr verfügbar"
+    },
+    {
+      "nr": "N38",
+      "art": "Normalfall",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000038",
+      "h1": "2-Zimmer-Wohnung, Erdgeschoss",
+      "text": "2-Zimmer-Wohnung, Erdgeschoss\nWohnung zur Miete\nLindenring 3, Erdgeschoss, 20259 Hamburg\n\nKaltmiete 650 €\nNebenkosten 120 €\nHeizkosten 80 €\nWarmmiete 850 €\nZimmer 2\nWohnfläche ca. 58 m²\n\nObjektbeschreibung\nRuhige Lage, gute Anbindung."
+    },
+    {
+      "nr": "N39",
+      "art": "Normalfall",
+      "portal": "Genossenschaft",
+      "url": "https://www.beispiel-genossenschaft.de/wohnungen/39",
+      "h1": "Wohnung Musterplatz 1",
+      "text": "Wohnung Musterplatz 1\nMusterplatz 1\n12345 Musterstadt\n\nMietpreis kalt: 650,00 EUR\nNebenkosten: 120,00 EUR\nHeizkosten: 80,00 EUR\nGesamtmiete: 850,00 EUR\nZimmer: 2\nWohnfläche: 58,00 m²\n\nBitte bewerben Sie sich über das Kontaktformular."
+    },
+    {
+      "nr": "N40",
+      "art": "PC118: geteilt, mit Adresse",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000040",
+      "h1": "Helle Wohnung mit Balkon",
+      "text": "Helle Wohnung mit Balkon\nWohnung zur Miete\nMusterweg 7, 12345 Musterstadt\n\nKaltmiete 650 €\nNebenkosten 120 €\nHeizkosten 80 €\nWarmmiete 850 €\nZimmer 2\nWohnfläche ca. 58 m²\n\nObjektbeschreibung\nRuhige Lage, gute Anbindung.",
+      "geteilt": "Dieses Angebot habe ich bei ImmoScout24 gefunden:\nhttps://www.immobilienscout24.de/expose/100000099?referrer=taf\n\n        Details\n-------------------------\nKaltmiete 12,59 €/m²: 754,76 €\nWohnfläche:     59,96 m²\nZimmer:         2\nWarmmiete:      951,76 €\n\nMusterweg 7 HS.2\n12345 Neustadt, Musterstadt"
+    },
+    {
+      "nr": "N41",
+      "art": "PC118: geteilt, ohne Adresse",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000041",
+      "h1": "Helle Wohnung mit Balkon",
+      "text": "Helle Wohnung mit Balkon\nWohnung zur Miete\n12345 Musterstadt\n\nKaltmiete 650 €\nNebenkosten 120 €\nHeizkosten 80 €\nWarmmiete 850 €\nZimmer 2\nWohnfläche ca. 58 m²\n\nObjektbeschreibung\nRuhige Lage, gute Anbindung.",
+      "geteilt": "Dieses Angebot habe ich bei ImmoScout24 gefunden:\nhttps://www.immobilienscout24.de/expose/100000099?referrer=taf\n\n        Details\n-------------------------\nKaltmiete 12,59 €/m²: 754,76 €\nWohnfläche:     59,96 m²\nZimmer:         2\nWarmmiete:      951,76 €\n\n12345 Neustadt, Musterstadt"
+    },
+    {
+      "nr": "N42",
+      "art": "PC118: geteilt, „Adresse auf Anfrage“",
+      "portal": "ImmoScout24",
+      "url": "https://www.immobilienscout24.de/expose/100000042",
+      "h1": "Helle Wohnung mit Balkon",
+      "text": "Helle Wohnung mit Balkon\nWohnung zur Miete\nAdresse auf Anfrage\n12345 Musterstadt\n\nKaltmiete 650 €\nNebenkosten 120 €\nHeizkosten 80 €\nWarmmiete 850 €\nZimmer 2\nWohnfläche ca. 58 m²\n\nObjektbeschreibung\nRuhige Lage, gute Anbindung.",
+      "geteilt": "Dieses Angebot habe ich bei ImmoScout24 gefunden:\nhttps://www.immobilienscout24.de/expose/100000099?referrer=taf\n\n        Details\n-------------------------\nKaltmiete 12,59 €/m²: 754,76 €\nWohnfläche:     59,96 m²\nZimmer:         2\nWarmmiete:      951,76 €\n\nAdresse auf Anfrage\n12345 Neustadt, Musterstadt"
+    }
+  ]
+}

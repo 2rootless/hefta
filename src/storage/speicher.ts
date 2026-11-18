@@ -1,4 +1,5 @@
 import { VERGABE } from '../domain/personenfarben';
+import { alteNummerUmsetzen } from '../domain/telefon';
 import { wohnungsSchluessel } from '../domain/adresse';
 import { sortieren } from '../domain/bewerbungen';
 import { hefteAusVersion1Einordnen } from '../domain/hefte';
@@ -24,6 +25,7 @@ import {
   type VersionFakten,
 } from '../domain/modell';
 import { dokumenttyp } from '../domain/regelkatalog';
+import { rollenNachruecken } from '../domain/nachruecken';
 import { erklaerungenFestlegen, farbeImHaushalt, giltImHaushalt } from '../domain/zugehoerigkeiten';
 import { ALLE_ORTE, type HeftaDb } from './db';
 import type { HeftaSchema } from './db';
@@ -301,6 +303,22 @@ export async function haushaltAendern(
   await db.put('haushalte', { ...haushalt, ...teil, updatedAt: jetzt() });
 }
 
+/** Der Ort der Zugehörigkeiten in einer laufenden Transaktion (für `nachruecken`). */
+interface ZugehoerigkeitenOrt {
+  index(name: 'haushaltId'): { getAll(haushaltId: Id): Promise<Zugehoerigkeit[]> };
+  put(z: Zugehoerigkeit): Promise<unknown>;
+}
+
+/**
+ * PC102 (E209), Frage 1: Nach jeder Änderung an Rollen oder Plätzen hat jeder Haushalt mit jemandem im
+ * Mietvertrag genau eine hauptmietende Person (`rollenNachruecken`). Läuft in derselben Transaktion.
+ */
+async function nachruecken(ort: ZugehoerigkeitenOrt, haushaltIds: Iterable<Id>, zeit: string) {
+  for (const id of new Set(haushaltIds))
+    for (const z of rollenNachruecken(await ort.index('haushaltId').getAll(id)))
+      await ort.put({ ...z, updatedAt: zeit });
+}
+
 /**
  * Rolle wechseln (design/unterlage-warum-haushalt.md, HA1). Aus der Bürgschaft kommt man hinten in den
  * Vertrag. Wird die hauptmietende Person Bürge, rückt die nächste im Vertrag an ihre Stelle.
@@ -312,18 +330,50 @@ export async function rolleWechseln(db: HeftaDb, id: Id, neu: Rolle): Promise<vo
   if (!z) throw new Error('Zugehörigkeit nicht gefunden');
   const zeit = jetzt();
   const andere = (await ort.index('haushaltId').getAll(z.haushaltId)).filter((x) => x.id !== id);
-  if (z.rolle === 'hauptmieter' && neu === 'buerge') {
-    const naechste = andere
-      .filter((x) => x.rolle === 'mitmieter' && !x.herausgenommenAm)
-      .sort((a, b) => a.reihenfolge - b.reihenfolge)[0];
-    if (naechste) await ort.put({ ...naechste, rolle: 'hauptmieter', updatedAt: zeit });
-  }
   const reihenfolge =
     z.rolle === 'buerge'
       ? andere.reduce((max, x) => Math.max(max, x.reihenfolge + 1), z.reihenfolge)
       : z.reihenfolge;
   await ort.put({ ...z, rolle: neu, reihenfolge, updatedAt: zeit });
+  await nachruecken(ort, [z.haushaltId], zeit);
   await tx.done;
+}
+
+/**
+ * Einmal je Start (PC102, E209): Haushalte ohne hauptmietende Person, etwa weil sie in 2.0 herausgenommen
+ * wurde, bekommen die nächste im Vertrag. Ändert nur Rollen, löscht nichts.
+ */
+export async function hauptmieterSichern(db: HeftaDb): Promise<void> {
+  const tx = db.transaction('zugehoerigkeiten', 'readwrite');
+  const zeit = jetzt();
+  for (const z of rollenNachruecken(await tx.store.getAll()))
+    await tx.store.put({ ...z, updatedAt: zeit });
+  await tx.done;
+}
+
+/**
+ * E222 (DP77, Abschnitt 5): Jede gespeicherte Nummer ohne internationale Nummer wird mit Deutschland umgesetzt,
+ * wenn das eindeutig geht. Sonst bleibt sie, wie sie ist; der Überblick zeigt einen offenen Punkt. Nichts wird
+ * gelöscht, und ein zweiter Lauf ändert nichts. Gibt die Zahl der umgesetzten Nummern zurück.
+ */
+export async function telefoneUmsetzen(db: HeftaDb): Promise<number> {
+  const tx = db.transaction('personen', 'readwrite');
+  const zeit = jetzt();
+  let n = 0;
+  for (const p of await tx.store.getAll()) {
+    const k = p.kontakt;
+    if (!k?.telefon?.trim() || k.telefonE164) continue;
+    const neu = alteNummerUmsetzen(k.telefon);
+    if (!neu) continue;
+    await tx.store.put({
+      ...p,
+      kontakt: { ...k, telefon: neu.anzeige, telefonLand: neu.land, telefonE164: neu.e164 },
+      updatedAt: zeit,
+    });
+    n++;
+  }
+  await tx.done;
+  return n;
 }
 
 /** Fügt eine neue Person mit Rolle hinten an den Haushalt an. */
@@ -408,10 +458,14 @@ export async function personAufnehmen(
  * (Person ist unabhängig vom Haushalt, docs/03-datenmodell.md).
  */
 export async function mitgliedHerausnehmen(db: HeftaDb, zugehoerigkeitId: Id): Promise<void> {
-  const zug = await db.get('zugehoerigkeiten', zugehoerigkeitId);
+  const tx = db.transaction('zugehoerigkeiten', 'readwrite');
+  const zug = await tx.store.get(zugehoerigkeitId);
   if (!zug) return;
   const zeit = jetzt();
-  await db.put('zugehoerigkeiten', { ...zug, herausgenommenAm: zeit, updatedAt: zeit });
+  await tx.store.put({ ...zug, herausgenommenAm: zeit, updatedAt: zeit });
+  // PC102 (E209): War sie hauptmietend, rückt die nächste im Vertrag nach.
+  await nachruecken(tx.store, [zug.haushaltId], zeit);
+  await tx.done;
 }
 
 /**
@@ -439,6 +493,8 @@ export async function mitgliedZurueckholen(
     reihenfolge: alle.reduce((m, z) => Math.max(m, z.reihenfolge + 1), 0),
     updatedAt: jetzt(),
   });
+  // PC102 (E209): Hauptmietet inzwischen jemand anderes, steht sie als Mitmieter im Vertrag.
+  await nachruecken(tx.store, [zug.haushaltId], jetzt());
   await tx.done;
 }
 
@@ -454,6 +510,7 @@ export async function mitgliedEntfernen(db: HeftaDb, zugehoerigkeitId: Id): Prom
   const zug = await tx.objectStore('zugehoerigkeiten').get(zugehoerigkeitId);
   if (!zug) return;
   await tx.objectStore('zugehoerigkeiten').delete(zug.id);
+  await nachruecken(tx.objectStore('zugehoerigkeiten'), [zug.haushaltId], jetzt());
   const weitere = await tx.objectStore('zugehoerigkeiten').index('personId').getAll(zug.personId);
   if (weitere.length === 0) {
     // Eine verschobene Seite kann die Datei mit einer anderen Person teilen.
@@ -514,8 +571,13 @@ export async function personGanzLoeschen(db: HeftaDb, personId: Id): Promise<voi
     ['zugehoerigkeiten', 'personen', 'dokumente', 'versionen', 'dateien'],
     'readwrite',
   );
-  for (const z of await tx.objectStore('zugehoerigkeiten').index('personId').getAll(personId))
-    await tx.objectStore('zugehoerigkeiten').delete(z.id);
+  const plaetze = await tx.objectStore('zugehoerigkeiten').index('personId').getAll(personId);
+  for (const z of plaetze) await tx.objectStore('zugehoerigkeiten').delete(z.id);
+  await nachruecken(
+    tx.objectStore('zugehoerigkeiten'),
+    plaetze.map((z) => z.haushaltId),
+    jetzt(),
+  );
   // Eine verschobene Seite kann die Datei mit einer anderen Person teilen.
   const kandidaten: (Id | null)[] = [];
   for (const dok of await tx.objectStore('dokumente').index('personId').getAll(personId)) {

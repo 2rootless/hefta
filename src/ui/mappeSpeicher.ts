@@ -68,7 +68,7 @@ export type MappenAnlass = Pick<Bewerbung, 'adresse' | 'satz' | 'bitteSatz'> & {
   deckInserat?: string;
   deckEinzug?: string;
   deckFassung?: string;
-  /** Für die Lesehilfe (Fassung 4); folgen aus den Zeilen oben, darum nicht im Schlüssel. */
+  /** Für die Lesehilfe (Fassung 1); folgen aus den Zeilen oben, darum nicht im Schlüssel. */
   deckPortal?: string;
   deckEinzugTag?: string;
   deckFassungNr?: number;
