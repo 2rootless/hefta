@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { bf2, bf2b, bf2Paarung } from '../tests/w7-bf2b';
 
 // wunsch-W7 (Wunschliste, PC45): nur Musterdaten. In Mustern, Tests und Testdaten stehen nur Rufnummern aus
 // dem Bereich, den die Bundesnetzagentur für Medienproduktionen freihält (0171 39200xx), und nur Mailadressen
@@ -172,5 +173,65 @@ describe('wunsch-W7: nur Musterdaten', () => {
     expect(verstoesse(`Mustermarkt 2\nZeile\nZeile\n00100 Musterstadt`)).toEqual(['Mustermarkt 2']);
     // Die echte Lindenallee bleibt verboten, auch mit erfundener Postleitzahl nicht in der Liste.
     expect(verstoesse('Lindenallee 3, 20259 Hamburg')).toEqual(['Lindenallee 3']);
+  });
+  it('BF2b (PC137, DP86): die Muster der Bildschirmfotos stehen nur in ihrer Paarung', () => {
+    // Im Quelltext des Bilder-Laufs steht der Stadtteil einige Zeilen unter der Adresse; darum sechs Zeilen.
+    expect(bf2b(readFileSync('tests/e2e/store-bilder.spec.ts', 'utf8'), 6)).toEqual([]);
+  });
+
+  it('BF2b, Gegenproben: Musterweg 7 mit Hoheluft, mit Neustadt und mit 20255 Hamburg werden rot', () => {
+    const z = String.fromCharCode(10);
+    expect(bf2b('Musterweg 7, Hoheluft')).toEqual(['Musterweg 7 mit Hoheluft']);
+    expect(bf2b(['Musterweg 7', 'Neustadt'].join(z))).toEqual(['Musterweg 7 mit Neustadt']);
+    expect(bf2b(['Musterweg 7', '20255 Hamburg'].join(z))).toEqual([
+      'Musterweg 7 mit Hamburg/20259',
+    ]);
+    expect(bf2b('Lindenring 8, Hoheluft')).toEqual(['Lindenring 8 mit Hoheluft']);
+    // Erlaubt: Lindenring mit Eimsbüttel und 20259 Hamburg, Musterweg und Beispielstraße mit Musterstadt.
+    expect(bf2b(['Lindenring 8', '20259 Hamburg', 'Eimsbüttel'].join(z))).toEqual([]);
+    expect(bf2b(['Musterweg 7', '12345 Musterstadt', 'Musterstadt'].join(z))).toEqual([]);
+    expect(bf2b('Beispielstraße 1, Musterstadt')).toEqual([]);
+    // Nicht „Hamm“ in „Hammerbrook“ und kein Stadtteil in einem längeren Wort.
+    expect(bf2b('Musterweg 7, Hammerweg')).toEqual([]);
+  });
+
+  // PC138, PC139: BF2b und die Paarung der Postleitzahlen (BF2) auch für die Testmappen aus dem Schreiber
+  // und für die öffentlichen Beispiele im Paket hefta.json.
+  const MIT_PAARUNG: [datei: string, folgeZeilen: number][] = [
+    ['tests/e2e/store-bilder.spec.ts', 6],
+    ['src/vermieter/stressSchreiber.test.ts', 3],
+    ...readdirSync('pakete/hefta-json/beispiele').map((d): [string, number] => [
+      `pakete/hefta-json/beispiele/${d}`,
+      8,
+    ]),
+    ['pakete/hefta-json/FORMAT.md', 3],
+  ];
+  it('BF2b und BF2 (PC138, PC139): Bilder, Testmappen und Beispiele im Paket stehen in ihrer Paarung', () => {
+    const falsch = MIT_PAARUNG.flatMap(([datei, n]) => {
+      const text = readFileSync(datei, 'utf8');
+      return [...bf2b(text, n), ...bf2Paarung(text, n)].map((f) => `${datei}: ${f}`);
+    });
+    expect(falsch).toEqual([]);
+    expect(MIT_PAARUNG.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it('BF2, Gegenproben: Musterweg mit 00100, Lindenring mit 12345 und eine fremde Postleitzahl werden rot', () => {
+    const z = String.fromCharCode(10);
+    expect(bf2Paarung("adresse: ['Musterweg 7, 2. OG', '00100 Musterstadt'],")).toEqual([
+      'Musterweg 7 mit 00100',
+    ]);
+    expect(bf2Paarung(['Lindenring 3', 'Erdgeschoss, 12345 Musterstadt'].join(z))).toEqual([
+      'Lindenring 3 mit 12345',
+    ]);
+    // Das Beispiel 1 im Paket bis CP77: Musterweg 7 mit 20259 Hamburg.
+    const alt = ['"strasse": "Musterweg 7",', '"rest": "1. OG rechts, 20259 Hamburg",'].join(z);
+    expect(bf2Paarung(alt)).toEqual(['Musterweg 7 mit 20259']);
+    expect(bf2b(alt)).toEqual(['Musterweg 7 mit Hamburg/20259']);
+    expect(bf2('Musterweg 7, 12345 Musterstadt')).toEqual([]);
+    expect(bf2('Lindenring 3, 20259 Hamburg')).toEqual([]);
+    expect(bf2('Fichtenweg 4, 00120 Musterstadt')).toEqual([]);
+    expect(bf2('Hauptstraße 2, 20146 Hamburg')).toEqual(['Postleitzahl 20146']);
+    // Telefonnummern und Preise sind keine Postleitzahlen.
+    expect(bf2('0171 3920001, 1.180 €, 040 66969123')).toEqual([]);
   });
 });

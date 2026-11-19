@@ -9,7 +9,7 @@
       "quote": [
         {
           "was": "Felder richtig oder ehrlich leer (Katalog PC117)",
-          "richtig": 167,
+          "richtig": 168,
           "von": 168
         },
         {
@@ -19,8 +19,8 @@
         },
         {
           "was": "ehrliche Meldung, wenn nichts geht (DP79)",
-          "richtig": 18,
-          "von": 18
+          "richtig": 19,
+          "von": 19
         }
       ],
       "quellen": [
@@ -32,8 +32,8 @@
         },
         {
           "datei": "tests/e2e/dp79-inserat.spec.ts",
-          "was": "DP79: 18 Arten von Antworten der Seite, ehrliche Meldung nach IL1 bis IL14",
-          "faelle": 18
+          "was": "DP79: 19 Arten von Antworten der Seite, ehrliche Meldung nach IL1 bis IL14 (dazu N26, PC124)",
+          "faelle": 19
         }
       ]
     },

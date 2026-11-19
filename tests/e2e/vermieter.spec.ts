@@ -214,13 +214,18 @@ test('Fassung der echten App: Die Mappe aus Hefta wird gelesen', async ({ page }
 // PC107 (E216): Die Mappe aus Version 1 (Stand 31e7436, Lesehilfe in alter Form, scripts/muster-mappen.mjs) öffnet
 // wie eine Mappe ohne Lesehilfe: ohne Fehlermeldung und ohne Hinweis auf alte Fassungen. Gegenprobe: Würde die
 // Lesehilfe gelesen, stünde die Rolle („Hauptmietpartei“) da, und der Test würde rot.
-test('Mappe aus Version 1 (PC107): öffnet ohne Lesehilfe und ohne Meldung', async ({ page }) => {
+test('Mappe aus Version 1 (PC107, K3): öffnet ohne Lesehilfe, ohne Fehlermeldung, mit dem Satz aus K3', async ({
+  page,
+}) => {
   await page.goto('/');
   await laden(page, 'tests/fixtures/mappe/version1-familie.pdf');
   await expect(page.locator('.vs-row')).toHaveCount(1);
   await expect(page.locator('.vs-row')).not.toContainText('passt nicht');
   const d = haupt(page);
-  await expect(d).toContainText('keine Lesehilfe');
+  // PC126 K3 (2.0.1): Die alte Form liegt bei, lässt sich aber nicht lesen; „keine Lesehilfe“ stimmte nicht (W10).
+  // Weiter ohne Fehlermeldung und ohne Hinweis auf alte Fassungen (PC107).
+  await expect(d).toContainText('Die Lesehilfe dieser Mappe lässt sich nicht lesen');
+  await expect(d).not.toContainText('keine Lesehilfe');
   const text = (await d.innerText()).replaceAll('­', '');
   expect(text).not.toContain('Hauptmietpartei');
   expect(text).not.toContain('passt nicht');
@@ -510,4 +515,43 @@ test('Export als CSV (PC100, PC107): Fassung 1 dabei, alte Form nicht; Hinweis z
   await page.getByRole('button', { name: 'Liste leeren' }).click();
   await laden(page, await pdf(ALT));
   await expect(page.getByRole('button', { name: 'Für Ihre Software exportieren' })).toBeDisabled();
+});
+
+// PC126 K3 (DP82 L1, PC130 für 2.0.1): Liegt eine Lesehilfe bei, die sich nicht lesen lässt, sagt die Seite das;
+// „keine Lesehilfe“ stimmt dann nicht (W10). Je eine Mappe: abgelehnt, passt nicht, ohne Anhang. Nur Musterdaten.
+test('K3: abgelehnte Lesehilfe hat ihren eigenen Satz; passt nicht und ohne Anhang bleiben', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await laden(
+    page,
+    await pdf({
+      datei: 'Bewerbung_Abgelehnt.pdf',
+      seiten: 2,
+      ersteSeite: 'Musterweg 7 Erstellt mit Hefta',
+      anhang: { hefta: 4, unbekannt: 'keine Lesehilfe dieser Form' },
+    }),
+    await pdf(M7),
+    await pdf(M3),
+  );
+  const UNLESBAR =
+    'Die Lesehilfe dieser Mappe lässt sich nicht lesen, darum zeigt die Seite sie nicht. Öffnen Sie die Mappe wie gewohnt.';
+  // In der Liste steht es auch so, nicht „Ohne Lesehilfe“.
+  await expect(zeile(page, 1)).toContainText('Lesehilfe lässt sich nicht lesen');
+  await expect(zeile(page, 3)).toContainText('Ohne Lesehilfe');
+  await zeile(page, 1).click();
+  await expect(haupt(page)).toContainText(UNLESBAR);
+  // Gegenprobe: Vorher stand hier „keine Lesehilfe“ und der Satz, warum sie fehlt.
+  await expect(haupt(page)).not.toContainText('keine Lesehilfe');
+  await expect(haupt(page)).not.toContainText('Eine Lesehilfe tragen nur Mappen aus Hefta');
+  await page.goBack();
+  await zeile(page, 2).click();
+  await expect(haupt(page)).toContainText('passt nicht zu ihren Seiten');
+  await expect(haupt(page)).not.toContainText(UNLESBAR);
+  await page.goBack();
+  await zeile(page, 3).click();
+  await expect(haupt(page)).toContainText(
+    'Diese Mappe hat keine Lesehilfe. Öffnen Sie sie wie gewohnt.',
+  );
+  await expect(haupt(page)).not.toContainText(UNLESBAR);
 });

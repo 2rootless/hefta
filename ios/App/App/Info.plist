@@ -23,6 +23,12 @@
 		<dict>
 			<key>CFBundleTypeName</key>
 			<string>Hefta-Backup</string>
+			<!-- K12 (W38): Ein Backup zeigt in „Dateien“ und im Teilen-Blatt das Logo, nicht das App-Symbol. -->
+			<key>CFBundleTypeIconFiles</key>
+			<array>
+				<string>HeftaBackup-64.png</string>
+				<string>HeftaBackup-320.png</string>
+			</array>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>

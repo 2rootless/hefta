@@ -275,6 +275,10 @@ test('schwierige Dateien: viele Seiten auswählen (D2, D3), Word-Datei (D7), ohn
   await expect(
     blatt.getByText(/^Diese Datei kann Hefta nicht öffnen\. Im Moment geht es mit PDFs\./),
   ).toBeVisible();
+  // DP70 QA25: Der Fehler wird sofort angesagt (role=alert).
+  await expect(
+    blatt.getByRole('alert').filter({ hasText: /kann Hefta nicht öffnen/ }),
+  ).toBeVisible();
 
   // D2: zwölf Seiten machen die Mappe dick; erst drei Seiten und „+9“.
   await blatt.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(dick));

@@ -57,10 +57,23 @@ export function ohneZaehlmarken(link: string): string {
   return `${m[1]}${teile.length ? `?${teile.join('&')}` : ''}${m[3] ?? ''}`;
 }
 
-/** Für eingespielte Backups: jedes Heft mit Link ohne Zählmarken, alles andere unverändert. */
+/**
+ * PC126 K6 (DP82 I1): jeder Link in einem Text ohne Zählmarken, etwa im geteilten Text eines Inserats. Der übrige
+ * Text bleibt Zeichen für Zeichen, wie er ist.
+ */
+export function textOhneZaehlmarken(text: string): string {
+  return text.replace(/https?:\/\/[^\s<>"']+/gi, (link) => ohneZaehlmarken(link));
+}
+
+/** Für eingespielte Backups: jedes Heft mit Link und Text des Inserats ohne Zählmarken, alles andere unverändert. */
 export function linksOhneZaehlmarken(hefte: unknown[]): unknown[] {
   return hefte.map((h) => {
-    const link = (h as { link?: unknown } | null)?.link;
-    return typeof link === 'string' && link ? { ...(h as object), link: ohneZaehlmarken(link) } : h;
+    const heft = h as { link?: unknown; inseratText?: unknown } | null;
+    if (!heft || typeof heft !== 'object') return h;
+    const aus: Record<string, unknown> = { ...heft };
+    if (typeof heft.link === 'string' && heft.link) aus.link = ohneZaehlmarken(heft.link);
+    if (typeof heft.inseratText === 'string' && heft.inseratText)
+      aus.inseratText = textOhneZaehlmarken(heft.inseratText);
+    return aus;
   });
 }

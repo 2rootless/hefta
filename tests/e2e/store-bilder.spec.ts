@@ -1,7 +1,8 @@
 import { test, type Browser, type Page } from '@playwright/test';
 import { PDFDocument, StandardFonts } from '@cantoo/pdf-lib';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { animationenFertig } from './hilfen';
+import { bf2, bf2b } from '../w7-bf2b';
 import { HEUTE, SZENARIEN, datensaetze } from './szenarien';
 
 // Bildschirmfotos für den App Store (PC74, Release-Mappe Abschnitt 5). Kein Test im eigentlichen Sinn: läuft
@@ -88,11 +89,13 @@ const HEFTE = [
     ereignisse: { ...leer, beworben: { am: tag(-3), weg: 'mail', sicher: true } },
   }),
   heft('muster', -1, {
-    adresse: 'Musterweg 7\n20255 Hamburg',
+    // PC136, PC137 (W7, BF2b): diese Straße nur mit 12345 Musterstadt und als Stadtteil „Musterstadt“, wie das
+    // Inserat auf Bild 03; nie mit einem echten Stadtteil.
+    adresse: 'Musterweg 7\n12345 Musterstadt',
     einzug: '2027-01-01',
     angaben: {
       titel: 'Dachgeschoss mit Gaube',
-      stadtteil: 'Hoheluft',
+      stadtteil: 'Musterstadt',
       warm: 1180,
       zimmer: 3,
       flaeche: 71,
@@ -239,6 +242,11 @@ async function laden(page: Page) {
   const fotos: Record<string, string> = {};
   for (const [id, farben] of Object.entries(FOTO_FARBEN))
     fotos[`foto-${id}`] = await zimmerZeichnen(page, farben);
+  // PC133 (DP85, F1b): Im Muster-Heft „Altbau mit Garten“ steht Designs Grundriss auf Karton statt des Zimmers. Nur
+  // in den Musterdaten der Bildschirmfotos; in der App und im Bau gibt es das Bild nicht.
+  fotos['foto-linden'] = `data:image/png;base64,${readFileSync(
+    'tests/fixtures/store/heftbild-F1b-grundriss-karton-2412x1206.png',
+  ).toString('base64')}`;
   await page.evaluate(
     async ({ daten, pdf, hefte, fotos, wuensche }) => {
       const db = await new Promise<IDBDatabase>((ok, fehler) => {
@@ -264,12 +272,13 @@ async function laden(page: Page) {
         });
       for (const [id, adresse] of Object.entries(fotos)) {
         const roh = Uint8Array.from(atob(adresse.split(',')[1]!), (z) => z.charCodeAt(0));
+        const typ = adresse.slice(5, adresse.indexOf(';'));
         tx.objectStore('dateien').put({
           id,
           createdAt: new Date().toISOString(),
-          typ: 'image/jpeg',
+          typ,
           groesse: roh.length,
-          daten: new Blob([roh], { type: 'image/jpeg' }),
+          daten: new Blob([roh], { type: typ }),
         });
       }
       for (const h of hefte as object[]) tx.objectStore('hefte').put({ ...h, haushaltId });
@@ -360,6 +369,11 @@ async function bilderMachen(browser: Browser, g: (typeof GROESSEN)[number], dunk
   mkdirSync(ordner, { recursive: true });
   const bild = async (name: string) => {
     await ruhig(page);
+    // PC137 (BF2b): Was auf dem Bild steht, nennt die Musterstraßen nur mit ihrem Ort.
+    const sichtbar = await page.locator('body').innerText();
+    // PC139: BF2 (Postleitzahlen und ihre Paarung) und BF2b an jedem Bildschirmfoto.
+    const falsch = [...bf2(sichtbar), ...bf2b(sichtbar)];
+    if (falsch.length) throw new Error(`BF2 oder BF2b auf ${name}: ${falsch.join('; ')}`);
     await page.screenshot({ path: `${ordner}/${name}.jpg`, type: 'jpeg', quality: 92 });
   };
 
@@ -382,7 +396,8 @@ async function bilderMachen(browser: Browser, g: (typeof GROESSEN)[number], dunk
     INSERAT_URL,
   );
   await page.getByRole('heading', { level: 1, name: 'Ist das die Wohnung?' }).waitFor();
-  await page.getByRole('heading', { level: 2, name: INSERAT_TITEL }).waitFor();
+  // E236: Mit Adresse heißt die Wohnung nach der Straße, nicht nach dem Titel des Inserats.
+  await page.getByRole('heading', { level: 2, name: 'Beispielstraße 1' }).waitFor();
   await page.locator('.punkte li').first().waitFor();
   await bild('03-inserat');
 

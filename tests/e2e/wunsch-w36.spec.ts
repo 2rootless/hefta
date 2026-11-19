@@ -2,7 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { haushaltMitMax } from './einrichtung';
 
 // wunsch-W36 (Fassung 20, PC88): Logo und Einstellungen stehen im Kopf von „Mappe“ und „Wohnungen“ gleich, in Lage
-// und Größe. Gemessen wie DP63c, Abschnitt 8: linke obere Ecke von Logo und Knopf „Einstellungen“.
+// und Größe. Gemessen wie DP63c, Abschnitt 8: linke obere Ecke von Logo und Knopf „Einstellungen“. PC130 K11: dazu das
+// sichtbare Zahnrad selbst; die Tippfläche (44 × 44) war auf beiden Reitern gleich, das Zahnrad nicht (20 statt 24 px),
+// darum war der Test grün.
 
 async function kopf(page: Page) {
   return page.evaluate(() => {
@@ -22,6 +24,7 @@ async function kopf(page: Page) {
     return {
       logo: kasten(logo),
       einstellungen: kasten(document.querySelector('header a[href="#/einstellungen"]')),
+      zahnrad: kasten(document.querySelector('header a[href="#/einstellungen"] svg')),
     };
   });
 }
@@ -52,6 +55,21 @@ for (const [breite, zoom] of [
     const wohnungen = await messen('#/wohnungen');
     const mappe = await messen('#/');
     expect(mappe).toEqual(wohnungen);
+    // Gegenprobe K11: Ein kleineres Zahnrad in derselben Tippfläche fällt auf.
+    await page.evaluate(() => {
+      const svg = document.querySelector('header a[href="#/einstellungen"] svg')!;
+      svg.setAttribute('width', '20');
+      svg.setAttribute('height', '20');
+    });
+    expect(await kopf(page)).not.toEqual(wohnungen);
+    await page.reload();
+    await expect(page.locator('header a[href="#/einstellungen"]')).toBeVisible();
+    await page.waitForTimeout(300);
+    if (zoom !== 1)
+      await page.evaluate(
+        (z) => document.documentElement.style.setProperty('zoom', String(z)),
+        zoom,
+      );
     // Gegenprobe: 4 px Versatz im Kopf von „Mappe“ fällt auf.
     await page.evaluate(() => {
       const s = document.styleSheets[0]!;

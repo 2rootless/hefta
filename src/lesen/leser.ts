@@ -423,6 +423,38 @@ function lageAus(roh: string | undefined): { lage?: string } {
  * in zwei Zeilen. Lieber keine als eine falsche.
  */
 export function adresseLesen(text: string): GeleseneAdresse | null {
+  const alle = adressenLesen(text);
+  // PC124 (N26, W10): Nennt das Inserat mehrere Wohnungen mit eigener Adresse, rät Hefta nicht; das Feld bleibt leer.
+  // Sonst gilt die erste Adresse: Weiter unten steht oft die des Anbieters (Probe 2).
+  if (mehrereWohnungen(alle)) return null;
+  return alle[0]?.adresse ?? null;
+}
+
+/**
+ * PC124 (N26): Nennt das Inserat mehrere Wohnungen mit eigener Adresse? So gilt es, wenn mindestens zwei
+ * verschiedene Adressen jeweils in einer Zeile mit Angaben zur Wohnung stehen (Zimmer, m², €, kalt, warm). Die
+ * Adresse des Anbieters weiter unten zählt nicht mit, denn neben ihr stehen keine solchen Angaben.
+ */
+export function mehrereAdressen(text: string): boolean {
+  return mehrereWohnungen(adressenLesen(text));
+}
+
+const WOHNUNGSANGABE = /\b(?:Zimmer|Zi\.)|m²|€|\bkalt\b|\bwarm\b/i;
+
+function mehrereWohnungen(alle: { mitAngaben: boolean }[]): boolean {
+  return alle.filter((a) => a.mitAngaben).length > 1;
+}
+
+/** Alle Adressen im Text, in ihrer Reihenfolge; dieselbe Straße mit derselben Postleitzahl nur einmal. */
+function adressenLesen(text: string): { adresse: GeleseneAdresse; mitAngaben: boolean }[] {
+  const gefunden: { adresse: GeleseneAdresse; mitAngaben: boolean }[] = [];
+  const merken = (a: GeleseneAdresse, zeile: string) => {
+    const schluessel = (x: GeleseneAdresse) => `${x.strasse.toLowerCase()}|${x.plz}`;
+    const da = gefunden.find((x) => schluessel(x.adresse) === schluessel(a));
+    const mitAngaben = WOHNUNGSANGABE.test(zeile);
+    if (da) da.mitAngaben ||= mitAngaben;
+    else gefunden.push({ adresse: a, mitAngaben });
+  };
   const zeilen = bereinigen(text)
     .split('\n')
     .map((z) => z.trim());
@@ -452,35 +484,48 @@ export function adresseLesen(text: string): GeleseneAdresse | null {
   for (let i = 0; i < zeilen.length; i++) {
     const z = zeilen[i] ?? '';
     let m = eine.exec(z);
-    if (m)
-      return {
-        strasse: strasseBereinigen(m[1]!),
-        plz: m[4]!,
-        ort: m[5]!.trim(),
-        stadtteil: m[3]?.trim() || null,
-        ...lageAus(m[2]),
-      };
+    if (m) {
+      merken(
+        {
+          strasse: strasseBereinigen(m[1]!),
+          plz: m[4]!,
+          ort: m[5]!.trim(),
+          stadtteil: m[3]?.trim() || null,
+          ...lageAus(m[2]),
+        },
+        z,
+      );
+      continue;
+    }
     m = klammer.exec(z);
-    if (m)
-      return {
-        strasse: strasseBereinigen(m[1]!),
-        plz: m[5]!,
-        ort: m[4]!.trim(),
-        stadtteil: m[3]?.trim() || null,
-        ...lageAus(m[2]),
-      };
+    if (m) {
+      merken(
+        {
+          strasse: strasseBereinigen(m[1]!),
+          plz: m[5]!,
+          ort: m[4]!.trim(),
+          stadtteil: m[3]?.trim() || null,
+          ...lageAus(m[2]),
+        },
+        z,
+      );
+      continue;
+    }
     const s = nurStrasse.exec(z);
     if (s) {
       const n = plzZeile.exec(zeilen[i + 1] ?? '');
       if (n)
-        return {
-          strasse: strasseBereinigen(s[1]!),
-          plz: n[1]!,
-          ort: (n[3] ?? n[2]!).trim(),
-          stadtteil: n[3] ? n[2]!.trim() : null,
-          ...lageAus([s[2], s[3]].filter(Boolean).join(', ')),
-        };
+        merken(
+          {
+            strasse: strasseBereinigen(s[1]!),
+            plz: n[1]!,
+            ort: (n[3] ?? n[2]!).trim(),
+            stadtteil: n[3] ? n[2]!.trim() : null,
+            ...lageAus([s[2], s[3]].filter(Boolean).join(', ')),
+          },
+          `${z} ${zeilen[i + 1] ?? ''}`,
+        );
     }
   }
-  return null;
+  return gefunden;
 }

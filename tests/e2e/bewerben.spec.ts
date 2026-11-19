@@ -231,8 +231,8 @@ test('Aussehen in den Einstellungen: System, Hell, Dunkel (12.11.)', async ({ pa
   await page.emulateMedia({ colorScheme: 'light' });
   await haushaltMitMax(page);
   await page.goto('/#/einstellungen');
-  // PC81 U5: Der Release-Stand zeigt „2.0“, nicht „0.0.1“ wie die Vorschau vorher.
-  await expect(page.getByText(/^2\.0, Regeln für Unterlagen vom /)).toBeVisible();
+  // PC81 U5: Der Stand zeigt seine Version, nicht „0.0.1“ wie die Vorschau vorher. PC134: 2.0.1.
+  await expect(page.getByText(/^2\.0\.1, Regeln für Unterlagen vom /)).toBeVisible();
   await expect(page.getByText(/0\.0\.1/)).toHaveCount(0);
   const gruppe = page.getByRole('radiogroup', { name: 'Aussehen' });
   await expect(gruppe.getByRole('radio', { name: 'System' })).toHaveAttribute(

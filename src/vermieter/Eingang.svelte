@@ -139,7 +139,15 @@
           {:else}
             <span class="vs-st vs-st-ohne">
               <span class="vs-i"><Symbol name="datei" groesse={20} /></span>
-              <span>{t(m.passtNicht ? 'stand.passtNicht' : 'stand.ohne')}</span>
+              <span
+                >{t(
+                  m.passtNicht
+                    ? 'stand.passtNicht'
+                    : m.lesehilfeUnlesbar
+                      ? 'stand.unlesbar'
+                      : 'stand.ohne',
+                )}</span
+              >
             </span>
           {/if}
         </span>

@@ -21,7 +21,11 @@
   } from '../domain/selbstauskunft';
   import { personenZiehenEin } from '../domain/mappeWoerter';
   import { t } from '../i18n';
-  import { angabenAus, type SelbstauskunftEingabe } from './selbstauskunftEingabe';
+  import {
+    angabenAus,
+    type SelbstauskunftEingabe,
+    telefonEingabeFehler,
+  } from './selbstauskunftEingabe';
   import Symbol from './Symbol.svelte';
 
   let {
@@ -57,7 +61,15 @@
 
   const id = $props.id();
   const felder = $derived(new Set(felderFuer(rolle, person.lebenssituation).map((f) => f.id)));
-  const stand = $derived(teile({ ...person, ...angabenAus(eingabe) }, rolle, eingabe.hh));
+  // PC126 K1: Solange im Telefon ein Fehler steht, ist „Kontakt“ nicht fertig (kein Haken, kein „Weiter“).
+  const telefonFehler = $derived(telefonEingabeFehler(eingabe));
+  const standRoh = $derived(teile({ ...person, ...angabenAus(eingabe) }, rolle, eingabe.hh));
+  const stand = $derived(
+    standRoh.map((s) => (s.id === 'kontakt' && telefonFehler ? { ...s, fertig: false } : s)),
+  );
+  // Der Knopf „Fertig“ bzw. „Weiter: …“ bleibt da, wenn nur der Fehler im Telefon fehlt; er schließt dann nicht,
+  // sondern führt ins Feld (DP77, DP82 T1).
+  const knopfDa = (id: TeilId) => standRoh.find((s) => s.id === id)?.fertig ?? false;
   const name = $derived(person.rufname || person.vorname);
 
   const FELD_IN_TEIL: Record<string, TeilId> = {
@@ -118,7 +130,9 @@
   /** Der nächste Teil, der noch nicht fertig ist; null, wenn alles fertig ist. */
   function naechsterOffen(teil: TeilId): TeilId | null {
     const i = stand.findIndex((s) => s.id === teil);
-    return [...stand.slice(i + 1), ...stand.slice(0, i + 1)].find((s) => !s.fertig)?.id ?? null;
+    // Ohne den Teil selbst: Er ist fertig, wenn es weitergeht, und mit Fehler im Telefon hieße der Knopf sonst
+    // „Weiter: Kontakt“ (PC126 K1).
+    return [...stand.slice(i + 1), ...stand.slice(0, i)].find((s) => !s.fertig)?.id ?? null;
   }
 
   // Zweifel am Format im Kontakt (Rückmeldung 12.11.: „E-Mail warnt nicht“): Der Knopf „Weiter“ und die
@@ -130,6 +144,14 @@
   let gewarntBei = $state<string | null>(null);
 
   function weiterNach(teil: TeilId): Promise<HTMLElement | null | undefined> {
+    // PC126 K1: Mit Fehler im Telefon schließt nichts den Teil; der Fokus geht ins Feld.
+    if (teil === 'kontakt' && telefonFehler) {
+      const f = document.querySelector<HTMLInputElement>('[data-feld="telefon"]');
+      // Stand der Fokus noch im Feld (der Knopf nimmt ihn nicht), zeigt erst das Verlassen den Fehler.
+      f?.blur();
+      f?.focus();
+      return Promise.resolve(f);
+    }
     const werte = `${eingabe.telefon}|${eingabe.email}`;
     if (teil === 'kontakt' && zweifelKontakt && gewarntBei !== werte) {
       gewarntBei = werte;
@@ -273,6 +295,8 @@
   function offenText(teil: { id: TeilId; offen: number }): string {
     if (teil.id === 'fragen' && teil.offen < FRAGEN_JETZT.length)
       return t('selbstauskunft.offen', { anzahl: teil.offen });
+    // PC126 K1: Offen ist „Kontakt“ dann wegen des Fehlers, nicht weil eine Angabe fehlt.
+    if (teil.id === 'kontakt' && telefonFehler) return t('selbstauskunft.pruefenTelefon');
     return t(`selbstauskunft.teil.${teil.id}Offen`);
   }
 
@@ -404,14 +428,14 @@
         >
       </span>
     </div>
-  {:else if hatAngaben(teil.id) || teil.fertig}
+  {:else if hatAngaben(teil.id) || knopfDa(teil.id)}
     <div class="teil-fuss">
       {#if hatAngaben(teil.id)}
         <button type="button" class="textlink leise" onclick={() => (loeschenFrage = teil.id)}
           >{t('selbstauskunft.angabenLoeschen')}</button
         >
       {/if}
-      {#if teil.fertig}
+      {#if knopfDa(teil.id)}
         {@const naechster = naechsterOffen(teil.id)}
         <!-- Der Fokus bleibt beim Tippen im Feld: Ginge die Tastatur erst zu, verschöbe sich die
              Leiste unten, und das iPhone verwirft den Tipp. Danach steht er im ersten Feld des
@@ -441,10 +465,12 @@
         <h3 id="{id}-{teil.id}">
           <span class="nummer" aria-hidden="true">{i + 1}</span>
           <span class="teilname" class:lang={titel.length > 30}>{titel}</span>
+          <!-- PC130 K7: Offen steht unter den Feldern schon „Eine Angabe reicht, die zweite ist freiwillig.“; im Kopf
+               nicht noch einmal „Eine Angabe genügt“. Zugeklappt bleibt der kurze Satz, dort fehlt der lange. -->
           <small
             >{#if teil.fertig}<Symbol name="haken" groesse={16} />{t(
                 'selbstauskunft.fertigMarke',
-              )}{:else}{offenText(teil)}{/if}</small
+              )}{:else if teil.id !== 'kontakt' || telefonFehler}{offenText(teil)}{/if}</small
           >
         </h3>
 

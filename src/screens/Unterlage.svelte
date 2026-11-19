@@ -4,7 +4,8 @@
   // Abschnitt 3 (Richtung A): Kopf in der Tönung der Person, Hinweis, was in der Mappe ist, als Zeilen mit
   // Pfeil, ältere Versionen, Notiz. Rot nur für Zurück und das Warnzeichen (DP35, W5); Löschen grau unten.
   import { daten, db, neuLaden } from '../app/daten.svelte';
-  import { ersetzen, zurueckGehen } from '../app/router.svelte';
+  import { einstieg, ersetzen, route, zumEinstieg } from '../app/router.svelte';
+  import { einstiegText } from '../ui/einstieg';
   import { einmal } from '../ui/einmal';
   import { pruefcodeStand, pruefhinweise } from '../domain/pruefhinweise';
 
@@ -61,6 +62,10 @@
   );
   const buerge = $derived(stand?.rolle === 'buerge');
   const name = $derived(stand ? stand.person.rufname || stand.person.vorname : '');
+  // W39 (PC130 K8): „Zurück“ und „Fertig“ führen dorthin, wo die Unterlage geöffnet wurde (Mappe, Personenseite …);
+  // ohne Einstieg im Verlauf wie bisher zur Personenseite.
+  const ablauf = $derived(`/unterlage/${personId}/${typId}`);
+  const einstiegPfad = $derived((void route.pfad, einstieg(ablauf)));
   const basis = $derived(`/unterlage/${personId}/${typId}`);
 
   const neuesteZuerst = (a: DateiVersion, b: DateiVersion) =>
@@ -269,7 +274,13 @@
 
 <main class="seite person-ton" style={stand ? tonStil(stand.farbe) : undefined}>
   <div class="kopf">
-    <Zurueck href="#/person/{personId}" text={name || t('allgemein.zurueck')} />
+    <Zurueck
+      href="#{einstiegPfad ?? `/person/${personId}`}"
+      text={einstiegPfad
+        ? einstiegText(einstiegPfad, daten.ansicht)
+        : name || t('allgemein.zurueck')}
+      onclick={() => zumEinstieg(ablauf, `/person/${personId}`)}
+    />
   </div>
 
   {#if !stand || !u}
@@ -449,7 +460,7 @@
   {:else}
     <Aktionsleiste
       text={t('allgemein.fertig')}
-      onclick={() => zurueckGehen(`/person/${personId}`)}
+      onclick={() => zumEinstieg(ablauf, `/person/${personId}`)}
     />
   {/if}
 

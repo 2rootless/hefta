@@ -57,6 +57,13 @@
           : undefined,
   );
 
+  // DP70 U3 (2.0.1): Tippt man ohne Vornamen auf „Weiter“, springt der Fokus in das leere Feld; den Satz dazu
+  // zeigt die Aktionsleiste schon.
+  function zumLeerenFeld() {
+    if (!werte.vorname.trim())
+      document.querySelector<HTMLInputElement>('main input[autocomplete="given-name"]')?.focus();
+  }
+
   async function weiter() {
     if (grund || speichert || !werte.bezeichnung) return;
     speichert = true;
@@ -124,7 +131,12 @@
     />
   </div>
 </main>
-<Aktionsleiste text={t('einrichtung.erste.knopf')} {grund} onclick={weiter} />
+<Aktionsleiste
+  text={t('einrichtung.erste.knopf')}
+  {grund}
+  onclick={weiter}
+  beiGrund={zumLeerenFeld}
+/>
 
 <style>
   .seite {

@@ -1,6 +1,6 @@
 import { VERGABE } from '../domain/personenfarben';
 import { alteNummerUmsetzen } from '../domain/telefon';
-import { ohneZaehlmarken } from '../domain/zaehlmarken';
+import { ohneZaehlmarken, textOhneZaehlmarken } from '../domain/zaehlmarken';
 import { wohnungsSchluessel } from '../domain/adresse';
 import { sortieren } from '../domain/bewerbungen';
 import { hefteAusVersion1Einordnen } from '../domain/hefte';
@@ -10,6 +10,7 @@ import {
   KEINE_EREIGNISSE,
   neueId,
   rufnameAus,
+  rufnameGelesen,
   type Bezeichnung,
   type DateiEintrag,
   type DateiVersion,
@@ -206,9 +207,10 @@ export async function haushaltLaden(
   const zugehoerigkeiten = (
     await tx.objectStore('zugehoerigkeiten').index('haushaltId').getAll(haushalt.id)
   ).sort((a, b) => a.reihenfolge - b.reihenfolge);
-  const personen = await Promise.all(
-    zugehoerigkeiten.map((z) => tx.objectStore('personen').get(z.personId)),
-  );
+  // E257: ein bis 2.0 aus einem Titel gebildeter Rufname („Dr.“) wird beim Lesen neu gebildet.
+  const personen = (
+    await Promise.all(zugehoerigkeiten.map((z) => tx.objectStore('personen').get(z.personId)))
+  ).map((p) => (p ? rufnameGelesen(p) : p));
   const dokumenteJe = await Promise.all(
     personen.map((p) =>
       p ? tx.objectStore('dokumente').index('personId').getAll(p.id) : Promise.resolve([]),
@@ -245,8 +247,9 @@ export async function personAendern(
   id: Id,
   teil: Partial<Omit<Person, 'id' | 'createdAt'>>,
 ): Promise<void> {
-  const person = await db.get('personen', id);
-  if (!person) throw new Error('Person nicht gefunden');
+  const gespeichert = await db.get('personen', id);
+  if (!gespeichert) throw new Error('Person nicht gefunden');
+  const person = rufnameGelesen(gespeichert);
   await db.put('personen', { ...person, ...teil, updatedAt: jetzt() });
 }
 
@@ -359,7 +362,6 @@ export async function hauptmieterSichern(db: HeftaDb): Promise<void> {
  */
 export async function telefoneUmsetzen(db: HeftaDb): Promise<number> {
   const tx = db.transaction('personen', 'readwrite');
-  const zeit = jetzt();
   let n = 0;
   for (const p of await tx.store.getAll()) {
     const k = p.kontakt;
@@ -368,8 +370,8 @@ export async function telefoneUmsetzen(db: HeftaDb): Promise<number> {
     if (!neu) continue;
     await tx.store.put({
       ...p,
+      // PC126 K2 (DP82 T2): Das stille Umsetzen ist keine Änderung durch den Menschen; „Zuletzt geändert“ bleibt.
       kontakt: { ...k, telefon: neu.anzeige, telefonLand: neu.land, telefonE164: neu.e164 },
-      updatedAt: zeit,
     });
     n++;
   }
@@ -1106,6 +1108,10 @@ export async function heftAendern(
     ...('link' in aenderung
       ? { link: aenderung.link ? ohneZaehlmarken(aenderung.link) : null }
       : {}),
+    // PC126 K6: auch die Links im gespeicherten Text des Inserats.
+    ...(typeof aenderung.inseratText === 'string'
+      ? { inseratText: textOhneZaehlmarken(aenderung.inseratText) }
+      : {}),
     id: alt.id,
     createdAt: alt.createdAt,
     updatedAt: jetzt(),
@@ -1157,6 +1163,10 @@ export async function heftAnlegen(
     ...entwurf,
     // PC120: Zählmarken (utm_…, fbclid, …) fallen beim Speichern aus dem Link.
     link: entwurf.link ? ohneZaehlmarken(entwurf.link) || null : null,
+    // PC126 K6 (DP82 I1): auch der geteilte Text samt Link, der im Heft gespeichert wird.
+    inseratText: entwurf.inseratText
+      ? textOhneZaehlmarken(entwurf.inseratText)
+      : entwurf.inseratText,
   };
   if (!heft.angaben) delete heft.angaben;
   if (foto) heft.foto = await dateiSpeichern(db, foto);

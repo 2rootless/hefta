@@ -86,6 +86,10 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   await page.getByRole('button', { name: 'Löschen', exact: true }).click();
   await expect(page.getByLabel('Telefon')).toHaveValue('');
   await expect(page.getByRole('button', { name: 'Angaben löschen' })).toHaveCount(0);
-  await expect(page.locator('section.offen')).toContainText('Eine Angabe genügt');
+  // PC130 K7: Offen steht der Satz einmal, unter den Feldern; „Eine Angabe genügt“ steht nur zugeklappt.
+  await expect(page.locator('section.offen')).toContainText(
+    'Eine Angabe reicht, die zweite ist freiwillig.',
+  );
+  await expect(page.locator('section.offen')).not.toContainText('Eine Angabe genügt');
   expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
 });

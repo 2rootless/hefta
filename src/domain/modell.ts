@@ -432,13 +432,42 @@ export interface DateiEintrag {
 export const AUSSEHEN_STANDARD: MappenAussehen = { art: 'personen' };
 
 export function rufnameAus(vorname: string): string {
+  // E257 (PC138): Titel am Anfang („Dr.“, „Prof.“, „Dipl.-Ing.“) zählen nicht. Ein Titel ist ein Wort,
+  // das mit einem Punkt endet. Besteht der Vorname nur aus Titeln, gilt die alte Regel.
+  const woerter = vorname.trim().split(/\s+/);
+  const ab = woerter.findIndex((w) => !w.endsWith('.'));
+  if (ab < 0) return rufnameNachAlterRegel(vorname);
+  return rufnameNachAlterRegel(woerter.slice(ab).join(' '));
+}
+
+/** Die Regel bis 2.0: Vorname bis zum ersten Leerzeichen oder Bindestrich, auch wenn das ein Titel ist. */
+function rufnameNachAlterRegel(vorname: string): string {
   return vorname.trim().split(/[\s-]/)[0] ?? '';
+}
+
+/** Selbst gebildet: der Rufname, den Hefta aus diesem Vornamen bildet oder bis 2.0 gebildet hat. */
+function rufnameSelbstGebildet(vorname: string, rufname: string): boolean {
+  const r = rufname.trim();
+  return r === rufnameAus(vorname) || r === rufnameNachAlterRegel(vorname);
 }
 
 /** Rufname nach einer Änderung des Vornamens: Er folgt, außer er wurde eigens gewählt. */
 export function rufnameFolgt(alterVorname: string, neuerVorname: string, rufname: string): string {
-  const eigens = rufname.trim() && rufname.trim() !== rufnameAus(alterVorname);
+  const eigens = rufname.trim() && !rufnameSelbstGebildet(alterVorname, rufname);
   return eigens ? rufname.trim() : rufnameAus(neuerVorname);
+}
+
+/**
+ * E257: Ein gespeicherter Rufname, den Hefta bis 2.0 selbst aus einem Titel gebildet hat („Dr.“), wird beim
+ * Lesen neu gebildet. Ein eigens gewählter Rufname bleibt. Gespeichert wird dabei nichts.
+ */
+export function rufnameGelesen<P extends { vorname: string; rufname: string }>(person: P): P {
+  const r = person.rufname.trim();
+  const neu = rufnameAus(person.vorname);
+  if (r && r !== neu && r === rufnameNachAlterRegel(person.vorname) && r.endsWith('.')) {
+    return { ...person, rufname: neu };
+  }
+  return person;
 }
 
 export function jetzt(): Zeitpunkt {

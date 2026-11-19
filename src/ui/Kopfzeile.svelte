@@ -10,8 +10,9 @@
   <!-- Das Logo ist Schmuck und wird nicht vorgelesen. -->
   <span class="breit" aria-hidden="true"><Logo /></span>
   <div class="nav">
+    <!-- PC130 K11 (W36): Das Zahnrad ist so groß wie auf „Wohnungen“ (24), nicht nur die Tippfläche. -->
     <a class="navb" href="#/einstellungen" aria-label={t('navigation.einstellungen')}
-      ><Symbol name="zahnrad" groesse={20} /></a
+      ><Symbol name="zahnrad" groesse={24} /></a
     >
   </div>
 </header>

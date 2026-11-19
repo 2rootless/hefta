@@ -4,7 +4,7 @@ import { gehe } from '../app/router.svelte';
 import type { HeftAngaben } from '../domain/modell';
 import { adresseAus, angabenAus } from '../lesen/angaben';
 import { anbieterLesen } from '../lesen/anbieter';
-import { adresseLesen, lesen, type Gelesen } from '../lesen/leser';
+import { adresseLesen, lesen, mehrereAdressen, type Gelesen } from '../lesen/leser';
 
 // Entwurf eines neuen Hefts zwischen „Text einfügen“ und „Heft anlegen“ (B23). Er lebt nur im Speicher
 // der Seite: Gespeichert wird erst mit „Heft anlegen“ (Lesesatz in B23). Schließt man die App, ist er weg.
@@ -34,6 +34,8 @@ export const entwurf = $state<{
    * geteilte Text); `geteilt`: nur der geteilte Text; `nichts`: Hefta hat nichts gelesen („Selbst ausfüllen“).
    */
   lesung: Lesung;
+  /** PC124 (N26): Das Inserat nennt mehrere Wohnungen mit eigener Adresse; Hefta hat keine übernommen. */
+  mehrereAdressen: boolean;
 }>({
   text: '',
   link: '',
@@ -47,6 +49,7 @@ export const entwurf = $state<{
   geteilt: false,
   geteilterText: '',
   lesung: 'nichts',
+  mehrereAdressen: false,
 });
 
 export type Lesung = 'inserat' | 'geteilt' | 'nichts';
@@ -87,6 +90,7 @@ export function entwurfLesen(): void {
   entwurf.gelesenAngaben = { ...angabenAus(g, a, null, link || null), anbieter };
   entwurf.gelesenAdresse = entwurf.adresse;
   entwurf.lesung = 'inserat';
+  entwurf.mehrereAdressen = !a && mehrereAdressen(entwurf.text);
 }
 
 export function entwurfVergessen(): void {
@@ -102,6 +106,7 @@ export function entwurfVergessen(): void {
   entwurf.geteilt = false;
   entwurf.geteilterText = '';
   entwurf.lesung = 'nichts';
+  entwurf.mehrereAdressen = false;
   vorschauStand.link = '';
   vorschauStand.roh = null;
 }
@@ -134,6 +139,8 @@ export function entwurfAusVorschau(g: InseratGelesen, link: string): void {
   // DP79: Nur eine Seite, die ankam (Status unter 400), zählt als gelesenes Inserat.
   const seiteGelesen = g.zustand === 'ok' && (g.http ?? 200) < 400 && !!seite.trim();
   entwurf.lesung = seiteGelesen ? 'inserat' : geteilt ? 'geteilt' : 'nichts';
+  entwurf.mehrereAdressen =
+    !a && ((!!geteilt && mehrereAdressen(geteilt)) || mehrereAdressen(seite));
 }
 
 /**

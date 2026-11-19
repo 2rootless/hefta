@@ -141,6 +141,34 @@ export function neuAnfangen(pfad: string): void {
  * Nach einem abgeschlossenen Schritt: zurück zu `ziel`, und alles dazwischen ist aus dem Weg.
  * Steht `ziel` nicht im Verlauf, ersetzt es die Seite.
  */
+/** Gehört `pfad` zum Ablauf, der mit `ablauf` beginnt („/selbstauskunft/p-1“, „/selbstauskunft/p-1/feld/x“)? */
+function imAblauf(pfad: string, ablauf: string): boolean {
+  return pfad === ablauf || pfad.startsWith(`${ablauf}/`);
+}
+
+/**
+ * W39 (PC130 K8): Die Seite, von der aus der Ablauf geöffnet wurde: die letzte im Verlauf vor ihm. Null, wenn es keine
+ * gibt, etwa beim direkten Öffnen.
+ */
+export function einstieg(ablauf: string): string | null {
+  for (let i = verlauf.stelle - 1; i >= 0; i--)
+    if (!imAblauf(verlauf.stapel[i]!, ablauf)) return verlauf.stapel[i]!;
+  return null;
+}
+
+/**
+ * W39 (PC130 K8): „Fertig“ und „Zurück“ führen dorthin, wo der Ablauf geöffnet wurde, nicht auf eine feste Seite.
+ * Ohne Einstieg im Verlauf geht es zu `sonst`.
+ */
+export function zumEinstieg(ablauf: string, sonst: string): void {
+  for (let i = verlauf.stelle - 1; i >= 0; i--)
+    if (!imAblauf(verlauf.stapel[i]!, ablauf)) {
+      history.go(i - verlauf.stelle);
+      return;
+    }
+  ersetzen(sonst);
+}
+
 export function abschliessen(ziel: string): void {
   if (ziel === aktuell()) return;
   const stelle = verlauf.stapel.lastIndexOf(ziel, verlauf.stelle - 1);

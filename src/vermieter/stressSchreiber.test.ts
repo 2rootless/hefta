@@ -82,12 +82,13 @@ async function mappe(nr: string, b: Bau): Promise<Uint8Array> {
     autor: name(haupt),
     fussName: name(haupt),
     kurz: 'Musterweg 7',
-    adresse: ['Musterweg 7, 2. OG', '00100 Musterstadt'],
+    // W7 (PC138): der Musterweg nur mit 12345 Musterstadt.
+    adresse: ['Musterweg 7, 2. OG', '12345 Musterstadt'],
     satz: '',
     fassung: 'Fassung 1 vom 19. November 2026',
     lesehilfeWerte: { fassung: 1 },
     mitziehende: [],
-    kennung: '5a1c9e2b-7d3f-4b8a-9c6e-2f0d1b3a4c5e',
+    kennung: KENNUNG[nr]!,
     hinweis: true,
     modus: 'marktueblich',
     bitte: BITTE_VORSCHLAG,
@@ -101,6 +102,46 @@ async function mappe(nr: string, b: Bau): Promise<Uint8Array> {
     datum: new Date(2026, 10, 19, 9, 0),
   };
   return (await bewerbungBauen(auftrag)).bytes;
+}
+
+// PC138: Jede Mappe ist eine eigene Bewerbung eines eigenen Haushalts, also mit eigener Kennung, wie in der
+// App (zufällig je Haushalt und Wohnung, `bewerbungsKennung`). Bis CP75 trugen alle dieselbe.
+const KENNUNG: Record<string, string> = {
+  G1: '62c20427-10a3-4652-902f-cf8934a70d4d',
+  G2: '52fe18d9-cce9-4aa8-aa1e-30f2ede655ad',
+  G4: 'e0d5e11c-c43d-4978-a3bf-24be64e04214',
+  G6: '02c03c49-d3a3-40f2-b7a1-46a9b9ffd0fa',
+  G8a: '073277da-714a-4960-bf85-27c05430e3c8',
+  G8b: 'd473b1f6-c7de-41da-b1a2-7aaf1345d299',
+  G8c: '326b1dab-ac83-4b72-97cd-5909813f0bfc',
+};
+
+/**
+ * PC138: Mappen verschiedener Haushalte mit derselben Kennung. Eine Software, die nach der Kennung
+ * zusammenführt, machte daraus eine Bewerbung. Dieselbe Kennung ist nur bei Fassungen derselben Bewerbung
+ * richtig, also mit denselben Personen.
+ */
+function gleicheKennung(mappen: { nr: string; kennung: string; personen: string[] }[]): string[] {
+  const funde: string[] = [];
+  mappen.forEach((a, i) => {
+    for (const b of mappen.slice(i + 1)) {
+      if (a.kennung === b.kennung && a.personen.join('|') !== b.personen.join('|')) {
+        funde.push(`${a.nr} und ${b.nr} mit ${a.kennung}`);
+      }
+    }
+  });
+  return funde;
+}
+
+/** Kennung und Personen aus dem Anhang hefta.json einer Mappe. */
+async function lesehilfeVon(bytes: Uint8Array): Promise<{ kennung: string; personen: string[] }> {
+  const dok = await PDFDocument.load(bytes, { updateMetadata: false });
+  const anh = dok.getAttachments().find((a) => a.name === 'hefta.json')!;
+  const lh = JSON.parse(new TextDecoder().decode(anh.data)) as {
+    bewerbung: { kennung: string };
+    haushalt: { personen: { name: string }[] };
+  };
+  return { kennung: lh.bewerbung.kennung, personen: lh.haushalt.personen.map((p) => p.name) };
 }
 
 const TEL: [string, string] = ['0171 3920001', '+491713920001'];
@@ -278,6 +319,19 @@ describe('Stresstest, Teil G: echte Mappen aus dem Schreiber (PC126, DP76 Teil 2
         (e) => `${e.nr}: Seite ${e.unser.urteil}, leser78 ${e.fremd?.[0]} ${e.fremd?.[1] ?? ''}`,
       );
     expect(anders).toEqual([]);
+  });
+
+  it('jede Mappe hat ihre eigene Kennung; zwei Haushalte mit derselben werden angemahnt (PC138)', async () => {
+    const mappen = await Promise.all(
+      ergebnisse.map(async (e) => ({ nr: e.nr, ...(await lesehilfeVon(e.bytes)) })),
+    );
+    expect(mappen.map((m) => m.kennung)).toEqual(FAELLE.map(([nr]) => KENNUNG[nr]));
+    expect(gleicheKennung(mappen)).toEqual([]);
+    // Gegenprobe: die feste Kennung bis CP75 für alle Mappen wird rot.
+    const alt = mappen.map((m) => ({ ...m, kennung: '5a1c9e2b-7d3f-4b8a-9c6e-2f0d1b3a4c5e' }));
+    expect(gleicheKennung(alt)).toContain(`G1 und G2 mit ${alt[0]!.kennung}`);
+    // Zwei Fassungen derselben Bewerbung (gleiche Personen) dürfen sie teilen.
+    expect(gleicheKennung([mappen[0]!, { ...mappen[0]!, nr: 'G1, Fassung 2' }])).toEqual([]);
   });
 
   it('Gegenprobe: dieselbe Mappe mit einem anderen Namen in der Lesehilfe passt nicht', async () => {

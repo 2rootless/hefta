@@ -17,16 +17,31 @@ const CSV = fileURLToPath(
   new URL('../../../tests/fixtures/export/2-paar-kind-buergin.csv', import.meta.url),
 );
 
-function python(): string | null {
+// E214 (PC106, in 2.0.1 auf leser78 übertragen): leser78 prüft das Schema nur mit `jsonschema`. Fehlt es, prüft er
+// es gar nicht. Darum wird der Test rot, wenn Python da ist, aber `jsonschema` fehlt, statt sich still zu überspringen.
+const NACHINSTALLIEREN = 'python -m pip install --user jsonschema==4.26.0';
+
+function pythonDa(): string | null {
   for (const p of ['python3', 'python']) {
-    const r = spawnSync(p, ['-E', '-P', '-B', '-c', 'import jsonschema; print(1)'], {
+    const r = spawnSync(p, ['-E', '-P', '-B', '-c', 'import sys; print(sys.version_info[0])'], {
       encoding: 'utf8',
     });
-    if (r.status === 0 && r.stdout.trim() === '1') return p;
+    if (r.status === 0 && r.stdout.trim() === '3') return p;
   }
   return null;
 }
-const PY = python();
+const PYTHON = pythonDa();
+const mitSchema = (p: string) =>
+  spawnSync(p, ['-E', '-P', '-B', '-c', 'import jsonschema'], { encoding: 'utf8' }).status === 0;
+const PY = PYTHON && mitSchema(PYTHON) ? PYTHON : null;
+
+describe.skipIf(!PYTHON)('hefta-json: Werkzeug für die zweite Probe (E214)', () => {
+  it('jsonschema ist installiert (sonst prüft leser78 das Schema nicht)', () => {
+    expect(mitSchema(PYTHON!), `jsonschema fehlt. Nachinstallieren: ${NACHINSTALLIEREN}`).toBe(
+      true,
+    );
+  });
+});
 
 type Urteil = 'gezeigt' | 'passt nicht' | 'abgelehnt' | 'ABSTURZ';
 const ORDNER = new URL('../beispiele/', import.meta.url);

@@ -37,7 +37,7 @@
     mappeTeilen,
     textKopieren,
   } from '../ui/bewerbenSenden';
-  import type { MappenErgebnis } from '../ui/mappeErstellen';
+  import { unterlagenZahl, type MappenErgebnis } from '../ui/mappeErstellen';
   import { staendeAus } from '../ui/mappeDaten';
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
   import Symbol from '../ui/Symbol.svelte';
@@ -157,8 +157,9 @@
             ? t('bewerben.buergschaftVon', {
                 name: b.person.person.rufname || b.person.person.vorname,
               })
-            : ohneTrennstellen(listenText(teil.stand.typ));
-        if (!namen.includes(name)) namen.push(name);
+            : // DP70 K1-3 (2.0.1): Die weichen Trennstellen bleiben, damit lange Wörter bei großem Zoom umbrechen.
+              listenText(teil.stand.typ);
+        if (!namen.some((n) => ohneTrennstellen(n) === ohneTrennstellen(name))) namen.push(name);
       }
     return namen;
   });
@@ -220,7 +221,8 @@
             portal: heft.angaben?.portal ?? heft.quelle,
             weg: w,
           }),
-          unterlagen: unterlagen.length,
+          // PC95 N3: so viele wie „Was beiliegt“ auf dem Deckblatt, nicht die Arten der Liste oben.
+          unterlagen: unterlagenZahl(m),
           seiten: m.seiten,
           personen: aktive.map((p) => p.person.rufname || p.person.vorname),
           ...(ueber ? { ueber } : {}),

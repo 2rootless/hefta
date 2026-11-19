@@ -70,6 +70,30 @@
       (typeof einstellungen)[keyof typeof einstellungen] | undefined,
   );
 
+  /**
+   * K14 (W8, PC139): Personenseite, Selbstauskunft und Unterlage blieben beim ersten Öffnen 3 bis 5 Bilder lang
+   * leer, weil sie erst dann geladen wurden. Kurz nach dem Start lädt Hefta sie im Leerlauf vor. Sie liegen in
+   * der App, es geht nichts ins Netz. Browsertests schalten das mit `__heftaOhneVorladen` ab (Gegenprobe).
+   */
+  function seitenVorladen(): number {
+    const fenster = window as unknown as {
+      __heftaOhneVorladen?: boolean;
+      requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number;
+    };
+    if (fenster.__heftaOhneVorladen) return 0;
+    const laden = () => {
+      for (const s of [seiten.person, seiten.auskunft, seiten.unterlage]) s().catch(() => {});
+    };
+    // Safari kennt requestIdleCallback nicht; dort genügt eine kurze Pause nach dem Start.
+    return window.setTimeout(
+      () =>
+        fenster.requestIdleCallback
+          ? fenster.requestIdleCallback(laden, { timeout: 1000 })
+          : laden(),
+      300,
+    );
+  }
+
   onMount(() => {
     // Schlägt das Laden fehl, zeigt `Stoerung` den Grund; hier nichts weiter tun.
     neuLaden().catch(() => {});
@@ -79,9 +103,11 @@
     document.addEventListener('visibilitychange', zurueck);
     // Ein Fehler kann an der Verbindung zum Speicher liegen: prüfen und bei Bedarf neu verbinden.
     const aufhoeren = fehlerBeobachten(() => void verbindungPruefen());
+    const vorladenZeit = seitenVorladen();
     return () => {
       document.removeEventListener('visibilitychange', zurueck);
       aufhoeren();
+      window.clearTimeout(vorladenZeit);
     };
   });
 

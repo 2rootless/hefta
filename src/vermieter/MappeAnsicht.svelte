@@ -140,8 +140,19 @@
     {@render zurueck()}
     <p class="vs-kick">{t('mappe.kopfOhne', { nummer, gesamt })}</p>
     <h2 class="vs-t vs-tf" data-titel tabindex="-1"><Dateiname name={mappe.name} /></h2>
-    <p class="vs-lead">{t(mappe.passtNicht ? 'mappe.passtNicht' : 'mappe.ohne')}</p>
-    {#if !mappe.passtNicht}<p class="vs-sub">{t('mappe.ohneWarum')}</p>{/if}
+    <p class="vs-lead">
+      {t(
+        mappe.passtNicht
+          ? 'mappe.passtNicht'
+          : mappe.lesehilfeUnlesbar
+            ? 'mappe.unlesbar'
+            : 'mappe.ohne',
+      )}
+    </p>
+    <!-- Der Satz, warum eine Lesehilfe fehlt, passt nur, wenn wirklich keine beiliegt (PC126 K3). -->
+    {#if !mappe.passtNicht && !mappe.lesehilfeUnlesbar}<p class="vs-sub">
+        {t('mappe.ohneWarum')}
+      </p>{/if}
     {@render aktion()}
     {@render loeschen()}
     {@render schritteLink()}

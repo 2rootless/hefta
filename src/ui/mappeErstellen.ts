@@ -483,3 +483,13 @@ export function sichern(dateien: File[]): void {
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
 }
+
+/**
+ * PC95 N3, PC96: Wie viele Unterlagen gingen hinaus? Gezählt wie „Was beiliegt“ auf dem Deckblatt, eine je Person
+ * und Unterlage (zwei Gehaltsnachweise von Max und Lea sind zwei). Bei Einzeldateien zählt jede Datei.
+ */
+export function unterlagenZahl(m: Pick<MappenErgebnis, 'inhalt' | 'dateien'>): number {
+  return m.inhalt.length
+    ? m.inhalt.reduce((summe, p) => summe + p.teile.length, 0)
+    : m.dateien.length;
+}

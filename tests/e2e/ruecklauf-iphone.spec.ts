@@ -224,21 +224,28 @@ test('Selbstauskunft: Hinweis zum Format, Knopf zum nächsten Teil, von wem der 
   const email = page.getByLabel('E-Mail');
   await email.fill('max-at-beispiel');
   await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toHaveCount(0);
-  await page.getByLabel('Telefon').click();
+  await page.getByRole('textbox', { name: 'Telefon' }).click();
   await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toBeVisible();
+  // DP70 QA25: Ein Hinweis ist höflich (role=status), kein Alarm; Gegenprobe: nicht als alert.
+  await expect(
+    page.getByRole('status').filter({ hasText: /Mailadresse sieht ungewöhnlich aus/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('alert').filter({ hasText: /Mailadresse sieht ungewöhnlich aus/ }),
+  ).toHaveCount(0);
   await email.fill('max@example.com');
   // DP77 (TL26): Die Nachfrage gibt es nur noch für gültige Sonderrufnummern; Buchstaben sind ein Fehler im Feld.
-  await page.getByLabel('Telefon').fill('abc');
+  await page.getByRole('textbox', { name: 'Telefon' }).fill('abc');
   await email.click();
   await expect(
     page.getByText('In der Nummer stehen Buchstaben. Möglich sind nur Ziffern.'),
   ).toBeVisible();
   await expect(page.getByText(/Die Telefonnummer sieht ungewöhnlich aus/)).toHaveCount(0);
-  await page.getByLabel('Telefon').fill(SONDER);
+  await page.getByRole('textbox', { name: 'Telefon' }).fill(SONDER);
   await email.click();
   await expect(page.getByText(/Die Telefonnummer sieht ungewöhnlich aus/)).toBeVisible();
   // Nur ein Hinweis: Es wird trotzdem gespeichert, und der Knopf führt weiter.
-  await page.getByLabel('Telefon').fill('0171 3920007');
+  await page.getByRole('textbox', { name: 'Telefon' }).fill('0171 3920007');
   await email.click();
   await expect(page.getByText(/Die Telefonnummer sieht ungewöhnlich aus/)).toHaveCount(0);
   await page.getByRole('button', { name: /^Weiter: / }).click();
@@ -260,7 +267,7 @@ test('Selbstauskunft: Hinweis zum Format, Knopf zum nächsten Teil, von wem der 
   await page.getByLabel('E-Mail').press('Enter');
   await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toBeVisible();
   // Beide zweifelhaft: ein Satz für beide (Planung 12r).
-  await page.getByLabel('Telefon').fill(SONDER);
+  await page.getByRole('textbox', { name: 'Telefon' }).fill(SONDER);
   await page.getByRole('button', { name: /^Weiter: / }).click();
   await page.getByRole('button', { name: /^Weiter: / }).click();
   await expect(page.getByRole('button', { name: /^Kontakt/ })).toContainText(

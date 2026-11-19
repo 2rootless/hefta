@@ -389,6 +389,10 @@
             </Notiz>
           {:else}
             <p class="satz">{t(`personSeite.rolleSatz.${rolle}`)}</p>
+            <!-- PC127 (DP83 c, N4 d): Wie man die Hauptmieterin herausnimmt, nur wenn noch jemand im Vertrag steht. -->
+            {#if rolle === 'hauptmieter' && bisher === 'hauptmieter' && imVertrag.length > 1}
+              <p class="satz">{t('personSeite.rolleSatz.hauptmieterRaus')}</p>
+            {/if}
           {/if}
           {#if rolle !== 'hauptmieter'}
             <button type="button" class="textlink links" onclick={herausnehmen}

@@ -36,6 +36,11 @@ export interface Mappe {
   /** Null: keine Lesehilfe oder eine, die nicht passt. */
   anhang: HeftaAnhang | null;
   passtNicht: boolean;
+  /**
+   * PC126 K3 (DP82 L1, PC130): Die Lesehilfe liegt bei, lässt sich aber nicht lesen (der Leser lehnt sie ab, auch
+   * eine alte Form). Dann sagt die Seite das, statt „keine Lesehilfe“ zu behaupten.
+   */
+  lesehilfeUnlesbar: boolean;
   neuereFassung: boolean;
 }
 
@@ -94,6 +99,7 @@ export async function einlesen(
         // PC107: Eine Lesehilfe, die sich nicht lesen lässt (etwa eine alte Form), öffnet wie eine Mappe ohne
         // Lesehilfe, ohne Meldung. „Passt nicht“ heißt: gelesen, aber nicht zum Papier passend (Punkte 1 bis 7).
         passtNicht: !!gelesen && !passt,
+        lesehilfeUnlesbar: !!roh && !gelesen,
         neuereFassung: passt && gelesen.hefta > ANHANG_FASSUNG,
       },
     };

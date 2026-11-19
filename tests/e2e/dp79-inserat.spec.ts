@@ -14,7 +14,17 @@ const NL = String.fromCharCode(10);
 type Antwort = Record<string, unknown>;
 type Anrede = 'ihr' | 'du';
 type Fall =
-  'weg' | 'gesperrt' | 'nichts' | 'netz' | 'offen' | 'teil' | 'teilk' | 'teilks' | 'selbst';
+  | 'weg'
+  | 'gesperrt'
+  | 'nichts'
+  | 'netz'
+  | 'offen'
+  | 'teil'
+  | 'teilk'
+  | 'teilks'
+  | 'selbst'
+  | 'mehrere'
+  | 'mehrereg';
 
 /** Der geteilte Text von ImmoScout24, nachgebaut wie im Test zu F8a (erfundene Nummer). */
 const geteilt = (adresse: string[]) =>
@@ -54,6 +64,17 @@ const SEITE: Record<string, Antwort> = {
   zeit: { zustand: 'zeit' },
   http500: { zustand: 'ok', http: 500, text: '' },
   fehler: { zustand: 'fehler' },
+  // PC124 (N26): zwei Wohnungen mit eigener Adresse, ohne Eckdaten für eine Wohnung (Fall C).
+  mehrere: {
+    zustand: 'ok',
+    http: 200,
+    text: [
+      'Freie Wohnungen',
+      '',
+      'Lindenring 3, 20259 Hamburg: 2 Zimmer, 650 € kalt',
+      'Lindenring 8, 20259 Hamburg: 3 Zimmer, 890 € kalt',
+    ].join(NL),
+  },
   ohneAdresse: {
     zustand: 'ok',
     http: 200,
@@ -159,6 +180,31 @@ const T: Record<Fall, { ihr: string[]; du: string[]; knoepfe: string[] }> = {
     ],
     knoepfe: ['Adresse eintragen', 'Heft anlegen'],
   },
+  mehrere: {
+    ihr: [
+      'Im Inserat fand Hefta mehrere Adressen. Die richtige kommt in Betreff und Deckblatt.',
+      'nicht gefunden',
+    ],
+    du: [
+      'Im Inserat fand Hefta mehrere Adressen. Die richtige kommt in Betreff und Deckblatt.',
+      'nicht gefunden',
+    ],
+    knoepfe: ['Adresse eintragen', 'Heft anlegen'],
+  },
+  // PC127 (DP83 b): derselbe Fall aus dem geteilten Text; der Satz nennt die Quelle.
+  mehrereg: {
+    ihr: [
+      'Gelesen aus dem geteilten Text.',
+      'Im geteilten Text fand Hefta mehrere Adressen. Die richtige kommt in Betreff und Deckblatt.',
+      'nicht gefunden',
+    ],
+    du: [
+      'Gelesen aus dem geteilten Text.',
+      'Im geteilten Text fand Hefta mehrere Adressen. Die richtige kommt in Betreff und Deckblatt.',
+      'nicht gefunden',
+    ],
+    knoepfe: ['Adresse eintragen', 'Heft anlegen'],
+  },
   selbst: {
     ihr: [
       'Die Adresse kommt in Betreff und Deckblatt.',
@@ -184,7 +230,12 @@ interface Lauf {
   kurz?: boolean;
 }
 
-const OHNE_ADRESSE = geteilt(['12345 Neustadt, Musterstadt']);
+const OHNE_ADRESSE = geteilt(['12345 Musterviertel, Musterstadt']);
+// PC127: zwei Wohnungen mit eigener Adresse im geteilten Text (Musteradressen nach W7, Fassung 25).
+const MEHRERE_GETEILT = geteilt([
+  'Musterweg 3, 00100 Musterstadt: 2 Zimmer, 650 € kalt',
+  'Musterweg 8, 00100 Musterstadt: 3 Zimmer, 890 € kalt',
+]);
 const LAEUFE: Lauf[] = [
   { name: 'A 404', seite: SEITE.weg!, fall: 'weg' },
   { name: 'A 410', seite: SEITE.weg410!, fall: 'weg', kurz: true },
@@ -224,6 +275,19 @@ const LAEUFE: Lauf[] = [
     seite: SEITE.gesperrt!,
     klick: 'Selbst ausfüllen',
     fall: 'selbst',
+  },
+  {
+    name: 'N26 mehrere Wohnungen, dann „Selbst ausfüllen“',
+    seite: SEITE.mehrere!,
+    klick: 'Selbst ausfüllen',
+    fall: 'mehrere',
+  },
+  {
+    name: 'N26 mehrere Adressen im geteilten Text',
+    seite: SEITE.gesperrt!,
+    text: MEHRERE_GETEILT,
+    klick: 'Ja, einlesen',
+    fall: 'mehrereg',
   },
 ];
 
@@ -342,7 +406,7 @@ const FORM_DU = /\b(kannst du|Versuch es|Tipp auf|bestätigst|dir|dein\w*)\b/;
 const FORM_IHR = /\b(könnt ihr|Versucht es|Tippt auf|bestätigt\.|euch|eur\w*)\b/;
 const LOB = /\b(einfach|schnell|smart|super|perfekt|endlich|mühelos)\b/i;
 const RASTER = new Set([4, 8, 12, 16, 20, 24, 32, 48]);
-const KONTROLLE: Fall[] = ['teilk', 'teilks', 'selbst'];
+const KONTROLLE: Fall[] = ['teilk', 'teilks', 'selbst', 'mehrere', 'mehrereg'];
 
 function rgb(s: string): [number, number, number] {
   const m = (s.match(/\d+/g) ?? ['0', '0', '0']).slice(0, 3).map(Number);

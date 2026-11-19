@@ -109,8 +109,8 @@
       "titel": "Rückmeldung",
       "kurzeFragen": "{Zahl} kurze Fragen",
       "satz": {
-        "ihr": "Mit „Abschicken“ geht nur eure Antwort an uns: ohne Namen und ohne Daten aus {app}.",
-        "du": "Mit „Abschicken“ geht nur deine Antwort an uns: ohne Namen und ohne Daten aus {app}."
+        "ihr": "Mit „Abschicken“ geht nur eure Antwort an {app}: ohne Namen und ohne Daten aus {app}.",
+        "du": "Mit „Abschicken“ geht nur deine Antwort an {app}: ohne Namen und ohne Daten aus {app}."
       },
       "anderes": {
         "ihr": "Etwas anderes? Schreibt an {adresse}.",
@@ -890,6 +890,10 @@
     "rolle": "Rolle",
     "rolleSatz": {
       "hauptmieter": "Erste Person im Mietvertrag.",
+      "hauptmieterRaus": {
+        "ihr": "Zum Herausnehmen wählt zuerst „Bürgschaft“. Dann steht „Aus diesem Haushalt nehmen“ darunter.",
+        "du": "Zum Herausnehmen wähl zuerst „Bürgschaft“. Dann steht „Aus diesem Haushalt nehmen“ darunter."
+      },
       "mitmieter": "Steht mit im Mietvertrag.",
       "buerge": {
         "ihr": "Bürgt für euch, zieht nicht ein.",
@@ -1954,7 +1958,7 @@
     "vorschlagMailDu": "Am {tag} hast du die Mail mit der Mappe geöffnet. Ob sie hinausging, erfährt {app} nicht.",
     "nochNicht": "Noch nicht",
     "ort": "Heft",
-    "nameAendern": "Name der Wohnung ändern",
+    "nameAendern": "Name ändern",
     "zumInserat": "Zum Inserat ↗",
     "eckWarm": "{betrag} warm · {zimmer} Zi · {flaeche} m²",
     "fotoAlt": "Foto aus dem Inserat",
@@ -1966,19 +1970,17 @@
   },
   "merkmal": {
     "zurueck": "Heft",
-    "titelIhr": "Name der Wohnung",
-    "titelDu": "Name der Wohnung",
-    "sub": "Das Merkmal steht in der Übersicht ganz oben, die Adresse darunter im Heft.",
+    "titelIhr": "Name",
+    "titelDu": "Name",
+    "sub": "Der Name steht in der Übersicht ganz oben, die Adresse darunter im Heft.",
     "feld": "Name",
     "zaehler": "{n} von 40",
     "zuLang": "Etwas kürzer, dann passt er in die Übersicht.",
     "einsetzen": "Einsetzen",
     "ausInserat": "Aus dem Inserat",
     "wiederherstellen": "Vorschlag von {app} wiederherstellen",
-    "keinVorschlagIhr": "Das Inserat gibt kein Merkmal her, das sie von den anderen unterscheidet. Bis ihr eins eintragt, steht {oben} oben.",
-    "keinVorschlagDu": "Das Inserat gibt kein Merkmal her, das sie von den anderen unterscheidet. Bis du eins einträgst, steht {oben} oben.",
-    "ohneTextIhr": "Ohne den Text des Inserats schlägt {app} kein Merkmal vor. Bis ihr eins eintragt, steht {oben} oben.",
-    "ohneTextDu": "Ohne den Text des Inserats schlägt {app} kein Merkmal vor. Bis du eins einträgst, steht {oben} oben.",
+    "bisNameIhr": "Bis ihr einen Namen eintragt, steht {oben} oben.",
+    "bisNameDu": "Bis du einen Namen einträgst, steht {oben} oben.",
     "dieStrasse": "die Straße",
     "uebernehmen": "Übernehmen"
   },
@@ -2064,6 +2066,8 @@
     "adresseGeteilt": "Im geteilten Text fand {app} keine Adresse. Sie kommt in Betreff und Deckblatt.",
     "adresseInserat": "Im Inserat fand {app} keine Adresse. Sie kommt in Betreff und Deckblatt.",
     "adresseNichts": "Die Adresse kommt in Betreff und Deckblatt.",
+    "adresseMehrereInserat": "Im Inserat fand {app} mehrere Adressen. Die richtige kommt in Betreff und Deckblatt.",
+    "adresseMehrereGeteilt": "Im geteilten Text fand {app} mehrere Adressen. Die richtige kommt in Betreff und Deckblatt.",
     "adresseEintragen": "Adresse eintragen",
     "nichtGefunden": "nicht gefunden",
     "tippEintragenIhr": "Tippt auf eine Angabe, um sie einzutragen.",

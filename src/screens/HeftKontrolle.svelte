@@ -592,7 +592,17 @@
     {#if !entwurf.adresse.trim()}
       <!-- DP79: Fehlt die Adresse, fragt ein Block danach, gebaut wie „Wünsche festlegen“; kein Tintenrand (W33). -->
       <div class="zus adresse">
-        <p class="zf">{t(ADRESSE_SATZ[entwurf.lesung])}</p>
+        <!-- PC124 (N26): Nennt das Inserat mehrere Wohnungen mit eigener Adresse, sagt Hefta das, statt zu raten. -->
+        <p class="zf">
+          <!-- PC127 (DP83 b, W10): Hefta weiß nur, dass es mehrere Adressen fand, nicht, dass es Wohnungen sind. -->
+          {t(
+            entwurf.mehrereAdressen
+              ? entwurf.lesung === 'geteilt'
+                ? 'neuesHeft.adresseMehrereGeteilt'
+                : 'neuesHeft.adresseMehrereInserat'
+              : ADRESSE_SATZ[entwurf.lesung],
+          )}
+        </p>
         <button class="wlink" type="button" onclick={adresseEintragen}
           >{t('neuesHeft.adresseEintragen')}</button
         >
