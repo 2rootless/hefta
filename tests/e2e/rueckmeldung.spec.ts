@@ -481,10 +481,12 @@ test('Fehlt eine Datei, nennt die Mappe sie mit Rufname und führt zur Seite der
   await expect(
     page.getByRole('link', { name: /^Bonitätsnachweis von Max Lässt sich nicht lesen/ }),
   ).toBeVisible({ timeout: 30_000 });
-  // „Teilen“ bleibt: Der Rest der Mappe geht.
+  // PC126 K5 (PC127, DP83 a): Teilen geht nicht mehr trotzdem; der Knopf führt erst ins Blatt (unlesbar-mappe.spec).
   await expect(page.getByRole('button', { name: 'Als PDF teilen' })).toBeVisible();
   await expect(page.getByText('Eine Datei fehlt in der Mappe')).toBeVisible();
-  await expect(page.getByText('Ladet sie noch einmal hoch. Teilen geht trotzdem.')).toBeVisible();
+  await expect(
+    page.getByText('Tauscht die Datei aus oder lasst die Unterlage diesmal weg.'),
+  ).toBeVisible();
   await page.getByRole('link', { name: /^Bonitätsnachweis von Max/ }).click();
   await expect(page).toHaveURL(/#\/unterlage\/p-04-fertig-0\/bonitaet$/);
 });

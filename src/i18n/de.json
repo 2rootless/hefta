@@ -145,6 +145,7 @@
     "pruefen": "prüfen",
     "pruefenAnsage": "prüfen: {kurz}",
     "da": "da",
+    "nichtOeffnen": "eine Datei lässt sich nicht öffnen",
     "teilen": "Mappe teilen",
     "trotzdemTeilen": "Mappe trotzdem teilen"
   },
@@ -660,6 +661,7 @@
     "uebersicht": "Übersicht"
   },
   "unterlage": {
+    "nichtOeffnen": "Diese Datei kann {app} nicht öffnen.",
     "satzNichtMehr": "Gespeichert. Wird nicht mehr gebraucht, kommt nicht in die Mappe.",
     "satzGespeichert": "Gespeichert. Kommt nicht in die Mappe.",
     "satzNichtDrin": "Noch nicht gespeichert. Kommt nicht in die Mappe.",
@@ -1216,9 +1218,16 @@
       "other": "{Wort} Dateien fehlen in der Mappe"
     },
     "dateiFehltUnter": {
-      "ihr": "Ladet sie noch einmal hoch. Teilen geht trotzdem.",
-      "du": "Lad sie noch einmal hoch. Teilen geht trotzdem."
+      "ihr": "Tauscht die Datei aus oder lasst die Unterlage diesmal weg.",
+      "du": "Tausch die Datei aus oder lass die Unterlage diesmal weg."
     },
+    "nichtOeffnen": "Eine Datei in „{unterlage}“ von {name} kann {app} nicht öffnen.",
+    "nichtOeffnenText": {
+      "ihr": "Tauscht die Datei aus oder lasst die Unterlage diesmal weg.",
+      "du": "Tausch die Datei aus oder lass die Unterlage diesmal weg."
+    },
+    "dateiAustauschen": "Datei austauschen",
+    "diesmalWeglassen": "Diesmal weglassen",
     "vorherLatein": "Teilen geht erst, wenn der Name eingetragen ist.",
     "auswahlStand": "{rolle} · {dabei} von {von} dabei",
     "satzEuer": "Euer Satz",
@@ -1945,7 +1954,7 @@
     "vorschlagMailDu": "Am {tag} hast du die Mail mit der Mappe geöffnet. Ob sie hinausging, erfährt {app} nicht.",
     "nochNicht": "Noch nicht",
     "ort": "Heft",
-    "nameAendern": "Name der Wohnung ändern",
+    "nameAendern": "Name ändern",
     "zumInserat": "Zum Inserat ↗",
     "eckWarm": "{betrag} warm · {zimmer} Zi · {flaeche} m²",
     "fotoAlt": "Foto aus dem Inserat",
@@ -1957,19 +1966,17 @@
   },
   "merkmal": {
     "zurueck": "Heft",
-    "titelIhr": "Name der Wohnung",
-    "titelDu": "Name der Wohnung",
-    "sub": "Das Merkmal steht in der Übersicht ganz oben, die Adresse darunter im Heft.",
+    "titelIhr": "Name",
+    "titelDu": "Name",
+    "sub": "Der Name steht in der Übersicht ganz oben, die Adresse darunter im Heft.",
     "feld": "Name",
     "zaehler": "{n} von 40",
     "zuLang": "Etwas kürzer, dann passt er in die Übersicht.",
     "einsetzen": "Einsetzen",
     "ausInserat": "Aus dem Inserat",
     "wiederherstellen": "Vorschlag von {app} wiederherstellen",
-    "keinVorschlagIhr": "Das Inserat gibt kein Merkmal her, das sie von den anderen unterscheidet. Bis ihr eins eintragt, steht {oben} oben.",
-    "keinVorschlagDu": "Das Inserat gibt kein Merkmal her, das sie von den anderen unterscheidet. Bis du eins einträgst, steht {oben} oben.",
-    "ohneTextIhr": "Ohne den Text des Inserats schlägt {app} kein Merkmal vor. Bis ihr eins eintragt, steht {oben} oben.",
-    "ohneTextDu": "Ohne den Text des Inserats schlägt {app} kein Merkmal vor. Bis du eins einträgst, steht {oben} oben.",
+    "bisNameIhr": "Bis ihr einen Namen eintragt, steht {oben} oben.",
+    "bisNameDu": "Bis du einen Namen einträgst, steht {oben} oben.",
     "dieStrasse": "die Straße",
     "uebernehmen": "Übernehmen"
   },

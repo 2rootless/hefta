@@ -93,7 +93,7 @@ describe('Format von Kontaktdaten: nur ein Hinweis', () => {
   });
 
   it('Telefon', () => {
-    for (const gut of ['0171 3920007', '+49 (0)40 / 123-456', '0171.1234567']) {
+    for (const gut of ['0171 3920007', '+49 (0)40 / 66969-123', '0171.3920008']) {
       expect(telefonSiehtGutAus(gut)).toBe(true);
     }
     for (const schlecht of ['abc', '12345', '040 12x456', '1234567890123456']) {

@@ -102,6 +102,8 @@ export interface AnschreibenAuftrag {
    * bietet der Satz die Mappe an, sobald der Vermieter eine Mailadresse nennt.
    */
   weg: BewerbungsWeg;
+  /** PC126 K5: Die Mappe hat eine eigene Auswahl, etwa nach „Diesmal weglassen“. */
+  eigeneAuswahl?: boolean;
 }
 
 /** Das Anschreiben nach B23 (`s=bewerben`), ohne Gruß und Unterschrift. */
@@ -119,14 +121,20 @@ export function anschreibenText(a: AnschreibenAuftrag): { anrede: string; text: 
     const wann = einzugText(a.einzug, a.heute);
     saetze.push(a.wir ? `Wir können zum ${wann} einziehen.` : `Ich kann zum ${wann} einziehen.`);
   }
+  // PC126 K5 (DP83 a, W10): Mit „Eigener Auswahl“ liegen nicht die üblichen Unterlagen bei; dann sagt der Satz es nicht.
+  const mappe = a.eigeneAuswahl
+    ? a.wir
+      ? 'Unsere Mappe'
+      : 'Meine Mappe'
+    : a.wir
+      ? 'Unsere Mappe mit den üblichen Unterlagen'
+      : 'Meine Mappe mit den üblichen Unterlagen';
   saetze.push(
     a.weg === 'mail'
-      ? a.wir
-        ? 'Unsere Mappe mit den üblichen Unterlagen liegt bei.'
-        : 'Meine Mappe mit den üblichen Unterlagen liegt bei.'
+      ? `${mappe} liegt bei.`
       : a.wir
-        ? 'Unsere Mappe mit den üblichen Unterlagen schicken wir Ihnen gern, sobald Sie uns eine Mailadresse nennen.'
-        : 'Meine Mappe mit den üblichen Unterlagen schicke ich Ihnen gern, sobald Sie mir eine Mailadresse nennen.',
+        ? `${mappe} schicken wir Ihnen gern, sobald Sie uns eine Mailadresse nennen.`
+        : `${mappe} schicke ich Ihnen gern, sobald Sie mir eine Mailadresse nennen.`,
   );
   return { anrede: anrede(a.anbieter), text: saetze.join(' ') };
 }

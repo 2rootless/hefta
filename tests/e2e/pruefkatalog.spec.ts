@@ -379,7 +379,7 @@ const amVorschau = async (page: Page) => {
 const IS24 = {
   url: 'https://www.immobilienscout24.de/expose/100000001',
   text: [
-    'Besonders Wohnen direkt an den Landungsbrücken!',
+    'Einzigartig wohnen direkt an der Musterhafenbrücke!',
     'Musterweg 7, 20359 Hamburg',
     'Kaltmiete 1.420 €',
     'Nebenkosten 290 €',
@@ -391,7 +391,7 @@ const IS24 = {
     'Kaution 3 Kaltmieten',
   ].join('\n'),
 };
-const KATALOG_TITEL = 'Besonders Wohnen direkt an den Landungsbrücken!';
+const KATALOG_TITEL = 'Einzigartig wohnen direkt an der Musterhafenbrücke!';
 
 /** Wünsche wie im Test der Kontrolle, damit Vorschau und Kontrolle Abweichungen zeigen; lädt neu. */
 async function katalogWuensche(page: Page) {

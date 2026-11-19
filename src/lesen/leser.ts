@@ -142,7 +142,7 @@ function* werteNach(t: string, bez: string): Generator<string> {
       string,
       string,
     ];
-    // „Kaltmiete 19,75 €/m²: 2.350 €“ (geteilter Text von ImmoScout24): der Betrag nach dem Doppelpunkt.
+    // „Kaltmiete 12,59 €/m²: 754,76 €“ (geteilter Text von ImmoScout24, erfundene Beträge): der Betrag nach dem Doppelpunkt.
     const nachM2 = /€\s*\/\s*m²\s*:\s*(.+)$/.exec(gleich);
     if (nachM2) yield nachM2[1] ?? '';
     else if (gleich) yield gleich;

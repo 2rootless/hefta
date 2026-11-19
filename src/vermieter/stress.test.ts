@@ -22,7 +22,7 @@ const ZEILE = String.fromCharCode(10);
 // echte PDF-Mappe mit Anhang `hefta.json`. Zwei Leser urteilen über dieselbe Datei:
 //   - die Vermieter-Seite: PDF.js, `papierLesen()`, das Paket `hefta-json` (`lesenMitGrund`, `pruefen`) und
 //     `lesehilfePasst()` der Seite, die zum selben Ergebnis kommen muss;
-//   - Designs fremder Leser `leser78.py` (pypdf und pdfplumber), unverändert in Fassung 3 (DP81, PC122), über
+//   - Designs fremder Leser `leser78.py` (pypdf und pdfplumber), unverändert in Fassung 4 (DP82, PC126), über
 //     `urteil78.py`.
 // Die Vermieter-Seite muss jeden Fall so entscheiden wie die Spalte „soll“ des Katalogs. Seit Fassung 3 kennt leser78
 // die Zeile im Verzeichnis nach V6; die Ausnahme dafür ist weg (PC121): Paket und leser78 urteilen in jedem Fall
@@ -128,8 +128,8 @@ describe('Stresstest der Lesehilfe, Fassung 1 (DP76, DP78)', () => {
     if (process.env.STRESS_TABELLE) writeFileSync(process.env.STRESS_TABELLE, tabelle(zeilen));
   }, 300_000);
 
-  it('der Katalog ist vollständig: 95 Fälle, jede Nummer einmal', () => {
-    expect(zeilen.length).toBe(95);
+  it('der Katalog ist vollständig: 96 Fälle (mit V7a, PC126), jede Nummer einmal', () => {
+    expect(zeilen.length).toBe(96);
     expect(new Set(zeilen.map((z) => z.f.nr)).size).toBe(zeilen.length);
   });
 
@@ -154,7 +154,7 @@ describe('Stresstest der Lesehilfe, Fassung 1 (DP76, DP78)', () => {
   });
 
   it.skipIf(!PY)(
-    'leser78 (Fassung 3) stürzt nie ab und urteilt in jedem Fall wie die Seite (PC121)',
+    'leser78 (Fassung 4) stürzt nie ab und urteilt in jedem Fall wie die Seite (PC121)',
     () => {
       expect(
         zeilen.filter((z) => z.fremd?.[0] === 'ABSTURZ').map((z) => `${z.f.nr}: ${z.fremd![1]}`),

@@ -298,7 +298,8 @@ describe('hefta-json: Telefon und Listen', () => {
       ['0171 3920001', '+491713920001', true],
       ['040 66969123', '+494066969123', true],
       ['+44 20 7946 0018', '+442079460018', true],
-      ['+43 1 5880000', '+4315880000', true],
+      // W7: im Ausland nur der britische Bereich für Film und Fernsehen (vorher eine österreichische Nummer).
+      ['+44 20 7946 0019', '+442079460019', true],
       ['0171 3920001', '+491713920002', false],
       ['+49 171 3920001', '+491713920001', false],
       ['+49 (0)171 3920006', '+491713920006', false],

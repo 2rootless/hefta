@@ -1,28 +1,58 @@
 {
   "stand": "2026-11-18",
-  "quelle": "PC120, Abschnitt 5 (E232): ab 2.0 ein Korpus je Bereich; für 2.0 angelegt und mit dem gefüllt, was es schon gibt",
+  "quelle": "Robustheitskatalog der Planung (PC123, Anlage), Bereiche und Messgrößen aus der Tabelle „Die Bereiche“; angelegt für 2.0 mit dem, was es schon gibt (PC120, E232)",
   "bereiche": [
     {
       "bereich": "I",
-      "name": "Inserat lesen: Vorschau, Fälle A bis F, geteilter Text",
-      "quote": null,
-      "quellen": [
+      "name": "Inserate lesen",
+      "messgroesse": "Adresse, Miete, Fläche, Zimmer je Feld richtig oder ehrlich leer; ehrliche Meldung, wenn nichts geht",
+      "quote": [
         {
-          "datei": "tests/e2e/dp79-inserat.spec.ts",
-          "was": "DP79, IL1 bis IL14: 18 Läufe je Anrede und Ansicht, dazu die Gegenproben",
-          "faelle": 18
+          "was": "Felder richtig oder ehrlich leer (Katalog PC117)",
+          "richtig": 167,
+          "von": 168
         },
         {
+          "was": "Felder richtig gelesen, wo das Inserat sie eindeutig nennt",
+          "richtig": 119,
+          "von": 134
+        },
+        {
+          "was": "ehrliche Meldung, wenn nichts geht (DP79)",
+          "richtig": 18,
+          "von": 18
+        }
+      ],
+      "quellen": [
+        {
           "datei": "tests/fixtures/inserate/katalog-pc117.json",
-          "was": "PC117: 42 erfundene Inserate, gelesen wie aus der Vorschau",
+          "soll": "tests/robustheit/i/katalog-soll.json",
+          "was": "PC117: 42 erfundene Inserate, je Feld Adresse, Warmmiete, Zimmer, Fläche gegen das Soll",
           "faelle": 42
+        },
+        {
+          "datei": "tests/e2e/dp79-inserat.spec.ts",
+          "was": "DP79: 18 Arten von Antworten der Seite, ehrliche Meldung nach IL1 bis IL14",
+          "faelle": 18
         }
       ]
     },
     {
       "bereich": "N",
-      "name": "Name, Adresse, Betreff, Anschreiben und Dateiname aus dem Inserat",
-      "quote": null,
+      "name": "Name des Hefts",
+      "messgroesse": "Name ist „Straße Hausnummer“ oder eine ehrliche Ersatzform, nie der Werbetitel",
+      "quote": [
+        {
+          "was": "Name ist Straße und Hausnummer oder gebaut, nicht der Titel des Inserats (Katalog PC117)",
+          "richtig": 20,
+          "von": 42
+        },
+        {
+          "was": "Präposition und Dateiname (Straßenarten)",
+          "richtig": 21,
+          "von": 21
+        }
+      ],
       "quellen": [
         {
           "datei": "tests/fixtures/inserate/katalog-pc117.json",
@@ -38,14 +68,34 @@
     },
     {
       "bereich": "P",
-      "name": "noch ohne Fälle",
-      "quote": null,
-      "quellen": []
+      "name": "Personen und Namen",
+      "messgroesse": "richtig gespeichert, gedruckt und in der Lesehilfe; keine Kürzung",
+      "quote": [
+        {
+          "was": "Urteil wie „soll“, Seite, Paket und leser78 gleich",
+          "richtig": 44,
+          "von": 44
+        }
+      ],
+      "quellen": [
+        {
+          "datei": "tests/stress/katalog.ts",
+          "was": "Stresstest DP76: S1 bis S36 (mit Varianten) und G7s, Namen und Angaben durch Papier und Lesehilfe",
+          "faelle": 44
+        }
+      ]
     },
     {
       "bereich": "T",
-      "name": "Telefon nach E222",
-      "quote": null,
+      "name": "Telefon und Mail",
+      "messgroesse": "richtige internationale Nummer oder ehrlicher Fehler",
+      "quote": [
+        {
+          "was": "TL1 bis TL28 und TR1 bis TR12 wie erwartet",
+          "richtig": 40,
+          "von": 40
+        }
+      ],
       "quellen": [
         {
           "datei": "src/domain/telefon.test.ts",
@@ -61,14 +111,27 @@
     },
     {
       "bereich": "U",
-      "name": "noch ohne Fälle",
-      "quote": null,
+      "name": "Unterlagen erkennen",
+      "messgroesse": "Art, Monat und Datum richtig oder Nachfrage",
+      "quote": [],
       "quellen": []
     },
     {
       "bereich": "L",
-      "name": "Lesehilfe der Mappe: Stresstest und Angriffe",
-      "quote": null,
+      "name": "Lesehilfe und Vermieterseite",
+      "messgroesse": "gleiches Urteil beider Leser; keine Fälschung angezeigt",
+      "quote": [
+        {
+          "was": "Stresstest: Seite, Paket und leser78 urteilen gleich und wie „soll“",
+          "richtig": 95,
+          "von": 95
+        },
+        {
+          "was": "Angriffe A1 bis A21 und S13 an der echten Vermieterseite",
+          "richtig": 22,
+          "von": 22
+        }
+      ],
       "quellen": [
         {
           "datei": "tests/stress/katalog.ts",
@@ -84,19 +147,32 @@
     },
     {
       "bereich": "M",
-      "name": "noch ohne Fälle",
-      "quote": null,
+      "name": "Mappe und Wege",
+      "messgroesse": "Mappe vollständig und lesbar; Text kommt ohne Code an",
+      "quote": [],
       "quellen": []
     },
     {
       "bereich": "B",
-      "name": "Bedienung: nichts springt beim Hochladen (W8)",
-      "quote": null,
+      "name": "Bedienung für alle",
+      "messgroesse": "Prüfkatalog ohne Befund A oder B",
+      "quote": [
+        {
+          "was": "Ansichten ohne Befund des Prüfkatalogs; nichts rutscht beim Hochladen",
+          "richtig": 10,
+          "von": 10
+        }
+      ],
       "quellen": [
         {
           "datei": "tests/e2e/hochladen-ruhig.spec.ts",
-          "was": "PC121, Regel 1 (DP80, D4) mit Gegenprobe",
+          "was": "PC121, Regel 1 (DP80, D4): nichts rutscht, wenn das Bild kommt; mit Gegenprobe",
           "faelle": 2
+        },
+        {
+          "datei": "tests/e2e/pruefkatalog.spec.ts",
+          "was": "Prüfkatalog Stil C, alle Bildschirme in acht Ansichten (390, 430, 390 dunkel, 390 grau, 320, 390 und 320 mit 130 %, 390 mit 200 %)",
+          "faelle": 8
         }
       ]
     }
@@ -107,5 +183,6 @@
       "name": "Gebiete der Stadtkarte",
       "wann": "sobald die Karte gebaut ist (PC120, Abschnitt 5, 3)"
     }
-  ]
+  ],
+  "regel_quote": "Quote für 2.0: die erste Zahl je Bereich, ohne Ziel (Regel 4). Richtig oder ehrlich leer zählt als richtig, ein falscher Wert als falsch (Regel 5). Sie darf in keiner Version sinken; robustheit.test.ts prüft das, wo sie sich ohne Browser rechnen lässt."
 }

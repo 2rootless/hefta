@@ -226,7 +226,7 @@ describe('Prüfen', () => {
 describe('Links zum Anrufen und Schreiben', () => {
   it('Links nur aus sauberen Werten', () => {
     expect(telefonLink('0171 3920001')).toBe('tel:01713920001');
-    expect(telefonLink('+49 (0)40 123-456')).toBe('tel:+49040123456');
+    expect(telefonLink('+49 (0)40 66969-123')).toBe('tel:+4904066969123');
     expect(telefonLink('javascript:alert(1)')).toBeNull();
     expect(telefonLink('12')).toBeNull();
     expect(mailEmpfaenger('max.mustermann@example.com')).toBe('max.mustermann@example.com');

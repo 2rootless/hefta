@@ -11,6 +11,7 @@ import {
   einstellungenNachLaden,
   standardEinstellungen,
   strassenteil,
+  ohneUnterlagen,
   type ExportEinstellungen,
 } from './export';
 import type { DateiVersion, Dokument, Person } from './modell';
@@ -361,5 +362,23 @@ describe('E49: „Datensparsam“ wird „Eigene Auswahl“ mit gleichem Inhalt'
       true,
     );
     expect(auskunftAntwortenImmer({ ...e, modus: 'datensparsam' })).toBe(false);
+  });
+});
+
+describe('PC126 K5: „Diesmal weglassen“ (DP83 a)', () => {
+  it('macht „Eigene Auswahl“ ohne die ganze Unterlage; alles andere bleibt, wie es gewählt war', () => {
+    const vorher = E();
+    const nachher = ohneUnterlagen(vorher, haushalt(), [
+      { personId: 'Max', typ: 'gehaltsnachweis' },
+    ]);
+    expect(nachher.modus).toBe('eigene_auswahl');
+    const v = Object.fromEntries(ids(vorher));
+    const n = Object.fromEntries(ids(nachher));
+    expect(v['Max']).toContain('gehaltsnachweis');
+    expect(n['Max']).toEqual(v['Max'].filter((typ: string) => typ !== 'gehaltsnachweis'));
+    expect(n['Lea']).toEqual(v['Lea']);
+    expect(n['Petra']).toEqual(v['Petra']);
+    // Gegenprobe: ohne etwas wegzulassen bleibt die Auswahl unverändert.
+    expect(ohneUnterlagen(vorher, haushalt(), [])).toBe(vorher);
   });
 });

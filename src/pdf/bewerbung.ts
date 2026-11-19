@@ -78,6 +78,8 @@ export interface MappenQuelle {
   seiten?: number[] | null;
   /** Text rechts in der Kopfzeile, wenn er von der Unterlage abweicht („Gehaltsnachweis August 2026“). */
   kopf?: string;
+  /** Kennung der Datei in Hefta, falls sie sich nicht öffnen lässt (PC126 K5). */
+  datei?: string;
 }
 
 /** Eine Zeile im Inhalt; bei Serien mehrere Dateien (z. B. drei Monate). */
@@ -159,6 +161,15 @@ export interface UnlesbareDatei {
   name: string;
   /** Seite der Unterlage. */
   href?: string;
+  /** PC126 K5 (DP83 a): wessen Unterlage, für „Diesmal weglassen“ und den Satz im Blatt. */
+  personId?: string;
+  typ?: string;
+  /** Rufname oder Vorname, „… von Aylin“. */
+  person?: string;
+  /** Die Unterlage, wie sie im Verzeichnis steht (W6): „Gehaltsnachweise, September bis November“. */
+  unterlage?: string;
+  /** Kennung der Datei, die sich nicht öffnen ließ; die Unterlage markiert sie. */
+  datei?: string;
 }
 
 export interface BewerbungErgebnis {
@@ -934,7 +945,12 @@ export async function bewerbungBauen(auftrag: BewerbungAuftrag): Promise<Bewerbu
         await weiter();
         if (!uebernommen) {
           const meldung = teil.meldung ?? { name: `${kopf}, ${block.person.name}` };
-          unlesbar.set(meldung.name, meldung);
+          // PC126 K5: die Unterlage, wie sie im Verzeichnis stünde, und die Datei, die nicht aufging.
+          unlesbar.set(meldung.name, {
+            ...meldung,
+            unterlage: beschriftung(teil),
+            datei: q.datei ?? unlesbar.get(meldung.name)?.datei,
+          });
           continue;
         }
         if (q.kopf) eintrag.monate.push({ titel: q.kopf, seite: pdf.getPageCount() + 1 });

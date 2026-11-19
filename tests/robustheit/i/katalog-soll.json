@@ -1,0 +1,315 @@
+{
+  "bereich": "I",
+  "quelle": "Soll zum Katalog aus PC117 (tests/fixtures/inserate/katalog-pc117.json), aus dem Aufbau der erfundenen Inserate. null heißt: steht nicht eindeutig im Inserat; dann ist jeder gelesene Wert falsch. Leer gelesen zählt immer als richtig (Robustheitskatalog, Regel 5).",
+  "faelle": [
+    {
+      "nr": "N01",
+      "adresse": "Musterweg 7",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N02",
+      "adresse": "Beispielstraße 1",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N03",
+      "adresse": null,
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N04",
+      "adresse": "Lindenring 8",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N05",
+      "adresse": null,
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N06",
+      "adresse": null,
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N07",
+      "adresse": null,
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N08",
+      "adresse": null,
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N09",
+      "adresse": "Musterweg 7",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58,
+      "notiz": "Adresse nur im Fließtext: leer ist ehrlich, die Straße wäre besser"
+    },
+    {
+      "nr": "N10",
+      "adresse": "Beispielstraße 1",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N11",
+      "adresse": "Lindenring 3",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N12",
+      "adresse": null,
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N13",
+      "adresse": null,
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N14",
+      "adresse": null,
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N15",
+      "adresse": "Lindenring",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N16",
+      "adresse": "Musterweg",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N17",
+      "adresse": "Beispielstraße",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N18",
+      "adresse": "Lindenring 3a",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N19",
+      "adresse": "Musterweg 7–9",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N20",
+      "adresse": "Beispielstraße 1",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N21",
+      "adresse": "Beispielstraße 1",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58,
+      "notiz": "Titel nennt eine andere Straße; das Soll ist die Adresszeile"
+    },
+    {
+      "nr": "N22",
+      "adresse": null,
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58,
+      "notiz": "Titel und Text nennen verschiedene Straßen: Soll leer (Hefta darf nicht raten)"
+    },
+    {
+      "nr": "N23",
+      "adresse": "Musterweg 7",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58,
+      "notiz": "Titel nennt eine andere Straße; das Soll ist die Adresszeile"
+    },
+    {
+      "nr": "N24",
+      "adresse": "Musterplatz 1",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N25",
+      "adresse": "Musterplatz 1",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N26",
+      "adresse": null,
+      "warm": null,
+      "zimmer": null,
+      "flaeche": null,
+      "notiz": "zwei Wohnungen mit eigenen Adressen und Mieten: Soll leer"
+    },
+    {
+      "nr": "N27",
+      "adresse": "Musterweg 7",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N28",
+      "adresse": null,
+      "warm": 480,
+      "zimmer": null,
+      "flaeche": 18,
+      "notiz": "WG: Zimmerzahl steht nicht da („3er-WG“ ist die WG)"
+    },
+    {
+      "nr": "N29",
+      "adresse": null,
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N30",
+      "adresse": null,
+      "warm": 480,
+      "zimmer": null,
+      "flaeche": 18,
+      "notiz": "WG: Zimmerzahl steht nicht da („3er-WG“ ist die WG)"
+    },
+    {
+      "nr": "N31",
+      "adresse": "Lindenring 8",
+      "warm": 480,
+      "zimmer": null,
+      "flaeche": 18,
+      "notiz": "WG: Adresse im Fließtext der Lage"
+    },
+    {
+      "nr": "N32",
+      "adresse": null,
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N33",
+      "adresse": "Musterweg 7",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58,
+      "notiz": "Tausch: angeboten wird die Wohnung im Musterweg 7"
+    },
+    {
+      "nr": "N34",
+      "adresse": "Lindenring 8",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N35",
+      "adresse": null,
+      "warm": null,
+      "zimmer": null,
+      "flaeche": null,
+      "notiz": "gar kein Inserat"
+    },
+    {
+      "nr": "N36",
+      "adresse": null,
+      "warm": null,
+      "zimmer": null,
+      "flaeche": null,
+      "notiz": "Trefferliste"
+    },
+    {
+      "nr": "N37",
+      "adresse": null,
+      "warm": null,
+      "zimmer": null,
+      "flaeche": null,
+      "notiz": "Anzeige nicht mehr da"
+    },
+    {
+      "nr": "N38",
+      "adresse": "Lindenring 3",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N39",
+      "adresse": "Musterplatz 1",
+      "warm": 850,
+      "zimmer": 2,
+      "flaeche": 58
+    },
+    {
+      "nr": "N40",
+      "adresse": "Musterweg 7",
+      "warm": 951.76,
+      "zimmer": 2,
+      "flaeche": 59.96,
+      "notiz": "geteilter Text gilt vor der Seite (PC118)"
+    },
+    {
+      "nr": "N41",
+      "adresse": null,
+      "warm": 951.76,
+      "zimmer": 2,
+      "flaeche": 59.96,
+      "notiz": "geteilter Text gilt vor der Seite (PC118)"
+    },
+    {
+      "nr": "N42",
+      "adresse": null,
+      "warm": 951.76,
+      "zimmer": 2,
+      "flaeche": 59.96,
+      "notiz": "geteilter Text gilt vor der Seite (PC118)"
+    }
+  ]
+}

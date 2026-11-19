@@ -296,6 +296,25 @@ export function datensparsamUmstellen(
 }
 
 /**
+ * PC126 K5 (DP83 a): „Diesmal weglassen“. Die Auswahl wird „Eigene Auswahl“ mit allem, was gerade gewählt ist, nur
+ * ohne diese Unterlagen. Weggelassen wird die ganze Unterlage, nicht eine Datei: Sonst stimmten Monate und Seiten im
+ * Verzeichnis nicht mehr (V6).
+ */
+export function ohneUnterlagen(
+  e: ExportEinstellungen,
+  staende: readonly PersonStand[],
+  weg: readonly { personId: string; typ: string }[],
+): ExportEinstellungen {
+  if (!weg.length) return e;
+  const auswahl: Record<string, boolean> = { ...e.auswahl };
+  for (const s of staende)
+    for (const u of s.unterlagen)
+      auswahl[schluessel(s.person.id, u.typ.id)] = gewaehlt(u, s.person.id, e);
+  for (const w of weg) auswahl[schluessel(w.personId, w.typ)] = false;
+  return { ...e, modus: 'eigene_auswahl', auswahl };
+}
+
+/**
  * „Was in der Mappe liegt“ (B23 `s=teilen`): je Unterlagenart einmal, in der Reihenfolge der Mappe, mit
  * den Personen, für die sie drinliegt. Gemeinsame Unterlagen (Mietzahlungen) zählen für jede Person einmal.
  */

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fremder Leser für hefta.json, Fassung 1 (DP78, Design). Stand des Lesers: Fassung 3 (DP81). Grundlage: leser76.py (DP76), davor leser72.py aus CP66.
+"""Fremder Leser für hefta.json, Fassung 1 (DP78, Design). Stand des Lesers: Fassung 4 (DP82). Grundlage: leser76.py (DP76), davor leser72.py aus CP66.
 
 Geschrieben nach FORMAT.md (CP66), dem Stresskatalog aus PD116 und E216 bis E220. Die acht Regeln aus E220 (PC110)
 liegen Design nicht vor. Gebaut ist darum nach der Spalte „soll“ des Katalogs. Jede Stelle, an der ich raten musste,
@@ -35,9 +35,13 @@ Protokoll, Fassung 3 des Lesers (DP81, nach PD123, F1):
     „Gehaltsnachweise, September bis November – Seiten 3 bis 5“. Nur diese bindet der Leser.
   - Die Lesart L78-5 entfällt: „Seiten 2–3“ und die Zahl allein passen nicht mehr. Fassung 2 liegt als leser78-fassung2.py daneben.
 
+Protokoll, Fassung 4 des Lesers (DP82, nach PD124):
+  - V7 streng: „Fassung n vom …“ steht in allen 95 Mappen aus PD124 (außer den zwei Mappen aus dem alten Bau). Fehlt die
+    Zeile, passt die Mappe nicht mehr. Die Lesart V7 (fehlende Zeile heißt Fassung 1) entfällt. Fassung 3 liegt daneben.
+
 Aufruf:
-  python3 -I leser76.py DATEI.pdf          (liest den Anhang hefta.json und prüft alles, auch gegen das Papier)
-  python3 -I leser76.py DATEI.json [--seiten N] [--schema schema.json] [--csv AUS.csv]
+  python3 -I leser78.py DATEI.pdf          (liest den Anhang hefta.json und prüft alles, auch gegen das Papier)
+  python3 -I leser78.py DATEI.json [--seiten N] [--schema schema.json] [--csv AUS.csv]
 """
 import argparse, datetime, json, re, sys, unicodedata
 
@@ -466,9 +470,9 @@ def papier(lh, pdf):
         if not irgendwo(lambda x, m=m: im(x, 'ziehen mit ein', _norm(m['text'])), 'mitziehend'):
             g.append(f"Mitziehende „{m['text']}“ stehen nicht unter „Ziehen mit ein“")                         # S17, A11
 
-    def fassung_ok(x):           # LESART V7: fehlt die Zeile „Fassung n vom …“, ist nur Fassung 1 erlaubt
+    def fassung_ok(x):           # V7 (PD124): „Fassung n vom …“ steht immer da
         m = re.search(r'fassung (\d+) vom (\d+\. \w+ \d{4})', x.flach)
-        return lh['fassung'] == 1 if not m else int(m.group(1)) == lh['fassung'] and m.group(2) == _norm(_datum(lh['erstellt'][:10]))
+        return bool(m) and int(m.group(1)) == lh['fassung'] and m.group(2) == _norm(_datum(lh['erstellt'][:10]))
     if not irgendwo(fassung_ok, 'fassung'):
         g.append(f"Fassung {lh['fassung']} vom {_datum(lh['erstellt'][:10])} steht so nicht auf dem Deckblatt")
     if not irgendwo(lambda x: f"seite 1 von {lh['seitenzahl']}" in x.flach or 'seite 1 von' not in x.flach, 'fuss'):   # LESART V8

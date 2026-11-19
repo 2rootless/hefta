@@ -141,7 +141,7 @@ export async function mappeErstellen(
     }
     const blob = await dateiLesen(db, id);
     if (!blob) {
-      unlesbar.set(meldung.name, meldung);
+      unlesbar.set(meldung.name, { ...meldung, datei: id });
       return null;
     }
     quellenIds.push(id);
@@ -165,6 +165,10 @@ export async function mappeErstellen(
           name: block.person.person.rufname || block.person.person.vorname,
         }),
         href: `#/unterlage/${block.person.person.id}/${u.typ.id}`,
+        personId: block.person.person.id,
+        typ: u.typ.id,
+        person: block.person.person.rufname || block.person.person.vorname,
+        unterlage: titel,
       };
       if (u.typ.inAppErstellt) {
         teile.push({
@@ -211,6 +215,7 @@ export async function mappeErstellen(
           alle.push(...monate);
           quellen.push({
             daten,
+            datei: id,
             seiten: platzhalter ? undefined : seiten,
             kopf: monate.length ? `${einzeln} ${monatsSpanne(monate, true)}` : einzeln,
           });
@@ -242,7 +247,13 @@ export async function mappeErstellen(
           pruefweg:
             u.typ.fristen?.pruefcodeTage && hatPruefcode(u.typ, v) ? 'pruefcode' : undefined,
           kopf: vom ? `${name === titel ? einzeln : name} ${vom}` : name === titel ? einzeln : name,
-          quellen: [{ daten, seiten: platzhalter ? undefined : v.seiten }],
+          quellen: [
+            {
+              daten,
+              datei: v.aufbereitet ?? v.original,
+              seiten: platzhalter ? undefined : v.seiten,
+            },
+          ],
         });
       }
     }

@@ -18,7 +18,12 @@
   } from '../domain/bewerben';
   import { spurAn, spurEintragen } from '../domain/datenspur';
   import { deckZeilen } from '../domain/deckZeilen';
-  import { bloecke, standardEinstellungen, type ExportEinstellungen } from '../domain/export';
+  import {
+    bloecke,
+    ohneUnterlagen,
+    standardEinstellungen,
+    type ExportEinstellungen,
+  } from '../domain/export';
   import type { HeftEreignisse } from '../domain/modell';
   import { angabenWerte, erkennen } from '../domain/nachricht';
   import { listenText, ohneTrennstellen } from '../domain/regelkatalog';
@@ -36,6 +41,9 @@
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
   import Symbol from '../ui/Symbol.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
+  import UnlesbarBlatt from '../ui/UnlesbarBlatt.svelte';
+  import type { UnlesbareDatei } from '../pdf/bewerbung';
+  import { unlesbarMerken } from '../app/unlesbar.svelte';
 
   let { id }: { id: string } = $props();
 
@@ -61,6 +69,21 @@
     (adresseZeilen(heft?.adresse ?? '')[0] ?? '').replace(/\u00a0/g, ' ').trim(),
   );
 
+  // Schritt 3: Mappe. Vorgabe „Nur, was verlangt ist“ (E49), „Alles mitschicken“ ist einen Tipp entfernt.
+  let alles = $state(false);
+  // PC126 K5 (DP83 a): „Diesmal weglassen“ gilt für diesen Besuch; die Unterlage bleibt in Hefta.
+  let weggelassen = $state<{ personId: string; typ: string }[]>([]);
+  const einstellungen = $derived<ExportEinstellungen>(
+    ohneUnterlagen(
+      {
+        ...standardEinstellungen(),
+        ...(heft?.export ?? {}),
+        ...(alles ? { modus: 'alles' as const } : {}),
+      },
+      ansicht ? staendeAus(ansicht, heute) : [],
+      weggelassen,
+    ),
+  );
   // Schritt 1: Anschreiben. „Ändern“ macht daraus einen eigenen Text für diesen Besuch.
   const vorschlag = $derived(
     anschreibenText({
@@ -70,6 +93,8 @@
       einzug: heft?.einzug ?? '',
       heute,
       weg: weg ?? 'mail',
+      // PC126 K5: Nach „Diesmal weglassen“ (oder mit eigener Auswahl) liegen nicht die üblichen Unterlagen bei.
+      eigeneAuswahl: einstellungen.modus === 'eigene_auswahl',
     }),
   );
   let eigenerText = $state<string | null>(null);
@@ -121,13 +146,6 @@
       }),
   );
 
-  // Schritt 3: Mappe. Vorgabe „Nur, was verlangt ist“ (E49), „Alles mitschicken“ ist einen Tipp entfernt.
-  let alles = $state(false);
-  const einstellungen = $derived<ExportEinstellungen>({
-    ...standardEinstellungen(),
-    ...(heft?.export ?? {}),
-    ...(alles ? { modus: 'alles' as const } : {}),
-  });
   const unterlagen = $derived.by(() => {
     if (!ansicht) return [];
     const namen: string[] = [];
@@ -169,6 +187,7 @@
         $state.snapshot(einstellungen) as ExportEinstellungen,
       );
       gebautFuer = schluessel;
+      unlesbarMerken(mappe.unlesbar.map((u) => u.datei));
       return mappe;
     } catch {
       mappeFehler = true;
@@ -233,10 +252,24 @@
   // PC81 B2 (QA3): Im Browser ohne Teilen von Dateien steht gleich oben, dass ihr die Mappe selbst anhängt.
   const ohneAnhang = mappeHaengtNichtAn();
 
+  // PC126 K5: Lässt sich eine Datei nicht öffnen, öffnet sich keine Mail und nichts wird geteilt, bis gewählt ist.
+  let blattDatei = $state<UnlesbareDatei | null>(null);
+  let blattOffen = $state(false);
+  function angehalten(m: MappenErgebnis): boolean {
+    const erste = m.unlesbar[0];
+    if (!erste) return false;
+    blattDatei = erste;
+    blattOffen = true;
+    return true;
+  }
+  function weglassen(d: UnlesbareDatei) {
+    if (d.personId && d.typ) weggelassen = [...weggelassen, { personId: d.personId, typ: d.typ }];
+  }
+
   async function mail() {
     meldung = '';
     const m = await mappeHolen();
-    if (!m) return;
+    if (!m || angehalten(m)) return;
     const a = await mailMitMappe({ an: erkannt.mail, betreff, text, dateien: m.dateien });
     if (a === 'abgebrochen') return;
     // PC81 B2: Steht der Satz schon oben, wiederholt ihn die Meldung nicht.
@@ -256,7 +289,7 @@
   async function teilen() {
     meldung = '';
     const m = await mappeHolen();
-    if (!m || !weg) return;
+    if (!m || !weg || angehalten(m)) return;
     const r = await mappeTeilen(m.dateien, weg);
     // PC31: WhatsApp, Dateien, Drucken … zählen nie als Bewerbung; dann bleibt alles, wie es war.
     if (r.wertung === 'nichts') return;
@@ -415,6 +448,8 @@
     </div>
   {/if}
 </main>
+
+<UnlesbarBlatt bind:offen={blattOffen} datei={blattDatei} {weglassen} />
 
 <style>
   .seite {

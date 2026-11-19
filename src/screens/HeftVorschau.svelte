@@ -305,7 +305,7 @@
       {/if}
       <div class="t">
         {#if quelle}<p class="q">{quelle}</p>{/if}
-        <!-- Lange Wörter wie „Landungsbrücken!“ brechen nie mitten im Wort (Prüfkatalog C2). -->
+        <!-- Lange Wörter wie „Musterhafenbrücke!“ brechen nie mitten im Wort (Prüfkatalog C2). -->
         <h2 class="titel" use:passend={!entwurf.bild || alt ? STUFEN_OHNE_FOTO : STUFEN}>
           {alt ? heftTitel(alt).text : titel}
         </h2>

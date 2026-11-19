@@ -9,6 +9,7 @@
   import { daten, db, gehe } from '../app/daten.svelte';
   import {
     bloecke,
+    ohneUnterlagen,
     mappeInhalt,
     fehlendeUnterlagen,
     zuAlteUnterlagen,
@@ -45,6 +46,9 @@
   import Symbol from '../ui/Symbol.svelte';
   import WerIstDabeiAuswahl from '../ui/WerIstDabeiAuswahl.svelte';
   import WarumBlatt from '../ui/WarumBlatt.svelte';
+  import UnlesbarBlatt from '../ui/UnlesbarBlatt.svelte';
+  import type { UnlesbareDatei } from '../pdf/bewerbung';
+  import { unlesbarMerken } from '../app/unlesbar.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
   import { staendeAus, zeichenFunde } from '../ui/mappeDaten';
   import { werIstDabeiKurz } from '../domain/mappeWoerter';
@@ -375,8 +379,25 @@
     offenesPdf = null;
   }
 
+  // PC126 K5 (DP83 a): Lässt sich eine Datei nicht öffnen, geht nichts hinaus, bis gewählt ist.
+  let blattDatei = $state<UnlesbareDatei | null>(null);
+  let blattOffen = $state(false);
+  $effect(() => {
+    if (ergebnis && !baut) unlesbarMerken(ergebnis.unlesbar.map((u) => u.datei));
+  });
+  function angehalten(): boolean {
+    const erste = !baut ? ergebnis?.unlesbar[0] : undefined;
+    if (!erste) return false;
+    blattDatei = erste;
+    blattOffen = true;
+    return true;
+  }
+  function weglassen(d: UnlesbareDatei) {
+    if (d.personId && d.typ) e = ohneUnterlagen(e, staende, [{ personId: d.personId, typ: d.typ }]);
+  }
+
   async function ansehen(datei: File | undefined, index = 0) {
-    if (!datei) return;
+    if (!datei || angehalten()) return;
     const { pdfOeffnen } = await import('../pdf/pdfjs');
     const modul = await import('../ui/SeitenAnsicht.svelte');
     await pdfZu();
@@ -509,12 +530,12 @@
   );
 
   async function teilenKlick() {
-    if (!ergebnis) return;
+    if (!ergebnis || angehalten()) return;
     const { teilen } = await import('../ui/mappeErstellen');
     await teilen(ergebnis.dateien);
   }
   async function sichernKlick() {
-    if (!ergebnis) return;
+    if (!ergebnis || angehalten()) return;
     // In der App zeigt „PDF ansehen“ die Mappe in der Seitenansicht, ohne sie zu speichern. Sichern geht
     // dort über „Teilen“ › „In Dateien sichern“. Im Browser bleibt es der Download, den Safari öffnet.
     const { istApp } = await import('../app/plattform');
@@ -937,6 +958,8 @@
       : undefined}
   />
 {/if}
+
+<UnlesbarBlatt bind:offen={blattOffen} datei={blattDatei} {weglassen} />
 
 {#if warumTyp}
   <WarumBlatt bind:offen={warumOffen} typ={warumTyp} zurueck={warumKnopf} />

@@ -15,6 +15,7 @@
     haushaltAus,
     haushaltsAngabenAus,
     type SelbstauskunftEingabe,
+    telefonEingabeFehler,
   } from '../ui/selbstauskunftEingabe';
   import Zurueck from '../ui/Zurueck.svelte';
 
@@ -43,7 +44,9 @@
   const fertig = $derived(
     !!mitglied &&
       !!eingabe &&
-      vollstaendig({ ...mitglied.person, ...angabenAus(eingabe) }, rolle, eingabe.hh),
+      vollstaendig({ ...mitglied.person, ...angabenAus(eingabe) }, rolle, eingabe.hh) &&
+      // PC126 K1: kein „Fertig, 1 Seite“, solange im Telefon ein Fehler steht.
+      !telefonEingabeFehler(eingabe),
   );
 
   // Sofort speichern: kurz nach jeder Änderung, ohne Knopf (A4: „Änderungen werden sofort gespeichert.“).

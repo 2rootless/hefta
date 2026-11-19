@@ -11,6 +11,7 @@
   import { t } from '../i18n';
   import Symbol from './Symbol.svelte';
   import { blattText } from './texte';
+  import { unterlageUnlesbar } from '../app/unlesbar.svelte';
 
   let {
     stand,
@@ -27,8 +28,10 @@
   const name = $derived(stand.person.rufname || stand.person.vorname);
   const anfang = $derived([...name][0]?.toUpperCase() ?? '');
 
-  type Art = 'da' | 'fehlt' | 'bald' | 'pruef';
+  type Art = 'da' | 'fehlt' | 'bald' | 'pruef' | 'unlesbar';
   function art(u: UnterlagenStand): Art {
+    // PC126 K5 (DP83 a): Hat Hefta beim Bauen gemerkt, dass sich eine Datei nicht öffnen lässt, steht das statt „da“.
+    if (u.versionen.length && unterlageUnlesbar(u)) return 'unlesbar';
     if (pruefen(u.typ.id)) return 'pruef';
     if (u.status === 'fehlt') return 'fehlt';
     if (u.status === 'bald') return 'bald';
@@ -74,6 +77,12 @@
             <span class="ring" aria-hidden="true"></span>
           {:else if a === 'bald'}
             <span class="marke">{t('mappeTab.baldAb')}</span>
+          {:else if a === 'unlesbar'}
+            <span class="marke unlesbar"
+              ><span class="warnzeichen" aria-hidden="true">!</span>{t(
+                'mappeTab.nichtOeffnen',
+              )}</span
+            >
           {:else}
             <span class="marke"
               >{t('mappeTab.pruefen')}<span class="visually-hidden">: {pruefen(u.typ.id)}</span
@@ -264,5 +273,31 @@
     line-height: calc(18 * var(--px));
     font-weight: 700;
     white-space: nowrap;
+  }
+
+  /* PC126 K5: ein Fehler, dargestellt wie die heutigen Fehler (DP77); Bernstein kommt später (W5). */
+  .marke.unlesbar {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    padding: 0;
+    background: none;
+    color: var(--ink);
+    white-space: normal;
+    text-align: right;
+  }
+
+  .warnzeichen {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--surface);
+    font-size: calc(11 * var(--px));
+    font-weight: 800;
+    line-height: 1;
   }
 </style>

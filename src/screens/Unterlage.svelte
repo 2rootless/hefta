@@ -38,6 +38,7 @@
   import WischZeile from '../ui/WischZeile.svelte';
 
   import Zurueck from '../ui/Zurueck.svelte';
+  import { fassungUnlesbar } from '../app/unlesbar.svelte';
 
   let { personId, typId }: { personId: string; typId: string } = $props();
 
@@ -180,7 +181,13 @@
 </script>
 
 {#snippet versionKarte(v: DateiVersion, mitDatum: boolean, mitLoeschen: boolean)}
-  <div class="karte">
+  <div class="karte" class:unlesbar={fassungUnlesbar(v)}>
+    <!-- PC126 K5 (DP83 a): „Datei austauschen“ führt hierher; die Datei, die sich nicht öffnen ließ, ist markiert. -->
+    {#if fassungUnlesbar(v)}
+      <p class="nicht-oeffnen">
+        <span class="warnzeichen" aria-hidden="true">!</span>{t('unterlage.nichtOeffnen')}
+      </p>
+    {/if}
     <div class="seiten">
       <VersionSeiten version={v} />
       <p class="datei">
@@ -239,7 +246,13 @@
         <span class="tx">
           <b>{v.abrechnungsmonat ? monatJahr(v.abrechnungsmonat) : versionTitel(v)}</b>
           <small>
-            {#if drin}
+            {#if fassungUnlesbar(v)}
+              <span class="nicht-oeffnen"
+                ><span class="warnzeichen" aria-hidden="true">!</span>{t(
+                  'unterlage.nichtOeffnen',
+                )}</span
+              >
+            {:else if drin}
               {dateiZeile(v, zahlen[v.id])}
             {:else}
               {zahlen[v.id] ? t('unterlage.seitenZahl', { anzahl: zahlen[v.id]! }) + '. ' : ''}{t(
@@ -580,6 +593,39 @@
     letter-spacing: 0.09em;
     text-transform: uppercase;
     color: var(--ink-muted);
+  }
+
+  .karte.unlesbar {
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
+
+  .nicht-oeffnen {
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 12px 14px 0;
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  small .nicht-oeffnen {
+    display: inline-flex;
+    padding: 0;
+  }
+
+  .warnzeichen {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--surface);
+    font-size: calc(11 * var(--px));
+    font-weight: 800;
+    line-height: 1;
   }
 
   .karte {

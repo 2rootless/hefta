@@ -9,10 +9,21 @@ import { describe, expect, it } from 'vitest';
 
 // Eine Vorlage wie „0171 39200${…}“ ist keine Nummer.
 const RUFNUMMER =
-  /(?<![\d.,-])0(?:1[5-7]\d|[2-9]\d{1,3})[ /-]?\d{2,5}[ -]?\d{2,6}(?:[ -]\d{3,6})?(?![\d.,]|\$\{)/g;
+  /(?<![\d.,-])0(?:1[5-7]\d|[2-9]\d{1,3})[ ./-]?\d{2,5}[ .-]?\d{2,6}(?:[ -]\d{3,6})?(?![\d.,]|\$\{)/g;
 // Wunschliste Fassung 24 (E224): dazu Festnetz Hamburg 040 66969 000 bis 999, ebenfalls Medienproduktionen; der
 // britische Bereich +44 20 7946 0xxx (E214) erscheint hier als „020 7946 0xxx“ hinter der Landesvorwahl.
-const ERLAUBT_NUMMER = /^(?:0171[ /-]?3920\d{3}|040[ /-]?66969 ?\d{3}|020 7946 0\d{3})$/;
+const ERLAUBT_NUMMER = /^(?:0171[ ./-]?3920\d{3}|040[ /-]?66969 ?\d{3}|020 7946 0\d{3})$/;
+/**
+ * Aus 2.0.1 (Fassung 23, E214): Nummern mit Vorwahl des Landes („+44 20 7946 0018“, „0049 (0)171 39 200 01“). Ohne
+ * diese Prüfung blieb eine österreichische Nummer in den Tests unbemerkt (PC123). Eine Vorlage wie „+4917139200${…}“
+ * ist keine Nummer.
+ */
+const INTERNATIONAL = /(?<![\w+])(?:\+|00)[1-9][\d ()./-]{6,22}\d(?!\d|\$\{)/g;
+/**
+ * Erlaubt: die reservierten Bereiche (Mobil 0171 39200xx und Festnetz 040 66969xxx international, der britische Bereich),
+ * auch in absichtlich falscher Länge als Testeingabe, dazu die nicht vergebene Landesvorwahl +999.
+ */
+const ERLAUBT_INTERNATIONAL = /^(?:4917139200\d*|494066969\d*|442079460\d*|999\d*)$/;
 const MAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
 const ERLAUBT_MAIL =
   /@(?:(?:[\w-]+\.)*example\.(?:com|org)|hefta\.de|users\.noreply\.github\.com)$/;
@@ -56,6 +67,15 @@ export function verstoesse(text: string): string[] {
   for (const m of text.matchAll(RUFNUMMER)) {
     const n = m[0].replace(/\s+/g, ' ');
     if (n.replace(/\D/g, '').length >= 9 && !ERLAUBT_NUMMER.test(n)) aus.push(n);
+  }
+  for (const m of text.matchAll(INTERNATIONAL)) {
+    // „+49 0171 …“ oder „+44 020 …“ (die Null nach der Landesvorwahl) ist dieselbe Nummer in falscher Schreibweise.
+    const ziffern = m[0]
+      .replace('(0)', '')
+      .replace(/\D/g, '')
+      .replace(/^00/, '')
+      .replace(/^(49|44)0/, '$1');
+    if (ziffern.length >= 9 && !ERLAUBT_INTERNATIONAL.test(ziffern)) aus.push(m[0].trim());
   }
   for (const m of text.matchAll(MAIL)) if (!ERLAUBT_MAIL.test(m[0])) aus.push(m[0]);
   for (const m of text.matchAll(ADRESSE)) {
@@ -107,11 +127,24 @@ describe('wunsch-W7: nur Musterdaten', () => {
     expect(verstoesse("telefon: '0171 3920001', email: 'max.mustermann@example.com'")).toEqual([]);
   });
 
+  it('Fassung 23: Nummern mit Landesvorwahl; nur die reservierten Bereiche, Gegenproben schlagen an', () => {
+    expect(
+      verstoesse(
+        '+44 20 7946 0018, +442079460999, +49 171 3920001, 0049 (0)171 39 200 01, +49 (0)171 3920006, +49 40 66969123, +44 020 7946 0018',
+      ),
+    ).toEqual([]);
+    expect(
+      verstoesse('+44 20 7946 1234 und +44 20 7123 4567, +49 170 1234567, +43 1 5880000'),
+    ).toEqual(['+44 20 7946 1234', '+44 20 7123 4567', '+49 170 1234567', '+43 1 5880000']);
+  });
+
   it('Fassung 24: Festnetz Hamburg 040 66969xxx ist erlaubt, 040 66968 000 schlägt an (PC114)', () => {
     expect(verstoesse("'040 66969123', '040/66969000', '04066969999', '040 66969 123'")).toEqual(
       [],
     );
     expect(verstoesse("telefon: '040 66968000'")).toEqual(['040 66968000']);
+    // Auch mit Punkt als Trenner (PC123): „0171.1234567“ schlägt an, „0171.3920008“ nicht.
+    expect(verstoesse("'0171.1234567', '0171.3920008'")).toEqual(['0171.1234567']);
     expect(verstoesse("telefon: '040 66968 000'")).toEqual(['040 66968 000']);
   });
 

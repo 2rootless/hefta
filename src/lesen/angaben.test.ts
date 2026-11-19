@@ -11,7 +11,7 @@ describe('Vom Gelesenen zum Heft', () => {
 
   it('Portal aus dem Link', () => {
     expect(portalAus('https://www.immobilienscout24.de/expose/1?x=1')).toBe('ImmoScout24');
-    expect(portalAus('https://www.wg-gesucht.de/13806110.html')).toBe('WG-Gesucht');
+    expect(portalAus('https://www.wg-gesucht.de/10000001.html')).toBe('WG-Gesucht');
     expect(portalAus('https://example.org/')).toBeNull();
   });
 

@@ -942,6 +942,11 @@ export function katalog(se1: Uint8Array, se1Lh: Lesehilfe): Fall[] {
       { zeilen: mitSatz(z2.zeilen, [SZ.besichtigung], 'kopf') },
     ),
   );
+  // PC126 (leser78 Fassung 4, DP82): V7 streng. Fehlt „Fassung n vom …“ auf dem Deckblatt, passt die Mappe nicht;
+  // die alte Lesart „fehlt die Zeile, ist es Fassung 1“ gilt nicht mehr. Gegenprobe ist K1 mit der Zeile.
+  k('V7a', 'Deckblatt ohne die Zeile „Fassung 1 vom …“ (V7 streng)', 'nicht', LH0, {
+    zeilen: deckblattZeilen(LH0).filter((z) => !/^Fassung \d+ vom /.test(z)),
+  });
   return F;
 }
 

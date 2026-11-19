@@ -267,3 +267,31 @@ describe('Löschbitte und Nachfassen (B18)', () => {
     );
   });
 });
+
+describe('PC126 K5: Satz zur Mappe folgt der Auswahl (DP83 a, W10)', () => {
+  const auftrag = {
+    wir: false,
+    anbieter: 'Frau Hansen',
+    strasse: 'Musterweg 7',
+    einzug: '',
+    heute: new Date(2026, 10, 19),
+  };
+  it('mit eigener Auswahl ohne „mit den üblichen Unterlagen“, per Mail und über ein Portal', () => {
+    const mail = anschreibenText({ ...auftrag, weg: 'mail', eigeneAuswahl: true }).text;
+    expect(mail).toContain('Meine Mappe liegt bei.');
+    expect(mail).not.toContain('üblichen Unterlagen');
+    const portal = anschreibenText({
+      ...auftrag,
+      wir: true,
+      weg: 'portal',
+      eigeneAuswahl: true,
+    }).text;
+    expect(portal).toContain(
+      'Unsere Mappe schicken wir Ihnen gern, sobald Sie uns eine Mailadresse nennen.',
+    );
+    // Gegenprobe: ohne eigene Auswahl bleibt der Satz.
+    expect(anschreibenText({ ...auftrag, weg: 'mail' }).text).toContain(
+      'Meine Mappe mit den üblichen Unterlagen liegt bei.',
+    );
+  });
+});
