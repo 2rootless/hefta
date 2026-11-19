@@ -1,6 +1,6 @@
 import { VERGABE } from '../domain/personenfarben';
 import { alteNummerUmsetzen } from '../domain/telefon';
-import { ohneZaehlmarken, textOhneZaehlmarken } from '../domain/zaehlmarken';
+import { ohneZaehlmarken } from '../domain/zaehlmarken';
 import { wohnungsSchluessel } from '../domain/adresse';
 import { sortieren } from '../domain/bewerbungen';
 import { hefteAusVersion1Einordnen } from '../domain/hefte';
@@ -359,6 +359,7 @@ export async function hauptmieterSichern(db: HeftaDb): Promise<void> {
  */
 export async function telefoneUmsetzen(db: HeftaDb): Promise<number> {
   const tx = db.transaction('personen', 'readwrite');
+  const zeit = jetzt();
   let n = 0;
   for (const p of await tx.store.getAll()) {
     const k = p.kontakt;
@@ -367,8 +368,8 @@ export async function telefoneUmsetzen(db: HeftaDb): Promise<number> {
     if (!neu) continue;
     await tx.store.put({
       ...p,
-      // PC126 K2 (DP82 T2): Das stille Umsetzen ist keine Änderung durch den Menschen; „Zuletzt geändert“ bleibt.
       kontakt: { ...k, telefon: neu.anzeige, telefonLand: neu.land, telefonE164: neu.e164 },
+      updatedAt: zeit,
     });
     n++;
   }
@@ -1105,10 +1106,6 @@ export async function heftAendern(
     ...('link' in aenderung
       ? { link: aenderung.link ? ohneZaehlmarken(aenderung.link) : null }
       : {}),
-    // PC126 K6: auch die Links im gespeicherten Text des Inserats.
-    ...(typeof aenderung.inseratText === 'string'
-      ? { inseratText: textOhneZaehlmarken(aenderung.inseratText) }
-      : {}),
     id: alt.id,
     createdAt: alt.createdAt,
     updatedAt: jetzt(),
@@ -1160,10 +1157,6 @@ export async function heftAnlegen(
     ...entwurf,
     // PC120: Zählmarken (utm_…, fbclid, …) fallen beim Speichern aus dem Link.
     link: entwurf.link ? ohneZaehlmarken(entwurf.link) || null : null,
-    // PC126 K6 (DP82 I1): auch der geteilte Text samt Link, der im Heft gespeichert wird.
-    inseratText: entwurf.inseratText
-      ? textOhneZaehlmarken(entwurf.inseratText)
-      : entwurf.inseratText,
   };
   if (!heft.angaben) delete heft.angaben;
   if (foto) heft.foto = await dateiSpeichern(db, foto);

@@ -51,6 +51,25 @@ async function dateiErsetzen(page: Page, bytes: number[]) {
 
 const KAPUTT = [...new TextEncoder().encode('%PDF-1.7\nkaputt, kein PDF mehr\n')];
 
+/** PC132 (DP84): Alle Dateien sind leer, wie in Designs Lauf für DP82. */
+async function alleLeeren(page: Page) {
+  await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((ok) => {
+      const r = indexedDB.open('hefta');
+      r.onsuccess = () => ok(r.result);
+    });
+    const tx = db.transaction('dateien', 'readwrite');
+    const ort = tx.objectStore('dateien');
+    const alle = await new Promise<{ id: string }[]>((ok) => {
+      const r = ort.getAll();
+      r.onsuccess = () => ok(r.result as { id: string }[]);
+    });
+    for (const d of alle) ort.put({ ...d, groesse: 0, daten: new ArrayBuffer(0) });
+    await new Promise((ok) => (tx.oncomplete = ok));
+    db.close();
+  });
+}
+
 async function mitPasswort(): Promise<number[]> {
   const doc = await PDFDocument.create();
   const schrift = await doc.embedFont(StandardFonts.Helvetica);
@@ -111,11 +130,13 @@ test('K5 „Als PDF teilen“ und „PDF ansehen“: erst das Blatt; „Diesmal 
   await expect(blatt).toBeVisible();
   expect(geladen).toBe(0);
 
-  // „Diesmal weglassen“: ohne die ganze Unterlage, Auswahl „Eigene Auswahl“; dann geht das Teilen.
+  // „Diesmal weglassen“: ohne die ganze Unterlage, Auswahl „Eigene Auswahl“. PC132 (DP84 U4): Danach geht es mit
+  // „PDF ansehen“ gleich weiter, ohne zweiten Tipp (im Browser wird die Mappe geladen); dann geht auch das Teilen.
   await blatt.getByRole('button', { name: 'Diesmal weglassen' }).click();
   await expect(blatt).toBeHidden();
   await expect(page.getByRole('button', { name: /^Eigene Auswahl, gewählt/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'PDF ansehen' })).toBeVisible({ timeout: 30_000 });
+  await expect.poll(() => geladen, { timeout: 30_000 }).toBe(1);
+  await expect(page.getByRole('dialog', { name: TITEL })).toHaveCount(0);
   await page.getByRole('button', { name: 'Als PDF teilen' }).click();
   await expect.poll(() => geteilt(page)).toBe(1);
   await expect(page.getByRole('dialog', { name: TITEL })).toHaveCount(0);
@@ -134,8 +155,10 @@ test('K5 „Datei austauschen“ öffnet die Unterlage mit markierter Datei; im 
   await expect(page).toHaveURL(new RegExp(`#/unterlage/${MAX}/gehaltsnachweis$`));
   await expect(page.getByText('Diese Datei kann Hefta nicht öffnen.')).toHaveCount(1);
 
-  // Überblick im Tab „Mappe“: an Max’ Gehaltsnachweisen der Vermerk statt „da“.
+  // Überblick im Tab „Mappe“: an Max’ Gehaltsnachweisen der Vermerk statt „da“, auch nach einem Neuladen
+  // (PC132, DP84 U6).
   await page.evaluate(() => (window.location.hash = '#/'));
+  await page.reload();
   const zeile = page.getByRole('link', { name: /^Gehaltsnachweise/ }).first();
   await expect(zeile).toContainText('eine Datei lässt sich nicht öffnen');
   expect(await geteilt(page)).toBe(0);
@@ -207,15 +230,27 @@ test('K5 „Mappe laden und Mail öffnen“: erst das Blatt, keine Mail; nach de
     await page.evaluate(() => (window as unknown as { __mailLink?: string }).__mailLink ?? ''),
   ).toBe('');
 
+  // PC132 (DP84 U4, U5): „Diesmal weglassen“ macht gleich weiter: Mappe laden, Mail öffnen, mit dem passenden Satz.
+  const laden = page.waitForEvent('download', { timeout: 30_000 });
   await blatt.getByRole('button', { name: 'Diesmal weglassen' }).click();
+  await laden;
   await expect(page.getByText(/Unsere Mappe liegt bei\./)).toBeVisible();
   await expect(page.getByText(/mit den üblichen Unterlagen/)).toHaveCount(0);
-  const laden = page.waitForEvent('download');
-  await knopf.click();
-  await laden;
   const link = await page.evaluate(
     () => (window as unknown as { __mailLink?: string }).__mailLink ?? '',
   );
   expect(decodeURIComponent(link)).toContain('Unsere Mappe liegt bei.');
   expect(decodeURIComponent(link)).not.toContain('üblichen Unterlagen');
+});
+
+test('K5 (PC132): Fehlen alle Dateien, hält das Blatt die Mappe auch an', async ({ page }) => {
+  await teilenZaehlen(page);
+  await szenarioLaden(page, '04-fertig', '/wohnungen');
+  await alleLeeren(page);
+  await page.goto('/#/mappe');
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'PDF ansehen' })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('button', { name: 'Als PDF teilen' }).click();
+  await expect(page.getByRole('dialog', { name: /kann Hefta nicht öffnen\.$/ })).toBeVisible();
+  expect(await geteilt(page)).toBe(0);
 });

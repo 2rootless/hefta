@@ -385,19 +385,34 @@
   $effect(() => {
     if (ergebnis && !baut) unlesbarMerken(ergebnis.unlesbar.map((u) => u.datei));
   });
-  function angehalten(): boolean {
+  // PC132 (DP84 U4, U5): Nach „Diesmal weglassen“ geht es mit der Aktion weiter, die das Blatt ausgelöst hat,
+  // sobald die Mappe ohne die Unterlage gebaut ist.
+  let wartend: (() => void) | null = null;
+  // Roh: Das alte Ergebnis wird mit `===` verglichen, ein Proxy wäre nie gleich.
+  let fortsetzen = $state.raw<{ aktion: () => void; alt: MappenErgebnis | null } | null>(null);
+  $effect(() => {
+    if (!fortsetzen || baut || !ergebnis || ergebnis === fortsetzen.alt) return;
+    const { aktion } = fortsetzen;
+    fortsetzen = null;
+    aktion();
+  });
+  function angehalten(weiter: () => void): boolean {
     const erste = !baut ? ergebnis?.unlesbar[0] : undefined;
     if (!erste) return false;
     blattDatei = erste;
     blattOffen = true;
+    wartend = weiter;
     return true;
   }
   function weglassen(d: UnlesbareDatei) {
-    if (d.personId && d.typ) e = ohneUnterlagen(e, staende, [{ personId: d.personId, typ: d.typ }]);
+    if (!d.personId || !d.typ) return;
+    if (wartend) fortsetzen = { aktion: wartend, alt: ergebnis };
+    wartend = null;
+    e = ohneUnterlagen(e, staende, [{ personId: d.personId, typ: d.typ }]);
   }
 
   async function ansehen(datei: File | undefined, index = 0) {
-    if (!datei || angehalten()) return;
+    if (!datei || angehalten(() => void ansehen(ergebnis?.dateien[0], index))) return;
     const { pdfOeffnen } = await import('../pdf/pdfjs');
     const modul = await import('../ui/SeitenAnsicht.svelte');
     await pdfZu();
@@ -530,12 +545,12 @@
   );
 
   async function teilenKlick() {
-    if (!ergebnis || angehalten()) return;
+    if (!ergebnis || angehalten(() => void teilenKlick())) return;
     const { teilen } = await import('../ui/mappeErstellen');
     await teilen(ergebnis.dateien);
   }
   async function sichernKlick() {
-    if (!ergebnis || angehalten()) return;
+    if (!ergebnis || angehalten(() => void sichernKlick())) return;
     // In der App zeigt „PDF ansehen“ die Mappe in der Seitenansicht, ohne sie zu speichern. Sichern geht
     // dort über „Teilen“ › „In Dateien sichern“. Im Browser bleibt es der Download, den Safari öffnet.
     const { istApp } = await import('../app/plattform');

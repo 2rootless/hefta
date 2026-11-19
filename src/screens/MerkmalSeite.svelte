@@ -5,14 +5,14 @@
   // leeres Feld heißt: wieder der Vorschlag von Hefta.
   import { daten, db, stillLaden } from '../app/daten.svelte';
   import { zurueckGehen } from '../app/router.svelte';
-  import { NAME_LAENGE, heftTitel, nameVorschlag, zurueckZumHeft } from '../domain/heftKarte';
+  import { heftTitel, zurueckZumHeft } from '../domain/heftKarte';
   import type { HeftAngaben } from '../domain/modell';
   import { t } from '../i18n';
   import { heftAendern } from '../storage/speicher';
   import Hauptbutton from '../ui/Hauptbutton.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
 
-  const LAENGE = NAME_LAENGE;
+  const LAENGE = 40;
   let { id }: { id: string } = $props();
 
   const heft = $derived(daten.hefte.find((h) => h.id === id) ?? null);
@@ -21,9 +21,7 @@
     !daten.ansicht ||
       daten.ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
   );
-  const titel = $derived((heft?.angaben?.titel ?? '').trim());
-  // PC126 K4 (DP82 N 2): Der Vorschlag passt in 40 Zeichen, und gezeigt wird genau, was „Einsetzen“ einsetzt.
-  const vorschlag = $derived(nameVorschlag(titel));
+  const vorschlag = $derived((heft?.angaben?.titel ?? '').trim());
   /** Was oben stünde, gäbe es kein Merkmal (E236): Straße, Titel oder der gebaute Titel. */
   const ohneMerkmal = $derived(
     heft
@@ -41,7 +39,7 @@
       // E236: Steht ohne Merkmal die Straße oben, bleibt das Feld leer; der Titel des Inserats ist nur ein Vorschlag.
       wert =
         (heft.angaben?.merkmal ?? '').trim() ||
-        (ohneMerkmal && !ohneMerkmal.strasse && ohneMerkmal.text === titel ? titel : '');
+        (ohneMerkmal && !ohneMerkmal.strasse && ohneMerkmal.text === vorschlag ? vorschlag : '');
       von = heft.id;
     }
   });
@@ -103,7 +101,6 @@
       placeholder={ohneMerkmal?.text ?? ''}
       bind:this={feld}
       bind:value={wert}
-      aria-describedby="merkmal-zaehler merkmal-hinweis"
       onkeydown={(e) => {
         // Ein Name hat keine Zeilen: Eingabe übernimmt.
         if (e.key === 'Enter') {
@@ -122,10 +119,6 @@
       <span>{t('merkmal.zaehler', { n: wert.trim().length })}</span>
     </p>
 
-    <!-- PC126 K4 (DP82 N 3): immer derselbe Satz unter dem Feld; er erklärt auch die Straße im leeren Feld. -->
-    <p class="hinweis" id="merkmal-hinweis">
-      {t(ihr ? 'merkmal.bisNameIhr' : 'merkmal.bisNameDu', { oben })}
-    </p>
     {#if vorschlag}
       <h2 class="h3">{t('merkmal.ausInserat')}</h2>
       <div class="vorschlag">
@@ -137,6 +130,19 @@
           >{t('merkmal.wiederherstellen')}</button
         >
       {/if}
+    {:else}
+      <p class="hinweis">
+        {t(
+          heft.inseratText
+            ? ihr
+              ? 'merkmal.keinVorschlagIhr'
+              : 'merkmal.keinVorschlagDu'
+            : ihr
+              ? 'merkmal.ohneTextIhr'
+              : 'merkmal.ohneTextDu',
+          { oben },
+        )}
+      </p>
     {/if}
 
     <div class="cta">

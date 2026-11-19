@@ -35,22 +35,6 @@ describe('Zählmarken im gespeicherten Link', () => {
     expect((await db.get('hefte', heft.id))?.link).toBeNull();
   });
 
-  it('PC126 K6: fallen auch im gespeicherten Text des Inserats weg, der übrige Text bleibt', async () => {
-    const db = await datenbankOeffnen(`test-${neueId()}`);
-    const text = `Dieses Angebot habe ich gefunden:${String.fromCharCode(10)}${MIT}${String.fromCharCode(10)}Zimmer: 2`;
-    const heft = await heftAnlegen(db, { ...entwurf, inseratText: text });
-    const gespeichert = (await db.get('hefte', heft.id))?.inseratText ?? '';
-    expect(gespeichert).toBe(text.replace(MIT, OHNE));
-    expect(ZAEHLMARKE.test(gespeichert)).toBe(false);
-    // Gegenprobe: am Speichern vorbei steht die Zählmarke noch im Text.
-    await db.put('hefte', { ...heft, inseratText: text });
-    expect(ZAEHLMARKE.test((await db.get('hefte', heft.id))?.inseratText ?? '')).toBe(true);
-    const datei = await sicherungErstellen(db, undefined, '', 1000);
-    const ziel = await datenbankOeffnen(`test-${neueId()}`);
-    await sicherungEinspielen(ziel, datei);
-    expect((await ziel.get('hefte', heft.id))?.inseratText).toBe(text.replace(MIT, OHNE));
-  });
-
   it('fallen beim Einspielen eines Backups weg; Gegenprobe: vorher stehen sie im Bestand', async () => {
     const quelle = await datenbankOeffnen(`test-${neueId()}`);
     const roh: Heft = { ...(await heftAnlegen(quelle, entwurf)), link: MIT };

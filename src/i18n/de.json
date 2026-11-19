@@ -1218,8 +1218,8 @@
       "other": "{Wort} Dateien fehlen in der Mappe"
     },
     "dateiFehltUnter": {
-      "ihr": "Tauscht die Datei aus oder lasst die Unterlage diesmal weg.",
-      "du": "Tausch die Datei aus oder lass die Unterlage diesmal weg."
+      "ihr": "Ladet sie noch einmal hoch.",
+      "du": "Lad sie noch einmal hoch."
     },
     "nichtOeffnen": "Eine Datei in „{unterlage}“ von {name} kann {app} nicht öffnen.",
     "nichtOeffnenText": {
@@ -1411,7 +1411,7 @@
       }
     },
     "vorherGeht": "Die Mappe geht trotzdem.",
-    "vorherUnlesbar": "Lässt sich nicht lesen",
+    "vorherUnlesbar": "eine Datei lässt sich nicht öffnen",
     "vorherZeichen": "Ein paar Zeichen kann die Mappe nicht schreiben, dort steht ein Fragezeichen.",
     "aussehen": {
       "schrift": "Schrift",
@@ -1954,7 +1954,7 @@
     "vorschlagMailDu": "Am {tag} hast du die Mail mit der Mappe geöffnet. Ob sie hinausging, erfährt {app} nicht.",
     "nochNicht": "Noch nicht",
     "ort": "Heft",
-    "nameAendern": "Name ändern",
+    "nameAendern": "Name der Wohnung ändern",
     "zumInserat": "Zum Inserat ↗",
     "eckWarm": "{betrag} warm · {zimmer} Zi · {flaeche} m²",
     "fotoAlt": "Foto aus dem Inserat",
@@ -1966,17 +1966,19 @@
   },
   "merkmal": {
     "zurueck": "Heft",
-    "titelIhr": "Name",
-    "titelDu": "Name",
-    "sub": "Der Name steht in der Übersicht ganz oben, die Adresse darunter im Heft.",
+    "titelIhr": "Name der Wohnung",
+    "titelDu": "Name der Wohnung",
+    "sub": "Das Merkmal steht in der Übersicht ganz oben, die Adresse darunter im Heft.",
     "feld": "Name",
     "zaehler": "{n} von 40",
     "zuLang": "Etwas kürzer, dann passt er in die Übersicht.",
     "einsetzen": "Einsetzen",
     "ausInserat": "Aus dem Inserat",
     "wiederherstellen": "Vorschlag von {app} wiederherstellen",
-    "bisNameIhr": "Bis ihr einen Namen eintragt, steht {oben} oben.",
-    "bisNameDu": "Bis du einen Namen einträgst, steht {oben} oben.",
+    "keinVorschlagIhr": "Das Inserat gibt kein Merkmal her, das sie von den anderen unterscheidet. Bis ihr eins eintragt, steht {oben} oben.",
+    "keinVorschlagDu": "Das Inserat gibt kein Merkmal her, das sie von den anderen unterscheidet. Bis du eins einträgst, steht {oben} oben.",
+    "ohneTextIhr": "Ohne den Text des Inserats schlägt {app} kein Merkmal vor. Bis ihr eins eintragt, steht {oben} oben.",
+    "ohneTextDu": "Ohne den Text des Inserats schlägt {app} kein Merkmal vor. Bis du eins einträgst, steht {oben} oben.",
     "dieStrasse": "die Straße",
     "uebernehmen": "Übernehmen"
   },

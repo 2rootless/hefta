@@ -2,7 +2,6 @@ import { expect, test, type Page } from '@playwright/test';
 import { haushaltMitMax } from './einrichtung';
 import { cspMelden } from './hilfen';
 import { SZENARIEN, datensaetze } from './szenarien';
-import { szenarioLaden } from './szenario-laden';
 
 // Telefon mit Land (E222, DP77, E224) im echten Feld, in WebKit und Chromium: feste Form erst beim Verlassen, „Wird
 // zu …“, Fehler mit Warnzeichen und ohne Tintenrand, Umstellung des Landes mit Satz, Blatt „Land der Nummer“ mit
@@ -14,11 +13,10 @@ async function kontaktOeffnen(page: Page) {
   await page.getByRole('link', { name: /^Unterlagen hinzufügen/ }).click();
   await page.getByRole('button', { name: 'Los geht’s' }).click();
   await page.getByRole('button', { name: 'Ausfüllen' }).click();
-  await expect(feld(page)).toBeVisible();
+  await expect(page.getByLabel('Telefon')).toBeVisible();
 }
 
-// Als Feld gesucht: Mit Fehler heißt der Teil „Kontakt, Telefonnummer bitte prüfen“ (PC126 K1).
-const feld = (page: Page) => page.getByRole('textbox', { name: 'Telefon' });
+const feld = (page: Page) => page.getByLabel('Telefon');
 async function eintragen(page: Page, nummer: string) {
   await feld(page).fill(nummer);
   await page.getByLabel('E-Mail').focus();
@@ -162,74 +160,4 @@ test('TL27: eine alte Nummer, die sich nicht umsetzen lässt, wird ein offener P
   await mitAlterNummer(page, '+49 (0)171 3920001');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.getByText(/Telefonnummer von Max/)).toHaveCount(0);
-});
-
-// PC126 K1 (DP82 T1, DP77): Solange im Telefon ein Fehler steht, schließt „Fertig“ den Teil „Kontakt“ nicht. Der
-// Fokus geht ins Feld, kein Haken, oben kein „Fertig, 1 Seite“. Die neun Fehlerfälle aus DP82; TL22 bleibt, wie es
-// ist. Alles andere ist in „04-fertig“ fertig, darum heißt der Knopf unten „Fertig“.
-const FEHLERFAELLE: [string, string][] = [
-  ['TL3', '0171 3920001-12'],
-  ['TL4', '0171 TAXI'],
-  ['TL5', '0171 3920001 mobil'],
-  ['TL6', '0171 3920001 ext. 12'],
-  ['TL7', '3920001'],
-  // TL8 und TL9 zusammengesetzt wie in telefon.test.ts, damit W7 sie nicht für echte Nummern hält.
-  ['TL8', ['0171', '39200'].join(' ')],
-  ['TL9', ['0171 3920001', '99999'].join(' ')],
-  ['TL23', '+999 123456'],
-  ['TL27', '0171 3920001-12'],
-];
-
-async function kontaktFertigOeffnen(page: Page) {
-  await szenarioLaden(page, '04-fertig', '/selbstauskunft/p-04-fertig-0');
-  await expect(page.locator('.bogen b')).not.toHaveText('Noch nicht fertig');
-  await page.getByRole('button', { name: /^Kontakt/ }).click();
-  await expect(feld(page)).toBeVisible();
-  // Wie Lea bei Design (DP82): Mit Mail ist „Kontakt“ auch ohne Telefon fertig; offen hält ihn nur der Fehler.
-  await page.getByLabel('E-Mail').fill('max.mustermann@example.com');
-}
-// Der Knopf unten im Teil, nicht „Fertig“ in der Leiste (die speichert und verlässt die Seite).
-const teilFertig = (page: Page) =>
-  page.locator('section.teil.offen').getByRole('button', { name: 'Fertig', exact: true });
-const kontaktKopf = (page: Page) =>
-  page.locator('section.teil.offen h3').filter({ hasText: 'Kontakt' }).locator('small');
-
-test('K1: mit Fehler im Telefon schließt „Fertig“ den Teil „Kontakt“ nicht; Gegenprobe gültige Nummer', async ({
-  page,
-}) => {
-  for (const [nr, nummer] of FEHLERFAELLE) {
-    await kontaktFertigOeffnen(page);
-    // Einmal mit Verlassen des Felds (wie Design), einmal direkt aus dem Feld heraus.
-    await feld(page).fill(nummer);
-    if (nr !== 'TL9') await page.getByLabel('E-Mail').focus();
-    await teilFertig(page).click();
-    await expect(feld(page), nr).toBeFocused();
-    await expect(feld(page), nr).toHaveAttribute('aria-invalid', 'true');
-    await expect(kontaktKopf(page), nr).toHaveText('Telefonnummer bitte prüfen');
-    await expect(page.locator('.bogen b'), nr).toHaveText('Noch nicht fertig');
-    // Die Taste „Weiter“ im letzten Feld schließt auch nicht.
-    await page.getByLabel('E-Mail').press('Enter');
-    await expect(feld(page), nr).toBeFocused();
-    await expect(kontaktKopf(page), nr).not.toContainText('Fertig');
-  }
-
-  // TL22 bleibt, wie es ist: Vereinigtes Königreich gewählt, deutsche Nummer; „Fertig“ schließt „Kontakt“.
-  await kontaktFertigOeffnen(page);
-  await page.getByRole('button', { name: /^Land der Nummer/ }).click();
-  await page
-    .getByRole('dialog')
-    .getByRole('button', { name: /^Vereinigtes Königreich/ })
-    .first()
-    .click();
-  await eintragen(page, '0171 3920001');
-  await teilFertig(page).click();
-  await expect(page.locator('section.teil.offen h3').filter({ hasText: 'Kontakt' })).toHaveCount(0);
-
-  // Gegenprobe: eine gültige Nummer, und „Fertig“ schließt „Kontakt“ mit Haken; oben steht wieder „Fertig …“.
-  await kontaktFertigOeffnen(page);
-  await eintragen(page, '0171 3920001');
-  await expect(kontaktKopf(page)).toHaveText('Fertig');
-  await teilFertig(page).click();
-  await expect(page.locator('section.teil.offen h3').filter({ hasText: 'Kontakt' })).toHaveCount(0);
-  await expect(page.locator('.bogen b')).not.toHaveText('Noch nicht fertig');
 });

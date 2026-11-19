@@ -1,4 +1,4 @@
-import { DEUTSCHLAND, telefonPruefen, telefonSpeichern, type Land } from '../domain/telefon';
+import { DEUTSCHLAND, telefonSpeichern, type Land } from '../domain/telefon';
 import {
   ERKLAERUNG,
   fehlendeAngaben,
@@ -31,17 +31,6 @@ export interface SelbstauskunftEingabe {
 }
 
 /** Haushaltsangaben aus dem geladenen Stand (mit Rückfall auf ältere Daten an Personen). */
-/**
- * PC126 K1 (DP82 T1, DP77): Im Telefon steht eine Eingabe mit Fehler. Solange das so ist, ist „Kontakt“ nicht fertig:
- * kein Haken, kein „Weiter“, kein „Fertig, 1 Seite“. TL22 (Nummer passt nicht zum gewählten Land) bleibt, wie es ist.
- * Eine gespeicherte alte Nummer, die sich nicht umsetzen lässt, zählt hier nicht (DP77, Abschnitt 5).
- */
-export function telefonEingabeFehler(e: { telefon: string; telefonLand: string }): boolean {
-  if (!e.telefon.trim()) return false;
-  const r = telefonPruefen(e.telefon, (e.telefonLand || DEUTSCHLAND) as Land);
-  return r.art === 'fehler' && r.fehler !== 'land';
-}
-
 export function haushaltsAngabenAus(ansicht: HaushaltAnsicht | null): HaushaltsAngaben {
   if (!ansicht) return haushaltsAngaben(null);
   return haushaltsAngaben(

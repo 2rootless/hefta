@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { telefonFuerMappe } from '../domain/telefon';
   import { zurueckZumHeft } from '../domain/heftKarte';
   // Bewerben in einer Minute (Zeile 8, B23 `s=bewerben`, B12a, Planung 11i): Weg wählen (Portal, Mail,
@@ -255,21 +256,30 @@
   // PC126 K5: Lässt sich eine Datei nicht öffnen, öffnet sich keine Mail und nichts wird geteilt, bis gewählt ist.
   let blattDatei = $state<UnlesbareDatei | null>(null);
   let blattOffen = $state(false);
-  function angehalten(m: MappenErgebnis): boolean {
+  // PC132 (DP84 U4, U5): Nach „Diesmal weglassen“ geht es mit „Mail“ bzw. „Teilen“ weiter, mit der Mappe ohne die
+  // Unterlage; der Satz der Mail folgt der eigenen Auswahl.
+  let wartend: (() => Promise<void>) | null = null;
+  function angehalten(m: MappenErgebnis, weiter: () => Promise<void>): boolean {
     const erste = m.unlesbar[0];
     if (!erste) return false;
     blattDatei = erste;
     blattOffen = true;
+    wartend = weiter;
     return true;
   }
-  function weglassen(d: UnlesbareDatei) {
-    if (d.personId && d.typ) weggelassen = [...weggelassen, { personId: d.personId, typ: d.typ }];
+  async function weglassen(d: UnlesbareDatei) {
+    if (!d.personId || !d.typ) return;
+    weggelassen = [...weggelassen, { personId: d.personId, typ: d.typ }];
+    const weiter = wartend;
+    wartend = null;
+    await tick();
+    await weiter?.();
   }
 
   async function mail() {
     meldung = '';
     const m = await mappeHolen();
-    if (!m || angehalten(m)) return;
+    if (!m || angehalten(m, mail)) return;
     const a = await mailMitMappe({ an: erkannt.mail, betreff, text, dateien: m.dateien });
     if (a === 'abgebrochen') return;
     // PC81 B2: Steht der Satz schon oben, wiederholt ihn die Meldung nicht.
@@ -289,7 +299,7 @@
   async function teilen() {
     meldung = '';
     const m = await mappeHolen();
-    if (!m || !weg || angehalten(m)) return;
+    if (!m || !weg || angehalten(m, teilen)) return;
     const r = await mappeTeilen(m.dateien, weg);
     // PC31: WhatsApp, Dateien, Drucken … zählen nie als Bewerbung; dann bleibt alles, wie es war.
     if (r.wertung === 'nichts') return;

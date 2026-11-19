@@ -12,6 +12,7 @@
   import Symbol from './Symbol.svelte';
   import { blattText } from './texte';
   import { unterlageUnlesbar } from '../app/unlesbar.svelte';
+  import { aktuelleVersionen } from '../domain/fristen';
 
   let {
     stand,
@@ -31,7 +32,12 @@
   type Art = 'da' | 'fehlt' | 'bald' | 'pruef' | 'unlesbar';
   function art(u: UnterlagenStand): Art {
     // PC126 K5 (DP83 a): Hat Hefta beim Bauen gemerkt, dass sich eine Datei nicht öffnen lässt, steht das statt „da“.
-    if (u.versionen.length && unterlageUnlesbar(u)) return 'unlesbar';
+    if (
+      unterlageUnlesbar({
+        versionen: aktuelleVersionen(u.versionen, u.typ.serie, u.typ.jeVariante),
+      })
+    )
+      return 'unlesbar';
     if (pruefen(u.typ.id)) return 'pruef';
     if (u.status === 'fehlt') return 'fehlt';
     if (u.status === 'bald') return 'bald';

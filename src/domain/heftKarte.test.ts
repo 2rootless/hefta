@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  NAME_LAENGE,
-  nameVorschlag,
   zurueckZumHeft,
   eckdaten,
   heftAdresseKurz,
@@ -142,28 +140,5 @@ describe('PC8 B3: Miete in den Eckdaten', () => {
       '1.471 € kalt · 2 Zi',
     );
     expect(eckdaten({ angaben: { warm: 1961, kalt: 1471 } as never })).toBe('1.961 €');
-  });
-});
-
-describe('PC126 K4: Vorschlag für den Namen (DP82 N 2)', () => {
-  it('kürzt den Titel mit 53 Zeichen bis zum letzten ganzen Wort vor 40, ohne Füllwort am Ende', () => {
-    const titel = 'Helle 3-Zimmer-Wohnung mit Balkon und Blick ins Grüne';
-    expect(titel.length).toBe(53);
-    expect(nameVorschlag(titel)).toBe('Helle 3-Zimmer-Wohnung mit Balkon');
-    // Gegenprobe: bloß abgeschnitten wäre es „… mit Balkon und Bli“ oder „… mit Balkon und“.
-    expect(nameVorschlag(titel)).not.toMatch(/und$|Bli$/);
-  });
-
-  it('lässt kurze Titel, wie sie sind, und kürzt nie über 40 Zeichen', () => {
-    expect(nameVorschlag('Altbau am Park')).toBe('Altbau am Park');
-    expect(nameVorschlag('  Altbau   am Park ')).toBe('Altbau am Park');
-    const genau = 'A'.repeat(18) + ' ' + 'B'.repeat(21);
-    expect(nameVorschlag(genau)).toBe(genau);
-    expect(nameVorschlag('Wohnung, ruhig gelegen – mit Garten, Terrasse und Keller')).toBe(
-      'Wohnung, ruhig gelegen – mit Garten',
-    );
-    expect(nameVorschlag('X'.repeat(45))).toBe('X'.repeat(40));
-    for (const t of ['Helle 3-Zimmer-Wohnung mit Balkon und Blick ins Grüne', 'Y '.repeat(30)])
-      expect(nameVorschlag(t).length).toBeLessThanOrEqual(NAME_LAENGE);
   });
 });
