@@ -30,6 +30,32 @@ function dokumentBilder(plist: string): string[] {
   return [...liste.matchAll(/<string>([^<]+)<\/string>/g)].map((m) => m[1]!);
 }
 
+const BILDER = [
+  'HeftaBackup-22x29.png',
+  'HeftaBackup-44x58.png',
+  'HeftaBackup-66x87.png',
+  'HeftaBackup-64.png',
+  'HeftaBackup-320.png',
+];
+
+/** P6: Was der Typ „Hefta-Backup“ fürs iPhone noch nicht nennt (Dokumenttyp und exportierter Typ). */
+function fehltFuerIphone(plist: string): string[] {
+  const fehlt: string[] = [];
+  const doku = dokumentBilder(plist);
+  for (const b of BILDER.slice(0, 3))
+    if (!doku.includes(b)) fehlt.push(`CFBundleTypeIconFiles: ${b}`);
+  const export_ = /<string>de\.hefta\.backup<\/string>([\s\S]*?)<\/dict>\s*<\/array>/.exec(
+    plist.slice(plist.indexOf('<key>UTExportedTypeDeclarations</key>')),
+  )?.[1];
+  const liste =
+    export_ && /<key>UTTypeIconFiles<\/key>\s*<array>([\s\S]*?)<\/array>/.exec(export_)?.[1];
+  if (!liste) fehlt.push('UTTypeIconFiles fehlt');
+  else
+    for (const b of BILDER)
+      if (!liste.includes(`<string>${b}</string>`)) fehlt.push(`UTTypeIconFiles: ${b}`);
+  return fehlt;
+}
+
 function groesse(pfad: string): [number, number] {
   const d = readFileSync(pfad);
   return [d.readUInt32BE(16), d.readUInt32BE(20)];
@@ -40,7 +66,7 @@ describe('wunsch-W38: App-Symbol nur als App-Symbol', () => {
   const projekt = readFileSync(PROJEKT, 'utf8');
 
   it('der Typ „Hefta-Backup“ trägt ein eigenes Dokumentbild, 64 und 320 Punkt, je @1x bis @3x', () => {
-    expect(dokumentBilder(plist)).toEqual(['HeftaBackup-64.png', 'HeftaBackup-320.png']);
+    expect(dokumentBilder(plist)).toEqual(BILDER);
     for (const [basis, pt] of [
       ['HeftaBackup-64', 64],
       ['HeftaBackup-320', 320],
@@ -57,6 +83,36 @@ describe('wunsch-W38: App-Symbol nur als App-Symbol', () => {
         // Im Bündel der App, also in den Ressourcen des Projekts.
         expect(projekt, datei).toContain(`/* ${datei} in Resources */,`);
       }
+  });
+
+  // PC149/PC150 (P6): 2.0.1 zeigte in „Dateien“ am iPhone weiter das App-Symbol auf einem Blatt, auch nach einem
+  // Neustart. Die Liste nannte nur die Größen fürs iPad, und der exportierte Typ trug kein Bild.
+  it('P6: Größen fürs iPhone (22 × 29, 44 × 58, 66 × 87 px), auch am exportierten Typ', () => {
+    expect(fehltFuerIphone(plist)).toEqual([]);
+    for (const [w, h] of [
+      [22, 29],
+      [44, 58],
+      [66, 87],
+    ] as const) {
+      const datei = `HeftaBackup-${w}x${h}.png`;
+      expect(groesse(`${ORDNER}/${datei}`), datei).toEqual([w, h]);
+      expect(projekt, datei).toContain(`/* ${datei} in Resources */,`);
+    }
+  });
+
+  it('Gegenprobe P6: die Info.plist von 2.0.1 wird rot', () => {
+    const alt = plist
+      .replace(/<key>UTTypeIconFiles<\/key>\s*<array>[\s\S]*?<\/array>/, '')
+      .replace(
+        /(<key>CFBundleTypeIconFiles<\/key>\s*<array>)[\s\S]*?(<\/array>)/,
+        '$1<string>HeftaBackup-64.png</string><string>HeftaBackup-320.png</string>$2',
+      );
+    expect(fehltFuerIphone(alt)).toEqual([
+      'CFBundleTypeIconFiles: HeftaBackup-22x29.png',
+      'CFBundleTypeIconFiles: HeftaBackup-44x58.png',
+      'CFBundleTypeIconFiles: HeftaBackup-66x87.png',
+      'UTTypeIconFiles fehlt',
+    ]);
   });
 
   it('kein Dokumentbild ist das App-Symbol', () => {
