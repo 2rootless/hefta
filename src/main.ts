@@ -21,3 +21,4 @@ else void serviceWorkerAnmelden();
 const fenster = window as unknown as { __heftaInseratTest?: unknown; __heftaTeilen?: unknown };
 if (fenster.__heftaInseratTest)
   void import('./ui/neuesHeft.svelte').then((m) => (fenster.__heftaTeilen = m.geteiltOeffnen));
+// (geteiltOeffnen nimmt Link und, wie die Erweiterung HeftaTeilen, den geteilten Text.)

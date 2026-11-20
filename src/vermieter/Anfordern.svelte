@@ -4,7 +4,7 @@
   // Textfeld (VS4): Wer ändern will, ändert in seinem Mailprogramm.
   import type { HeftaAnhang } from '../pdf/anhang';
   import { mailLink, nachforderung } from './nachforderung';
-  import { haushaltTitel, mailEmpfaenger, MUSTERBOGEN } from './regel';
+  import { haushaltTitel, kontaktwege, mailEmpfaenger, MUSTERBOGEN } from './regel';
   import { t } from './texte';
 
   let {
@@ -19,7 +19,7 @@
 
   const mail = $derived(nachforderung(anhang));
   const link = $derived(
-    mailLink(mail.betreff, mail.text, mailEmpfaenger(anhang.haushalt.kontakt?.email)),
+    mailLink(mail.betreff, mail.text, mailEmpfaenger(kontaktwege(anhang)?.email)),
   );
   let meldung = $state('');
 

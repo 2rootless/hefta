@@ -1,6 +1,8 @@
 import { AFRelationship, PDFDocument } from '@cantoo/pdf-lib';
 import fontkit from '@cantoo/fontkit';
 import { readFileSync } from 'node:fs';
+import { deckblattZeilen } from '../../pakete/hefta-json/test/deckblatt';
+import { mitziehendText, type Lesehilfe } from '../../pakete/hefta-json/src/index';
 
 // Mappen für die Vermieter-Seite: echte PDFs mit Lesehilfe, Seite 1 trägt Namen und Straße.
 export const NB = ' ';
@@ -120,11 +122,56 @@ export const M4z: Probe = {
     ],
   },
 };
-export const M5: Probe = {
-  ...M1,
-  datei: 'Bewerbung_Mustermann_neu.pdf',
-  anhang: { ...M1.anhang, hefta: 4, erstellt: '2026-11-04', zusatz: 'unbekannt' },
-};
+/**
+ * Fassung 1 (E218) aus den kurzen Testdaten: Unterlagen zur Person, Seiten als von/bis, Kontakt bei der Person mit
+ * `telefon_e164` (E222), Vor- und Nachname am ersten Leerzeichen getrennt (nur für diese Musternamen), Zeitpunkt
+ * statt Tag, ohne `modus` (V23), Mitziehende in fester Form (V22).
+ */
+export function alsFassung1(alt: Record<string, unknown>, hefta = 1): Record<string, unknown> {
+  type AltU = { person: number; seiten: [number, number] } & Record<string, unknown>;
+  const haushalt = alt.haushalt as {
+    personen: ({ name: string } & Record<string, unknown>)[];
+    mitziehende: { anzahl: number; art: string; text: string }[];
+    kontakt?: Record<string, string>;
+  };
+  const kontakt = { ...(haushalt.kontakt ?? {}) };
+  if (kontakt.telefon) kontakt.telefon_e164 = `+49${kontakt.telefon.replace(/\D/g, '').slice(1)}`;
+  const personen = haushalt.personen.map((p, i) => {
+    const [vorname = '', ...rest] = p.name.split(' ');
+    return {
+      ...p,
+      vorname,
+      nachname: rest.join(' '),
+      ...(p.kontakt ? kontakt : {}),
+      unterlagen: (alt.unterlagen as AltU[])
+        .filter((u) => u.person === i)
+        .map((x) => {
+          const { person, seiten, ...u } = x;
+          void person;
+          return { ...u, seiten_mappe: { von: seiten[0], bis: seiten[1] } };
+        }),
+    };
+  });
+  const { unterlagen, modus, ...oben } = alt;
+  void unterlagen;
+  void modus;
+  return {
+    ...oben,
+    hefta,
+    erstellt: `${String(alt.erstellt)}T10:00:00+01:00`,
+    fassung: 1,
+    haushalt: {
+      personen,
+      mitziehende: haushalt.mitziehende.map((m) => ({
+        ...m,
+        text: mitziehendText(m.anzahl, m.art) ?? m.text,
+      })),
+    },
+  };
+}
+
+export { deckblattZeilen } from '../../pakete/hefta-json/test/deckblatt';
+
 export const M6: Probe = {
   datei: 'Bewerbung_Nguyen.pdf',
   seiten: 8,
@@ -191,6 +238,17 @@ export const LANG: Probe = {
   },
 };
 
+// Alle Proben mit Lesehilfe in Fassung 1 (E218); die kurze Schreibweise oben bleibt lesbar.
+for (const p of [M1, M2, M4, M4z, M6, M7, LANG]) p.anhang = alsFassung1(p.anhang!);
+/** Eine neuere Fassung (2) mit einem Feld, das diese Seite nicht kennt. */
+export const M5: Probe = {
+  ...M1,
+  datei: 'Bewerbung_Mustermann_neu.pdf',
+  anhang: { ...M1.anhang, hefta: 2, x_zusatz: 'unbekannt' },
+};
+/** Für den Export als CSV. */
+export const M8: Probe = { ...M1, datei: 'Bewerbung_Mustermann_Fassung_1.pdf' };
+
 export interface Datei {
   name: string;
   mimeType: string;
@@ -208,33 +266,21 @@ export async function pdf(p: Probe): Promise<Datei> {
   const schrift = await dok.embedFont(readFileSync('src/pdf/fonts/Archivo-Regular.ttf'), {
     subset: false,
   });
-  const a = p.anhang as
-    | {
-        bewerbung: { wohnung: { strasse: string } | null };
-        haushalt: { personen: { name: string }[]; kontakt?: { telefon?: string; email?: string } };
-      }
-    | undefined;
-  const zeilen = p.ersteSeite
-    ? [p.ersteSeite]
-    : a
-      ? [
-          a.bewerbung.wohnung?.strasse ?? '',
-          ...a.haushalt.personen.map((x) => x.name),
-          ...[a.haushalt.kontakt?.telefon, a.haushalt.kontakt?.email].filter(
-            (x) => x !== undefined,
-          ),
-        ]
-      : [p.datei];
+  const a = p.anhang as unknown as Lesehilfe | undefined;
+  // Seite 1 als Deckblatt nach dem Format (E223); `ersteSeite` ersetzt es für „passt nicht“.
+  const zeilen = p.ersteSeite ? [p.ersteSeite] : a ? deckblattZeilen(a) : [p.datei];
   for (let i = 1; i <= p.seiten; i++) {
     const seite = dok.addPage([595, 842]);
     if (i === 1) {
       zeilen.forEach((z, k) =>
-        seite.drawText(z, { x: 40, y: 780 - k * 24, size: 14, font: schrift }),
+        seite.drawText(z, { x: 30, y: 810 - k * 13, size: 8, font: schrift }),
       );
     } else {
       seite.drawText(`Seite ${i}`, { x: 40, y: 780, size: 40, font: schrift });
     }
   }
+  // V11: Das Erstelldatum der PDF ist `erstellt` der Lesehilfe.
+  if (a?.erstellt) dok.setCreationDate(new Date(a.erstellt));
   if (p.anhang) {
     await dok.attach(new TextEncoder().encode(JSON.stringify(p.anhang)), 'hefta.json', {
       mimeType: 'application/json',

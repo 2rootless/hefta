@@ -1,4 +1,5 @@
 import { hatPruefcode } from '../domain/pruefhinweise';
+import { telefonFuerMappe } from '../domain/telefon';
 import { AUSSEHEN_STANDARD, type MappenAussehen } from '../domain/modell';
 import { bauSchluessel, gebauteMappen, kleineDateien, type MappenAnlass } from './mappeSpeicher';
 import { serienQuellen } from '../domain/aufteilen';
@@ -79,6 +80,9 @@ function mappenPerson(s: PersonStand): MappenPerson {
       : '');
   return {
     name: nameText(nameImPdf(s.person)),
+    // Fassung 1 der Lesehilfe: Vor- und Nachname wie auf dem Deckblatt, von Hefta nie selbst geteilt.
+    vorname: nameImPdf(s.person).vorname,
+    nachname: nameImPdf(s.person).nachname,
     rolle: rollenText(s.rolle, s.bezeichnung),
     beruf: taetigkeit,
     farbe: farbe(s.farbe),
@@ -137,7 +141,7 @@ export async function mappeErstellen(
     }
     const blob = await dateiLesen(db, id);
     if (!blob) {
-      unlesbar.set(meldung.name, meldung);
+      unlesbar.set(meldung.name, { ...meldung, datei: id });
       return null;
     }
     quellenIds.push(id);
@@ -161,6 +165,10 @@ export async function mappeErstellen(
           name: block.person.person.rufname || block.person.person.vorname,
         }),
         href: `#/unterlage/${block.person.person.id}/${u.typ.id}`,
+        personId: block.person.person.id,
+        typ: u.typ.id,
+        person: block.person.person.rufname || block.person.person.vorname,
+        unterlage: titel,
       };
       if (u.typ.inAppErstellt) {
         teile.push({
@@ -207,6 +215,7 @@ export async function mappeErstellen(
           alle.push(...monate);
           quellen.push({
             daten,
+            datei: id,
             seiten: platzhalter ? undefined : seiten,
             kopf: monate.length ? `${einzeln} ${monatsSpanne(monate, true)}` : einzeln,
           });
@@ -238,7 +247,13 @@ export async function mappeErstellen(
           pruefweg:
             u.typ.fristen?.pruefcodeTage && hatPruefcode(u.typ, v) ? 'pruefcode' : undefined,
           kopf: vom ? `${name === titel ? einzeln : name} ${vom}` : name === titel ? einzeln : name,
-          quellen: [{ daten, seiten: platzhalter ? undefined : v.seiten }],
+          quellen: [
+            {
+              daten,
+              datei: v.aufbereitet ?? v.original,
+              seiten: platzhalter ? undefined : v.seiten,
+            },
+          ],
         });
       }
     }
@@ -323,6 +338,11 @@ export async function mappeErstellen(
     inserat: bewerbung?.deckInserat,
     einzug: bewerbung?.deckEinzug,
     fassung: bewerbung?.deckFassung,
+    lesehilfeWerte: {
+      portal: bewerbung?.deckPortal,
+      einzug: bewerbung?.deckEinzugTag,
+      fassung: bewerbung?.deckFassungNr,
+    },
     mitziehende,
     // Nur für die Lesehilfe; die Vorschau mit Platzhaltern braucht keine.
     kennung:
@@ -331,13 +351,22 @@ export async function mappeErstellen(
         : undefined,
     hinweis: e.hinweis !== false,
     modus: e.modus,
-    schritt: e.schritt,
+    // E227 (PC116): Die datensparsame Mappe kommt nicht in 2.0; das Deckblatt liest den Schritt nicht aus dem
+    // gespeicherten Stand. So steht weder der Satz zum Schritt auf dem Papier noch `schritt` in der Lesehilfe.
+    schritt: undefined,
     bitte: e.bitte && e.deckblatt ? bitteSatzAus(bewerbung) : undefined,
+    // E222 (DP77, Abschnitt 5): nur eine umgesetzte Nummer, in fester Form, mit ihrer internationalen Nummer.
     kontakt: haupt
-      ? [hauptName ?? '', haupt.kontakt.telefon, haupt.kontakt.email].filter(Boolean)
+      ? [hauptName ?? '', telefonFuerMappe(haupt.kontakt)?.anzeige, haupt.kontakt.email].filter(
+          (x): x is string => !!x,
+        )
       : [],
     kontaktwege: haupt
-      ? { telefon: haupt.kontakt.telefon || undefined, email: haupt.kontakt.email || undefined }
+      ? {
+          telefon: telefonFuerMappe(haupt.kontakt)?.anzeige,
+          telefonE164: telefonFuerMappe(haupt.kontakt)?.e164,
+          email: haupt.kontakt.email || undefined,
+        }
       : undefined,
     bloecke: mappenBloecke,
     deckblatt: e.deckblatt,
@@ -453,4 +482,14 @@ export function sichern(dateien: File[]): void {
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
+}
+
+/**
+ * PC95 N3, PC96: Wie viele Unterlagen gingen hinaus? Gezählt wie „Was beiliegt“ auf dem Deckblatt, eine je Person
+ * und Unterlage (zwei Gehaltsnachweise von Max und Lea sind zwei). Bei Einzeldateien zählt jede Datei.
+ */
+export function unterlagenZahl(m: Pick<MappenErgebnis, 'inhalt' | 'dateien'>): number {
+  return m.inhalt.length
+    ? m.inhalt.reduce((summe, p) => summe + p.teile.length, 0)
+    : m.dateien.length;
 }

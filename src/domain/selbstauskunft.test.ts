@@ -364,3 +364,24 @@ describe('E49: Mietrückstände erst nach der Zusage', () => {
     });
   });
 });
+
+describe('E222 (DP77, Abschnitt 5): Kontakt mit einer Nummer, die sich nicht umsetzen lässt', () => {
+  const mit = (kontakt: Person['kontakt']) => person({ ...AUSGEFUELLT, kontakt });
+  it('mit Mail ist der Teil fertig: Nur die Nummer fehlt in der Mappe, nicht die Selbstauskunft', () => {
+    const p = mit({ telefon: '0171 3920001-12', email: 'lea@example.com' });
+    expect(fehlendeAngaben(p, 'mitmieter')).not.toContain('kontakt');
+  });
+  it('ohne Mail fehlt der Kontakt („Eine Angabe reicht“, die Nummer zählt nicht)', () => {
+    const p = mit({ telefon: '0171 3920001-12', email: '' });
+    expect(fehlendeAngaben(p, 'mitmieter')).toContain('kontakt');
+  });
+  it('Gegenprobe: eine umgesetzte Nummer allein reicht', () => {
+    const p = mit({
+      telefon: '0171 3920001',
+      telefonLand: 'DE',
+      telefonE164: '+491713920001',
+      email: '',
+    });
+    expect(fehlendeAngaben(p, 'mitmieter')).not.toContain('kontakt');
+  });
+});

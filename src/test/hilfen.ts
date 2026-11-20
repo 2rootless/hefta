@@ -35,6 +35,32 @@ export function testJpeg(breite: number, hoehe: number): Uint8Array {
 }
 
 /** Text je Seite, mit PDF.js ausgelesen (so wie ein Vermieter Text markieren oder suchen würde). */
+/** Die Textstücke jeder Seite, wie das PDF sie enthält (nicht zusammengefügt). */
+export async function teileJeSeite(bytes: Uint8Array): Promise<string[][]> {
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const schriftOrdner = join(
+    import.meta.dirname,
+    '..',
+    '..',
+    'node_modules',
+    'pdfjs-dist',
+    'standard_fonts',
+  );
+  const aufgabe = pdfjs.getDocument({
+    data: bytes.slice(),
+    useSystemFonts: false,
+    standardFontDataUrl: schriftOrdner.split(sep).join('/') + '/',
+  });
+  const dokument = await aufgabe.promise;
+  const seiten: string[][] = [];
+  for (let i = 1; i <= dokument.numPages; i++) {
+    const inhalt = await (await dokument.getPage(i)).getTextContent();
+    seiten.push(inhalt.items.map((teil) => ('str' in teil ? teil.str : '')));
+  }
+  await aufgabe.destroy();
+  return seiten;
+}
+
 export async function textJeSeite(bytes: Uint8Array): Promise<string[]> {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const schriftOrdner = join(

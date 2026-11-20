@@ -43,6 +43,11 @@
   let bild = $state('');
   let stelle = $state.raw<Stelle | null>(null);
   let seite = $state(1);
+  /**
+   * PC121, Regel 1 (DP80, D4): Bis Hefta gesucht hat, hält ein leerer Rahmen in der Größe des Ausschnitts den Platz.
+   * So rutscht nichts nach, wenn das Bild kommt. Findet Hefta den Namen nicht, fällt der Rahmen weg.
+   */
+  let gesucht = $state(false);
 
   /** Breite eines Texts in einer Schrift wie in den meisten PDFs, damit die Markierung genau sitzt. */
   function messer(): ((text: string) => number) | undefined {
@@ -60,6 +65,7 @@
     let vorbei = false;
     let eigenes: PdfDokument | null = null;
     let url = '';
+    gesucht = false;
     void (async () => {
       try {
         let dok = offen;
@@ -89,6 +95,8 @@
         }
       } catch {
         // Datei nicht lesbar oder Seite verlassen: Dann bleibt es bei der Frage ohne Vorschau.
+      } finally {
+        if (!vorbei) gesucht = true;
       }
     })();
     return () => {
@@ -156,8 +164,8 @@
     </div>
   {/if}
 {:else}
-  <!-- Platzhalter, damit die Breite zum Rendern bekannt ist. -->
-  <div class="mass" bind:this={rahmen} aria-hidden="true"></div>
+  <!-- Platzhalter, damit die Breite zum Rendern bekannt ist; solange Hefta sucht, in der Größe des Ausschnitts. -->
+  <div class="mass" class:frei={!gesucht} bind:this={rahmen} aria-hidden="true"></div>
 {/if}
 
 <style>
@@ -216,5 +224,13 @@
 
   .mass {
     height: 0;
+  }
+
+  /* Gleiche Größe und Fläche wie der Ausschnitt, ohne Bewegung (W8, W9). */
+  .mass.frei {
+    height: 140px;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 0 0 1px var(--line);
   }
 </style>

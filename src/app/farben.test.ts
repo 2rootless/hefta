@@ -241,7 +241,11 @@ describe('Farbe nach B28a, Weg B', () => {
       expect(token(thema, 'app-zeichen')).toBe('#661f14');
       expect(token(thema, 'app-zeichen-haus')).toBe('#fbf8f2');
     }
-    expect(readFileSync('public/icons/favicon.svg', 'utf8')).toMatch(/#661f14/i);
+    // PC85 (W34): Das Favicon ist nicht mehr das App-Symbol, sondern F1 aus DP63a, Tinte ohne Deckelfarbe.
+    expect(readFileSync('public/icons/favicon.svg', 'utf8')).not.toMatch(/#661f14/i);
+    expect(readFileSync('public/icons/favicon.svg', 'utf8')).toBe(
+      readFileSync('design/logo/favicon-dp63a-f1/favicon.svg', 'utf8'),
+    );
     expect(
       readFileSync('android/app/src/main/res/values/ic_launcher_background.xml', 'utf8'),
     ).toMatch(/#3f130b/i);

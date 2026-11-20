@@ -1,9 +1,28 @@
 import { describe, expect, it } from 'vitest';
+import { alsFassung1 } from '../../tests/e2e/vermieter-hilfe';
 import katalogRoh from '../../data/regelkatalog.de.json';
-import type { HeftaAnhang } from '../pdf/anhang';
-import { ansicht, bonitaetFrist, etikettVon } from './ansicht';
+import { anhangLesen, type AnhangUnterlage, type HeftaAnhang } from '../pdf/anhang';
+import { ansicht as ansichtNeu, bonitaetFrist as fristNeu, etikettVon } from './ansicht';
 
-const M1: HeftaAnhang = {
+// Fassung 1 (E218): Die Testdaten gehen über alsFassung1() und lesen(), wie auf der Vermieterseite (F11).
+type AltUnterlage = {
+  person: number;
+  typ: string;
+  seiten: number[];
+  vom?: string;
+  monate?: string[];
+  pruefweg?: string;
+};
+const unterlage = (u: AltUnterlage): AnhangUnterlage =>
+  ({ ...u, seiten_mappe: { von: u.seiten[0], bis: u.seiten[1] } }) as unknown as AnhangUnterlage;
+const bonitaetFrist = (u: AltUnterlage, heute: Date) => fristNeu(unterlage(u), heute);
+const ansicht = (x: unknown, heute: Date) => {
+  const b = anhangLesen(JSON.stringify(alsFassung1(x as Record<string, unknown>)));
+  if (!b) throw new Error('Testdaten sind keine Lesehilfe');
+  return ansichtNeu(b as HeftaAnhang, heute);
+};
+
+const M1 = {
   hefta: 3,
   erstellt: '2026-11-02',
   bewerbung: {
@@ -66,8 +85,8 @@ describe('Frist der Bonität', () => {
   it('rechnet 60 Tage ab dem Datum der Lesehilfe', () => {
     const f = bonitaetFrist(M1.unterlagen[2]!, HEUTE)!;
     expect(f.bis).toBe('2026-12-19');
-    expect(f.kurz).toBe('prüfbar bis 19. Dez.');
-    expect(f.lang).toBe('Online prüfbar bis 19. Dezember 2026.');
+    expect(f.kurz).toBe('prüfbar bis 19.\u00a0Dez.');
+    expect(f.lang).toBe('Online prüfbar bis 19.\u00a0Dezember 2026.');
     expect(f.hinweis).toBe('Endet die Frist, wird der Nachweis dadurch nicht ungültig.');
     expect(f.quelle).toMatch(/^Quelle: Muster des SCHUFA-BonitätsChecks, Stand Januar 2024/);
     expect(f.vorbei).toBe(false);
@@ -128,17 +147,18 @@ describe('Ansicht aus der Lesehilfe', () => {
     expect(JSON.stringify(a)).not.toMatch(/€|Euro|netto|brutto|\d\.\d{3},\d{2}/i);
   });
 
-  it('ohne Kennung und ohne Bürgen', () => {
+  // Fassung 1: Die Kennung ist Pflicht (E21); ohne sie gibt es keine Lesehilfe. Geprüft wird hier: ohne Wohnung und
+  // ohne Bürgen.
+  it('ohne Wohnung und ohne Bürgen', () => {
     const b = ansicht(
       {
         ...M1,
-        bewerbung: { wohnung: null },
+        bewerbung: { kennung: M1.bewerbung.kennung, wohnung: null },
         haushalt: { personen: [M1.haushalt.personen[0]!], mitziehende: [] },
         unterlagen: [M1.unterlagen[0]!],
       },
       HEUTE,
     );
-    expect(b.kennung).toBeNull();
     expect(b.rahmen).toBe('Eine Person im Mietvertrag.');
     expect(b.register).toHaveLength(2);
   });

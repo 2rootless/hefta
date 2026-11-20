@@ -14,26 +14,62 @@ function zeilen(adresse: string): [string, string] {
   return [a, b];
 }
 
-/** Ort aus der zweiten Adresszeile, ohne Postleitzahl: „20259 Hamburg“ → „Hamburg“. */
+/** Ort aus der zweiten Adresszeile, ohne Postleitzahl und Lage: „2. OG, 20259 Hamburg“ → „Hamburg“ (DP73 B2). */
 function ortAusAdresse(adresse: string): string {
-  return zeilen(adresse)[1].replace(/^\d{5}\s*/, '');
+  const letztes = zeilen(adresse)[1].split(',').at(-1) ?? '';
+  return letztes.trim().replace(/^\d{5}\s*/, '');
+}
+
+/** Höchstens so viele Zeichen hat der Name eines Hefts (B16, DP33 5.2). */
+export const NAME_LAENGE = 40;
+
+// Am Ende eines gekürzten Namens stünden sie ohne ihr Wort: „… mit Balkon und“ (PC126 K4).
+const FUELLWOERTER = new Set(
+  'und oder sowie mit ohne in im ins am an auf bei beim für nahe nach von vom zum zur zu ab über unter aus der die das den dem des ein eine einer einem einen'.split(
+    ' ',
+  ),
+);
+
+/**
+ * PC126 K4 (DP82 N 2): Vorschlag für den Namen aus dem Titel des Inserats. Passt er nicht in 40 Zeichen, endet er
+ * beim letzten ganzen Wort davor, ohne Füllwort und Zeichen am Ende: „Helle 3-Zimmer-Wohnung mit Balkon und Blick
+ * ins Grüne“ → „Helle 3-Zimmer-Wohnung mit Balkon“. Ein einzelnes Wort über 40 Zeichen wird hart gekürzt.
+ */
+export function nameVorschlag(titel: string): string {
+  const ganz = titel.replace(/\s+/g, ' ').trim();
+  if (ganz.length <= NAME_LAENGE) return ganz;
+  const woerter = ganz.slice(0, NAME_LAENGE + 1).split(' ');
+  woerter.pop(); // Das letzte Stück ist abgeschnitten oder leer.
+  const sauber = (w: string) => w.replace(/[\s,;:.\-–—/&+(]+$/u, '');
+  while (woerter.length) {
+    const letztes = sauber(woerter.at(-1) ?? '');
+    if (!letztes || FUELLWOERTER.has(letztes.toLowerCase())) woerter.pop();
+    else {
+      woerter[woerter.length - 1] = letztes;
+      break;
+    }
+  }
+  return woerter.length ? woerter.join(' ') : ganz.slice(0, NAME_LAENGE).trim();
 }
 
 /**
- * Der Name des Hefts (E78): Merkmal, sonst Titel des Inserats, sonst die Straße, sonst gebaut aus dem,
- * was bekannt ist: „2-Zimmer-Wohnung in Eimsbüttel“, „Wohnung in Eimsbüttel“, „2-Zimmer-Wohnung bei
- * ImmoScout24“, „Inserat bei ImmoScout24“, „Wohnung vom 11. Nov.“. Der gebaute Titel steht wie ein
- * normaler Titel; ein Merkmal ersetzt ihn.
+ * Der Name des Hefts (E236, hebt E78 in diesem Punkt auf): das eigene Merkmal, sonst Straße und Hausnummer,
+ * sonst der Titel des Inserats, sonst gebaut aus dem, was bekannt ist: „2-Zimmer-Wohnung in Eimsbüttel“,
+ * „Wohnung in Eimsbüttel“, „2-Zimmer-Wohnung bei ImmoScout24“, „Inserat bei ImmoScout24“, „Wohnung vom
+ * 11. Nov.“. Die Lage nach dem Komma („Lindenring 3, EG“) gehört nicht zum Namen. Der gebaute Titel steht wie
+ * ein normaler Titel; ein Merkmal ersetzt ihn.
  */
 export function heftTitel(h: Pick<Heft, 'adresse' | 'angaben'> & { createdAt?: string }): {
   text: string;
   strasse: boolean;
 } {
   const a = h.angaben;
-  const name = (a?.merkmal ?? '').trim() || (a?.titel ?? '').trim();
-  if (name) return { text: name, strasse: false };
-  const strasse = zeilen(h.adresse)[0] || h.adresse.trim();
+  const merkmal = (a?.merkmal ?? '').trim();
+  if (merkmal) return { text: merkmal, strasse: false };
+  const strasse = ((zeilen(h.adresse)[0] || h.adresse.trim()).split(',')[0] ?? '').trim();
   if (strasse) return { text: strasse, strasse: true };
+  const titel = (a?.titel ?? '').trim();
+  if (titel) return { text: titel, strasse: false };
   return { text: gebauterTitel(a ?? null, h.createdAt), strasse: false };
 }
 

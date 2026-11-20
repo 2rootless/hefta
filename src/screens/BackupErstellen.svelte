@@ -17,6 +17,7 @@
   } from '../storage/sicherung';
   import { einstellungenAendern, speicherBelegt } from '../storage/speicher';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
+  import BackupZeichen from '../ui/BackupZeichen.svelte';
   import { einstellungenZustand } from '../ui/einstellungen.svelte';
   import WerIstDabei from '../ui/WerIstDabei.svelte';
   import Notiz from '../ui/Notiz.svelte';
@@ -129,6 +130,7 @@
   {#if datei}
     <!-- S3b: fertig, nur noch sichern. -->
     <div class="titelblock">
+      <BackupZeichen {mitPasswort} />
       <h1 class="display">{t('backupSeite.fertigTitel')}</h1>
       <p class="lead">{t('backupSeite.fertigText')}</p>
     </div>
@@ -160,6 +162,7 @@
     </section>
   {:else}
     <div class="titelblock">
+      <BackupZeichen {mitPasswort} />
       <h1 class="display">{t('backupSeite.titel')}</h1>
       <p class="lead">{t('backupSeite.lead')}</p>
     </div>

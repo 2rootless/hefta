@@ -379,7 +379,7 @@ const amVorschau = async (page: Page) => {
 const IS24 = {
   url: 'https://www.immobilienscout24.de/expose/100000001',
   text: [
-    'Besonders Wohnen direkt an den Landungsbrücken!',
+    'Einzigartig wohnen direkt an der Musterhafenbrücke!',
     'Musterweg 7, 20359 Hamburg',
     'Kaltmiete 1.420 €',
     'Nebenkosten 290 €',
@@ -391,7 +391,7 @@ const IS24 = {
     'Kaution 3 Kaltmieten',
   ].join('\n'),
 };
-const KATALOG_TITEL = 'Besonders Wohnen direkt an den Landungsbrücken!';
+const KATALOG_TITEL = 'Einzigartig wohnen direkt an der Musterhafenbrücke!';
 
 /** Wünsche wie im Test der Kontrolle, damit Vorschau und Kontrolle Abweichungen zeigen; lädt neu. */
 async function katalogWuensche(page: Page) {
@@ -516,7 +516,7 @@ const BILDER: Bild[] = [
     pfad: '/einrichtung',
     vorher: async (page) => {
       await page.getByLabel('Vorname').fill('Max');
-      await page.getByLabel('Nachname').fill('Mustermann');
+      await page.getByLabel('Nachname', { exact: true }).fill('Mustermann');
       await page.getByRole('radio', { name: 'Hauptmieter', exact: true }).click();
     },
   },
@@ -591,7 +591,7 @@ const BILDER: Bild[] = [
     vorher: async (page) => {
       await page.getByRole('button', { name: /Neue Person anlegen/ }).click();
       await page.getByLabel('Vorname').fill('Jonas');
-      await page.getByLabel('Nachname').fill('Becker');
+      await page.getByLabel('Nachname', { exact: true }).fill('Becker');
       await page.getByRole('status').waitFor();
     },
   },
@@ -1256,7 +1256,8 @@ const BILDER: Bild[] = [
         (url) => (window as never as { __einsetzen: (x: unknown) => void }).__einsetzen({ url }),
         IS24.url,
       );
-      await page.getByRole('heading', { level: 2, name: KATALOG_TITEL }).waitFor();
+      // E236: Die Karte heißt nach Straße und Hausnummer.
+      await page.getByRole('heading', { level: 2, name: 'Musterweg 7' }).waitFor();
       await page.locator('.punkte li').first().waitFor();
     },
   },

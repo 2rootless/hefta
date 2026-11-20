@@ -1,4 +1,7 @@
 <script lang="ts">
+  import TelefonFeld from './TelefonFeld.svelte';
+  import { daten } from '../app/daten.svelte';
+  import { telefonPruefen, type Land } from '../domain/telefon';
   // Selbstauskunft als Akkordeon aus vier Teilen (Entwürfe A1 bis A4): Kontakt, Einkommen, Fragen,
   // Für euren ganzen Haushalt. Fertige Teile zeigen eine Zusammenfassung mit „Ändern“, offene ihren
   // Stand. Bürgen haben keinen Haushaltsteil. Ja/Nein ohne Vorauswahl.
@@ -12,14 +15,17 @@
     betragText,
     emailSiehtGutAus,
     felderFuer,
-    telefonSiehtGutAus,
     teile,
     type JaNein,
     type TeilId,
   } from '../domain/selbstauskunft';
   import { personenZiehenEin } from '../domain/mappeWoerter';
   import { t } from '../i18n';
-  import { angabenAus, type SelbstauskunftEingabe } from './selbstauskunftEingabe';
+  import {
+    angabenAus,
+    type SelbstauskunftEingabe,
+    telefonEingabeFehler,
+  } from './selbstauskunftEingabe';
   import Symbol from './Symbol.svelte';
 
   let {
@@ -55,7 +61,15 @@
 
   const id = $props.id();
   const felder = $derived(new Set(felderFuer(rolle, person.lebenssituation).map((f) => f.id)));
-  const stand = $derived(teile({ ...person, ...angabenAus(eingabe) }, rolle, eingabe.hh));
+  // PC126 K1: Solange im Telefon ein Fehler steht, ist „Kontakt“ nicht fertig (kein Haken, kein „Weiter“).
+  const telefonFehler = $derived(telefonEingabeFehler(eingabe));
+  const standRoh = $derived(teile({ ...person, ...angabenAus(eingabe) }, rolle, eingabe.hh));
+  const stand = $derived(
+    standRoh.map((s) => (s.id === 'kontakt' && telefonFehler ? { ...s, fertig: false } : s)),
+  );
+  // Der Knopf „Fertig“ bzw. „Weiter: …“ bleibt da, wenn nur der Fehler im Telefon fehlt; er schließt dann nicht,
+  // sondern führt ins Feld (DP77, DP82 T1).
+  const knopfDa = (id: TeilId) => standRoh.find((s) => s.id === id)?.fertig ?? false;
   const name = $derived(person.rufname || person.vorname);
 
   const FELD_IN_TEIL: Record<string, TeilId> = {
@@ -71,9 +85,18 @@
   let offen = $state<TeilId | null>(null);
   // Der Hinweis zum Format wartet, bis man das Feld verlassen hat: Beim Tippen stimmt es noch nicht.
   let imFeld = $state<'telefon' | 'email' | null>(null);
-  const telefonHinweis = $derived(
-    imFeld !== 'telefon' && !!eingabe.telefon.trim() && !telefonSiehtGutAus(eingabe.telefon),
+  // DP77, Abschnitt 2: Unter „Oft gewählt“ stehen auch die Länder, die im Haushalt schon gewählt sind.
+  const haushaltLaender = $derived(
+    (daten.ansicht?.mitglieder ?? [])
+      .map((m) => m.person.kontakt.telefonLand)
+      .filter((l): l is string => !!l),
   );
+  // E222 (DP77, TL26): Nachfrage nach W33 nur noch für gültige Sonderrufnummern; alles andere ist ein Fehler im Feld.
+  const sonderNummer = $derived.by(() => {
+    const r = telefonPruefen(eingabe.telefon, eingabe.telefonLand as Land);
+    return r.art === 'gut' && r.ungewoehnlich;
+  });
+  const telefonHinweis = $derived(imFeld !== 'telefon' && sonderNummer);
   const emailHinweis = $derived(
     imFeld !== 'email' && !!eingabe.email.trim() && !emailSiehtGutAus(eingabe.email),
   );
@@ -107,18 +130,28 @@
   /** Der nächste Teil, der noch nicht fertig ist; null, wenn alles fertig ist. */
   function naechsterOffen(teil: TeilId): TeilId | null {
     const i = stand.findIndex((s) => s.id === teil);
-    return [...stand.slice(i + 1), ...stand.slice(0, i + 1)].find((s) => !s.fertig)?.id ?? null;
+    // Ohne den Teil selbst: Er ist fertig, wenn es weitergeht, und mit Fehler im Telefon hieße der Knopf sonst
+    // „Weiter: Kontakt“ (PC126 K1).
+    return [...stand.slice(i + 1), ...stand.slice(0, i)].find((s) => !s.fertig)?.id ?? null;
   }
 
   // Zweifel am Format im Kontakt (Rückmeldung 12.11.: „E-Mail warnt nicht“): Der Knopf „Weiter“ und die
   // Taste im letzten Feld schlossen den Teil, bevor der Hinweis erscheinen konnte. Jetzt zeigt der erste
   // Schritt weiter den Hinweis, der zweite geht weiter („Du kannst es trotzdem so lassen“).
-  const zweifelTelefon = $derived(!!eingabe.telefon.trim() && !telefonSiehtGutAus(eingabe.telefon));
+  const zweifelTelefon = $derived(sonderNummer);
   const zweifelEmail = $derived(!!eingabe.email.trim() && !emailSiehtGutAus(eingabe.email));
   const zweifelKontakt = $derived(zweifelTelefon || zweifelEmail);
   let gewarntBei = $state<string | null>(null);
 
   function weiterNach(teil: TeilId): Promise<HTMLElement | null | undefined> {
+    // PC126 K1: Mit Fehler im Telefon schließt nichts den Teil; der Fokus geht ins Feld.
+    if (teil === 'kontakt' && telefonFehler) {
+      const f = document.querySelector<HTMLInputElement>('[data-feld="telefon"]');
+      // Stand der Fokus noch im Feld (der Knopf nimmt ihn nicht), zeigt erst das Verlassen den Fehler.
+      f?.blur();
+      f?.focus();
+      return Promise.resolve(f);
+    }
     const werte = `${eingabe.telefon}|${eingabe.email}`;
     if (teil === 'kontakt' && zweifelKontakt && gewarntBei !== werte) {
       gewarntBei = werte;
@@ -140,7 +173,12 @@
       if (e.key !== 'Enter') return;
       e.preventDefault();
       const feld = e.currentTarget as HTMLInputElement;
-      const felder = [...(feld.closest('section')?.querySelectorAll('input') ?? [])];
+      // Die Suche im Blatt „Land der Nummer“ liegt im Teil, gehört aber nicht zur Reihe der Felder.
+      const felder = [
+        ...(feld
+          .closest('section')
+          ?.querySelectorAll<HTMLInputElement>('input:not(dialog input)') ?? []),
+      ];
       const danach = felder[felder.indexOf(feld) + 1];
       if (danach) danach.focus();
       else
@@ -257,6 +295,8 @@
   function offenText(teil: { id: TeilId; offen: number }): string {
     if (teil.id === 'fragen' && teil.offen < FRAGEN_JETZT.length)
       return t('selbstauskunft.offen', { anzahl: teil.offen });
+    // PC126 K1: Offen ist „Kontakt“ dann wegen des Fehlers, nicht weil eine Angabe fehlt.
+    if (teil.id === 'kontakt' && telefonFehler) return t('selbstauskunft.pruefenTelefon');
     return t(`selbstauskunft.teil.${teil.id}Offen`);
   }
 
@@ -388,14 +428,14 @@
         >
       </span>
     </div>
-  {:else if hatAngaben(teil.id) || teil.fertig}
+  {:else if hatAngaben(teil.id) || knopfDa(teil.id)}
     <div class="teil-fuss">
       {#if hatAngaben(teil.id)}
         <button type="button" class="textlink leise" onclick={() => (loeschenFrage = teil.id)}
           >{t('selbstauskunft.angabenLoeschen')}</button
         >
       {/if}
-      {#if teil.fertig}
+      {#if knopfDa(teil.id)}
         {@const naechster = naechsterOffen(teil.id)}
         <!-- Der Fokus bleibt beim Tippen im Feld: Ginge die Tastatur erst zu, verschöbe sich die
              Leiste unten, und das iPhone verwirft den Tipp. Danach steht er im ersten Feld des
@@ -425,27 +465,26 @@
         <h3 id="{id}-{teil.id}">
           <span class="nummer" aria-hidden="true">{i + 1}</span>
           <span class="teilname" class:lang={titel.length > 30}>{titel}</span>
+          <!-- PC130 K7: Offen steht unter den Feldern schon „Eine Angabe reicht, die zweite ist freiwillig.“; im Kopf
+               nicht noch einmal „Eine Angabe genügt“. Zugeklappt bleibt der kurze Satz, dort fehlt der lange. -->
           <small
             >{#if teil.fertig}<Symbol name="haken" groesse={16} />{t(
                 'selbstauskunft.fertigMarke',
-              )}{:else}{offenText(teil)}{/if}</small
+              )}{:else if teil.id !== 'kontakt' || telefonFehler}{offenText(teil)}{/if}</small
           >
         </h3>
 
         {#if teil.id === 'kontakt'}
-          <label class="eingabe">
-            {t('selbstauskunft.telefon')}
-            <input
-              data-feld="telefon"
-              bind:value={eingabe.telefon}
-              type="tel"
-              autocomplete="tel"
-              inputmode="tel"
-              onfocus={() => (imFeld = 'telefon')}
-              onblur={() => (imFeld = null)}
-              {...weiterTaste(teil.id)}
-            />
-          </label>
+          <!-- E222, DP77: Telefon mit Land; Gruppen und Fehler erst beim Verlassen. -->
+          <TelefonFeld
+            bind:wert={eingabe.telefon}
+            bind:land={eingabe.telefonLand}
+            {allein}
+            gewaehlte={haushaltLaender}
+            feld={{ 'data-feld': 'telefon', ...weiterTaste(teil.id) }}
+            onfocus={() => (imFeld = 'telefon')}
+            onblur={() => (imFeld = null)}
+          />
           {#if telefonHinweis}<p class="format" role="status">
               {t('selbstauskunft.telefonHinweis')}
             </p>{/if}

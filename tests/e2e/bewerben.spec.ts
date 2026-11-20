@@ -161,6 +161,44 @@ test('Bewerben per Portal: Anschreiben, Angaben, Mappe, Text kopieren, dann der 
   await expect(page.getByText('Hast du dich beworben?')).toHaveCount(0);
 });
 
+test('PC81 A1 (QA1): Über Portal und Website liegt nichts bei, auch nicht im kopierten Text', async ({
+  page,
+  context,
+  browserName,
+}) => {
+  if (browserName === 'chromium')
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'canShare', { value: undefined });
+  });
+  await haushaltMitMax(page);
+  await hefteAnlegen(page, [heft('linden')]);
+  await heftOeffnen(page, 'linden');
+  await page.getByRole('link', { name: 'Jetzt bewerben' }).click();
+  const anschreiben = page.locator('.mailblatt .mt');
+  const angebot =
+    'Meine Mappe mit den üblichen Unterlagen schicke ich Ihnen gern, sobald Sie mir eine Mailadresse nennen.';
+  for (const weg of ['Portal', 'Website']) {
+    await page.getByRole('button', { name: weg, exact: true }).click();
+    await expect(anschreiben).toContainText(angebot);
+    await expect(anschreiben).not.toContainText('liegt bei');
+    await expect(anschreiben).not.toContainText('die Sie verlangen');
+  }
+  // „Kopieren“ übernimmt denselben Satz.
+  await page.getByRole('button', { name: 'Portal', exact: true }).click();
+  await page.getByRole('button', { name: 'Anschreiben kopieren' }).click();
+  await expect(page.getByRole('status').filter({ hasText: /Kopier/ })).toBeVisible();
+  if (browserName === 'chromium') {
+    const kopiert = await page.evaluate(() => navigator.clipboard.readText());
+    expect(kopiert).toContain(angebot);
+    expect(kopiert).not.toContain('liegt bei');
+  }
+  // Gegenprobe: per Mail liegt die Mappe bei.
+  await page.getByRole('button', { name: 'Mail', exact: true }).click();
+  await expect(anschreiben).toContainText('Meine Mappe mit den üblichen Unterlagen liegt bei.');
+  await expect(anschreiben).not.toContainText('sobald Sie mir eine Mailadresse nennen');
+});
+
 test('„Noch nicht“: Hefta fragt nicht wieder, der Stand bleibt „Gemerkt“', async ({ page }) => {
   await haushaltMitMax(page);
   await hefteAnlegen(page, [
@@ -193,6 +231,9 @@ test('Aussehen in den Einstellungen: System, Hell, Dunkel (12.11.)', async ({ pa
   await page.emulateMedia({ colorScheme: 'light' });
   await haushaltMitMax(page);
   await page.goto('/#/einstellungen');
+  // PC81 U5: Der Stand zeigt seine Version, nicht „0.0.1“ wie die Vorschau vorher. PC134: 2.0.1.
+  await expect(page.getByText(/^2\.0\.1, Regeln für Unterlagen vom /)).toBeVisible();
+  await expect(page.getByText(/0\.0\.1/)).toHaveCount(0);
   const gruppe = page.getByRole('radiogroup', { name: 'Aussehen' });
   await expect(gruppe.getByRole('radio', { name: 'System' })).toHaveAttribute(
     'aria-checked',
@@ -236,6 +277,59 @@ test('Aussehen: kein Rahmen um die Zeile nach dem Tippen, Rückmeldung an hallo@
     /^mailto:hallo@hefta\.de/,
   );
   await expect(page.locator('main')).not.toContainText('pm.me');
+});
+
+test('PC81 B2 (QA3): Mail im Browser ohne Teilen von Dateien: Satz gleich oben, Knopf „Mappe laden und Mail öffnen“', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'canShare', { value: undefined });
+    (window as unknown as { __heftaMailTest: (l: string) => void }).__heftaMailTest = (l) => {
+      (window as unknown as { __mailLink: string }).__mailLink = l;
+    };
+  });
+  await haushaltMitMax(page);
+  await hefteAnlegen(page, [heft('linden')]);
+  await heftOeffnen(page, 'linden');
+  await page.getByRole('link', { name: 'Jetzt bewerben' }).click();
+  await page.getByRole('button', { name: 'Mail', exact: true }).click();
+  // Gleich oben, vor dem Tipp; „hängt an“ steht nirgends.
+  await expect(page.locator('p.klein')).toHaveText(
+    'Die Mappe ist geladen. Häng sie in der Mail selbst an.',
+  );
+  await expect(page.getByText('die Mappe hängt an')).toHaveCount(0);
+  const knopf = page.getByRole('button', { name: 'Mappe laden und Mail öffnen' });
+  await expect(knopf).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mail mit Mappe öffnen' })).toHaveCount(0);
+  const laden = page.waitForEvent('download');
+  await knopf.click();
+  expect((await laden).suggestedFilename()).toMatch(/\.pdf$/);
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as unknown as { __mailLink?: string }).__mailLink ?? ''),
+    )
+    .toMatch(/^mailto:/);
+  // Der Satz steht nur einmal da, nicht noch einmal als Meldung unter dem Knopf.
+  await expect(page.getByText('Häng sie in der Mail selbst an.')).toHaveCount(1);
+});
+
+test('PC81 B2, Gegenprobe: Kann der Browser Dateien teilen, hängt die Mappe an', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'canShare', { value: () => true });
+    Object.defineProperty(navigator, 'share', { value: async () => {} });
+  });
+  await haushaltMitMax(page);
+  await hefteAnlegen(page, [heft('linden')]);
+  await heftOeffnen(page, 'linden');
+  await page.getByRole('link', { name: 'Jetzt bewerben' }).click();
+  await page.getByRole('button', { name: 'Mail', exact: true }).click();
+  await expect(page.locator('p.klein')).toHaveText(
+    'Die Mail ist fertig, die Mappe hängt an. Prüfen, abschicken, fertig.',
+  );
+  await expect(page.getByRole('button', { name: 'Mail mit Mappe öffnen' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mappe laden und Mail öffnen' })).toHaveCount(0);
 });
 
 test('PC8 A6: Nach dem Teilen der Mail kehrt Hefta ins Heft zurück, mit dem Vorschlag', async ({

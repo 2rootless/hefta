@@ -338,6 +338,24 @@ body {
   font-size: 14px;
   margin-left: 2px;
 }
+/* PC100: Export als CSV unter der Liste, mit dem Hinweis zum Löschen. */
+.vs-export {
+  margin: 18px 2px 0;
+}
+.vs-export .vs-btn {
+  max-width: 100%;
+  min-height: 48px;
+  height: auto;
+  padding: 10px 22px;
+  white-space: normal;
+  text-align: center;
+}
+.vs-export p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--vs-muted);
+}
 .vs-err {
   margin: 0 0 12px;
   padding: 10px 14px 12px;

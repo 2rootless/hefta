@@ -1,4 +1,5 @@
 import katalogRoh from '../../data/regelkatalog.de.json';
+import { passt, type Papier } from '../../pakete/hefta-json/src/index';
 import type { AnhangPerson, AnhangUnterlage, HeftaAnhang } from '../pdf/anhang';
 
 // Die Regeln der Vermieter-Seite (design/vermieter-seite.md, Abschnitt „Die Regel“). Reine Logik ohne
@@ -105,7 +106,8 @@ export function wort(n: number, weiblich = false): string {
 export const gross = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function datumText(iso: string, mitJahr = true): string {
-  const [j, m, t] = iso.split('-').map(Number);
+  // Fassung 4: `erstellt` ist ein Zeitpunkt; der Tag sind seine ersten zehn Zeichen.
+  const [j, m, t] = iso.slice(0, 10).split('-').map(Number);
   return `${t}.${NB}${MONATE[(m ?? 1) - 1]}${mitJahr ? ` ${j}` : ''}`;
 }
 
@@ -119,7 +121,7 @@ export function monateText(monate: string[]): string {
 }
 
 /** Seitenbereiche brechen nie am Strich (C23). */
-export function seitenText([von, bis]: [number, number]): string {
+export function seitenText({ von, bis }: { von: number; bis: number }): string {
   return von === bis ? `Seite${NB}${von}` : `Seiten${NB}${von}${WORTLOS}–${WORTLOS}${bis}`;
 }
 
@@ -195,13 +197,10 @@ export interface PersonStand {
 /** Bezugsfassung: vollstaendigkeit() in design/werkzeug/vs_bau.py. */
 export function vollstaendigkeit(a: HeftaAnhang): { ziel: SchrittId; personen: PersonStand[] } {
   const ziel: SchrittId =
-    a.modus === 'datensparsam' && a.schritt && a.schritt in RANG
-      ? (a.schritt as SchrittId)
-      : 'will_wohnung';
+    // E227: `schritt` allein, gebunden an seinen festen Satz auf dem Deckblatt (V23: kein `modus` mehr).
+    a.schritt && a.schritt in RANG ? (a.schritt as SchrittId) : 'will_wohnung';
   const personen = a.haushalt.personen.map((person, index) => {
-    const da = a.unterlagen
-      .filter((u) => u.person === index)
-      .sort((x, y) => x.seiten[0] - y.seiten[0]);
+    const da = [...person.unterlagen].sort((x, y) => x.seiten_mappe.von - y.seiten_mappe.von);
     const typen = new Set(da.map((u) => u.typ));
     const fehlt: Fehlend[] = [];
     const spaeter: Fehlend[] = [];
@@ -280,8 +279,7 @@ export interface PruefPunkt {
 export function pruefPunkte(a: HeftaAnhang): { punkte: PruefPunkt[]; quelle: string } {
   const weg = stimme.pruefwege.bonitaet!;
   const punkte: PruefPunkt[] = [];
-  for (const u of [...a.unterlagen].sort((x, y) => x.seiten[0] - y.seiten[0])) {
-    const p = a.haushalt.personen[u.person]!;
+  for (const { u, person: p } of alleUnterlagen(a)) {
     const wer = vorname(p.name);
     if (u.typ === 'bonitaet') {
       const frist = `laut Muster der SCHUFA ${weg.tage} Tage ab Ausstellung`;
@@ -289,7 +287,7 @@ export function pruefPunkte(a: HeftaAnhang): { punkte: PruefPunkt[]; quelle: str
         titel: `Bonitätsnachweis von ${wer}`,
         text:
           u.pruefweg === 'pruefcode'
-            ? `Der ${weg.name} steht auf dem Zertifikat (${seitenText(u.seiten)}). Online prüfen lässt er sich ${frist}, mit dem Code und dem Geburtsdatum von ${p.name}. Beides steht auf dem Zertifikat. Endet die Frist, wird der Nachweis dadurch nicht ungültig.`
+            ? `Der ${weg.name} steht auf dem Zertifikat (${seitenText(u.seiten_mappe)}). Online prüfen lässt er sich ${frist}, mit dem Code und dem Geburtsdatum von ${p.name}. Beides steht auf dem Zertifikat. Endet die Frist, wird der Nachweis dadurch nicht ungültig.`
             : `Steht auf dem Zertifikat ein ${weg.name}, lässt er sich ${frist} online prüfen. Endet die Frist, wird der Nachweis dadurch nicht ungültig.`,
         link: { text: `Auf ${weg.adresse} prüfen`, url: weg.url },
       });
@@ -308,14 +306,6 @@ export function pruefPunkte(a: HeftaAnhang): { punkte: PruefPunkt[]; quelle: str
   };
 }
 
-const ROLLEN = new Set(['hauptmieter', 'mitmieter', 'buerge']);
-const SCHRITTE = new Set(Object.keys(RANG));
-const TAG = /^\d{4}-\d{2}-\d{2}$/;
-// Seit der Veröffentlichung Pflicht (E21, Planung 06j): Kennung der Bewerbung als UUID.
-const KENNUNG = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const MONAT = /^\d{4}-\d{2}$/;
-const MAX_TEXT = 200;
-const MAX_BITTE = 500;
 /** Was in einen Link `tel:` darf: Ziffern, Plus, Klammern, Leerzeichen, Punkt, Strich, Schrägstrich. */
 const TELEFON = /^\+?[\d ()./-]{3,30}$/;
 /** Eine schlichte Mailadresse, ohne Zeichen, die einen Link `mailto:` verändern könnten. */
@@ -333,71 +323,31 @@ export function mailEmpfaenger(email: string | undefined): string | null {
   return email && MAIL.test(email.trim()) ? email.trim() : null;
 }
 
-const text = (v: unknown, max = MAX_TEXT): v is string =>
-  typeof v === 'string' && v.trim().length > 0 && v.length <= max;
-const ganz = (v: unknown, von: number, bis: number): v is number =>
-  Number.isInteger(v) && (v as number) >= von && (v as number) <= bis;
-/** Text vergleichbar machen: Das PDF trennt Zeilen und Wörter anders als die Lesehilfe. */
-const blank = (s: string) =>
-  s
-    .normalize('NFC')
-    .replace(/[\s\u00a0\u00ad\u2060]/g, '')
-    .toLowerCase();
-
 /**
  * Passt die Lesehilfe zu dieser Mappe? Sonst wird sie gar nicht gezeigt, auch nicht teilweise (VS5b).
- * Strenger als der Entwurf: Die Seitenzahl muss stimmen, und Namen und Straße stehen auf Seite 1.
+ * Die Prüfung aus dem Paket hefta-json (FORMAT.md, Abschnitt 11, Punkte 1 bis 7), mit der Bindung an das Papier.
  */
-export function lesehilfePasst(a: HeftaAnhang, seiten: number, ersteSeite: string): boolean {
-  const personen = a.haushalt?.personen;
-  const mitziehende = a.haushalt?.mitziehende;
-  if (!Array.isArray(personen) || !personen.length || !Array.isArray(mitziehende)) return false;
-  if (!text(a.erstellt) || !TAG.test(a.erstellt)) return false;
-  const kennung = a.bewerbung?.kennung;
-  if (typeof kennung !== 'string' || !KENNUNG.test(kennung)) return false;
-  if (a.seitenzahl !== undefined && a.seitenzahl !== seiten) return false;
-  if (a.schritt !== undefined && !SCHRITTE.has(a.schritt)) return false;
-  if (a.loeschwunsch !== undefined && !text(a.loeschwunsch, MAX_BITTE)) return false;
-  if (!personen.some((p) => p && p.rolle !== 'buerge')) return false;
+export function lesehilfePasst(a: HeftaAnhang, seiten: number, papier: Papier): boolean {
+  return passt(a, { seiten, ...papier });
+}
 
-  const seite = blank(ersteSeite);
-  const steht = (s: string) =>
-    s
-      .trim()
-      .split(/\s+/)
-      .every((w) => seite.includes(blank(w)));
-  for (const p of personen) {
-    if (!p || !text(p.name) || !ROLLEN.has(p.rolle) || !steht(p.name)) return false;
-  }
-  for (const m of mitziehende) {
-    if (!m || !text(m.text) || !ganz(m.anzahl, 1, 50)) return false;
-    if (m.art !== 'kind' && m.art !== 'erwachsen') return false;
-  }
-  // Fassung 3: Telefon und Mail nur, wenn sie wörtlich auf Seite 1 stehen. Eine geänderte Lesehilfe
-  // könnte sonst eine fremde Nummer oder Mail unterschieben (Bedingung 1 zu E17).
-  const k = a.haushalt.kontakt;
-  if (k !== undefined) {
-    if (!k || typeof k !== 'object' || !personen.some((p) => p?.kontakt)) return false;
-    if (k.telefon === undefined && k.email === undefined) return false;
-    for (const wert of [k.telefon, k.email])
-      if (wert !== undefined && (!text(wert, 254) || !seite.includes(blank(wert)))) return false;
-  }
-  const w = a.bewerbung?.wohnung;
-  if (w) {
-    if (!text(w.strasse) || (w.rest !== undefined && !text(w.rest)) || !steht(w.strasse))
-      return false;
-  }
-  if (!Array.isArray(a.unterlagen)) return false;
-  for (const u of a.unterlagen) {
-    if (!u || !text(u.typ) || !ganz(u.person, 0, personen.length - 1)) return false;
-    if (!Array.isArray(u.seiten) || u.seiten.length !== 2) return false;
-    const [von, bis] = u.seiten;
-    if (!ganz(von, 1, seiten) || !ganz(bis, von, seiten)) return false;
-    if (u.vom !== undefined && !(text(u.vom) && TAG.test(u.vom))) return false;
-    if (u.monate !== undefined) {
-      if (!Array.isArray(u.monate) || !u.monate.length) return false;
-      if (!u.monate.every((m) => typeof m === 'string' && MONAT.test(m))) return false;
-    }
-  }
-  return true;
+/** Alle Unterlagen der Mappe mit ihrer Person, in der Reihenfolge der Seiten. */
+export function alleUnterlagen(
+  a: HeftaAnhang,
+): { u: AnhangUnterlage; person: AnhangPerson; index: number }[] {
+  return a.haushalt.personen
+    .flatMap((person, index) => person.unterlagen.map((u) => ({ u, person, index })))
+    .sort((x, y) => x.u.seiten_mappe.von - y.u.seiten_mappe.von);
+}
+
+/** Die Person, die als Kontakt auf dem Deckblatt steht; sonst null. */
+export function kontaktPerson(a: HeftaAnhang): AnhangPerson | null {
+  return a.haushalt.personen.find((p) => p.kontakt) ?? null;
+}
+
+/** Telefon und Mail der Kontaktperson, wie auf dem Deckblatt; null, wenn keins von beiden da ist. */
+export function kontaktwege(a: HeftaAnhang): { telefon?: string; email?: string } | null {
+  const p = kontaktPerson(a);
+  if (!p || (!p.telefon && !p.email)) return null;
+  return { ...(p.telefon ? { telefon: p.telefon } : {}), ...(p.email ? { email: p.email } : {}) };
 }

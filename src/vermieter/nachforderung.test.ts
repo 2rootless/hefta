@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { LANG, M1, M2, M4, M4z, M6, type Probe } from '../../tests/e2e/vermieter-hilfe';
-import type { HeftaAnhang } from '../pdf/anhang';
+import { anhangLesen, type HeftaAnhang } from '../pdf/anhang';
 import { aufMusteradressen } from '../test/musteradressen';
 import { MAIL_LINK_GRENZE, mailLink, nachforderung } from './nachforderung';
 
-const anhang = (p: Probe) => p.anhang as unknown as HeftaAnhang;
+// Fassung 4: Die Testdaten sind Fassung 3 und gehen über lesen() in das neue Bild, wie auf der Vermieterseite.
+const anhang = (p: Probe) => anhangLesen(JSON.stringify(p.anhang)) as HeftaAnhang;
 
 // Die Mails aus den Testdaten des Designs: design/bildschirme/vermieter/nachforderung-mails.md.
 const VORBILD = readFileSync(
@@ -98,7 +99,7 @@ describe('Mail-Link', () => {
   it('ohne Empfänger und sicher kodiert', () => {
     const l = mailLink('Wohnung & mehr', 'Zeile 1\nZeile 2');
     expect(l).toEqual({
-      href: 'mailto:?subject=Wohnung%20%26%20mehr&body=Zeile%201%0AZeile%202',
+      href: 'mailto:?subject=Wohnung%20%26%20mehr&body=Zeile%201%0D%0AZeile%202',
       nurBetreff: false,
     });
   });

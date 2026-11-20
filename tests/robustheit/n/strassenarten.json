@@ -1,0 +1,134 @@
+{
+  "bereich": "N",
+  "quelle": "PC120 (§8, 5): „am Musterplatz“, Straßenarten mit „am“, Hausnummer „7–9“ im Dateinamen; nur Musterdaten (W7, Fassung 25: erfundene Straßen mit PLZ 00100)",
+  "faelle": [
+    {
+      "nr": "N-S01",
+      "was": "„am“ nach der Straßenart",
+      "adresse": "Musterplatz 1, 00100 Musterstadt",
+      "soll_satz": "am Musterplatz 1, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S02",
+      "was": "„am“ nach der Straßenart",
+      "adresse": "Mustermarkt 2, 00100 Musterstadt",
+      "soll_satz": "am Mustermarkt 2, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S03",
+      "was": "„am“ nach der Straßenart",
+      "adresse": "Musterkai 3, 00100 Musterstadt",
+      "soll_satz": "am Musterkai 3, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S04",
+      "was": "„am“ nach der Straßenart",
+      "adresse": "Musterufer 4, 00100 Musterstadt",
+      "soll_satz": "am Musterufer 4, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S05",
+      "was": "„am“ nach der Straßenart",
+      "adresse": "Musterhang 5, 00100 Musterstadt",
+      "soll_satz": "am Musterhang 5, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S06",
+      "was": "„am“ nach der Straßenart",
+      "adresse": "Musterdamm 6, 00100 Musterstadt",
+      "soll_satz": "am Musterdamm 6, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S07",
+      "was": "„am“ nach der Straßenart",
+      "adresse": "Musterwall 7, 00100 Musterstadt",
+      "soll_satz": "am Musterwall 7, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S08",
+      "was": "„am“ nach der Straßenart",
+      "adresse": "Musterdeich 8, 00100 Musterstadt",
+      "soll_satz": "am Musterdeich 8, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S09",
+      "was": "„am“ nach der Straßenart",
+      "adresse": "Musterberg 9, 00100 Musterstadt",
+      "soll_satz": "am Musterberg 9, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S10",
+      "was": "„am“ nach der Straßenart",
+      "adresse": "Mustergraben 10, 00100 Musterstadt",
+      "soll_satz": "am Mustergraben 10, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S11",
+      "was": "„am“ nach der Straßenart",
+      "adresse": "Musterstieg 11, 00100 Musterstadt",
+      "soll_satz": "am Musterstieg 11, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S12",
+      "was": "„am“ nach der Straßenart",
+      "adresse": "Mustersteig 12, 00100 Musterstadt",
+      "soll_satz": "am Mustersteig 12, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S13",
+      "was": "„an der“ an einer Brücke",
+      "adresse": "Musterbrücke 13, 00100 Musterstadt",
+      "soll_satz": "an der Musterbrücke 13, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S14",
+      "was": "„im“ bleibt",
+      "adresse": "Musterweg 7, 00100 Musterstadt",
+      "soll_satz": "im Musterweg 7, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S15",
+      "was": "„im“ bleibt",
+      "adresse": "Lindenring 3, 00100 Musterstadt",
+      "soll_satz": "im Lindenring 3, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S16",
+      "was": "„im“ bleibt",
+      "adresse": "Musterhof 2, 00100 Musterstadt",
+      "soll_satz": "im Musterhof 2, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S17",
+      "was": "weiblich",
+      "adresse": "Beispielstraße 1, 00100 Musterstadt",
+      "soll_satz": "in der Beispielstraße 1, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S18",
+      "was": "Präposition steht schon im Namen",
+      "adresse": "Am Musterplatz 1, 00100 Musterstadt",
+      "soll_satz": "Am Musterplatz 1, 00100 Musterstadt"
+    },
+    {
+      "nr": "N-S19",
+      "was": "gebeugtes Adjektiv davor: keine Präposition",
+      "adresse": "Lange Musterreihe 5, 00100 Musterstadt",
+      "soll_satz": ""
+    },
+    {
+      "nr": "N-S20",
+      "was": "Spanne der Hausnummer",
+      "adresse": "Musterweg 7–9, 00100 Musterstadt",
+      "soll_satz": "im Musterweg 7–9, 00100 Musterstadt",
+      "soll_datei": "Bewerbung_Mustermann_Musterweg7-9.pdf"
+    },
+    {
+      "nr": "N-S21",
+      "was": "Spanne mit Schrägstrich",
+      "adresse": "Musterweg 7/9, 00100 Musterstadt",
+      "soll_satz": "im Musterweg 7/9, 00100 Musterstadt",
+      "soll_datei": "Bewerbung_Mustermann_Musterweg7-9.pdf"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ export default ts.config(
     ignores: [
       'dist/',
       'dist-vermieter/',
+      'dist-web/',
       'node_modules/',
       'design/',
       'test-results/',

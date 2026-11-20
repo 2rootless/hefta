@@ -1,6 +1,7 @@
 <script lang="ts">
   import Symbol from '../ui/Symbol.svelte';
   import Dateiname from './Dateiname.svelte';
+  import { csvText, dateiname, exportierbar } from './export';
   import type { Mappe } from './lesen';
   import {
     datumText,
@@ -44,6 +45,23 @@
     mappen.length === 1 ? 'Eine Mappe' : `${gross(wort(mappen.length))} Mappen`,
   );
   const dieserTag = new Date().getFullYear();
+
+  // Export als CSV (PC99, PC100): nur Lesehilfen, die zur Mappe passen (Fassung 1). Läuft hier im Browser.
+  const exportMappen = $derived(mappen.filter((m) => exportierbar(m.anhang)));
+  const nichtDabei = $derived(
+    mappen.flatMap((m, i) => (exportierbar(m.anhang) ? [] : [t('export.ohne', { nummer: i + 1 })])),
+  );
+  function exportieren() {
+    const text = csvText(exportMappen.map((m) => m.anhang!));
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = dateiname(new Date());
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  }
 </script>
 
 <section class="vs-list sec" aria-label={t('eingang.titel')}>
@@ -121,13 +139,39 @@
           {:else}
             <span class="vs-st vs-st-ohne">
               <span class="vs-i"><Symbol name="datei" groesse={20} /></span>
-              <span>{t(m.passtNicht ? 'stand.passtNicht' : 'stand.ohne')}</span>
+              <span
+                >{t(
+                  m.passtNicht
+                    ? 'stand.passtNicht'
+                    : m.lesehilfeUnlesbar
+                      ? 'stand.unlesbar'
+                      : 'stand.ohne',
+                )}</span
+              >
             </span>
           {/if}
         </span>
       </a>
     {/each}
   </nav>
+  {#if mappen.length}
+    <section class="vs-export" aria-label={t('export.knopf')}>
+      <button
+        type="button"
+        class="vs-btn vs-btn-leise"
+        disabled={!exportMappen.length}
+        onclick={exportieren}>{t('export.knopf')}</button
+      >
+      <p>
+        {t('export.csv')}
+        {exportMappen.length
+          ? t('export.zahl', { anzahl: exportMappen.length, gesamt: mappen.length })
+          : t('export.keine')}
+      </p>
+      {#if nichtDabei.length}<p>{t('export.nichtDabei', { liste: nichtDabei.join(', ') })}</p>{/if}
+      <p>{t('export.loeschen')}</p>
+    </section>
+  {/if}
   <p class="vs-fuss">{t('eingang.fuss')}</p>
   <button type="button" class="vs-lk vs-leeren" onclick={leeren}>{t('eingang.leeren')}</button>
 </section>

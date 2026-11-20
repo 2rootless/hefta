@@ -31,10 +31,12 @@ export function anrede(anbieter: string | null | undefined): string {
 }
 
 /**
- * „im Lindenring 3“, „im Lindenring 8“: die Präposition nach dem Geschlecht des Straßennamens.
- * Beginnt der Name schon mit einer („Am Markt 4“), bleibt er, wie er ist. Ist das Geschlecht unbekannt
+ * „im Lindenring 3“, „am Musterplatz 1“: die Präposition nach dem Grundwort des Straßennamens.
+ * Beginnt der Name schon mit einer („Am Markt 4“), bleibt er, wie er ist. Ist das Grundwort unbekannt
  * oder steht ein gebeugtes Adjektiv davor („Lange Reihe“ hieße „in der Langen Reihe“), gibt es keine:
  * Dann steht „die Wohnung Lange Reihe 5“, ungelenk, aber nie falsch.
+ * PC120 (§8, 5): An einem Platz, Markt, Kai, Ufer, Hang, Damm, Wall, Deich, Berg, Graben, Stieg oder Steig
+ * wohnt man „am“, an einer Brücke „an der“; „im“ bleibt für Weg, Ring, Hof und die übrigen.
  */
 export function inDerStrasse(strasse: string): string {
   const s = strasse.trim();
@@ -42,9 +44,10 @@ export function inDerStrasse(strasse: string): string {
   const name = s.replace(/\s+\d+\s*[a-z]?(?:[-–/]\d+\s*[a-z]?)?(?:,.*)?$/i, '').trim();
   const letztes = name.split(/[\s-]/).pop()?.toLowerCase() ?? '';
   const weiblich =
-    /(straße|strasse|str\.|allee|gasse|chaussee|promenade|zeile|twiete|aue|reihe|koppel|brücke|höhe)$/;
-  const maennlich =
-    /(weg|ring|damm|platz|stieg|steig|kamp|deich|wall|markt|graben|berg|hof|pfad|gang|park|kai|winkel|grund)$/;
+    /(straße|strasse|str\.|allee|gasse|chaussee|promenade|zeile|twiete|aue|reihe|koppel|höhe)$/;
+  const anDer = /brücke$/;
+  const am = /(platz|markt|kai|ufer|hang|damm|wall|deich|berg|graben|stieg|steig)$/;
+  const im = /(weg|ring|kamp|hof|pfad|gang|park|winkel|grund)$/;
   if (
     /^(am|an der|an den|auf der|auf dem|im|in der|zum|zur|beim|hinter der|hinter dem|unter den)\b/i.test(
       name,
@@ -54,8 +57,10 @@ export function inDerStrasse(strasse: string): string {
   // Ein Wort davor, das auf „e“ endet, ist ein Adjektiv, das sich beugen müsste.
   const davor = name.split(/\s+/).slice(0, -1);
   if (davor.some((w) => /e$/i.test(w))) return '';
+  if (anDer.test(letztes)) return `an der ${s}`;
   if (weiblich.test(letztes)) return `in der ${s}`;
-  if (maennlich.test(letztes)) return `im ${s}`;
+  if (am.test(letztes)) return `am ${s}`;
+  if (im.test(letztes)) return `im ${s}`;
   return '';
 }
 
@@ -92,6 +97,13 @@ export interface AnschreibenAuftrag {
   /** „JJJJ-MM-TT“ oder freier Text; leer: kein Satz zum Einzug. */
   einzug: string;
   heute: Date;
+  /**
+   * PC81 A1: Nur per Mail liegt die Mappe bei. Über ein Portal oder eine Website geht keine Datei mit; dann
+   * bietet der Satz die Mappe an, sobald der Vermieter eine Mailadresse nennt.
+   */
+  weg: BewerbungsWeg;
+  /** PC126 K5: Die Mappe hat eine eigene Auswahl, etwa nach „Diesmal weglassen“. */
+  eigeneAuswahl?: boolean;
 }
 
 /** Das Anschreiben nach B23 (`s=bewerben`), ohne Gruß und Unterschrift. */
@@ -109,10 +121,20 @@ export function anschreibenText(a: AnschreibenAuftrag): { anrede: string; text: 
     const wann = einzugText(a.einzug, a.heute);
     saetze.push(a.wir ? `Wir können zum ${wann} einziehen.` : `Ich kann zum ${wann} einziehen.`);
   }
+  // PC126 K5 (DP83 a, W10): Mit „Eigener Auswahl“ liegen nicht die üblichen Unterlagen bei; dann sagt der Satz es nicht.
+  const mappe = a.eigeneAuswahl
+    ? a.wir
+      ? 'Unsere Mappe'
+      : 'Meine Mappe'
+    : a.wir
+      ? 'Unsere Mappe mit den üblichen Unterlagen'
+      : 'Meine Mappe mit den üblichen Unterlagen';
   saetze.push(
-    a.wir
-      ? 'Unsere Mappe mit allen Unterlagen, die Sie verlangen, liegt bei.'
-      : 'Meine Mappe mit allen Unterlagen, die Sie verlangen, liegt bei.',
+    a.weg === 'mail'
+      ? `${mappe} liegt bei.`
+      : a.wir
+        ? `${mappe} schicken wir Ihnen gern, sobald Sie uns eine Mailadresse nennen.`
+        : `${mappe} schicke ich Ihnen gern, sobald Sie mir eine Mailadresse nennen.`,
   );
   return { anrede: anrede(a.anbieter), text: saetze.join(' ') };
 }
@@ -143,12 +165,16 @@ function gruss(namen: string[]): string {
   return liste ? `Freundliche Grüße\n${liste}` : 'Freundliche Grüße';
 }
 
-/** Löschbitte nach B18 (`s=loeschbitte`): kurz und freundlich, der Nutzer schickt sie selbst. */
+/**
+ * Löschbitte nach B18 (`s=loeschbitte`): kurz und freundlich, der Nutzer schickt sie selbst.
+ * PC92 K4 (DP66 U1, E192): Der Satz mit dem Datum bleibt; danach „Unsere Bewerbung ist erledigt. Bitte löschen
+ * Sie unsere Unterlagen, auch Ausdrucke und Anhänge.“ Allein steht dasselbe mit „Meine“ und „meine“.
+ */
 export function loeschbitteText(a: NachrichtAuftrag): { betreff: string; text: string } {
   const { wohnung, am } = wohnungUndDatum(a);
   const satz = a.wir
-    ? `wir haben uns ${am}um ${wohnung} beworben. Da wir sie nicht mehr suchen, bitten wir Sie, unsere Unterlagen zu löschen, auch Ausdrucke und Anhänge.`
-    : `ich habe mich ${am}um ${wohnung} beworben. Da ich sie nicht mehr suche, bitte ich Sie, meine Unterlagen zu löschen, auch Ausdrucke und Anhänge.`;
+    ? `wir haben uns ${am}um ${wohnung} beworben. Unsere Bewerbung ist erledigt. Bitte löschen Sie unsere Unterlagen, auch Ausdrucke und Anhänge.`
+    : `ich habe mich ${am}um ${wohnung} beworben. Meine Bewerbung ist erledigt. Bitte löschen Sie meine Unterlagen, auch Ausdrucke und Anhänge.`;
   return {
     betreff: a.wir ? 'Bitte um Löschung unserer Unterlagen' : 'Bitte um Löschung meiner Unterlagen',
     text: `${anrede(a.anbieter)}\n\n${satz}\n\n${gruss(a.namen)}`,
@@ -214,6 +240,15 @@ export function werZiehtEin(o: {
   return satz;
 }
 
+/**
+ * PC92 K3 (DP66, E192): Jede Angabe-Zeile endet mit Punkt („Haustiere: keine.“). Zieht Gmail die Absätze
+ * zusammen, bleiben die Angaben so trotzdem Sätze. Steht schon ein Satzzeichen am Ende, kommt keins dazu.
+ */
+export function angabeZeile(a: { label: string; wert: string }): string {
+  const wert = a.wert.trim();
+  return `${a.label}: ${wert}${/[.!?…]$/.test(wert) ? '' : '.'}`;
+}
+
 /** Der ganze Text für Mail und Portal: Anrede, Anschreiben, die Angaben, Gruß und Kontakt. */
 export function bewerbungsText(o: {
   anrede: string;
@@ -224,7 +259,7 @@ export function bewerbungsText(o: {
   mail: string;
 }): string {
   const z = [o.anrede, '', o.text];
-  if (o.angaben.length) z.push('', ...o.angaben.map((a) => `${a.label}: ${a.wert}`));
+  if (o.angaben.length) z.push('', ...o.angaben.map(angabeZeile));
   z.push('', 'Mit freundlichen Grüßen', o.name.trim());
   const kontakt = [o.telefon.trim(), o.mail.trim()].filter(Boolean).join(' · ');
   if (kontakt) z.push(kontakt);

@@ -33,8 +33,18 @@ export interface Person extends Basis {
   rufname: string;
   /** Name in lateinischen Buchstaben, wie im Pass, wenn das PDF den eingetragenen nicht schreiben kann (K8). */
   nameMappe?: { vorname: string; nachname: string } | null;
-  /** `anschrift`: freiwillig, nur für die Nachricht ans Inserat, wenn es danach fragt. */
-  kontakt: { telefon: string; email: string; anschrift?: string };
+  /**
+   * `anschrift`: freiwillig, nur für die Nachricht ans Inserat, wenn es danach fragt.
+   * E222 (DP77): `telefon` steht in fester Form, dazu sein Land (ISO 3166-1) und die internationale Nummer. Fehlt
+   * `telefonE164`, ließ sich die Nummer nicht umsetzen; dann steht sie nicht in der Mappe (DP77, Abschnitt 5).
+   */
+  kontakt: {
+    telefon: string;
+    email: string;
+    anschrift?: string;
+    telefonLand?: string;
+    telefonE164?: string;
+  };
   lebenssituation: Lebenssituation | null;
   /** Bei „studierend_azubi“: was es genau ist; fehlt bei älteren Daten. */
   ausbildungArt?: AusbildungArt | null;
@@ -44,6 +54,11 @@ export interface Person extends Basis {
   abrechnungMeist: 'anfang' | 'mitte' | 'ende' | null;
   /** Antworten der Selbstauskunft (M4); fehlt bei älteren Daten und wird dann leer gelesen. */
   selbstauskunft?: import('./selbstauskunft').Selbstauskunft;
+  /**
+   * DP74 C3 (PC109): Die Person hat keinen Nachnamen; dann ist `nachname` leer, und Hefta fragt nicht mehr danach.
+   * Fehlt bei älteren Daten. In der Lesehilfe ändert sich nichts (FORMAT, Regel 1).
+   */
+  ohneNachname?: boolean;
 }
 
 export type MappenAkzent = 'tanne' | 'schiefer' | 'bordeaux' | 'graphit';
@@ -417,13 +432,42 @@ export interface DateiEintrag {
 export const AUSSEHEN_STANDARD: MappenAussehen = { art: 'personen' };
 
 export function rufnameAus(vorname: string): string {
+  // E257 (PC138): Titel am Anfang („Dr.“, „Prof.“, „Dipl.-Ing.“) zählen nicht. Ein Titel ist ein Wort,
+  // das mit einem Punkt endet. Besteht der Vorname nur aus Titeln, gilt die alte Regel.
+  const woerter = vorname.trim().split(/\s+/);
+  const ab = woerter.findIndex((w) => !w.endsWith('.'));
+  if (ab < 0) return rufnameNachAlterRegel(vorname);
+  return rufnameNachAlterRegel(woerter.slice(ab).join(' '));
+}
+
+/** Die Regel bis 2.0: Vorname bis zum ersten Leerzeichen oder Bindestrich, auch wenn das ein Titel ist. */
+function rufnameNachAlterRegel(vorname: string): string {
   return vorname.trim().split(/[\s-]/)[0] ?? '';
+}
+
+/** Selbst gebildet: der Rufname, den Hefta aus diesem Vornamen bildet oder bis 2.0 gebildet hat. */
+function rufnameSelbstGebildet(vorname: string, rufname: string): boolean {
+  const r = rufname.trim();
+  return r === rufnameAus(vorname) || r === rufnameNachAlterRegel(vorname);
 }
 
 /** Rufname nach einer Änderung des Vornamens: Er folgt, außer er wurde eigens gewählt. */
 export function rufnameFolgt(alterVorname: string, neuerVorname: string, rufname: string): string {
-  const eigens = rufname.trim() && rufname.trim() !== rufnameAus(alterVorname);
+  const eigens = rufname.trim() && !rufnameSelbstGebildet(alterVorname, rufname);
   return eigens ? rufname.trim() : rufnameAus(neuerVorname);
+}
+
+/**
+ * E257: Ein gespeicherter Rufname, den Hefta bis 2.0 selbst aus einem Titel gebildet hat („Dr.“), wird beim
+ * Lesen neu gebildet. Ein eigens gewählter Rufname bleibt. Gespeichert wird dabei nichts.
+ */
+export function rufnameGelesen<P extends { vorname: string; rufname: string }>(person: P): P {
+  const r = person.rufname.trim();
+  const neu = rufnameAus(person.vorname);
+  if (r && r !== neu && r === rufnameNachAlterRegel(person.vorname) && r.endsWith('.')) {
+    return { ...person, rufname: neu };
+  }
+  return person;
 }
 
 export function jetzt(): Zeitpunkt {

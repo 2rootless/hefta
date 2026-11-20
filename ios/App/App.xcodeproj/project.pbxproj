@@ -11,6 +11,15 @@
 		C1C2D3E4F500000000000013 /* HeftaTeilen.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C1C2D3E4F500000000000004 /* HeftaTeilen.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
 		B1C2D3E4F5000000000000A2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5000000000000A1 /* PrivacyInfo.xcprivacy */; };
+		D0C1B2A3F4E50000000000B1 /* HeftaBackup-64.png in Resources */ = {isa = PBXBuildFile; fileRef = D0C1B2A3F4E50000000000B0 /* HeftaBackup-64.png */; };
+		D0C1B2A3F4E50000000000B3 /* HeftaBackup-64@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D0C1B2A3F4E50000000000B2 /* HeftaBackup-64@2x.png */; };
+		D0C1B2A3F4E50000000000B5 /* HeftaBackup-64@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = D0C1B2A3F4E50000000000B4 /* HeftaBackup-64@3x.png */; };
+		D0C1B2A3F4E50000000000B7 /* HeftaBackup-320.png in Resources */ = {isa = PBXBuildFile; fileRef = D0C1B2A3F4E50000000000B6 /* HeftaBackup-320.png */; };
+		D0C1B2A3F4E50000000000B9 /* HeftaBackup-320@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D0C1B2A3F4E50000000000B8 /* HeftaBackup-320@2x.png */; };
+		D0C1B2A3F4E50000000000BB /* HeftaBackup-320@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = D0C1B2A3F4E50000000000BA /* HeftaBackup-320@3x.png */; };
+		D0C1B2A3F4E50000000000BD /* HeftaBackup-22x29.png in Resources */ = {isa = PBXBuildFile; fileRef = D0C1B2A3F4E50000000000BC /* HeftaBackup-22x29.png */; };
+		D0C1B2A3F4E50000000000BF /* HeftaBackup-44x58.png in Resources */ = {isa = PBXBuildFile; fileRef = D0C1B2A3F4E50000000000BE /* HeftaBackup-44x58.png */; };
+		D0C1B2A3F4E50000000000C1 /* HeftaBackup-66x87.png in Resources */ = {isa = PBXBuildFile; fileRef = D0C1B2A3F4E50000000000C0 /* HeftaBackup-66x87.png */; };
 		4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */ = {isa = PBXBuildFile; productRef = 4D22ABE82AF431CB00220026 /* CapApp-SPM */; };
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
 		A1B2C3D40000000000000001 /* HeftaNativPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000011 /* HeftaNativPlugin.swift */; };
@@ -25,6 +34,9 @@
 		B1C2D3E4F500000000000011 /* ProbeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F500000000000001 /* ProbeViewController.swift */; };
 		B1C2D3E4F500000000000012 /* Vorverarbeitung.js in Resources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F500000000000003 /* Vorverarbeitung.js */; };
 		B1C2D3E4F500000000000013 /* HeftaProbe.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F500000000000004 /* HeftaProbe.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E1C2D3E4F500000000000011 /* ThumbnailProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1C2D3E4F500000000000001 /* ThumbnailProvider.swift */; };
+		E1C2D3E4F500000000000012 /* probe-testbild-3x4.png in Resources */ = {isa = PBXBuildFile; fileRef = E1C2D3E4F500000000000003 /* probe-testbild-3x4.png */; };
+		E1C2D3E4F500000000000013 /* HeftaVorschauProbe.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E1C2D3E4F500000000000004 /* HeftaVorschauProbe.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +54,13 @@
 			remoteGlobalIDString = B1C2D3E4F500000000000030;
 			remoteInfo = HeftaProbe;
 		};
+		E1C2D3E4F500000000000050 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1C2D3E4F500000000000030;
+			remoteInfo = HeftaVorschauProbe;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -53,6 +72,7 @@
 			files = (
 				B1C2D3E4F500000000000013 /* HeftaProbe.appex in Embed Foundation Extensions */,
 				C1C2D3E4F500000000000013 /* HeftaTeilen.appex in Embed Foundation Extensions */,
+				E1C2D3E4F500000000000013 /* HeftaVorschauProbe.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -65,6 +85,15 @@
 		C1C2D3E4F500000000000004 /* HeftaTeilen.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = HeftaTeilen.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
 		B1C2D3E4F5000000000000A1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		D0C1B2A3F4E50000000000B0 /* HeftaBackup-64.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "HeftaBackup-64.png"; path = "Dokumentbild/HeftaBackup-64.png"; sourceTree = "<group>"; };
+		D0C1B2A3F4E50000000000B2 /* HeftaBackup-64@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "HeftaBackup-64@2x.png"; path = "Dokumentbild/HeftaBackup-64@2x.png"; sourceTree = "<group>"; };
+		D0C1B2A3F4E50000000000B4 /* HeftaBackup-64@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "HeftaBackup-64@3x.png"; path = "Dokumentbild/HeftaBackup-64@3x.png"; sourceTree = "<group>"; };
+		D0C1B2A3F4E50000000000B6 /* HeftaBackup-320.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "HeftaBackup-320.png"; path = "Dokumentbild/HeftaBackup-320.png"; sourceTree = "<group>"; };
+		D0C1B2A3F4E50000000000B8 /* HeftaBackup-320@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "HeftaBackup-320@2x.png"; path = "Dokumentbild/HeftaBackup-320@2x.png"; sourceTree = "<group>"; };
+		D0C1B2A3F4E50000000000BA /* HeftaBackup-320@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "HeftaBackup-320@3x.png"; path = "Dokumentbild/HeftaBackup-320@3x.png"; sourceTree = "<group>"; };
+		D0C1B2A3F4E50000000000BC /* HeftaBackup-22x29.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "HeftaBackup-22x29.png"; path = "Dokumentbild/HeftaBackup-22x29.png"; sourceTree = "<group>"; };
+		D0C1B2A3F4E50000000000BE /* HeftaBackup-44x58.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "HeftaBackup-44x58.png"; path = "Dokumentbild/HeftaBackup-44x58.png"; sourceTree = "<group>"; };
+		D0C1B2A3F4E50000000000C0 /* HeftaBackup-66x87.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "HeftaBackup-66x87.png"; path = "Dokumentbild/HeftaBackup-66x87.png"; sourceTree = "<group>"; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B2C3D40000000000000011 /* HeftaNativPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeftaNativPlugin.swift; sourceTree = "<group>"; };
@@ -82,6 +111,10 @@
 		B1C2D3E4F500000000000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B1C2D3E4F500000000000003 /* Vorverarbeitung.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Vorverarbeitung.js; sourceTree = "<group>"; };
 		B1C2D3E4F500000000000004 /* HeftaProbe.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = HeftaProbe.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1C2D3E4F500000000000001 /* ThumbnailProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailProvider.swift; sourceTree = "<group>"; };
+		E1C2D3E4F500000000000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E1C2D3E4F500000000000003 /* probe-testbild-3x4.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "probe-testbild-3x4.png"; sourceTree = "<group>"; };
+		E1C2D3E4F500000000000004 /* HeftaVorschauProbe.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = HeftaVorschauProbe.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,6 +140,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E1C2D3E4F500000000000032 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -117,6 +157,7 @@
 				504EC3061FED79650016851F /* App */,
 				B1C2D3E4F500000000000020 /* HeftaProbe */,
 				C1C2D3E4F500000000000020 /* HeftaTeilen */,
+				E1C2D3E4F500000000000020 /* HeftaVorschauProbe */,
 				504EC3051FED79650016851F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -127,6 +168,7 @@
 				504EC3041FED79650016851F /* App.app */,
 				B1C2D3E4F500000000000004 /* HeftaProbe.appex */,
 				C1C2D3E4F500000000000004 /* HeftaTeilen.appex */,
+				E1C2D3E4F500000000000004 /* HeftaVorschauProbe.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -146,6 +188,15 @@
 				504EC3131FED79650016851F /* Info.plist */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				B1C2D3E4F5000000000000A1 /* PrivacyInfo.xcprivacy */,
+				D0C1B2A3F4E50000000000B0 /* HeftaBackup-64.png */,
+				D0C1B2A3F4E50000000000B2 /* HeftaBackup-64@2x.png */,
+				D0C1B2A3F4E50000000000B4 /* HeftaBackup-64@3x.png */,
+				D0C1B2A3F4E50000000000B6 /* HeftaBackup-320.png */,
+				D0C1B2A3F4E50000000000B8 /* HeftaBackup-320@2x.png */,
+				D0C1B2A3F4E50000000000BA /* HeftaBackup-320@3x.png */,
+				D0C1B2A3F4E50000000000BC /* HeftaBackup-22x29.png */,
+				D0C1B2A3F4E50000000000BE /* HeftaBackup-44x58.png */,
+				D0C1B2A3F4E50000000000C0 /* HeftaBackup-66x87.png */,
 				50B271D01FEDC1A000F3C39B /* public */,
 			);
 			path = App;
@@ -170,6 +221,16 @@
 			path = HeftaTeilen;
 			sourceTree = "<group>";
 		};
+		E1C2D3E4F500000000000020 /* HeftaVorschauProbe */ = {
+			isa = PBXGroup;
+			children = (
+				E1C2D3E4F500000000000001 /* ThumbnailProvider.swift */,
+				E1C2D3E4F500000000000003 /* probe-testbild-3x4.png */,
+				E1C2D3E4F500000000000002 /* Info.plist */,
+			);
+			path = HeftaVorschauProbe;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -187,6 +248,7 @@
 			dependencies = (
 				B1C2D3E4F500000000000051 /* PBXTargetDependency */,
 				C1C2D3E4F500000000000051 /* PBXTargetDependency */,
+				E1C2D3E4F500000000000051 /* PBXTargetDependency */,
 			);
 			name = App;
 			packageProductDependencies = (
@@ -230,6 +292,23 @@
 			productReference = C1C2D3E4F500000000000004 /* HeftaTeilen.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		E1C2D3E4F500000000000030 /* HeftaVorschauProbe */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1C2D3E4F500000000000040 /* Build configuration list for PBXNativeTarget "HeftaVorschauProbe" */;
+			buildPhases = (
+				E1C2D3E4F500000000000031 /* Sources */,
+				E1C2D3E4F500000000000032 /* Frameworks */,
+				E1C2D3E4F500000000000033 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HeftaVorschauProbe;
+			productName = HeftaVorschauProbe;
+			productReference = E1C2D3E4F500000000000004 /* HeftaVorschauProbe.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -245,6 +324,10 @@
 						ProvisioningStyle = Automatic;
 					};
 					B1C2D3E4F500000000000030 = {
+						CreatedOnToolsVersion = 16.0;
+						ProvisioningStyle = Automatic;
+					};
+					E1C2D3E4F500000000000030 = {
 						CreatedOnToolsVersion = 16.0;
 						ProvisioningStyle = Automatic;
 					};
@@ -273,6 +356,7 @@
 				504EC3031FED79650016851F /* App */,
 				B1C2D3E4F500000000000030 /* HeftaProbe */,
 				C1C2D3E4F500000000000030 /* HeftaTeilen */,
+				E1C2D3E4F500000000000030 /* HeftaVorschauProbe */,
 			);
 		};
 /* End PBXProject section */
@@ -290,6 +374,15 @@
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
 				B1C2D3E4F5000000000000A2 /* PrivacyInfo.xcprivacy in Resources */,
+				D0C1B2A3F4E50000000000B1 /* HeftaBackup-64.png in Resources */,
+				D0C1B2A3F4E50000000000B3 /* HeftaBackup-64@2x.png in Resources */,
+				D0C1B2A3F4E50000000000B5 /* HeftaBackup-64@3x.png in Resources */,
+				D0C1B2A3F4E50000000000B7 /* HeftaBackup-320.png in Resources */,
+				D0C1B2A3F4E50000000000B9 /* HeftaBackup-320@2x.png in Resources */,
+				D0C1B2A3F4E50000000000BB /* HeftaBackup-320@3x.png in Resources */,
+				D0C1B2A3F4E50000000000BD /* HeftaBackup-22x29.png in Resources */,
+				D0C1B2A3F4E50000000000BF /* HeftaBackup-44x58.png in Resources */,
+				D0C1B2A3F4E50000000000C1 /* HeftaBackup-66x87.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -305,6 +398,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1C2D3E4F500000000000033 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1C2D3E4F500000000000012 /* probe-testbild-3x4.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -338,6 +439,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E1C2D3E4F500000000000031 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1C2D3E4F500000000000011 /* ThumbnailProvider.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -350,6 +459,11 @@
 			isa = PBXTargetDependency;
 			target = C1C2D3E4F500000000000030 /* HeftaTeilen */;
 			targetProxy = C1C2D3E4F500000000000050 /* PBXContainerItemProxy */;
+		};
+		E1C2D3E4F500000000000051 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1C2D3E4F500000000000030 /* HeftaVorschauProbe */;
+			targetProxy = E1C2D3E4F500000000000050 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -616,6 +730,51 @@
 			};
 			name = Release;
 		};
+		E1C2D3E4F500000000000041 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = HeftaVorschauProbe/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.hefta.app.vorschaubild;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		E1C2D3E4F500000000000042 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = HeftaVorschauProbe/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.hefta.app.vorschaubild;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -651,6 +810,15 @@
 			buildConfigurations = (
 				C1C2D3E4F500000000000041 /* Debug */,
 				C1C2D3E4F500000000000042 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E1C2D3E4F500000000000040 /* Build configuration list for PBXNativeTarget "HeftaVorschauProbe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1C2D3E4F500000000000041 /* Debug */,
+				E1C2D3E4F500000000000042 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

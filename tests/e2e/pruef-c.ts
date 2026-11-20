@@ -75,7 +75,8 @@ export function pruefen() {
       }
       // C21: Titel und Sätze werden nicht neben anderem in eine schmale Spalte gequetscht
       // (drei und mehr Zeilen auf weniger als 45 % der Breite ihres Kastens).
-      if (/\S\s+\S/.test(text) && !el.closest('.band-svg, .seiten, .leiste, .haus')) {
+      // DP36: Die Liste „In keinem Schritt vorgesehen“ ist mit Absicht eine Tabelle, Begriff links, Grund rechts.
+      if (/\S\s+\S/.test(text) && !el.closest('.band-svg, .seiten, .leiste, .haus, dl.kein dt')) {
         const r = document.createRange();
         r.selectNodeContents(n);
         const rects = rechtecke(r);
@@ -518,10 +519,16 @@ export function pruefen() {
   // und den gewählten Reiter unten (R1). Gesucht wird Text in der Akzentfarbe; zulässig ist er nur in
   // `.zurueck`, in der Leiste der Reiter und an Stellen, die sich mit `data-rot` als Warnung ausweisen.
   // Personenseite, Unterlage und Rutsch (`.stil-alt`) folgen erst mit der Abschluss-DP des Designs.
+  // Die App nennt die Farbe `--accent-text`, die Website (web/seite.css) `--akzent-text`. Fehlt beides, erbt
+  // die Probe die Tinte; dann prüft C28 nichts, statt jeden Text als rot zu melden (Release 2.0).
+  const wurzelStil = getComputedStyle(document.documentElement);
+  const akzentToken = ['--accent-text', '--akzent-text'].find((t) =>
+    wurzelStil.getPropertyValue(t).trim(),
+  );
   const rotProbe = document.createElement('span');
-  rotProbe.style.color = 'var(--accent-text)';
+  rotProbe.style.color = akzentToken ? `var(${akzentToken})` : 'transparent';
   document.body.append(rotProbe);
-  const akzent = getComputedStyle(rotProbe).color;
+  const akzent = akzentToken ? getComputedStyle(rotProbe).color : 'keine';
   rotProbe.remove();
   const rotWurzel = document.querySelector('dialog[open]') ?? document.body;
   for (const e of rotWurzel.querySelectorAll('*')) {

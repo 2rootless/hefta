@@ -23,6 +23,20 @@
 		<dict>
 			<key>CFBundleTypeName</key>
 			<string>Hefta-Backup</string>
+			<!-- K12 (W38): Ein Backup zeigt in „Dateien“ und im Teilen-Blatt das Zweitblatt, nicht das App-Symbol.
+			     PC150 (P6): auch in den Größen fürs iPhone (22 × 29 und 44 × 58 px, hochkant); 2.0.1 nannte nur die fürs iPad. -->
+			<key>CFBundleTypeIconFiles</key>
+			<array>
+				<string>HeftaBackup-22x29.png</string>
+				<string>HeftaBackup-44x58.png</string>
+				<string>HeftaBackup-66x87.png</string>
+				<string>HeftaBackup-64.png</string>
+				<string>HeftaBackup-320.png</string>
+			</array>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>hefta</string>
+			</array>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
@@ -41,6 +55,15 @@
 			<string>de.hefta.backup</string>
 			<key>UTTypeDescription</key>
 			<string>Hefta-Backup</string>
+			<!-- PC150 (P6): Das Bild gehört auch zum exportierten Typ; ohne es zeichnet iOS das App-Symbol auf ein Blatt. -->
+			<key>UTTypeIconFiles</key>
+			<array>
+				<string>HeftaBackup-22x29.png</string>
+				<string>HeftaBackup-44x58.png</string>
+				<string>HeftaBackup-66x87.png</string>
+				<string>HeftaBackup-64.png</string>
+				<string>HeftaBackup-320.png</string>
+			</array>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.data</string>

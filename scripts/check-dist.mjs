@@ -49,11 +49,18 @@ function dateien(ordner) {
 }
 
 const funde = [];
-for (const datei of [...dateien('dist'), ...dateien('dist-vermieter')]) {
+// Die Website gibt es nur, wo ihre Quelle web/ liegt; das öffentliche Repository der App baut sie nicht.
+const mitWebsite = existsSync('web');
+for (const datei of [
+  ...dateien('dist'),
+  ...dateien('dist-vermieter'),
+  ...(mitWebsite ? dateien('dist-web') : []),
+]) {
   if (!TEXT.has(extname(datei))) continue;
   // Nur auf dem Zweig probe-vision (PC75): Tesseract nennt in seinem Code die Adresse seines CDN als
   // Vorgabe. Die Probe gibt alle Pfade selbst an (src/probe/lesen.ts), geladen wird nur vom eigenen Ursprung.
-  if (/^dist[\\/]probe[\\/]ocr[\\/]/.test(datei)) continue;
+  // Die Website trägt die App unter /mappe/ mit (nur im privaten Repository): dieselbe Ausnahme dort.
+  if (/^dist(-web[\\/]mappe)?[\\/]probe[\\/]ocr[\\/]/.test(datei)) continue;
   const inhalt = readFileSync(datei, 'utf8');
   for (const [, host] of inhalt.matchAll(/https?:\/\/([a-zA-Z0-9.-]+)/g)) {
     if (!ERLAUBT.has(host)) funde.push(`${datei}: ${host}`);

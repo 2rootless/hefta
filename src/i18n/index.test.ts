@@ -9,13 +9,19 @@ beforeEach(() => {
 
 describe('Ansprache „ihr“ und „du“ (B28b)', () => {
   it('wählt die Fassung nach der Anrede der App, auch in der Mehrzahl', () => {
-    expect(t('rueckmeldung.mehr')).toBe('Mehr zu sagen? Schreib uns.');
+    expect(t('rueckmeldung.mehr', { adresse: 'hallo@hefta.de' })).toBe(
+      'Mehr zu sagen? Schreib an hallo@hefta.de.',
+    );
     anrede.wert = 'ihr';
-    expect(t('rueckmeldung.mehr')).toBe('Mehr zu sagen? Schreibt uns.');
+    expect(t('rueckmeldung.mehr', { adresse: 'hallo@hefta.de' })).toBe(
+      'Mehr zu sagen? Schreibt an hallo@hefta.de.',
+    );
     expect(t('rutsch.endeUebersprungen', { anzahl: 3 })).toBe(
       'Drei habt ihr übersprungen, sie bleiben auf der Übersicht offen.',
     );
-    expect(tIn('du', 'rueckmeldung.mehr')).toBe('Mehr zu sagen? Schreib uns.');
+    expect(tIn('du', 'rueckmeldung.mehr', { adresse: 'hallo@hefta.de' })).toBe(
+      'Mehr zu sagen? Schreib an hallo@hefta.de.',
+    );
   });
 });
 

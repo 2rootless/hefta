@@ -4,8 +4,9 @@ import UniformTypeIdentifiers
 /// Teilen an Hefta (E81, B23 `quelle=teilen`): Wer in einer Portal-App oder in Safari auf „Teilen“ und dann
 /// auf Hefta tippt, landet direkt in der Vorschau von Hefta. Die Erweiterung liest nur, was die App übergibt
 /// (Adresse oder Text), sucht darin den ersten Link (E75: WG-Gesucht teilt Titel mit Link) und öffnet Hefta
-/// mit `hefta://teilen?link=…`. Sie lädt nichts, speichert nichts und schickt nichts weg; gelesen wird das
-/// Inserat erst in der App, genau einmal (E72).
+/// mit `hefta://teilen?link=…&text=…`. PC118 (F8a): Den geteilten Text gibt sie mit; ImmoScout24 schickt darin
+/// Miete, Fläche, Zimmer und Adresse, und die App liest ihn vor der Seite. Sie lädt nichts, speichert nichts und
+/// schickt nichts weg; gelesen wird das Inserat erst in der App, genau einmal (E72).
 final class TeilenViewController: UIViewController {
     private let satz = UILabel()
 
@@ -33,9 +34,9 @@ final class TeilenViewController: UIViewController {
             fertig.heightAnchor.constraint(greaterThanOrEqualToConstant: 44)
         ])
         stapel.isHidden = true
-        linkSuchen { [weak self] link in
+        linkSuchen { [weak self] link, text in
             guard let self else { return }
-            if let link, self.heftaOeffnen(link) {
+            if let link, self.heftaOeffnen(link, text: text) {
                 self.extensionContext?.completeRequest(returningItems: nil)
             } else {
                 // Kein Link oder Hefta ließ sich nicht öffnen: ein Satz statt eines stillen Abbruchs.
@@ -48,7 +49,7 @@ final class TeilenViewController: UIViewController {
     }
 
     /// Erst eine Adresse, sonst der erste Link im geteilten Text.
-    private func linkSuchen(_ fertig: @escaping (URL?) -> Void) {
+    private func linkSuchen(_ fertig: @escaping (URL?, String) -> Void) {
         let elemente = extensionContext?.inputItems as? [NSExtensionItem] ?? []
         let anbieter = elemente.flatMap { $0.attachments ?? [] }
         let texte = elemente.compactMap { $0.attributedContentText?.string }
@@ -75,9 +76,13 @@ final class TeilenViewController: UIViewController {
             }
         }
         gruppe.notify(queue: .main) {
-            fertig(adresse ?? gelesen.lazy.compactMap(TeilenViewController.ersterLink).first)
+            let text = String(gelesen.joined(separator: "\n\n").prefix(TeilenViewController.textHoechstens))
+            fertig(adresse ?? gelesen.lazy.compactMap(TeilenViewController.ersterLink).first, text)
         }
     }
+
+    /// So viel geteilter Text reicht für jedes Inserat (dieselbe Grenze in der App, appStart.ts).
+    static let textHoechstens = 8000
 
     static func ersterLink(_ text: String) -> URL? {
         guard let fund = text.range(of: #"https?://[^\s<>"']+"#, options: .regularExpression) else { return nil }
@@ -87,11 +92,12 @@ final class TeilenViewController: UIViewController {
     }
 
     /// Öffnet Hefta über den Weg der App selbst (Responder-Kette bis zur UIApplication).
-    private func heftaOeffnen(_ link: URL) -> Bool {
+    private func heftaOeffnen(_ link: URL, text: String) -> Bool {
         var teile = URLComponents()
         teile.scheme = "hefta"
         teile.host = "teilen"
         teile.queryItems = [URLQueryItem(name: "link", value: link.absoluteString)]
+        if !text.isEmpty { teile.queryItems?.append(URLQueryItem(name: "text", value: text)) }
         guard let ziel = teile.url else { return false }
         // In Erweiterungen ist `UIApplication.open` gesperrt (APPLICATION_EXTENSION_API_ONLY). Die App erreicht
         // man über die Responder-Kette und ruft `openURL:options:completionHandler:` über die Laufzeit auf;

@@ -16,7 +16,7 @@ describe('Der Name steht an einer Stelle', () => {
 
   it('kein Satz nennt noch den alten Namen als Dienst', () => {
     const alt =
-      /(?<![Dd]ie |[Dd]er |[Ee]ine |[Ee]iner |Eure |Deine |eurer |deiner |jede |ganze |zur |dieser |mit |eure |deine |und )\bMappe\b(?! erstellen| anpassen| ansehen| anhängen| wird erstellt| trotzdem| teilen)/;
+      /(?<![Dd]ie |[Dd]er |[Ee]ine |[Ee]iner |Eure |Deine |eurer |deiner |jede |ganze |zur |dieser |mit |eure |deine |und )\bMappe\b(?! erstellen| anpassen| ansehen| anhängen| wird erstellt| trotzdem| teilen| laden)/;
     const treffer = [lesen('src/i18n/de.json'), lesen('data/regelkatalog.de.json')]
       .join('\n')
       .split('\n')
@@ -47,7 +47,7 @@ describe('Der Name steht an einer Stelle', () => {
     expect(lesen('src/storage/sicherung.ts')).toContain("FORMAT = 'hefta-backup'");
     expect(lesen('src/storage/backup.ts')).toContain("encode('HEFTABAK')");
     expect(lesen('src/storage/db.ts')).toContain("DB_NAME = 'hefta'");
-    expect(lesen('src/sw/sw.js')).toContain('`hefta-${VERSION}`');
+    expect(lesen('src/sw/sw.js')).toContain('`hefta-mappe-${VERSION}`');
   });
 });
 

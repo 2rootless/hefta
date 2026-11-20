@@ -17,6 +17,7 @@
   } from '../storage/sicherung';
   import { einstellungenAendern } from '../storage/speicher';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
+  import BackupZeichen from '../ui/BackupZeichen.svelte';
   import { bestandKurz, einstellungenZustand } from '../ui/einstellungen.svelte';
   import WerIstDabei from '../ui/WerIstDabei.svelte';
   import Notiz from '../ui/Notiz.svelte';
@@ -178,6 +179,7 @@
     {/if}
   </div>
   <div class="titelblock">
+    <BackupZeichen mitPasswort={verschluesselt} />
     <h1 class="display">{t('einspielenSeite.titel')}</h1>
   </div>
 

@@ -232,7 +232,7 @@ test('A15: Ende mit Übersprungenem: Reihen je Person, Legende', async ({ page }
   await expect(page.getByText(/übersprungen, bleibt auf der Übersicht offen/)).toBeVisible();
 });
 
-test('A17, wunsch-W18: 320 px mit 130 %: Reiter in zwei Reihen, aktiver unten, nichts gekürzt', async ({
+test('A17, wunsch-W18: 320 px mit 130 %: Reiter in zwei Reihen in der Reihenfolge des Haushalts (DP70 U1), nichts gekürzt', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 246, height: 437 });
@@ -242,8 +242,9 @@ test('A17, wunsch-W18: 320 px mit 130 %: Reiter in zwei Reihen, aktiver unten, n
     .locator('.reiter')
     .evaluateAll((r) => r.map((e) => Math.round(e.getBoundingClientRect().top)));
   expect(new Set(lagen).size).toBeGreaterThan(1);
-  const an = await page.locator('.reiter.an').evaluate((e) => e.getBoundingClientRect().top);
-  expect(Math.round(an)).toBe(Math.max(...lagen));
+  // DP70 U1 (2.0.1): Der erste Reiter steht oben, wie er vorgelesen wird; der aktive rückt nicht mehr nach unten.
+  expect(lagen[0]).toBe(Math.min(...lagen));
+  expect([...lagen].sort((a, b) => a - b)).toEqual(lagen);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
 });
 

@@ -48,6 +48,59 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
     expect(inDerStrasse('Planten un Blomen 1')).toBe('');
   });
 
+  it('PC120 (§8, 5): „am“ an Platz, Markt, Kai, Ufer, Hang, Damm und Verwandten; „im“ bleibt bei Weg und Ring', () => {
+    expect(inDerStrasse('Musterplatz 1')).toBe('am Musterplatz 1');
+    expect(inDerStrasse('Am Musterplatz 1')).toBe('Am Musterplatz 1');
+    expect(inDerStrasse('Mustermarkt 2, 00100 Musterstadt')).toBe(
+      'am Mustermarkt 2, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterkai 3, 00100 Musterstadt')).toBe(
+      'am Musterkai 3, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterufer 4, 00100 Musterstadt')).toBe(
+      'am Musterufer 4, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterhang 5, 00100 Musterstadt')).toBe(
+      'am Musterhang 5, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterdamm 6, 00100 Musterstadt')).toBe(
+      'am Musterdamm 6, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterwall 7, 00100 Musterstadt')).toBe(
+      'am Musterwall 7, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterdeich 8, 00100 Musterstadt')).toBe(
+      'am Musterdeich 8, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterberg 9, 00100 Musterstadt')).toBe(
+      'am Musterberg 9, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Mustergraben 10, 00100 Musterstadt')).toBe(
+      'am Mustergraben 10, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterstieg 11, 00100 Musterstadt')).toBe(
+      'am Musterstieg 11, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Mustersteig 12, 00100 Musterstadt')).toBe(
+      'am Mustersteig 12, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterbrücke 13, 00100 Musterstadt')).toBe(
+      'an der Musterbrücke 13, 00100 Musterstadt',
+    );
+    expect(inDerStrasse('Musterweg 7–9')).toBe('im Musterweg 7–9');
+    expect(inDerStrasse('Lindenring 3')).toBe('im Lindenring 3');
+    expect(inDerStrasse('Musterhof 2, 00100 Musterstadt')).toBe(
+      'im Musterhof 2, 00100 Musterstadt',
+    );
+    // Erfundene Straßen mit Postleitzahl 00100 (W7, Fassung 25).
+    // Zwei Wörter: das Grundwort entscheidet, ein Adjektiv auf „-er“ beugt sich nicht.
+    expect(inDerStrasse('Musterstädter Ufer 4, 00100 Musterstadt')).toBe(
+      'am Musterstädter Ufer 4, 00100 Musterstadt',
+    );
+    // Gegenprobe: das alte „im“ vor einem Platz wäre falsch.
+    expect(inDerStrasse('Musterplatz 1')).not.toBe('im Musterplatz 1');
+  });
+
   it('schreibt das Anschreiben wie B23, allein und zu mehreren', () => {
     expect(
       anschreibenText({
@@ -56,10 +109,11 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
         strasse: 'Lindenring 3',
         einzug: '2027-01-01',
         heute: HEUTE,
+        weg: 'mail',
       }),
     ).toEqual({
       anrede: 'Sehr geehrte Frau Hansen,',
-      text: 'ich möchte mich um die Wohnung im Lindenring 3 bewerben. Ich kann zum 1. Januar 2027 einziehen. Meine Mappe mit allen Unterlagen, die Sie verlangen, liegt bei.',
+      text: 'ich möchte mich um die Wohnung im Lindenring 3 bewerben. Ich kann zum 1. Januar 2027 einziehen. Meine Mappe mit den üblichen Unterlagen liegt bei.',
     });
     const wir = anschreibenText({
       wir: true,
@@ -67,11 +121,29 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
       strasse: 'Planten un Blomen 1',
       einzug: '',
       heute: HEUTE,
+      weg: 'mail',
     });
     expect(wir.text).toBe(
-      'wir möchten uns um die Wohnung Planten un Blomen 1 bewerben. Unsere Mappe mit allen Unterlagen, die Sie verlangen, liegt bei.',
+      'wir möchten uns um die Wohnung Planten un Blomen 1 bewerben. Unsere Mappe mit den üblichen Unterlagen liegt bei.',
     );
     expect(einzugText('2026-12-01', HEUTE)).toBe('1. Dezember');
+  });
+
+  it('PC81 A1 (QA1): Über Portal und Website liegt nichts bei; nur per Mail „liegt bei“', () => {
+    const basis = { anbieter: null, strasse: 'Lindenring 3', einzug: '', heute: HEUTE };
+    for (const weg of ['portal', 'website'] as const) {
+      const wir = anschreibenText({ ...basis, wir: true, weg });
+      expect(wir.text).toContain(
+        'Unsere Mappe mit den üblichen Unterlagen schicken wir Ihnen gern, sobald Sie uns eine Mailadresse nennen.',
+      );
+      // Gegenprobe: kein „liegt bei“, kein „die Sie verlangen“.
+      expect(wir.text).not.toMatch(/liegt bei|die Sie verlangen/);
+      const ich = anschreibenText({ ...basis, wir: false, weg });
+      expect(ich.text).toContain('schicke ich Ihnen gern, sobald Sie mir eine Mailadresse nennen.');
+    }
+    const mail = anschreibenText({ ...basis, wir: true, weg: 'mail' });
+    expect(mail.text).toContain('Unsere Mappe mit den üblichen Unterlagen liegt bei.');
+    expect(mail.text).not.toContain('die Sie verlangen');
   });
 
   it('sagt kurz, wer einzieht (E25)', () => {
@@ -97,8 +169,45 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
         mail: '',
       }),
     ).toBe(
-      'Sehr geehrte Frau Hansen,\n\nich möchte mich bewerben.\n\nEinzug: 1. Januar 2027\n\nMit freundlichen Grüßen\nLea Berg\n040 123',
+      'Sehr geehrte Frau Hansen,\n\nich möchte mich bewerben.\n\nEinzug: 1. Januar 2027.\n\nMit freundlichen Grüßen\nLea Berg\n040 123',
     );
+  });
+});
+
+describe('PC92 K3: Angabe-Zeilen enden mit Punkt (DP66, E192)', () => {
+  const angaben = [
+    { label: 'Einzug ab', wert: '1. Januar 2027' },
+    { label: 'Personen', wert: '2 Erwachsene, 1 Kind' },
+    { label: 'Einkommen', wert: '3.200 € netto im Monat' },
+    { label: 'Haustiere', wert: 'keine' },
+    { label: 'Haustiere', wert: 'Eine Katze.' },
+  ];
+  /** Die Zeilen mit „Bezeichnung: Wert“ zwischen Anschreiben und Gruß. */
+  const zeilen = (text: string) => text.split('\n').filter((z) => /^[A-ZÄÖÜ][a-zäöüß ]+: /.test(z));
+  const mitPunkt = (z: string) => /[^.][.]$/.test(z);
+
+  it('jede Zeile endet mit genau einem Punkt', () => {
+    const text = bewerbungsText({
+      anrede: 'Hallo,',
+      text: 'Text.',
+      angaben,
+      name: 'Lea',
+      telefon: '',
+      mail: '',
+    });
+    expect(zeilen(text)).toEqual([
+      'Einzug ab: 1. Januar 2027.',
+      'Personen: 2 Erwachsene, 1 Kind.',
+      'Einkommen: 3.200 € netto im Monat.',
+      'Haustiere: keine.',
+      'Haustiere: Eine Katze.',
+    ]);
+    expect(zeilen(text).every(mitPunkt)).toBe(true);
+  });
+
+  it('Gegenprobe: die Fassung ohne Punkt fällt auf', () => {
+    const alt = angaben.map((a) => `${a.label}: ${a.wert}`).join('\n');
+    expect(zeilen(alt).every(mitPunkt)).toBe(false);
   });
 });
 
@@ -117,9 +226,17 @@ describe('Löschbitte und Nachfassen (B18)', () => {
       betreff: 'Bitte um Löschung unserer Unterlagen',
       text:
         'Sehr geehrter Herr Kraus,\n\nwir haben uns am 15. Oktober um die Wohnung in der Beispielstraße 1 beworben. ' +
-        'Da wir sie nicht mehr suchen, bitten wir Sie, unsere Unterlagen zu löschen, auch Ausdrucke und Anhänge.' +
+        'Unsere Bewerbung ist erledigt. Bitte löschen Sie unsere Unterlagen, auch Ausdrucke und Anhänge.' +
         '\n\nFreundliche Grüße\nMax Mustermann und Lea Mustermann',
     });
+  });
+
+  it('PC92 K4, Gegenprobe: Der alte Grund „nicht mehr suchen“ steht nicht mehr da', () => {
+    for (const wir of [true, false]) {
+      const { text } = loeschbitteText({ ...auftrag, wir });
+      expect(text).not.toMatch(/nicht mehr such|Da (wir|ich) sie/);
+      expect(text).toMatch(/beworben\. (Unsere|Meine) Bewerbung ist erledigt\. Bitte löschen Sie/);
+    }
   });
 
   it('Löschbitte allein, ohne Datum, ohne Anbieter, ohne Namen', () => {
@@ -133,7 +250,7 @@ describe('Löschbitte und Nachfassen (B18)', () => {
     expect(betreff).toBe('Bitte um Löschung meiner Unterlagen');
     expect(text).toBe(
       'Sehr geehrte Damen und Herren,\n\nich habe mich um die Wohnung in der Beispielstraße 1 beworben. ' +
-        'Da ich sie nicht mehr suche, bitte ich Sie, meine Unterlagen zu löschen, auch Ausdrucke und Anhänge.' +
+        'Meine Bewerbung ist erledigt. Bitte löschen Sie meine Unterlagen, auch Ausdrucke und Anhänge.' +
         '\n\nFreundliche Grüße',
     );
   });
@@ -147,6 +264,34 @@ describe('Löschbitte und Nachfassen (B18)', () => {
     });
     expect(nachfassText({ ...auftrag, wir: false, beworbenAm: null, strasse: '' }).text).toContain(
       'ich habe mich um Ihre Wohnung beworben. Ist sie noch zu haben? Ich würde sie mir gern ansehen.',
+    );
+  });
+});
+
+describe('PC126 K5: Satz zur Mappe folgt der Auswahl (DP83 a, W10)', () => {
+  const auftrag = {
+    wir: false,
+    anbieter: 'Frau Hansen',
+    strasse: 'Musterweg 7',
+    einzug: '',
+    heute: new Date(2026, 10, 19),
+  };
+  it('mit eigener Auswahl ohne „mit den üblichen Unterlagen“, per Mail und über ein Portal', () => {
+    const mail = anschreibenText({ ...auftrag, weg: 'mail', eigeneAuswahl: true }).text;
+    expect(mail).toContain('Meine Mappe liegt bei.');
+    expect(mail).not.toContain('üblichen Unterlagen');
+    const portal = anschreibenText({
+      ...auftrag,
+      wir: true,
+      weg: 'portal',
+      eigeneAuswahl: true,
+    }).text;
+    expect(portal).toContain(
+      'Unsere Mappe schicken wir Ihnen gern, sobald Sie uns eine Mailadresse nennen.',
+    );
+    // Gegenprobe: ohne eigene Auswahl bleibt der Satz.
+    expect(anschreibenText({ ...auftrag, weg: 'mail' }).text).toContain(
+      'Meine Mappe mit den üblichen Unterlagen liegt bei.',
     );
   });
 });

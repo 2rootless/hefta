@@ -1,24 +1,62 @@
 import { describe, expect, it } from 'vitest';
-import type { HeftaAnhang } from '../pdf/anhang';
+import type { Lesehilfe as AnhangLesehilfe } from '../../pakete/hefta-json/src/index';
+import { alsFassung1, deckblattZeilen } from '../../tests/e2e/vermieter-hilfe';
+import { anhangLesen, type AnhangPerson, type AnhangUnterlage } from '../pdf/anhang';
+import * as regel from './regel';
 import {
   datumText,
-  fehlendeGruppe,
   groesseText,
-  gruppe,
-  haushaltTitel,
-  lesehilfePasst,
   mailEmpfaenger,
   telefonLink,
   monateText,
-  pruefPunkte,
   seitenText,
-  standText,
   unterlageText,
-  vollstaendigkeit,
-  werKurz,
 } from './regel';
 
-const M1: HeftaAnhang = {
+// Fassung 4 (PC100): Die Testdaten bleiben in Fassung 3. Jede Prüfung bekommt sie so, wie die Vermieterseite sie
+// liest: über lesen() aus dem Paket hefta-json, das Fassung 1 bis 3 in das Bild von Fassung 4 überträgt (F11).
+interface AltUnterlage {
+  person: number;
+  typ: string;
+  seiten: number[];
+  vom?: string;
+  monate?: string[];
+  pruefweg?: string;
+}
+interface AltPerson {
+  name: string;
+  rolle: string;
+  kontakt?: true;
+}
+interface Alt {
+  hefta: number;
+  erstellt?: string;
+  bewerbung: { kennung?: string; wohnung: { strasse: string; rest: string } | null };
+  haushalt: { personen: AltPerson[]; mitziehende: { text: string; anzahl: number; art: string }[] };
+  unterlagen: AltUnterlage[];
+  seitenzahl?: number;
+  modus?: string;
+  schritt?: string;
+  loeschwunsch?: string;
+}
+const bild = (x: unknown) => anhangLesen(JSON.stringify(alsFassung1(x as Record<string, unknown>)));
+const sicher = (x: unknown) => {
+  const b = bild(x);
+  if (!b) throw new Error('Testdaten sind keine Lesehilfe');
+  return b;
+};
+const haushaltTitel = (x: unknown) => regel.haushaltTitel(sicher(x));
+const werKurz = (x: unknown) => regel.werKurz(sicher(x));
+const vollstaendigkeit = (x: unknown) => regel.vollstaendigkeit(sicher(x));
+const standText = (x: unknown) => regel.standText(sicher(x));
+const pruefPunkte = (x: unknown) => regel.pruefPunkte(sicher(x));
+const person = (p: AltPerson) => ({ ...p, unterlagen: [] }) as unknown as AnhangPerson;
+const unterlage = (u: AltUnterlage): AnhangUnterlage =>
+  ({ ...u, seiten_mappe: { von: u.seiten[0], bis: u.seiten[1] } }) as unknown as AnhangUnterlage;
+const gruppe = (u: AltUnterlage, p: AltPerson) => regel.gruppe(unterlage(u), person(p));
+const fehlendeGruppe = (f: regel.Fehlend, p: AltPerson) => regel.fehlendeGruppe(f, person(p));
+
+const M1: Alt = {
   hefta: 3,
   erstellt: '2026-11-02',
   bewerbung: {
@@ -47,12 +85,11 @@ const M1: HeftaAnhang = {
   seitenzahl: 18,
   modus: 'marktueblich',
 };
-const ERSTE = 'Beispielstraße 1 Max Mustermann Lea Mustermann Petra Mustermann';
 
-function mit(teil: Partial<HeftaAnhang>): HeftaAnhang {
+function mit(teil: Partial<Alt>): Alt {
   return { ...M1, ...teil };
 }
-const allein = (personen: HeftaAnhang['haushalt']['personen'], mitziehende = 0) =>
+const allein = (personen: AltPerson[], mitziehende = 0) =>
   mit({
     unterlagen: [],
     haushalt: {
@@ -158,7 +195,7 @@ describe('Vollständigkeit nach Schritten', () => {
   });
 
   it('Bezeichnungen nur aus dem Katalog, auch bei erfundenen Typen', () => {
-    expect(unterlageText({ person: 0, typ: 'erfunden <b>', seiten: [1, 1] })).toBe(
+    expect(unterlageText(unterlage({ person: 0, typ: 'erfunden <b>', seiten: [1, 1] }))).toBe(
       'Weitere Unterlage',
     );
   });
@@ -186,102 +223,10 @@ describe('Prüfen', () => {
   });
 });
 
-describe('Passt die Lesehilfe zur Mappe?', () => {
-  it('nimmt eine stimmige Lesehilfe an, auch wenn die Zeilen anders brechen', () => {
-    expect(lesehilfePasst(M1, 18, ERSTE)).toBe(true);
-    expect(lesehilfePasst(M1, 18, 'Beispiel\nstraße\u00a01 Max\nMustermann Lea Petra')).toBe(true);
-  });
-
-  it('seit der Veröffentlichung nur mit Kennung der Bewerbung (E21)', () => {
-    const ohne = { ...M1, bewerbung: { wohnung: M1.bewerbung.wohnung } };
-    expect(lesehilfePasst(ohne, 18, ERSTE)).toBe(false);
-    const falsch = { ...M1, bewerbung: { ...M1.bewerbung, kennung: 'keine-uuid' } };
-    expect(lesehilfePasst(falsch, 18, ERSTE)).toBe(false);
-  });
-
-  it('Seite entfernt: Die Gesamtzahl stimmt nicht mehr', () => {
-    expect(lesehilfePasst(M1, 17, ERSTE)).toBe(false);
-  });
-
-  it('ohne Gesamtzahl gilt der Bereich der Seiten', () => {
-    expect(lesehilfePasst(mit({ seitenzahl: undefined }), 18, ERSTE)).toBe(true);
-    expect(lesehilfePasst(mit({ seitenzahl: undefined }), 17, ERSTE)).toBe(false);
-  });
-
-  it('Namen und Straße müssen auf Seite 1 stehen', () => {
-    expect(lesehilfePasst(M1, 18, 'Beispielstraße 1 Max Mustermann Lea')).toBe(false);
-    expect(lesehilfePasst(M1, 18, 'Max Mustermann Lea Petra')).toBe(false);
-  });
-
-  it.each([
-    ['Person ins Leere', { unterlagen: [{ person: 9, typ: 'wbs', seiten: [1, 1] }] }],
-    ['Seite verkehrt', { unterlagen: [{ person: 0, typ: 'wbs', seiten: [5, 2] }] }],
-    ['Seite null', { unterlagen: [{ person: 0, typ: 'wbs', seiten: [0, 1] }] }],
-    ['Seite kein Bereich', { unterlagen: [{ person: 0, typ: 'wbs', seiten: [1] }] }],
-    ['Datum falsch', { unterlagen: [{ person: 0, typ: 'wbs', seiten: [1, 1], vom: 'gestern' }] }],
-    ['Monat falsch', { unterlagen: [{ person: 0, typ: 'wbs', seiten: [1, 1], monate: ['x'] }] }],
-    ['Erstellt fehlt', { erstellt: undefined }],
-    ['Schritt erfunden', { schritt: 'irgendwann' }],
-    ['Bitte zu lang', { loeschwunsch: 'x'.repeat(501) }],
-  ])('%s', (_, teil) => {
-    expect(lesehilfePasst(mit(teil as unknown as Partial<HeftaAnhang>), 18, ERSTE)).toBe(false);
-  });
-
-  it('Name überlang, Rolle erfunden, niemand im Vertrag', () => {
-    const name = 'x'.repeat(201);
-    expect(
-      lesehilfePasst(allein([{ name, rolle: 'hauptmieter' }]), 18, name + ' Beispielstraße 1'),
-    ).toBe(false);
-    expect(
-      lesehilfePasst(
-        allein([{ name: 'Max Mustermann', rolle: 'chef' as 'hauptmieter' }]),
-        18,
-        ERSTE,
-      ),
-    ).toBe(false);
-    expect(lesehilfePasst(allein([{ name: 'Petra Mustermann', rolle: 'buerge' }]), 18, ERSTE)).toBe(
-      false,
-    );
-  });
-});
-
-describe('Kontakt in der Lesehilfe (Fassung 3, E17)', () => {
-  const KONTAKT = { telefon: '0171 3920001', email: 'max.mustermann@example.com' };
-  const mitKontakt = (kontakt: unknown) =>
-    ({ ...M1, haushalt: { ...M1.haushalt, kontakt } }) as unknown as HeftaAnhang;
-  const SEITE = `${ERSTE} Kontakt Max Mustermann 0171 3920001 max.mustermann@example.com`;
-
-  it('gilt, wenn Telefon und Mail wörtlich auf Seite 1 stehen, auch über einen Zeilenumbruch', () => {
-    expect(lesehilfePasst(mitKontakt(KONTAKT), 18, SEITE)).toBe(true);
-    const umbrochen = `${ERSTE} 0171 3920001 max.mustermann
-@example.com`;
-    expect(lesehilfePasst(mitKontakt(KONTAKT), 18, umbrochen)).toBe(true);
-    expect(lesehilfePasst(mitKontakt({ telefon: '0171 3920001' }), 18, SEITE)).toBe(true);
-  });
-
-  it('passt nicht, wenn eine Nummer oder Mail nicht auf Seite 1 steht: Schutz vor Fälschung', () => {
-    expect(lesehilfePasst(mitKontakt({ ...KONTAKT, telefon: '0171 3920011' }), 18, SEITE)).toBe(
-      false,
-    );
-    expect(lesehilfePasst(mitKontakt({ ...KONTAKT, email: 'betrug@example.org' }), 18, SEITE)).toBe(
-      false,
-    );
-    expect(lesehilfePasst(mitKontakt({}), 18, SEITE)).toBe(false);
-    expect(lesehilfePasst(mitKontakt('0171 3920001'), 18, SEITE)).toBe(false);
-    const ohneKontaktperson = {
-      ...M1,
-      haushalt: {
-        ...M1.haushalt,
-        personen: M1.haushalt.personen.map((p) => ({ name: p.name, rolle: p.rolle })),
-        kontakt: KONTAKT,
-      },
-    } as HeftaAnhang;
-    expect(lesehilfePasst(ohneKontaktperson, 18, SEITE)).toBe(false);
-  });
-
+describe('Links zum Anrufen und Schreiben', () => {
   it('Links nur aus sauberen Werten', () => {
     expect(telefonLink('0171 3920001')).toBe('tel:01713920001');
-    expect(telefonLink('+49 (0)40 123-456')).toBe('tel:+49040123456');
+    expect(telefonLink('+49 (0)40 66969-123')).toBe('tel:+4904066969123');
     expect(telefonLink('javascript:alert(1)')).toBeNull();
     expect(telefonLink('12')).toBeNull();
     expect(mailEmpfaenger('max.mustermann@example.com')).toBe('max.mustermann@example.com');
@@ -291,14 +236,63 @@ describe('Kontakt in der Lesehilfe (Fassung 3, E17)', () => {
   });
 });
 
+describe('Passt die Lesehilfe zur Mappe? (Fassung 1, Punkte 1 bis 7)', () => {
+  // Die Einzelfälle prüft das Paket (pakete/hefta-json, Stresstest PC110, PC113). Hier: die Seite nutzt die Prüfung
+  // mit dem Papier der Mappe, wie papierLesen() es liefert.
+  const papier = (l: AnhangLesehilfe, zeilen = deckblattZeilen(l)) => ({
+    seite1: zeilen.join(String.fromCharCode(10)),
+    text: zeilen.join(String.fromCharCode(10)),
+    leereSeiten: [] as number[],
+    erstellt: new Date(l.erstellt),
+  });
+
+  it('nimmt eine stimmige Lesehilfe mit ihrem Deckblatt an', () => {
+    const l = sicher(M1);
+    expect(regel.lesehilfePasst(l, 18, papier(l))).toBe(true);
+  });
+
+  it('Seite entfernt: Die Gesamtzahl stimmt nicht mehr', () => {
+    const l = sicher(M1);
+    expect(regel.lesehilfePasst(l, 17, papier(l))).toBe(false);
+  });
+
+  it('Was die Lesehilfe zeigt, steht auf dem Papier: ohne Petra auf dem Deckblatt passt sie nicht', () => {
+    const l = sicher(M1);
+    const ohnePetra = deckblattZeilen(l).filter((z) => !z.includes('Petra'));
+    expect(regel.lesehilfePasst(l, 18, papier(l, ohnePetra))).toBe(false);
+  });
+
+  it('ohne Kennung der Bewerbung keine Lesehilfe (E21, Fassung 1)', () => {
+    const ohne = { ...M1, bewerbung: { wohnung: M1.bewerbung.wohnung } };
+    expect(bild(ohne)).toBeNull();
+  });
+
+  it('Kontakt: Telefon und Mail stehen unter „Kontakt“; eine andere Mail passt nicht', () => {
+    const l = sicher({
+      ...M1,
+      haushalt: {
+        ...M1.haushalt,
+        kontakt: { telefon: '0171 3920001', email: 'max.mustermann@example.com' },
+      },
+    });
+    expect(regel.lesehilfePasst(l, 18, papier(l))).toBe(true);
+    const anders = deckblattZeilen(l).map((z) =>
+      z === 'max.mustermann@example.com' ? 'lea.mustermann@example.com' : z,
+    );
+    expect(regel.lesehilfePasst(l, 18, papier(l, anders))).toBe(false);
+  });
+});
+
 describe('Schreibweisen', () => {
   it('Datum, Monate, Seiten, Größe', () => {
     expect(datumText('2026-11-02')).toBe('2.\u00a0November 2026');
     expect(datumText('2026-11-02', false)).toBe('2.\u00a0November');
+    // Fassung 4: Zeitpunkt mit Uhrzeit und Zeitzone; es zählt der Tag am Ort der Mappe.
+    expect(datumText('2026-11-18T23:30:00+01:00')).toBe('18.\u00a0November 2026');
     expect(monateText(['2026-07', '2026-08', '2026-09'])).toBe('Juli bis September 2026');
     expect(monateText(['2025-12', '2026-01'])).toBe('Dezember 2025 bis Januar 2026');
-    expect(seitenText([2, 2])).toBe('Seite\u00a02');
-    expect(seitenText([3, 6])).toBe('Seiten\u00a03\u2060–\u20606');
+    expect(seitenText({ von: 2, bis: 2 })).toBe('Seite\u00a02');
+    expect(seitenText({ von: 3, bis: 6 })).toBe('Seiten\u00a03\u2060–\u20606');
     expect(groesseText(2_516_582)).toBe('2,4\u00a0MB');
     expect(groesseText(240 * 1024)).toBe('240\u00a0KB');
   });

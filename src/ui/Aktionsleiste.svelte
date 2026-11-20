@@ -213,6 +213,17 @@
     display: none;
   }
 
+  /* DP70 K1-2 (2.0.1): Bei niedrigem Fenster (etwa 200 % Zoom) läuft die Leiste mit dem Inhalt, statt die halbe Höhe
+     zu decken. Sie steht dann am Ende der Seite, über der Tab-Leiste; --leiste-hoehe gilt dort als 0 (global.css). */
+  @media (max-height: 500px) {
+    .leiste {
+      position: static;
+      margin-bottom: var(--tabs-hoehe, 0px);
+      padding-top: 12px;
+      background: none;
+    }
+  }
+
   .innen {
     max-width: calc(var(--content-width) - 32px);
     margin: 0 auto;

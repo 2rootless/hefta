@@ -48,7 +48,9 @@ function vermieterBau(): Plugin {
       }
       writeFileSync(join(pdf, 'huelle.mjs'), HUELLE);
       mkdirSync(join(ziel, 'icons'), { recursive: true });
-      cpSync(join(wurzel, 'public/icons/favicon.svg'), join(ziel, 'icons/favicon.svg'));
+      // PC85 (W34, DP63a): das eigene Favicon F1, als SVG und für Safari als PNG.
+      for (const f of ['favicon.svg', 'favicon-32.png', 'favicon-16.png'])
+        cpSync(join(wurzel, 'public/icons', f), join(ziel, 'icons', f));
       writeFileSync(join(ziel, '_headers'), vermieterHeadersFile);
       writeFileSync(join(ziel, 'robots.txt'), readFileSync(join(wurzel, 'public/robots.txt')));
       writeFileSync(join(ziel, 'lizenzen.txt'), lizenzenText());

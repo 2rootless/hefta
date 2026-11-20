@@ -4,7 +4,8 @@
   // Abschnitt 3 (Richtung A): Kopf in der Tönung der Person, Hinweis, was in der Mappe ist, als Zeilen mit
   // Pfeil, ältere Versionen, Notiz. Rot nur für Zurück und das Warnzeichen (DP35, W5); Löschen grau unten.
   import { daten, db, neuLaden } from '../app/daten.svelte';
-  import { ersetzen, zurueckGehen } from '../app/router.svelte';
+  import { einstieg, ersetzen, route, zumEinstieg } from '../app/router.svelte';
+  import { einstiegText } from '../ui/einstieg';
   import { einmal } from '../ui/einmal';
   import { pruefcodeStand, pruefhinweise } from '../domain/pruefhinweise';
 
@@ -38,6 +39,7 @@
   import WischZeile from '../ui/WischZeile.svelte';
 
   import Zurueck from '../ui/Zurueck.svelte';
+  import { fassungUnlesbar } from '../app/unlesbar.svelte';
 
   let { personId, typId }: { personId: string; typId: string } = $props();
 
@@ -60,6 +62,10 @@
   );
   const buerge = $derived(stand?.rolle === 'buerge');
   const name = $derived(stand ? stand.person.rufname || stand.person.vorname : '');
+  // W39 (PC130 K8): „Zurück“ und „Fertig“ führen dorthin, wo die Unterlage geöffnet wurde (Mappe, Personenseite …);
+  // ohne Einstieg im Verlauf wie bisher zur Personenseite.
+  const ablauf = $derived(`/unterlage/${personId}/${typId}`);
+  const einstiegPfad = $derived((void route.pfad, einstieg(ablauf)));
   const basis = $derived(`/unterlage/${personId}/${typId}`);
 
   const neuesteZuerst = (a: DateiVersion, b: DateiVersion) =>
@@ -180,7 +186,13 @@
 </script>
 
 {#snippet versionKarte(v: DateiVersion, mitDatum: boolean, mitLoeschen: boolean)}
-  <div class="karte">
+  <div class="karte" class:unlesbar={fassungUnlesbar(v)}>
+    <!-- PC126 K5 (DP83 a): „Datei austauschen“ führt hierher; die Datei, die sich nicht öffnen ließ, ist markiert. -->
+    {#if fassungUnlesbar(v)}
+      <p class="nicht-oeffnen">
+        <span class="warnzeichen" aria-hidden="true">!</span>{t('unterlage.nichtOeffnen')}
+      </p>
+    {/if}
     <div class="seiten">
       <VersionSeiten version={v} />
       <p class="datei">
@@ -239,7 +251,13 @@
         <span class="tx">
           <b>{v.abrechnungsmonat ? monatJahr(v.abrechnungsmonat) : versionTitel(v)}</b>
           <small>
-            {#if drin}
+            {#if fassungUnlesbar(v)}
+              <span class="nicht-oeffnen"
+                ><span class="warnzeichen" aria-hidden="true">!</span>{t(
+                  'unterlage.nichtOeffnen',
+                )}</span
+              >
+            {:else if drin}
               {dateiZeile(v, zahlen[v.id])}
             {:else}
               {zahlen[v.id] ? t('unterlage.seitenZahl', { anzahl: zahlen[v.id]! }) + '. ' : ''}{t(
@@ -256,7 +274,13 @@
 
 <main class="seite person-ton" style={stand ? tonStil(stand.farbe) : undefined}>
   <div class="kopf">
-    <Zurueck href="#/person/{personId}" text={name || t('allgemein.zurueck')} />
+    <Zurueck
+      href="#{einstiegPfad ?? `/person/${personId}`}"
+      text={einstiegPfad
+        ? einstiegText(einstiegPfad, daten.ansicht)
+        : name || t('allgemein.zurueck')}
+      onclick={() => zumEinstieg(ablauf, `/person/${personId}`)}
+    />
   </div>
 
   {#if !stand || !u}
@@ -436,7 +460,7 @@
   {:else}
     <Aktionsleiste
       text={t('allgemein.fertig')}
-      onclick={() => zurueckGehen(`/person/${personId}`)}
+      onclick={() => zumEinstieg(ablauf, `/person/${personId}`)}
     />
   {/if}
 
@@ -580,6 +604,39 @@
     letter-spacing: 0.09em;
     text-transform: uppercase;
     color: var(--ink-muted);
+  }
+
+  .karte.unlesbar {
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
+
+  .nicht-oeffnen {
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 12px 14px 0;
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  small .nicht-oeffnen {
+    display: inline-flex;
+    padding: 0;
+  }
+
+  .warnzeichen {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--surface);
+    font-size: calc(11 * var(--px));
+    font-weight: 800;
+    line-height: 1;
   }
 
   .karte {

@@ -4,7 +4,8 @@
   // Inserat genau einmal unsichtbar und zeigt eine kleine Karte. Foto, Portal und Nummer, Titel, Eckdaten,
   // bis zu drei Abweichungen erst nach fertigem Lesen. „Ja, einlesen“ übernimmt nur, was hier gelesen
   // ist; gespeichert wird erst mit „Heft anlegen“. Zurück zur Vorschau lädt nichts neu.
-  // Fälle: lädt, Zeit um (8 s), nichts gelesen, kein Netz, Trefferliste, schon gemerkt (E56).
+  // Fälle: lädt, Trefferliste, schon gemerkt (E56) und die Fälle aus DP79 (E235): A weg, B gesperrt, C keine Eckdaten,
+  // D kein Netz am Gerät, F nicht geöffnet; E ist die normale Vorschau aus dem geteilten Text.
   import { onMount } from 'svelte';
   import { daten } from '../app/daten.svelte';
   import {
@@ -27,8 +28,10 @@
   import {
     entwurf,
     entwurfAusVorschau,
+    geteilterTextReicht,
     entwurfVergessen,
     hatEckdaten,
+    vorschauFall,
     vorschauStand,
     zurKontrolle,
   } from '../ui/neuesHeft.svelte';
@@ -63,6 +66,14 @@
     vorschauStand.link = link;
     vorschauStand.zustand = 'laden';
     vorschauStand.roh = null;
+    // PC118 (F8a): Sagt der geteilte Text schon alles, lädt Hefta die Seite nicht. Ein Abruf weniger.
+    if (geteilterTextReicht()) {
+      const ohneSeite: InseratGelesen = { zustand: 'ok' };
+      vorschauStand.roh = ohneSeite;
+      entwurfAusVorschau(ohneSeite, link);
+      vorschauStand.zustand = 'ok';
+      return;
+    }
     // PC19 A4: Ohne Netz kommt die Antwort sofort. Der Ladezustand steht trotzdem kurz da, damit man
     // sieht, dass es noch einmal versucht wurde; danach die Meldung neu, mit der Uhrzeit.
     const [g] = await Promise.all([
@@ -72,11 +83,21 @@
     vorschauStand.versuchtUm = new Date();
     if (vorschauStand.link !== link) return;
     vorschauStand.roh = g;
-    if (g.zustand === 'ok') {
+    // DP79 (E235), Abschnitt 2: „nicht mehr online“ nur, wenn die Seite es meldet (A: 404, 410).
+    let fall = vorschauFall(g);
+    if (fall === 'ok') {
       entwurfAusVorschau(g, link);
-      const nichtDa = (g.http ?? 200) >= 400 || !hatEckdaten(entwurf.angaben);
-      vorschauStand.zustand = nichtDa ? 'leer' : 'ok';
-    } else vorschauStand.zustand = g.zustand === 'fehler' ? 'leer' : g.zustand;
+      if (!hatEckdaten(entwurf.angaben)) fall = 'nichts';
+    }
+    // E (F8a): Ließ sich die Seite nicht lesen (B, C, D, F), trägt der geteilte Text, was er hat. Dann zählt nur er,
+    // damit „nur den geteilten Text gelesen“ stimmt; von einer gesperrten Seite kommt auch kein Titel. Meldet die
+    // Seite A, gilt A; „Trotzdem anlegen“ übernimmt dann die Angaben des geteilten Texts.
+    if (fall !== 'ok' && fall !== 'weg' && entwurf.geteilterText) {
+      entwurfAusVorschau({ zustand: 'fehler' }, link);
+      if (hatEckdaten(entwurf.angaben)) fall = 'ok';
+      else if (fall === 'nichts') entwurfAusVorschau(g, link);
+    }
+    vorschauStand.zustand = fall;
   }
 
   onMount(() => {
@@ -101,9 +122,19 @@
 
   const zustand = $derived(vorschauStand.link === link ? vorschauStand.zustand : 'laden');
 
-  /** Weiter mit dem, was gelesen ist; bei Zeit um oder leerem Lesen auch mit wenig. */
+  /** „Ja, einlesen“: weiter mit dem, was gelesen ist. */
   function weiter() {
     if (!entwurf.angaben) entwurfAusVorschau(vorschauStand.roh ?? { zustand: 'fehler' }, link);
+    zurKontrolle();
+  }
+
+  /**
+   * DP79: „Selbst ausfüllen“ und bei A „Trotzdem anlegen“: zur Kontrolle mit dem, was gelesen ist. Bei C kam die
+   * Seite an, ihr Titel und ihre Adresse bleiben; sonst zählt nur der geteilte Text, wenn es ihn gibt.
+   */
+  function selbstAusfuellen() {
+    const roh = vorschauStand.roh;
+    entwurfAusVorschau(zustand === 'nichts' && roh ? roh : { zustand: 'fehler' }, link);
     zurKontrolle();
   }
 
@@ -212,14 +243,18 @@
   const titel = $derived(
     entwurf.angaben ? heftTitel({ adresse: entwurf.adresse, angaben: entwurf.angaben }).text : '',
   );
+  /** E (DP79, Abschnitt 3): Die Angaben kommen nur aus dem geteilten Text. */
+  const nurGeteilt = $derived(zustand === 'ok' && entwurf.lesung === 'geteilt');
   const quelle = $derived(
     [
       portal,
-      entwurf.geteilt
-        ? t('vorschau.geteilt')
-        : nummer
-          ? `${t('vorschau.inserat')} ${nummer}`
-          : null,
+      nurGeteilt
+        ? t('vorschau.ausGeteiltemText')
+        : entwurf.geteilt
+          ? t('vorschau.geteilt')
+          : nummer
+            ? `${t('vorschau.inserat')} ${nummer}`
+            : null,
     ]
       .filter(Boolean)
       .join(' · '),
@@ -270,7 +305,7 @@
       {/if}
       <div class="t">
         {#if quelle}<p class="q">{quelle}</p>{/if}
-        <!-- Lange Wörter wie „Landungsbrücken!“ brechen nie mitten im Wort (Prüfkatalog C2). -->
+        <!-- Lange Wörter wie „Musterhafenbrücke!“ brechen nie mitten im Wort (Prüfkatalog C2). -->
         <h2 class="titel" use:passend={!entwurf.bild || alt ? STUFEN_OHNE_FOTO : STUFEN}>
           {alt ? heftTitel(alt).text : titel}
         </h2>
@@ -339,7 +374,11 @@
         >
       </div>
     {:else}
-      <p class="satz">{t(ihr ? 'vorschau.lesesatzIhr' : 'vorschau.lesesatzDu')}</p>
+      <p class="satz">
+        {nurGeteilt
+          ? t(ihr ? 'vorschau.teilsatzIhr' : 'vorschau.teilsatzDu')
+          : t(ihr ? 'vorschau.lesesatzIhr' : 'vorschau.lesesatzDu')}
+      </p>
       <div class="cta">
         <Hauptbutton text={t('vorschau.einlesen')} onclick={weiter} />
         <div class="reihe">
@@ -370,10 +409,7 @@
       <div class="bild leer"><Symbol name="wohnung" groesse={24} /></div>
       <div class="t">
         <p class="q"><span class="link">{kurz}</span></p>
-        {#if zustand === 'zeit'}
-          <p class="fh">{t('vorschau.zeitTitel')}</p>
-          <p class="fs">{t(ihr ? 'vorschau.zeitIhr' : 'vorschau.zeitDu')}</p>
-        {:else if zustand === 'netz'}
+        {#if zustand === 'netz'}
           <p class="fh">{t('vorschau.netzTitel')}</p>
           <p class="fs">{t(ihr ? 'vorschau.netzIhr' : 'vorschau.netzDu')}</p>
           {#if vorschauStand.versuchtUm}
@@ -389,21 +425,30 @@
         {:else if zustand === 'liste'}
           <p class="fh">{t('vorschau.listeTitel')}</p>
           <p class="fs">{t(ihr ? 'vorschau.listeIhr' : 'vorschau.listeDu')}</p>
+        {:else if zustand === 'weg'}
+          <!-- DP79 A: „nicht mehr online“ nur hier, weil die Seite es selbst meldet (W10). -->
+          <p class="fh">{t('vorschau.wegTitel')}</p>
+          <p class="fs">{t('vorschau.wegText')}</p>
+        {:else if zustand === 'gesperrt'}
+          <p class="fh">{t('vorschau.gesperrtTitel')}</p>
+          <p class="fs">{t(ihr ? 'vorschau.gesperrtIhr' : 'vorschau.gesperrtDu')}</p>
+        {:else if zustand === 'nichts'}
+          <p class="fh">{t('vorschau.nichtsTitel')}</p>
+          <p class="fs">{t(ihr ? 'vorschau.nichtsIhr' : 'vorschau.nichtsDu')}</p>
         {:else}
-          <p class="fh">{t('vorschau.leerTitel')}</p>
-          <p class="fs">{t('vorschau.leerText')}</p>
+          <p class="fh">{t('vorschau.offenTitel')}</p>
+          <p class="fs">{t(ihr ? 'vorschau.offenIhr' : 'vorschau.offenDu')}</p>
         {/if}
       </div>
     </div>
-    <div class="cta">
-      {#if zustand === 'zeit'}
-        <Hauptbutton text={t('vorschau.trotzdemEinlesen')} onclick={weiter} />
-      {:else if zustand === 'leer'}
-        <Hauptbutton text={t('vorschau.trotzdemAnlegen')} onclick={weiter} />
-      {:else if zustand === 'netz'}
-        <Hauptbutton text={t('vorschau.nochmal')} onclick={laden} />
-      {:else}
+    <!-- DP79: In den Fällen A bis D und F folgen die Knöpfe der Karte; bei 320 px mit 130 % steht der Satz darüber. -->
+    <div class="cta" class:folgt={zustand !== 'liste'}>
+      {#if zustand === 'weg' || zustand === 'liste'}
         <Hauptbutton text={t('vorschau.andererLink')} onclick={andererLink} />
+      {:else if zustand === 'gesperrt' || zustand === 'nichts'}
+        <Hauptbutton text={t('vorschau.selbstAusfuellen')} onclick={selbstAusfuellen} />
+      {:else}
+        <Hauptbutton text={t('vorschau.nochmal')} onclick={laden} />
       {/if}
       {#if zustand !== 'netz'}
         <button class="ganz" type="button" onclick={ganzeSeite}
@@ -423,9 +468,18 @@
           >{t('vorschau.ganzeSeite')}</button
         >
       {/if}
-      {#if zustand !== 'liste'}
+      {#if zustand === 'weg'}
+        <button class="zweit" type="button" onclick={selbstAusfuellen}
+          >{t('vorschau.trotzdemAnlegen')}</button
+        >
+      {:else if zustand === 'gesperrt' || zustand === 'nichts'}
         <button class="zweit" type="button" onclick={andererLink}
           >{t('vorschau.andererLink')}</button
+        >
+      {:else if zustand !== 'liste'}
+        <!-- D und F: Ohne Netz hilft ein anderer Link nicht; ein Heft lässt sich auch so anlegen. -->
+        <button class="zweit" type="button" onclick={selbstAusfuellen}
+          >{t('vorschau.selbstAusfuellen')}</button
         >
       {/if}
     </div>
@@ -468,8 +522,9 @@
     background: var(--surface);
   }
 
+  /* DP79 N1 (W5): Der Streifen ohne Foto ist Tinte, kein Rot. */
   .karte.ohnefoto {
-    border-left: 6px solid var(--accent);
+    border-left: 6px solid var(--ink);
     border-radius: 6px 18px 18px 6px;
   }
 
@@ -731,6 +786,10 @@
     padding: 16px var(--space-4) calc(env(safe-area-inset-bottom) + 16px);
     background: var(--ground);
     box-shadow: 0 -14px 14px -2px var(--ground);
+  }
+
+  .cta.folgt {
+    position: static;
   }
 
   .reihe {

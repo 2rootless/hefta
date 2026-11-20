@@ -1,5 +1,6 @@
 import type { DateiEintrag, Zeitpunkt } from '../domain/modell';
 import { neueUnterlagen } from '../domain/zeit';
+import { linksOhneZaehlmarken } from '../domain/zaehlmarken';
 import {
   BackupFehler,
   backupErstellen,
@@ -9,7 +10,7 @@ import {
 } from './backup';
 import { DATENORTE, SCHEMA_VERSION, datenMigrieren, type HeftaDb } from './db';
 import { teilbestand, zusammenfuehren } from './haushalte';
-import { dateiSpeichern } from './speicher';
+import { dateiSpeichern, telefoneUmsetzen } from './speicher';
 
 // Backup aller Angaben und Dateien (docs/07-speicher-backup-sicherheit.md).
 // Inhalt der Datei: manifest.json mit allen Angaben, danach jede Datei unter dateien/<id>.
@@ -146,6 +147,8 @@ export async function sicherungEinspielen(
   const m = await manifestLesen(leser);
   // Vor dem ersten Schreiben: Lassen sich die Angaben umrechnen, und ist jede Datei da?
   let daten = datenMigrieren(m.daten, m.schemaVersion);
+  // PC120: Auch aus eingespielten Heften fallen die Zählmarken im Link weg.
+  if (daten.hefte) daten = { ...daten, hefte: linksOhneZaehlmarken(daten.hefte) };
   if (m.dateien.some((d) => !leser.pfade.includes(`dateien/${d.id}`))) {
     throw new BackupFehler('beschaedigt');
   }
@@ -193,6 +196,8 @@ export async function sicherungEinspielen(
     }
     throw e;
   }
+  // E222 (DP77, Abschnitt 5): Nummern aus einem Backup von vor dem Land gleich umsetzen, wo es eindeutig geht.
+  await telefoneUmsetzen(db);
 
   const bestand = bestandZaehlen(daten);
   return {

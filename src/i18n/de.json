@@ -32,8 +32,8 @@
     "neinDanke": "Nein danke",
     "sendet": "Wird gesendet …",
     "mailZeile": {
-      "ihr": "Was fehlt euch? Schreibt uns an {adresse}.",
-      "du": "Was fehlt dir? Schreib uns an {adresse}."
+      "ihr": "Was fehlt euch? Schreibt an {adresse}.",
+      "du": "Was fehlt dir? Schreib an {adresse}."
     },
     "mailKnopf": "Mail schreiben",
     "mailHinweis": {
@@ -101,20 +101,20 @@
       "du": "Gerade keine Verbindung. Versuch es später noch einmal."
     },
     "mehr": {
-      "ihr": "Mehr zu sagen? Schreibt uns.",
-      "du": "Mehr zu sagen? Schreib uns."
+      "ihr": "Mehr zu sagen? Schreibt an {adresse}.",
+      "du": "Mehr zu sagen? Schreib an {adresse}."
     },
     "nichtMehr": "Nicht mehr fragen",
     "seite": {
       "titel": "Rückmeldung",
       "kurzeFragen": "{Zahl} kurze Fragen",
       "satz": {
-        "ihr": "Mit „Abschicken“ geht nur eure Antwort an uns: ohne Namen und ohne Daten aus {app}.",
-        "du": "Mit „Abschicken“ geht nur deine Antwort an uns: ohne Namen und ohne Daten aus {app}."
+        "ihr": "Mit „Abschicken“ geht nur eure Antwort an {app}: ohne Namen und ohne Daten aus {app}.",
+        "du": "Mit „Abschicken“ geht nur deine Antwort an {app}: ohne Namen und ohne Daten aus {app}."
       },
       "anderes": {
-        "ihr": "Etwas anderes? Schreibt uns.",
-        "du": "Etwas anderes? Schreib uns."
+        "ihr": "Etwas anderes? Schreibt an {adresse}.",
+        "du": "Etwas anderes? Schreib an {adresse}."
       },
       "zurueck": "Zurück zu {app}",
       "recht": "Impressum und Datenschutz",
@@ -145,6 +145,7 @@
     "pruefen": "prüfen",
     "pruefenAnsage": "prüfen: {kurz}",
     "da": "da",
+    "nichtOeffnen": "eine Datei lässt sich nicht öffnen",
     "teilen": "Mappe teilen",
     "trotzdemTeilen": "Mappe trotzdem teilen"
   },
@@ -153,8 +154,8 @@
       "titel": "Willkommen."
     },
     "hallo": "Hallo {name}.",
-    "nachnameFehlt": "Nachname von {name} fehlt",
-    "nachnameWozu": "Für Deckblatt und Selbstauskunft",
+    "nachnameOffen": "Nachname von {name}",
+    "nachnameWozu": "Für Deckblatt und Selbstauskunft. Hat {name} keinen, reicht ein Haken.",
     "offenIhr": {
       "one": "Noch ein Ding, dann seid ihr startklar.",
       "other": "Noch {zahl} Dinge, dann seid ihr startklar."
@@ -213,7 +214,9 @@
     "haushaltBearbeiten": "Haushalt bearbeiten",
     "haushaltZeile": "Haushalt bearbeiten: {liste}",
     "pruefen": "{unterlage} prüfen",
-    "pruefenAnsage": "{unterlage}. {grund}."
+    "pruefenAnsage": "{unterlage}. {grund}.",
+    "telefonPruefen": "Telefonnummer von {name} prüfen",
+    "telefonSoSteht": "So steht sie da: „{nummer}“. Bis dahin steht sie nicht in der Mappe."
   },
   "backupZeile": {
     "nie": "Noch kein Backup",
@@ -252,7 +255,7 @@
       "weiterePersonHinweis": "Falls noch jemand unterschreibt",
       "buerge": "Bürge hinzufügen",
       "buergeWeiterer": "Weiteren Bürgen hinzufügen",
-      "buergeHinweis": "Nur nötig, wenn das Einkommen knapp ist",
+      "buergeHinweis": "Hilft, wenn das Einkommen knapp ist",
       "anlegen": "Haushalt anlegen",
       "fertig": "Fertig",
       "herausgenommen": "Herausgenommen",
@@ -356,13 +359,9 @@
     "lizenz": "Freie Software",
     "lizenzWert": "{app} steht unter der AGPL-3.0, die Schrift Archivo unter der OFL-1.1. Die Postleitzahlen für die Luftlinie stammen von GeoNames (geonames.org) unter CC BY 4.0. Alle Lizenztexte liegen der App als lizenzen.txt bei. Der Quellcode steht offen auf GitHub.",
     "quellcode": "Quellcode ansehen",
-    "rueckmeldung": {
-      "ihr": "Was fehlt euch? Schreibt uns.",
-      "du": "Was fehlt dir? Schreib uns."
-    },
+    "rueckmeldung": "Rückmeldung geben",
     "rueckmeldungBetreff": "Rückmeldung zu {app}",
     "ueber": "Über {app}",
-    "rueckmeldung": "Rückmeldung geben",
     "rueckmeldungUnter": "Freiwillig, {Zahl} kurze Fragen",
     "rueckmeldungDanke": "Danke, beantwortet am {datum}",
     "mehrereGeraete": {
@@ -662,6 +661,7 @@
     "uebersicht": "Übersicht"
   },
   "unterlage": {
+    "nichtOeffnen": "Diese Datei kann {app} nicht öffnen.",
     "satzNichtMehr": "Gespeichert. Wird nicht mehr gebraucht, kommt nicht in die Mappe.",
     "satzGespeichert": "Gespeichert. Kommt nicht in die Mappe.",
     "satzNichtDrin": "Noch nicht gespeichert. Kommt nicht in die Mappe.",
@@ -890,6 +890,10 @@
     "rolle": "Rolle",
     "rolleSatz": {
       "hauptmieter": "Erste Person im Mietvertrag.",
+      "hauptmieterRaus": {
+        "ihr": "Zum Herausnehmen wählt zuerst „Bürgschaft“. Dann steht „Aus diesem Haushalt nehmen“ darunter.",
+        "du": "Zum Herausnehmen wähl zuerst „Bürgschaft“. Dann steht „Aus diesem Haushalt nehmen“ darunter."
+      },
       "mitmieter": "Steht mit im Mietvertrag.",
       "buerge": {
         "ihr": "Bürgt für euch, zieht nicht ein.",
@@ -898,7 +902,11 @@
     },
     "ausHaushaltNehmen": "Aus diesem Haushalt nehmen",
     "ganzLoeschenLink": "{name} ganz löschen",
-    "zurueck": "Zurück"
+    "zurueck": "Zurück",
+    "ohneNachname": "{name} hat keinen Nachnamen",
+    "ohneNachnameOhneName": "Hat keinen Nachnamen",
+    "ohneNachnameSatz": "Dann fragt {app} nicht mehr danach.",
+    "keinNachname": "kein Nachname"
   },
   "rutsch": {
     "bandSatz": "Schritt {schritt} von {gesamt}: {unterlage} für {name}",
@@ -1044,7 +1052,10 @@
     "antwortEntfernen": "Antwort entfernen",
     "speichern": "Speichern",
     "grund": "Es fehlt noch: {liste}.",
-    "grundZahl": "Noch {anzahl} Teile.",
+    "grundZahl": {
+      "one": "Noch ein Teil.",
+      "other": "Noch {anzahl} Teile."
+    },
     "fehlt": {
       "kontakt": "Kontakt",
       "nettoeinkommen": "Einkommen",
@@ -1187,6 +1198,8 @@
     "titel": "Mappe teilen",
     "leadIhr": "Ein PDF mit Deckblatt und Lesehilfe. Ihr schickt es, wohin ihr wollt.",
     "leadDu": "Ein PDF mit Deckblatt und Lesehilfe. Du schickst es, wohin du willst.",
+    "leadEinzeln": "Eine Datei je Unterlage, ohne Deckblatt.",
+    "ausgabeZeile": "Ausgabe: Einzeldateien",
     "alsPdfTeilen": "Als PDF teilen",
     "deckblattAendern": "Deckblatt ändern",
     "fuerBeide": "für beide",
@@ -1209,9 +1222,16 @@
       "other": "{Wort} Dateien fehlen in der Mappe"
     },
     "dateiFehltUnter": {
-      "ihr": "Ladet sie noch einmal hoch. Teilen geht trotzdem.",
-      "du": "Lad sie noch einmal hoch. Teilen geht trotzdem."
+      "ihr": "Ladet sie noch einmal hoch.",
+      "du": "Lad sie noch einmal hoch."
     },
+    "nichtOeffnen": "Eine Datei in „{unterlage}“ von {name} kann {app} nicht öffnen.",
+    "nichtOeffnenText": {
+      "ihr": "Tauscht die Datei aus oder lasst die Unterlage diesmal weg.",
+      "du": "Tausch die Datei aus oder lass die Unterlage diesmal weg."
+    },
+    "dateiAustauschen": "Datei austauschen",
+    "diesmalWeglassen": "Diesmal weglassen",
     "vorherLatein": "Teilen geht erst, wenn der Name eingetragen ist.",
     "auswahlStand": "{rolle} · {dabei} von {von} dabei",
     "satzEuer": "Euer Satz",
@@ -1395,7 +1415,7 @@
       }
     },
     "vorherGeht": "Die Mappe geht trotzdem.",
-    "vorherUnlesbar": "Lässt sich nicht lesen",
+    "vorherUnlesbar": "eine Datei lässt sich nicht öffnen",
     "vorherZeichen": "Ein paar Zeichen kann die Mappe nicht schreiben, dort steht ein Fragezeichen.",
     "aussehen": {
       "schrift": "Schrift",
@@ -1938,7 +1958,7 @@
     "vorschlagMailDu": "Am {tag} hast du die Mail mit der Mappe geöffnet. Ob sie hinausging, erfährt {app} nicht.",
     "nochNicht": "Noch nicht",
     "ort": "Heft",
-    "nameAendern": "Name der Wohnung ändern",
+    "nameAendern": "Name ändern",
     "zumInserat": "Zum Inserat ↗",
     "eckWarm": "{betrag} warm · {zimmer} Zi · {flaeche} m²",
     "fotoAlt": "Foto aus dem Inserat",
@@ -1950,19 +1970,17 @@
   },
   "merkmal": {
     "zurueck": "Heft",
-    "titelIhr": "Name der Wohnung",
-    "titelDu": "Name der Wohnung",
-    "sub": "Das Merkmal steht in der Übersicht ganz oben, die Adresse darunter im Heft.",
+    "titelIhr": "Name",
+    "titelDu": "Name",
+    "sub": "Der Name steht in der Übersicht ganz oben, die Adresse darunter im Heft.",
     "feld": "Name",
     "zaehler": "{n} von 40",
     "zuLang": "Etwas kürzer, dann passt er in die Übersicht.",
     "einsetzen": "Einsetzen",
     "ausInserat": "Aus dem Inserat",
     "wiederherstellen": "Vorschlag von {app} wiederherstellen",
-    "keinVorschlagIhr": "Das Inserat gibt kein Merkmal her, das sie von den anderen unterscheidet. Bis ihr eins eintragt, steht {oben} oben.",
-    "keinVorschlagDu": "Das Inserat gibt kein Merkmal her, das sie von den anderen unterscheidet. Bis du eins einträgst, steht {oben} oben.",
-    "ohneTextIhr": "Ohne den Text des Inserats schlägt {app} kein Merkmal vor. Bis ihr eins eintragt, steht {oben} oben.",
-    "ohneTextDu": "Ohne den Text des Inserats schlägt {app} kein Merkmal vor. Bis du eins einträgst, steht {oben} oben.",
+    "bisNameIhr": "Bis ihr einen Namen eintragt, steht {oben} oben.",
+    "bisNameDu": "Bis du einen Namen einträgst, steht {oben} oben.",
     "dieStrasse": "die Straße",
     "uebernehmen": "Übernehmen"
   },
@@ -2044,7 +2062,18 @@
     "strasse": "Straße und Hausnummer",
     "plzOrt": "Postleitzahl und Ort",
     "eintragen": "Eintragen",
-    "nichtAngegeben": "nicht angegeben",
+    "quelleGeteilt": "Gelesen aus dem geteilten Text.",
+    "adresseGeteilt": "Im geteilten Text fand {app} keine Adresse. Sie kommt in Betreff und Deckblatt.",
+    "adresseInserat": "Im Inserat fand {app} keine Adresse. Sie kommt in Betreff und Deckblatt.",
+    "adresseNichts": "Die Adresse kommt in Betreff und Deckblatt.",
+    "adresseMehrereInserat": "Im Inserat fand {app} mehrere Adressen. Die richtige kommt in Betreff und Deckblatt.",
+    "adresseMehrereGeteilt": "Im geteilten Text fand {app} mehrere Adressen. Die richtige kommt in Betreff und Deckblatt.",
+    "adresseEintragen": "Adresse eintragen",
+    "nichtGefunden": "nicht gefunden",
+    "tippEintragenIhr": "Tippt auf eine Angabe, um sie einzutragen.",
+    "tippEintragenDu": "Tipp auf eine Angabe, um sie einzutragen.",
+    "geteiltWar": "Im geteilten Text: {wert}",
+    "geteiltFehlt": "Im geteilten Text: nicht gefunden",
     "ca": "ca.",
     "sofort": "sofort",
     "befristet": "befristet",
@@ -2101,12 +2130,21 @@
     "andererLink": "Anderer Link",
     "ganzeSeite": "Ganze Seite ansehen",
     "laedt": "{app} öffnet das Inserat …",
-    "zeitTitel": "Vorschau ging nicht.",
-    "zeitIhr": "Das Inserat hat zu lange gebraucht. Ihr könnt es trotzdem einlesen oder die ganze Seite ansehen.",
-    "zeitDu": "Das Inserat hat zu lange gebraucht. Du kannst es trotzdem einlesen oder die ganze Seite ansehen.",
-    "trotzdemEinlesen": "Trotzdem einlesen",
-    "leerTitel": "{app} konnte nichts lesen.",
-    "leerText": "Vielleicht ist das Inserat nicht mehr online.",
+    "wegTitel": "Das Inserat ist nicht mehr online.",
+    "wegText": "Die Seite meldet, dass es das Inserat nicht mehr gibt.",
+    "gesperrtTitel": "Die Seite lässt {app} nicht lesen.",
+    "gesperrtIhr": "Ob das Inserat noch online ist, sagt das nicht. Die Angaben könnt ihr selbst eintragen.",
+    "gesperrtDu": "Ob das Inserat noch online ist, sagt das nicht. Die Angaben kannst du selbst eintragen.",
+    "nichtsTitel": "{app} hat keine Eckdaten gefunden.",
+    "nichtsIhr": "Miete, Zimmer und Fläche könnt ihr selbst eintragen.",
+    "nichtsDu": "Miete, Zimmer und Fläche kannst du selbst eintragen.",
+    "offenTitel": "{app} konnte die Seite gerade nicht öffnen.",
+    "offenIhr": "Ob das Inserat noch online ist, sagt das nicht. Versucht es gleich noch einmal.",
+    "offenDu": "Ob das Inserat noch online ist, sagt das nicht. Versuch es gleich noch einmal.",
+    "selbstAusfuellen": "Selbst ausfüllen",
+    "ausGeteiltemText": "aus dem geteilten Text",
+    "teilsatzIhr": "{app} hat nur den geteilten Text gelesen, nicht die Seite. Gespeichert wird erst, was ihr gleich bestätigt.",
+    "teilsatzDu": "{app} hat nur den geteilten Text gelesen, nicht die Seite. Gespeichert wird erst, was du gleich bestätigst.",
     "trotzdemAnlegen": "Trotzdem anlegen",
     "netzTitel": "Gerade kein Netz.",
     "netzIhr": "{app} hat das Inserat noch nicht geöffnet. Versucht es gleich noch einmal.",
@@ -2394,6 +2432,7 @@
       "du": "Die Mappe ließ sich nicht zusammenlegen. Versuch es noch einmal."
     },
     "mailOeffnen": "Mail mit Mappe öffnen",
+    "mappeLadenMailOeffnen": "Mappe laden und Mail öffnen",
     "textKopieren": "Text kopieren",
     "mappeTeilen": "Mappe teilen",
     "websiteOeffnen": "Website öffnen",
@@ -2602,6 +2641,32 @@
   },
   "personAendern": {
     "inDerMappe": "In der Mappe:"
+  },
+  "telefon": {
+    "landKnopf": "Land der Nummer: {land}",
+    "blattTitel": "Land der Nummer",
+    "suche": "Land oder Vorwahl suchen",
+    "oft": "Oft gewählt",
+    "alle": "Alle Länder",
+    "einLand": "1 Land",
+    "laender": "{zahl} Länder",
+    "keinLand": "Kein Land gefunden. Gesucht wird nach Name oder Vorwahl.",
+    "zeile": "{land}, {vorwahl}",
+    "zeileGewaehlt": "{land}, {vorwahl}, ausgewählt",
+    "plus": "plus ",
+    "wirdZu": "Wird zu {nummer}.",
+    "umgestellt": "Das Land hat {app} nach der Vorwahl {vorwahl} gestellt.",
+    "fehlerVorspann": "Fehler: ",
+    "fehler": {
+      "buchstaben": "In der Nummer stehen Buchstaben. Möglich sind nur Ziffern.",
+      "durchwahlIhr": "Eine Durchwahl („-12“) kann {app} nicht übernehmen. Tragt die Nummer ohne sie ein.",
+      "durchwahlDu": "Eine Durchwahl („-12“) kann {app} nicht übernehmen. Trag die Nummer ohne sie ein.",
+      "vorwahl": "Die Vorwahl fehlt. In Deutschland beginnt sie mit 0.",
+      "kurz": "Die Nummer ist zu kurz. Fehlt eine Ziffer?",
+      "lang": "Die Nummer ist zu lang. Steht eine Ziffer doppelt?",
+      "land": "Mit {vorwahl} ergibt das keine gültige Nummer. Stimmt das Land?",
+      "unbekannt": "Die Ländervorwahl {vorwahl} gibt es nicht."
+    }
   },
   "probe": {
     "eingang": "Probe: Vision gegen Tesseract",

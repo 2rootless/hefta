@@ -254,3 +254,44 @@ html {
     border-radius: 16px;
   }
 }
+/* Übersicht der Beiträge unter /ratgeber/ (E59): je Beitrag eine Karte mit Titel und einem Satz. */
+.rg-uebersicht {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.rg-uebersicht li + li {
+  margin-top: 12px;
+}
+.rg-beitrag {
+  display: block;
+  padding: 20px 24px;
+  border-radius: 18px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+}
+.rg-beitrag b {
+  display: block;
+  font-size: 19px;
+  line-height: 25px;
+  font-weight: 750;
+}
+.rg-beitrag span {
+  display: block;
+  margin-top: 6px;
+  color: var(--vs-muted);
+  line-height: 22px;
+}
+.rg-beitrag:hover b,
+.rg-beitrag:focus-visible b {
+  text-decoration: underline;
+}
+/* Impressum auf eigener Seite (Landingpage, Planung 13e): Bei 320 px mit 130 % bricht sonst
+   „Kontaktmöglichkeiten“ mitten im Wort. Der Text des Generators bleibt, wie er ist. */
+@media (max-width: 340px) {
+  .ds h2 {
+    font-size: 18px;
+    font-stretch: 100%;
+  }
+}

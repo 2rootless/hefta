@@ -11,8 +11,19 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* DP70 K1-1 (WCAG 2.4.11, 2.0.1): Ein fokussiertes Element rollt nie unter die festen Leisten unten. Ihre Höhen
+     stehen als --tabs-hoehe (TabLeiste) und --leiste-hoehe (Aktionsleiste) an der Wurzel; oben steht keine Leiste. */
+  scroll-padding-bottom: calc(var(--tabs-hoehe, 0px) + var(--leiste-hoehe, 0px) + 8px);
   /* Auch hinter der Seite die Grundfarbe, etwa beim Überziehen über die Tastatur hinaus. */
   background: var(--ground);
+}
+
+/* DP70 K1-2: Bei niedrigem Fenster steht die Aktionsleiste nicht fest (Aktionsleiste.svelte); kein Platz dafür frei.
+   Mit !important, denn die Höhe steht als Stil direkt an der Wurzel. */
+@media (max-height: 500px) {
+  :root {
+    --leiste-hoehe: 0px !important;
+  }
 }
 
 body {
@@ -295,6 +306,11 @@ input[type='month']::-webkit-date-and-time-value {
   display: inline-flex;
   align-items: center;
   min-height: var(--tap-target);
+  /* DP70 K1-3 (2.0.1): Bei 200 % Zoom darf eine Wahl wie „Gehaltsabrechnung“ umbrechen statt überzustehen. */
+  max-width: 100%;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  overflow-wrap: anywhere;
   padding: 0 var(--space-5);
   border: 0;
   border-radius: var(--radius-full);

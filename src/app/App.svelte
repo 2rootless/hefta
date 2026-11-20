@@ -19,6 +19,7 @@
   import { anrede, anredeFuer } from '../i18n/anrede.svelte';
   import { linkWegDa } from './plattform';
   import { wechselArt, wechselEnde } from '../ui/wechsel';
+  import { stelleNachsetzen } from '../ui/scrollMerken';
 
   // Der Technik-Test (M0-Spike) wird nur bei Bedarf geladen, damit PDF.js nicht im Start-Bundle steckt.
   const technikTest = () => import('../spike/TechnikTest.svelte');
@@ -71,6 +72,30 @@
       (typeof einstellungen)[keyof typeof einstellungen] | undefined,
   );
 
+  /**
+   * K14 (W8, PC139): Personenseite, Selbstauskunft und Unterlage blieben beim ersten Öffnen 3 bis 5 Bilder lang
+   * leer, weil sie erst dann geladen wurden. Kurz nach dem Start lädt Hefta sie im Leerlauf vor. Sie liegen in
+   * der App, es geht nichts ins Netz. Browsertests schalten das mit `__heftaOhneVorladen` ab (Gegenprobe).
+   */
+  function seitenVorladen(): number {
+    const fenster = window as unknown as {
+      __heftaOhneVorladen?: boolean;
+      requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number;
+    };
+    if (fenster.__heftaOhneVorladen) return 0;
+    const laden = () => {
+      for (const s of [seiten.person, seiten.auskunft, seiten.unterlage]) s().catch(() => {});
+    };
+    // Safari kennt requestIdleCallback nicht; dort genügt eine kurze Pause nach dem Start.
+    return window.setTimeout(
+      () =>
+        fenster.requestIdleCallback
+          ? fenster.requestIdleCallback(laden, { timeout: 1000 })
+          : laden(),
+      300,
+    );
+  }
+
   onMount(() => {
     // Schlägt das Laden fehl, zeigt `Stoerung` den Grund; hier nichts weiter tun.
     neuLaden().catch(() => {});
@@ -80,9 +105,11 @@
     document.addEventListener('visibilitychange', zurueck);
     // Ein Fehler kann an der Verbindung zum Speicher liegen: prüfen und bei Bedarf neu verbinden.
     const aufhoeren = fehlerBeobachten(() => void verbindungPruefen());
+    const vorladenZeit = seitenVorladen();
     return () => {
       document.removeEventListener('visibilitychange', zurueck);
       aufhoeren();
+      window.clearTimeout(vorladenZeit);
     };
   });
 
@@ -128,12 +155,13 @@
     route.pfad.match(/^\/person-neu\/(mitmieter|buerge)(\/einrichtung)?$/),
   );
   const personAendern = $derived(
-    route.pfad.match(/^\/person-aendern\/([\w-]+)(\/einrichtung|\/person|\/mappe)?$/),
+    route.pfad.match(/^\/person-aendern\/([\w-]+)(\/einrichtung|\/person|\/mappe|\/nachname)?$/),
   );
   function zurueckZu(zusatz: string | undefined, id?: string): string {
     if (zusatz === '/einrichtung') return '/einrichtung/2';
     if (zusatz === '/person' && id) return `/person/${id}`;
-    if (zusatz === '/mappe') return '/';
+    // DP74 C3: „/nachname“ kommt vom offenen Punkt im Überblick und geht dorthin zurück.
+    if (zusatz === '/mappe' || zusatz === '/nachname') return '/';
     return '/haushalt';
   }
 
@@ -173,15 +201,7 @@
     // Zurück an die Stelle, an der man war. Die Seite baut sich erst auf: so lange nachsetzen.
     const ziel = untrack(() => route.scrollZiel);
     // PC29 (A2): gleich an die alte Stelle, nicht erst nach oben und ein Bild später zurück.
-    window.scrollTo(0, ziel);
-    if (ziel && Math.abs(window.scrollY - ziel) > 1) {
-      let runden = 0;
-      const nachsetzen = () => {
-        window.scrollTo(0, ziel);
-        if (Math.abs(window.scrollY - ziel) > 1 && ++runden < 40) requestAnimationFrame(nachsetzen);
-      };
-      requestAnimationFrame(nachsetzen);
-    }
+    stelleNachsetzen(ziel);
     if (ersterBildschirm) {
       ersterBildschirm = false;
       return;
@@ -321,6 +341,7 @@
           <m.default
             personId={personAendern[1]}
             zurueckZu={zurueckZu(personAendern[2], personAendern[1])}
+            ziel={personAendern[2] === '/nachname' ? 'ueber' : null}
           />
         {/await}
       {/key}

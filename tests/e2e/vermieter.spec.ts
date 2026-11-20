@@ -13,6 +13,7 @@ import {
   M5,
   M6,
   M7,
+  M8,
   NB,
   pdf,
   type Datei,
@@ -164,13 +165,13 @@ test('Lesehilfe passt nicht: gar nicht zeigen. Neuere Fassung: zeigen, was die S
     await pdf({ ...M2, datei: 'Fremd.pdf', ersteSeite: 'Ganz andere Leute' }),
     await pdf(M5),
     await pdf(M3),
-    // Eine ältere Fassung ist keine neuere (Fehler vom 6.11.2026).
+    // Fassung 1 mit anderer Kennung ist keine neuere Fassung (Fehler vom 6.11.2026).
     await pdf({
       ...M1,
       datei: 'Bewerbung_Mustermann_Fassung_2.pdf',
       anhang: {
         ...M1.anhang,
-        hefta: 2,
+        hefta: 1,
         bewerbung: {
           ...(M1.anhang?.bewerbung as Record<string, unknown>),
           kennung: '6f1c2b9e-4d7a-4c1e-9b2f-3a5d8e7c1f40',
@@ -210,22 +211,26 @@ test('Fassung der echten App: Die Mappe aus Hefta wird gelesen', async ({ page }
   await expect(haupt(page)).toContainText('Beispielstraße 1');
 });
 
-// E60: Seit dem Start von Version 1 im Store gibt es Mappen bei Fremden. Diese Mappe hat der Code von
-// Version 1 gebaut (Stand 31e7436, Lesehilfe Fassung 3, scripts/muster-mappen.mjs). Sie wird nie neu
-// erzeugt; für jede neue Fassung kommt eine eigene dazu, und alle müssen lesbar bleiben.
-test('Mappe aus Version 1 (E60): Die Lesehilfe passt und wird ganz gezeigt', async ({ page }) => {
+// PC107 (E216): Die Mappe aus Version 1 (Stand 31e7436, Lesehilfe in alter Form, scripts/muster-mappen.mjs) öffnet
+// wie eine Mappe ohne Lesehilfe: ohne Fehlermeldung und ohne Hinweis auf alte Fassungen. Gegenprobe: Würde die
+// Lesehilfe gelesen, stünde die Rolle („Hauptmietpartei“) da, und der Test würde rot.
+test('Mappe aus Version 1 (PC107, K3): öffnet ohne Lesehilfe, ohne Fehlermeldung, mit dem Satz aus K3', async ({
+  page,
+}) => {
   await page.goto('/');
   await laden(page, 'tests/fixtures/mappe/version1-familie.pdf');
   await expect(page.locator('.vs-row')).toHaveCount(1);
-  await expect(page.locator('.vs-rt')).toContainText('Max und Lea Mustermann');
+  await expect(page.locator('.vs-row')).not.toContainText('passt nicht');
   const d = haupt(page);
+  // PC126 K3 (2.0.1): Die alte Form liegt bei, lässt sich aber nicht lesen; „keine Lesehilfe“ stimmte nicht (W10).
+  // Weiter ohne Fehlermeldung und ohne Hinweis auf alte Fassungen (PC107).
+  await expect(d).toContainText('Die Lesehilfe dieser Mappe lässt sich nicht lesen');
+  await expect(d).not.toContainText('keine Lesehilfe');
   const text = (await d.innerText()).replaceAll('­', '');
-  expect(text).toContain('Hauptmietpartei');
-  expect(text).toContain('Hefta prüft sie nicht');
-  expect(text).toContain('Bitte der Bewerber');
-  await expect(d.getByRole('button', { name: 'Deckblatt mit Kontakt ansehen' })).toBeVisible();
-  await d.getByRole('button', { name: 'Deckblatt mit Kontakt ansehen' }).click();
-  await expect(page.getByRole('heading', { name: /Seite 1 von \d+/ })).toBeVisible();
+  expect(text).not.toContain('Hauptmietpartei');
+  expect(text).not.toContain('passt nicht');
+  expect(text).not.toContain('Fassung 3');
+  await expect(d.locator('.vs-was')).toHaveCount(0);
 });
 
 test('Hineinziehen: Die ganze Seite nimmt an und zeigt es', async ({ page }) => {
@@ -294,7 +299,7 @@ test('Für den Vertrag anfordern: Mail mit Zusage, Kopieren, Link mit Empfänger
   await expect(page.getByRole('button', { name: 'Mappe öffnen' })).toBeVisible();
 });
 
-test('Absagen: Mail ohne Grund, Wahl „Schon gelöscht“ oder „Lösche ich später“ (VS10, VS16)', async ({
+test('Absagen: Mail ohne Grund, Wahl „Schon gelöscht“ oder „Lösche ich später“, nichts vorgewählt (VS10, VS16, PC81 B9 QA11)', async ({
   page,
   context,
   browserName,
@@ -308,7 +313,9 @@ test('Absagen: Mail ohne Grund, Wahl „Schon gelöscht“ oder „Lösche ich s
   const mail = page.locator('.vs-abs .vs-mt');
   await expect(mail).toContainText('Guten Tag Max Mustermann und Lea Mustermann,');
   await expect(mail).toContainText('ist vergeben.');
-  await expect(mail).toContainText('Wir haben Ihre Unterlagen gelöscht, wie Sie es sich gewünscht');
+  // PC81 B9 (QA11): Ohne Wahl steht „gelöscht“ nirgends in der Mail, nur der Satz von „Lösche ich später“.
+  await expect(mail).toContainText('spätestens nach sechs Monaten');
+  await expect(mail).not.toContainText('gelöscht');
   await expect(mail).not.toContainText('Petra');
   await expect(page.locator('.vs-abs .vs-bitte')).toContainText('Bitte der Bewerber');
   await expect(page.locator('.vs-abs textarea, .vs-abs input')).toHaveCount(0);
@@ -317,7 +324,15 @@ test('Absagen: Mail ohne Grund, Wahl „Schon gelöscht“ oder „Lösche ich s
   const gruppe = page.getByRole('radiogroup', { name: 'Unterlagen' });
   const schon = gruppe.getByRole('radio', { name: 'Schon gelöscht' });
   const spaeter = gruppe.getByRole('radio', { name: 'Lösche ich später' });
+  // Nichts ist vorgewählt; der erste Knopf ist per Tab erreichbar.
+  await expect(schon).toHaveAttribute('aria-checked', 'false');
+  await expect(spaeter).toHaveAttribute('aria-checked', 'false');
+  await expect(schon).toHaveAttribute('tabindex', '0');
+  await expect(spaeter).toHaveAttribute('tabindex', '-1');
+  // Gegenprobe: Erst die eigene Wahl „Schon gelöscht“ bringt „gelöscht“ in die Mail.
+  await schon.click();
   await expect(schon).toHaveAttribute('aria-checked', 'true');
+  await expect(mail).toContainText('Wir haben Ihre Unterlagen gelöscht, wie Sie es sich gewünscht');
   await spaeter.click();
   await expect(spaeter).toHaveAttribute('aria-checked', 'true');
   await expect(mail).toContainText('spätestens nach sechs Monaten');
@@ -346,6 +361,9 @@ test('Absagen: Mail ohne Grund, Wahl „Schon gelöscht“ oder „Lösche ich s
   // Ohne Bitte in der Mappe: kein „wie Sie es sich gewünscht haben“.
   await page.evaluate(() => (window.location.hash = '#/mappe/2/absagen'));
   await expect(mail).toContainText('Guten Tag Olena Kovalenko,');
+  // PC81 B9: Auch hier ist nichts vorgewählt; erst die Wahl bringt „gelöscht“.
+  await expect(mail).not.toContainText('gelöscht');
+  await gruppe.getByRole('radio', { name: 'Schon gelöscht' }).click();
   await expect(mail).toContainText('Wir haben Ihre Unterlagen gelöscht. Haben');
   await expect(page.locator('.vs-abs .vs-bitte')).toHaveCount(0);
 });
@@ -441,4 +459,99 @@ test('Eine Mappe aus der Liste nehmen: nur diese, die nächste rückt nach (Wuns
   await expect(page.locator('.vs-row').first()).toContainText('Olena Kovalenko');
   await expect(page.locator('.vs-row')).not.toContainText(['Max und Lea Mustermann']);
   await expect(page.locator('.vs-nr')).toHaveText(['1', '2']);
+});
+
+test('Export als CSV (PC100, PC107): Fassung 1 dabei, alte Form nicht; Hinweis zum Löschen; nichts geht hinaus', async ({
+  page,
+}) => {
+  const fremd: string[] = [];
+  page.on('request', (r) => {
+    if (
+      !r.url().startsWith('http://localhost:4174') &&
+      !r.url().startsWith('blob:') &&
+      !r.url().startsWith('data:')
+    )
+      fremd.push(r.url());
+  });
+  await page.goto('/');
+  // Eine Lesehilfe in alter Form (Version 1) ist keine Lesehilfe; Seite 1 trägt den Namen.
+  const ALT = {
+    ...M1,
+    datei: 'Bewerbung_Mustermann_alt.pdf',
+    ersteSeite: 'Max Mustermann',
+    anhang: {
+      hefta: 3,
+      erstellt: '2026-11-06',
+      bewerbung: { kennung: 'd2e0f734-0b59-41ea-95f4-c9715acbe034', wohnung: null },
+      haushalt: { personen: [{ name: 'Max Mustermann', rolle: 'hauptmieter' }], mitziehende: [] },
+      unterlagen: [],
+      seitenzahl: M1.seiten,
+    },
+  };
+  await laden(page, await pdf(M8), await pdf(ALT));
+  const bereich = page.getByRole('region', { name: 'Für Ihre Software exportieren' });
+  await expect(bereich).toContainText('CSV für Tabellen und Software.');
+  await expect(bereich).toContainText('Dabei sind 1 von 2 Mappen.');
+  await expect(bereich).toContainText('Nicht dabei: Mappe 2 (ohne passende Lesehilfe).');
+  await expect(bereich).not.toContainText('vor Hefta');
+  await expect(bereich).toContainText(
+    'Die Datei enthält Namen und Kontaktdaten. Löschen Sie sie mit der Mappe, wenn die Wohnung vergeben ist.',
+  );
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    bereich.getByRole('button', { name: 'Für Ihre Software exportieren' }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^hefta-export-\d{4}-\d{2}-\d{2}\.csv$/);
+  const bytes = readFileSync((await download.path())!);
+  expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+  const zeilen = bytes.subarray(3).toString('utf8').split('\r\n').filter(Boolean);
+  expect(zeilen).toHaveLength(4);
+  expect(zeilen[0]!.startsWith('kennung;fassung;erstellt;')).toBe(true);
+  expect(zeilen[1]).toContain(';Max;Mustermann;Max Mustermann;ja;0171 3920001;');
+  expect(zeilen[3]).toContain(';buerge;Petra;Mustermann;Petra Mustermann;');
+  expect(fremd).toEqual([]);
+
+  // Gegenprobe: nur eine Mappe in alter Form, dann gibt es nichts zu exportieren.
+  await page.getByRole('button', { name: 'Liste leeren' }).click();
+  await laden(page, await pdf(ALT));
+  await expect(page.getByRole('button', { name: 'Für Ihre Software exportieren' })).toBeDisabled();
+});
+
+// PC126 K3 (DP82 L1, PC130 für 2.0.1): Liegt eine Lesehilfe bei, die sich nicht lesen lässt, sagt die Seite das;
+// „keine Lesehilfe“ stimmt dann nicht (W10). Je eine Mappe: abgelehnt, passt nicht, ohne Anhang. Nur Musterdaten.
+test('K3: abgelehnte Lesehilfe hat ihren eigenen Satz; passt nicht und ohne Anhang bleiben', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await laden(
+    page,
+    await pdf({
+      datei: 'Bewerbung_Abgelehnt.pdf',
+      seiten: 2,
+      ersteSeite: 'Musterweg 7 Erstellt mit Hefta',
+      anhang: { hefta: 4, unbekannt: 'keine Lesehilfe dieser Form' },
+    }),
+    await pdf(M7),
+    await pdf(M3),
+  );
+  const UNLESBAR =
+    'Die Lesehilfe dieser Mappe lässt sich nicht lesen, darum zeigt die Seite sie nicht. Öffnen Sie die Mappe wie gewohnt.';
+  // In der Liste steht es auch so, nicht „Ohne Lesehilfe“.
+  await expect(zeile(page, 1)).toContainText('Lesehilfe lässt sich nicht lesen');
+  await expect(zeile(page, 3)).toContainText('Ohne Lesehilfe');
+  await zeile(page, 1).click();
+  await expect(haupt(page)).toContainText(UNLESBAR);
+  // Gegenprobe: Vorher stand hier „keine Lesehilfe“ und der Satz, warum sie fehlt.
+  await expect(haupt(page)).not.toContainText('keine Lesehilfe');
+  await expect(haupt(page)).not.toContainText('Eine Lesehilfe tragen nur Mappen aus Hefta');
+  await page.goBack();
+  await zeile(page, 2).click();
+  await expect(haupt(page)).toContainText('passt nicht zu ihren Seiten');
+  await expect(haupt(page)).not.toContainText(UNLESBAR);
+  await page.goBack();
+  await zeile(page, 3).click();
+  await expect(haupt(page)).toContainText(
+    'Diese Mappe hat keine Lesehilfe. Öffnen Sie sie wie gewohnt.',
+  );
+  await expect(haupt(page)).not.toContainText(UNLESBAR);
 });

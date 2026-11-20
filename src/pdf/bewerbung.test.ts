@@ -183,16 +183,16 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       'WAS BEILIEGT',
       'Max Mustermann',
       'Hauptmieter, Elektroniker',
-      'Gehaltsnachweise, Juli bis September',
-      '3–5',
-      'Bonitätsnachweis vom 20. Oktober 2026',
+      // V6: Wortlaut, Monate oder Datum, dann „– Seite n“ oder „– Seiten n bis m“ in derselben Zeile.
+      'Gehaltsnachweise, Juli bis September – Seiten 3 bis 5',
+      'Bonitätsnachweis vom 20. Oktober 2026 – Seite 6',
       'Ein Kind',
       'Ziehen mit ein',
       'Bürgschaft',
       'Kontakt',
       'Seite 1 von 10',
     ])
-      expect(deckblatt).toContain(t);
+      expect(deckblatt!.replace(/ +/g, ' ')).toContain(t);
     // Es gibt keine eigene Inhaltsseite mehr: Seite 2 ist schon die Selbstauskunft.
     expect((await textJeSeite(e.bytes))[1]).toContain('Selbstauskunft');
   });
@@ -805,24 +805,27 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       expect(deckOhne).not.toContain(VERMIETER_DOMAIN);
     });
 
-    it('E39: Inserat und Einzug im Kopf, die Fassung unten in der Leiste; fehlen sie, keine Zeile', async () => {
+    it('E39, V7: Inserat und Einzug im Kopf, fehlen sie, keine Zeile; „Fassung n vom …“ immer, mit dem Tag der Mappe', async () => {
       const mit = await bewerbungBauen(
         await auftrag({
           hinweis: true,
           inserat: 'Zu Ihrem Inserat auf ImmoScout24',
           einzug: 'Einzug möglich ab 1. Februar 2027',
           fassung: 'Fassung 2 vom 13. November 2026',
+          lesehilfeWerte: { fassung: 2 },
         }),
       );
       const [deck] = await textJeSeite(mit.bytes);
       const flach = deck!.replace(/\s+/g, ' ');
       expect(flach).toContain('Zu Ihrem Inserat auf ImmoScout24');
       expect(flach).toContain('Einzug möglich ab 1. Februar 2027');
-      expect(flach).toContain('Fassung 2 vom 13. November 2026');
+      // V7, V11: Der Tag ist der Tag, an dem die Mappe entsteht (gleich `erstellt` und dem Erstelldatum der PDF).
+      expect(flach).toContain('Fassung 2 vom 6. November 2026');
+      expect(flach).not.toContain('13. November');
       const ohne = await bewerbungBauen(await auftrag({ hinweis: true }));
       const [deckOhne] = await textJeSeite(ohne.bytes);
       expect(deckOhne).not.toContain('Inserat');
-      expect(deckOhne).not.toContain('Fassung');
+      expect(deckOhne!.replace(/\s+/g, ' ')).toContain('Fassung 1 vom 6. November 2026');
     });
 
     it.each([

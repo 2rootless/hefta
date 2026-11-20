@@ -3,7 +3,7 @@
   // die vier Teile zugeklappt mit Zusammenfassung und „Ändern“. Änderungen werden sofort gespeichert.
   import { untrack } from 'svelte';
   import { daten, db, neuLaden } from '../app/daten.svelte';
-  import { abschliessen } from '../app/router.svelte';
+  import { einstieg, route, zumEinstieg } from '../app/router.svelte';
   import { ERKLAERUNG, einziehend, einziehendText, vollstaendig } from '../domain/selbstauskunft';
   import { t, tagZusammen } from '../i18n';
   import { haushaltAendern, personAendern } from '../storage/speicher';
@@ -15,8 +15,10 @@
     haushaltAus,
     haushaltsAngabenAus,
     type SelbstauskunftEingabe,
+    telefonEingabeFehler,
   } from '../ui/selbstauskunftEingabe';
   import Zurueck from '../ui/Zurueck.svelte';
+  import { einstiegText } from '../ui/einstieg';
 
   let {
     personId,
@@ -33,6 +35,11 @@
   let eingabe = $state<SelbstauskunftEingabe | null>(start?.eingabe ?? null);
   let vorher = untrack(() => haushaltsAngabenAus(daten.ansicht));
   const zurueckZu = $derived(ausBereich ? '/selbstauskuenfte' : `/person/${personId}`);
+  // W39 (PC130 K8): „Fertig“ und „Zurück“ führen dorthin, wo die Selbstauskunft geöffnet wurde (Mappe,
+  // Personenseite, Mappe teilen …). Nur ohne Einstieg im Verlauf, etwa direkt geöffnet, wie bisher zu `zurueckZu`.
+  const ablauf = $derived(`/selbstauskunft/${personId}`);
+  const einstiegPfad = $derived((void route.pfad, einstieg(ablauf)));
+  const zurueckText = $derived(einstiegText(einstiegPfad ?? zurueckZu, daten.ansicht));
   const rolle = $derived(mitglied?.zugehoerigkeit.rolle ?? 'mitmieter');
   const vertragsZahl = $derived(
     (daten.ansicht?.mitglieder ?? []).filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length,
@@ -43,7 +50,9 @@
   const fertig = $derived(
     !!mitglied &&
       !!eingabe &&
-      vollstaendig({ ...mitglied.person, ...angabenAus(eingabe) }, rolle, eingabe.hh),
+      vollstaendig({ ...mitglied.person, ...angabenAus(eingabe) }, rolle, eingabe.hh) &&
+      // PC126 K1: kein „Fertig, 1 Seite“, solange im Telefon ein Fehler steht.
+      !telefonEingabeFehler(eingabe),
   );
 
   // Sofort speichern: kurz nach jeder Änderung, ohne Knopf (A4: „Änderungen werden sofort gespeichert.“).
@@ -108,10 +117,9 @@
 <main class="seite">
   <div class="kopf">
     <Zurueck
-      href="#{zurueckZu}"
-      text={ausBereich
-        ? t('selbstauskuenfte.titel')
-        : (mitglied?.person.rufname ?? t('allgemein.zurueck'))}
+      href="#{einstiegPfad ?? zurueckZu}"
+      text={zurueckText}
+      onclick={() => zumEinstieg(ablauf, zurueckZu)}
     />
   </div>
   {#if !mitglied || !eingabe}
@@ -173,7 +181,7 @@
     text={t('selbstauskunft.fertigKnopf')}
     onclick={async () => {
       await speichern();
-      abschliessen(zurueckZu);
+      zumEinstieg(ablauf, zurueckZu);
     }}
   />
 {/if}

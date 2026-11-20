@@ -123,7 +123,12 @@ function mensch(
       vorname,
       nachname,
       rufname: vorname,
-      kontakt: { telefon: '0171 3920001', email: `${vorname.toLowerCase()}@example.com` },
+      kontakt: {
+        telefon: '0171 3920001',
+        telefonLand: 'DE',
+        telefonE164: '+491713920001',
+        email: `${vorname.toLowerCase()}@example.com`,
+      },
       lebenssituation: 'angestellt',
       beruf: '',
       arbeitgeber: '',
@@ -439,12 +444,22 @@ export const SZENARIEN: Record<string, () => Promise<BewerbungAuftrag>> = {
   'MP9-andere-schrift': async () => {
     const olena = mensch('Олена', 'Коваленко', 'hauptmieter', 'Hauptmieterin', {
       nameMappe: { vorname: 'Olena', nachname: 'Kovalenko' },
-      kontakt: { telefon: '0171 3920004', email: 'olena@example.com' },
+      kontakt: {
+        telefon: '0171 3920004',
+        telefonLand: 'DE',
+        telefonE164: '+491713920004',
+        email: 'olena@example.com',
+      },
     });
     const piotr = mensch('Piotr', 'Wiśniewski', 'mitmieter', 'Mitmieter', { n: 1 });
     const mai = mensch('Thị Mai', 'Nguyễn', 'mitmieter', 'Mitmieterin', {
       n: 2,
-      kontakt: { telefon: '0171 3920005', email: 'mai@example.com' },
+      kontakt: {
+        telefon: '0171 3920005',
+        telefonLand: 'DE',
+        telefonE164: '+491713920005',
+        email: 'mai@example.com',
+      },
     });
     const alle = [olena, piotr, mai];
     return auftrag(alle, [

@@ -79,6 +79,11 @@ export interface Dokumenttyp {
   warumErlaubtIhr?: string;
   warumUeblichIhr?: string;
   warumGutZuWissenIhr?: string[];
+  /**
+   * PC81 B12 (QA14): je Satz unter „Gut zu wissen“ eine eigene Quelle, wo die Orientierungshilfe ihn nicht trägt
+   * (gleiche Reihenfolge wie die Sätze; null: keine eigene).
+   */
+  warumGutZuWissenQuellen?: (string | null)[];
   /** Kein Vermieter kann das verlangen: im Blatt keine Marken für die Schritte. */
   nieVerlangbar?: boolean;
   /** Geht bei „Marktüblich“ mit, sobald hochgeladen; das Etikett bleibt, darum gilt es nie als fehlend. */
@@ -310,6 +315,8 @@ export interface WarumInhalt {
   erlaubt: string;
   ueblich: string;
   gutZuWissen: string[];
+  /** Je Satz die eigene Quelle oder null (PC81 B12). */
+  gutZuWissenQuellen: (string | null)[];
   /** Die drei Bewerbungsschritte; leer, wenn die Unterlage nie verlangt werden kann. */
   schritte: { id: string; text: string; erlaubt: boolean }[];
   quelle: { titel: string; url: string };
@@ -330,6 +337,7 @@ export function warumInhalt(typ: Dokumenttyp, an: 'ihr' | 'du' = 'du'): WarumInh
     erlaubt: (an === 'ihr' && typ.warumErlaubtIhr) || typ.warumErlaubt,
     ueblich: (an === 'ihr' && typ.warumUeblichIhr) || typ.warumUeblich,
     gutZuWissen: (an === 'ihr' && typ.warumGutZuWissenIhr) || typ.warumGutZuWissen || [],
+    gutZuWissenQuellen: typ.warumGutZuWissenQuellen ?? [],
     schritte:
       ab < 0 || typ.nieVerlangbar
         ? []

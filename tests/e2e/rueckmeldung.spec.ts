@@ -283,6 +283,8 @@ test('Seite einer Unterlage: Stand, Hinweis, „Warum?“, ältere Version, lös
     'Zusage: dürfen fragen',
   ]);
   await expect(blatt.getByRole('link', { name: /Orientierungshilfe.*Januar 2026/ })).toBeVisible();
+  // PC81 B12: Eigene Quellen je Satz nur, wo die Orientierungshilfe ihn nicht trägt; bei der Bonität keine.
+  await expect(blatt.locator('.satz-quelle')).toHaveCount(0);
   await expect(blatt.getByText(/Stand der Angaben in Hefta: 30\.\sOktober 2026/)).toBeVisible();
   await expect(blatt.getByText(/29,95/)).toHaveCount(0);
   await blatt.getByRole('button', { name: 'Verstanden' }).click();
@@ -477,12 +479,16 @@ test('Fehlt eine Datei, nennt die Mappe sie mit Rufname und führt zur Seite der
     location.reload();
   });
   await expect(
-    page.getByRole('link', { name: /^Bonitätsnachweis von Max Lässt sich nicht lesen/ }),
+    page.getByRole('link', {
+      name: /^Bonitätsnachweis von Max eine Datei lässt sich nicht öffnen/,
+    }),
   ).toBeVisible({ timeout: 30_000 });
-  // „Teilen“ bleibt: Der Rest der Mappe geht.
+  // PC132 (DP84): Der Hinweis vor dem Bauen bleibt, „Teilen geht trotzdem“ fällt weg; geteilt wird nur über das
+  // Blatt aus DP83 (unlesbar-mappe.spec).
   await expect(page.getByRole('button', { name: 'Als PDF teilen' })).toBeVisible();
   await expect(page.getByText('Eine Datei fehlt in der Mappe')).toBeVisible();
-  await expect(page.getByText('Ladet sie noch einmal hoch. Teilen geht trotzdem.')).toBeVisible();
+  await expect(page.getByText('Ladet sie noch einmal hoch.', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Teilen geht trotzdem/)).toHaveCount(0);
   await page.getByRole('link', { name: /^Bonitätsnachweis von Max/ }).click();
   await expect(page).toHaveURL(/#\/unterlage\/p-04-fertig-0\/bonitaet$/);
 });

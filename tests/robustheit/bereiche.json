@@ -1,0 +1,188 @@
+{
+  "stand": "2026-11-18",
+  "quelle": "Robustheitskatalog der Planung (PC123, Anlage), Bereiche und Messgrößen aus der Tabelle „Die Bereiche“; angelegt für 2.0 mit dem, was es schon gibt (PC120, E232)",
+  "bereiche": [
+    {
+      "bereich": "I",
+      "name": "Inserate lesen",
+      "messgroesse": "Adresse, Miete, Fläche, Zimmer je Feld richtig oder ehrlich leer; ehrliche Meldung, wenn nichts geht",
+      "quote": [
+        {
+          "was": "Felder richtig oder ehrlich leer (Katalog PC117)",
+          "richtig": 168,
+          "von": 168
+        },
+        {
+          "was": "Felder richtig gelesen, wo das Inserat sie eindeutig nennt",
+          "richtig": 119,
+          "von": 134
+        },
+        {
+          "was": "ehrliche Meldung, wenn nichts geht (DP79)",
+          "richtig": 19,
+          "von": 19
+        }
+      ],
+      "quellen": [
+        {
+          "datei": "tests/fixtures/inserate/katalog-pc117.json",
+          "soll": "tests/robustheit/i/katalog-soll.json",
+          "was": "PC117: 42 erfundene Inserate, je Feld Adresse, Warmmiete, Zimmer, Fläche gegen das Soll",
+          "faelle": 42
+        },
+        {
+          "datei": "tests/e2e/dp79-inserat.spec.ts",
+          "was": "DP79: 19 Arten von Antworten der Seite, ehrliche Meldung nach IL1 bis IL14 (dazu N26, PC124)",
+          "faelle": 19
+        }
+      ]
+    },
+    {
+      "bereich": "N",
+      "name": "Name des Hefts",
+      "messgroesse": "Name ist „Straße Hausnummer“ oder eine ehrliche Ersatzform, nie der Werbetitel",
+      "quote": [
+        {
+          "was": "Name ist Straße und Hausnummer oder gebaut, nicht der Titel des Inserats (Katalog PC117)",
+          "richtig": 20,
+          "von": 42
+        },
+        {
+          "was": "Präposition und Dateiname (Straßenarten)",
+          "richtig": 21,
+          "von": 21
+        }
+      ],
+      "quellen": [
+        {
+          "datei": "tests/fixtures/inserate/katalog-pc117.json",
+          "was": "PC117: Name, Betreff, erster Satz, Deckblatt, Dateiname (E236: Straße zuerst)",
+          "faelle": 42
+        },
+        {
+          "datei": "tests/robustheit/n/strassenarten.json",
+          "was": "PC120 (§8, 5): Präposition nach der Straßenart und Spanne der Hausnummer",
+          "faelle": 21
+        }
+      ]
+    },
+    {
+      "bereich": "P",
+      "name": "Personen und Namen",
+      "messgroesse": "richtig gespeichert, gedruckt und in der Lesehilfe; keine Kürzung",
+      "quote": [
+        {
+          "was": "Urteil wie „soll“, Seite, Paket und leser78 gleich",
+          "richtig": 44,
+          "von": 44
+        }
+      ],
+      "quellen": [
+        {
+          "datei": "tests/stress/katalog.ts",
+          "was": "Stresstest DP76: S1 bis S36 (mit Varianten) und G7s, Namen und Angaben durch Papier und Lesehilfe",
+          "faelle": 44
+        }
+      ]
+    },
+    {
+      "bereich": "T",
+      "name": "Telefon und Mail",
+      "messgroesse": "richtige internationale Nummer oder ehrlicher Fehler",
+      "quote": [
+        {
+          "was": "TL1 bis TL28 und TR1 bis TR12 wie erwartet",
+          "richtig": 40,
+          "von": 40
+        }
+      ],
+      "quellen": [
+        {
+          "datei": "src/domain/telefon.test.ts",
+          "was": "TL1 bis TL28 (DP77)",
+          "faelle": 28
+        },
+        {
+          "datei": "src/vermieter/stress.test.ts",
+          "was": "TR1 bis TR12: die Regel für Leser",
+          "faelle": 12
+        }
+      ]
+    },
+    {
+      "bereich": "U",
+      "name": "Unterlagen erkennen",
+      "messgroesse": "Art, Monat und Datum richtig oder Nachfrage",
+      "quote": [],
+      "quellen": []
+    },
+    {
+      "bereich": "L",
+      "name": "Lesehilfe und Vermieterseite",
+      "messgroesse": "gleiches Urteil beider Leser; keine Fälschung angezeigt",
+      "quote": [
+        {
+          "was": "Stresstest: Seite, Paket und leser78 urteilen gleich und wie „soll“",
+          "richtig": 95,
+          "von": 95
+        },
+        {
+          "was": "Angriffe A1 bis A21 und S13 an der echten Vermieterseite",
+          "richtig": 22,
+          "von": 22
+        }
+      ],
+      "quellen": [
+        {
+          "datei": "tests/stress/katalog.ts",
+          "was": "DP76, DP78: 95 echte PDF-Mappen, Vermieterseite, Paket und leser78 Fassung 3 (DP81) urteilen gleich",
+          "faelle": 95
+        },
+        {
+          "datei": "tests/e2e/vermieter-angriffe.spec.ts",
+          "was": "A1 bis A21 und S13 an der echten Vermieterseite, in Chromium und WebKit",
+          "faelle": 22
+        }
+      ]
+    },
+    {
+      "bereich": "M",
+      "name": "Mappe und Wege",
+      "messgroesse": "Mappe vollständig und lesbar; Text kommt ohne Code an",
+      "quote": [],
+      "quellen": []
+    },
+    {
+      "bereich": "B",
+      "name": "Bedienung für alle",
+      "messgroesse": "Prüfkatalog ohne Befund A oder B",
+      "quote": [
+        {
+          "was": "Ansichten ohne Befund des Prüfkatalogs; nichts rutscht beim Hochladen",
+          "richtig": 10,
+          "von": 10
+        }
+      ],
+      "quellen": [
+        {
+          "datei": "tests/e2e/hochladen-ruhig.spec.ts",
+          "was": "PC121, Regel 1 (DP80, D4): nichts rutscht, wenn das Bild kommt; mit Gegenprobe",
+          "faelle": 2
+        },
+        {
+          "datei": "tests/e2e/pruefkatalog.spec.ts",
+          "was": "Prüfkatalog Stil C, alle Bildschirme in acht Ansichten (390, 430, 390 dunkel, 390 grau, 320, 390 und 320 mit 130 %, 390 mit 200 %)",
+          "faelle": 8
+        }
+      ]
+    }
+  ],
+  "spaeter": [
+    {
+      "bereich": "K",
+      "name": "Gebiete der Stadtkarte",
+      "wann": "sobald die Karte gebaut ist (PC120, Abschnitt 5, 3)"
+    }
+  ],
+  "regel_quote": "Quote für 2.0: die erste Zahl je Bereich, ohne Ziel (Regel 4). Richtig oder ehrlich leer zählt als richtig, ein falscher Wert als falsch (Regel 5). Sie darf in keiner Version sinken; robustheit.test.ts prüft das, wo sie sich ohne Browser rechnen lässt."
+}

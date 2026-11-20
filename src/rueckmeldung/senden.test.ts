@@ -31,3 +31,11 @@ describe('Abschicken der Rückmeldung', () => {
     expect(await abschicken('woher', 'suche', kaputt)).toBe('aus');
   });
 });
+
+describe('PC92 K1: Die Rückmeldung ist in 2.0 an', () => {
+  it('ohne Testschalter zeigt Hefta die Fragen (Einstellungen „Über Hefta“, Hinweis an Apple)', async () => {
+    const { empfangLive } = await import('./senden');
+    expect((globalThis as { __heftaEmpfangTest?: boolean }).__heftaEmpfangTest).toBeUndefined();
+    expect(empfangLive()).toBe(true);
+  });
+});

@@ -3,6 +3,7 @@ import { werIstDabeiSatz } from '../domain/mappeWoerter';
 import type { Tag } from '../domain/modell';
 import type { AnhangUnterlage, HeftaAnhang } from '../pdf/anhang';
 import {
+  alleUnterlagen,
   datumText,
   gruppe,
   haushaltTitel,
@@ -155,32 +156,30 @@ export function ansicht(a: HeftaAnhang, heute: Date): Ansicht {
     imVertrag: imVertrag(p),
     zeilen: [],
   }));
-  a.unterlagen.forEach((u, index) => {
-    const p = personen[u.person];
-    const roh = a.haushalt.personen[u.person];
-    if (!p || !roh) return; // Die Prüfung der Lesehilfe lässt das nicht durch; hier nur zur Sicherheit.
+  // Fassung 1: Die Unterlagen stehen bei ihrer Person; `index` zählt sie in der Reihenfolge der Seiten.
+  const alle = alleUnterlagen(a);
+  alle.forEach(({ u, person: roh, index: pi }, index) => {
+    const p = personen[pi];
+    if (!p) return;
     p.zeilen.push({
       index,
       typ: u.typ,
       etikett: etikettVon(u.typ),
       text: unterlageText(u),
       angabe: unterlageAngabe(u),
-      seiten: u.seiten,
+      seiten: [u.seiten_mappe.von, u.seiten_mappe.bis],
       gruppe: gruppe(u, roh),
       frist: bonitaetFrist(u, heute),
     });
   });
-  for (const p of personen) p.zeilen.sort((x, y) => x.seiten[0] - y.seiten[0]);
 
   const register: RegisterEintrag[] = [
     { etikett: DECKBLATT, name: '', seite: 1 },
-    ...a.unterlagen
-      .map((u) => ({
-        etikett: etikettVon(u.typ),
-        name: a.haushalt.personen[u.person]?.name ?? '',
-        seite: u.seiten[0],
-      }))
-      .sort((x, y) => x.seite - y.seite),
+    ...alle.map(({ u, person }) => ({
+      etikett: etikettVon(u.typ),
+      name: person.name,
+      seite: u.seiten_mappe.von,
+    })),
   ];
 
   const vertrag = a.haushalt.personen.filter(imVertrag).length;
@@ -189,7 +188,7 @@ export function ansicht(a: HeftaAnhang, heute: Date): Ansicht {
     kennung: a.bewerbung.kennung ?? null,
     haushalt: haushaltTitel(a),
     rahmen: werIstDabeiSatz(vertrag, a.haushalt.mitziehende, buergen),
-    erstellt: a.erstellt,
+    erstellt: a.erstellt.slice(0, 10),
     personen,
     register,
     vollstaendigkeit: vollstaendigkeit(a),

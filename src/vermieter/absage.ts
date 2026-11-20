@@ -12,7 +12,7 @@ export interface Absage {
   text: string;
 }
 
-/** `geloescht`: „Schon gelöscht“ (Standard) oder „Lösche ich später“. */
+/** `geloescht`: „Schon gelöscht“ nur nach eigener Wahl (PC81 B9); sonst der Satz von „Lösche ich später“. */
 export function absage(a: HeftaAnhang, geloescht: boolean): Absage {
   const personen = a.haushalt.personen;
   const vertrag = personen.filter(imVertrag);

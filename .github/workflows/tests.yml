@@ -1,0 +1,65 @@
+# Die volle Reihe bei GitHub (E221, PC111; E226: im privaten Repository, Ausgabenlimit 0 €):
+# Einheitstests, Typen, Lint, Bau und die Browsertests in Chromium und WebKit, auf einem Linux-Rechner.
+# - Läuft bei jedem Push auf release/** und app/** und von Hand.
+# - Der Lauf „testflight“ in app.yml lädt nur hoch, wenn dieser Ablauf auf demselben Commit grün ist.
+# - Minuten: Linux zählt einfach; eine volle Reihe braucht geschätzt 30 bis 40 Minuten. Ist das freie Kontingent
+#   aufgebraucht, hält GitHub an (Limit 0 €), statt Geld zu kosten.
+# - pypdf, pdfplumber und jsonschema nur für die Tests mit dem fremden Leser (E125, PC115), feste Versionen.
+name: Tests
+
+on:
+  push:
+    branches: ['release/**', 'app/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+# Ein neuer Push auf denselben Zweig bricht den älteren Lauf ab.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reihe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    # Die Testhilfen rechnen Termine in Node, der Browser in Europe/Berlin (playwright.config.ts). Der Rechner
+    # von GitHub läuft in UTC; ohne diese Zeile lagen Termine um Stunden daneben (erste Reihe am 18.11.).
+    env:
+      TZ: Europe/Berlin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Prüfwerkzeuge für den fremden Leser (nur Tests)
+        run: python -m pip install --disable-pip-version-check pypdf==7.1.0 pdfplumber==0.11.10 jsonschema==4.26.0
+      - run: npm ci
+      - name: Browser für die Reihe
+        run: npx playwright install --with-deps chromium webkit
+      - name: Typen und Svelte
+        run: npm run check
+      - name: Lint
+        run: npm run lint
+      - name: Einheitstests
+        run: npm test
+      - name: Bau
+        run: npm run build
+      - name: Browsertests, Chromium und WebKit
+        run: npx playwright test
+      - name: Spuren bei Fehlern
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 7

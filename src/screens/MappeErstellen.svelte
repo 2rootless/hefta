@@ -9,6 +9,7 @@
   import { daten, db, gehe } from '../app/daten.svelte';
   import {
     bloecke,
+    ohneUnterlagen,
     mappeInhalt,
     fehlendeUnterlagen,
     zuAlteUnterlagen,
@@ -45,6 +46,9 @@
   import Symbol from '../ui/Symbol.svelte';
   import WerIstDabeiAuswahl from '../ui/WerIstDabeiAuswahl.svelte';
   import WarumBlatt from '../ui/WarumBlatt.svelte';
+  import UnlesbarBlatt from '../ui/UnlesbarBlatt.svelte';
+  import type { UnlesbareDatei } from '../pdf/bewerbung';
+  import { unlesbarMerken } from '../app/unlesbar.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
   import { staendeAus, zeichenFunde } from '../ui/mappeDaten';
   import { werIstDabeiKurz } from '../domain/mappeWoerter';
@@ -54,6 +58,7 @@
   import { bauSchluessel, gebauteMappen, schaetzungen, vorschauen } from '../ui/mappeSpeicher';
   import type { PdfDokument } from '../pdf/pdfjs';
   import { standText } from '../ui/texte';
+  import MitUmbruch from '../ui/MitUmbruch.svelte';
 
   const GRENZE = 5 * 1024 * 1024;
   let warumTyp = $state<Dokumenttyp | null>(null);
@@ -191,11 +196,13 @@
       })),
       // E96, 3: Ohne Nachname geht es trotzdem; Hefta sagt es hier noch einmal, sperrt aber nicht.
       ...dabei
-        .filter((s) => !s.person.nachname.trim() && !ohneLatein.includes(s))
+        .filter(
+          (s) => !s.person.nachname.trim() && !s.person.ohneNachname && !ohneLatein.includes(s),
+        )
         .map((s) => ({
           id: `nachname-${s.person.id}`,
-          titel: t('uebersicht.nachnameFehlt', { name: s.person.rufname || s.person.vorname }),
-          sub: t('uebersicht.nachnameWozu'),
+          titel: t('uebersicht.nachnameOffen', { name: s.person.rufname || s.person.vorname }),
+          sub: t('uebersicht.nachnameWozu', { name: s.person.rufname || s.person.vorname }),
           href: `#/person-aendern/${s.person.id}`,
         })),
       ...fehlendeUnterlagen(dabei, e).map(({ person, unterlage }) => ({
@@ -372,8 +379,40 @@
     offenesPdf = null;
   }
 
+  // PC126 K5 (DP83 a): Lässt sich eine Datei nicht öffnen, geht nichts hinaus, bis gewählt ist.
+  let blattDatei = $state<UnlesbareDatei | null>(null);
+  let blattOffen = $state(false);
+  $effect(() => {
+    if (ergebnis && !baut) unlesbarMerken(ergebnis.unlesbar.map((u) => u.datei));
+  });
+  // PC132 (DP84 U4, U5): Nach „Diesmal weglassen“ geht es mit der Aktion weiter, die das Blatt ausgelöst hat,
+  // sobald die Mappe ohne die Unterlage gebaut ist.
+  let wartend: (() => void) | null = null;
+  // Roh: Das alte Ergebnis wird mit `===` verglichen, ein Proxy wäre nie gleich.
+  let fortsetzen = $state.raw<{ aktion: () => void; alt: MappenErgebnis | null } | null>(null);
+  $effect(() => {
+    if (!fortsetzen || baut || !ergebnis || ergebnis === fortsetzen.alt) return;
+    const { aktion } = fortsetzen;
+    fortsetzen = null;
+    aktion();
+  });
+  function angehalten(weiter: () => void): boolean {
+    const erste = !baut ? ergebnis?.unlesbar[0] : undefined;
+    if (!erste) return false;
+    blattDatei = erste;
+    blattOffen = true;
+    wartend = weiter;
+    return true;
+  }
+  function weglassen(d: UnlesbareDatei) {
+    if (!d.personId || !d.typ) return;
+    if (wartend) fortsetzen = { aktion: wartend, alt: ergebnis };
+    wartend = null;
+    e = ohneUnterlagen(e, staende, [{ personId: d.personId, typ: d.typ }]);
+  }
+
   async function ansehen(datei: File | undefined, index = 0) {
-    if (!datei) return;
+    if (!datei || angehalten(() => void ansehen(ergebnis?.dateien[0], index))) return;
     const { pdfOeffnen } = await import('../pdf/pdfjs');
     const modul = await import('../ui/SeitenAnsicht.svelte');
     await pdfZu();
@@ -506,12 +545,12 @@
   );
 
   async function teilenKlick() {
-    if (!ergebnis) return;
+    if (!ergebnis || angehalten(() => void teilenKlick())) return;
     const { teilen } = await import('../ui/mappeErstellen');
     await teilen(ergebnis.dateien);
   }
   async function sichernKlick() {
-    if (!ergebnis) return;
+    if (!ergebnis || angehalten(() => void sichernKlick())) return;
     // In der App zeigt „PDF ansehen“ die Mappe in der Seitenansicht, ohne sie zu speichern. Sichern geht
     // dort über „Teilen“ › „In Dateien sichern“. Im Browser bleibt es der Download, den Safari öffnet.
     const { istApp } = await import('../app/plattform');
@@ -621,7 +660,15 @@
     {#if ansicht}
       <div class="titelblock">
         <h1 class="display frage" use:passend={TITEL}>{t('mappe.titel')}</h1>
-        <p class="lead">{t(allein ? 'mappe.leadDu' : 'mappe.leadIhr')}</p>
+        <!-- PC81 B3 (QA4): Bei Einzeldateien gibt es kein Deckblatt; der Lead sagt es, die Zeile führt zur Wahl. -->
+        <p class="lead">
+          {einzeln ? t('mappe.leadEinzeln') : t(allein ? 'mappe.leadDu' : 'mappe.leadIhr')}
+        </p>
+        {#if einzeln}
+          <a class="textlink weiter ausgabe-zeile" href="#/mappe/anpassen"
+            >{t('mappe.ausgabeZeile')}</a
+          >
+        {/if}
       </div>
 
       {#if vorherAnzahl}
@@ -927,6 +974,8 @@
   />
 {/if}
 
+<UnlesbarBlatt bind:offen={blattOffen} datei={blattDatei} {weglassen} />
+
 {#if warumTyp}
   <WarumBlatt bind:offen={warumOffen} typ={warumTyp} zurueck={warumKnopf} />
 {/if}
@@ -970,7 +1019,7 @@
             void ansehen(d);
           }}
         >
-          <span>{d.name.replaceAll('_', '_​')}</span>
+          <span><MitUmbruch text={d.name} nach="_" /></span>
           <Symbol name="weiter" groesse={16} />
         </button>
       </li>
@@ -1150,6 +1199,10 @@
 
   .titelblock {
     padding: 6px var(--space-5) 0;
+  }
+
+  .ausgabe-zeile {
+    margin-top: 4px;
   }
 
   .frage {

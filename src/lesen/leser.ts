@@ -142,7 +142,7 @@ function* werteNach(t: string, bez: string): Generator<string> {
       string,
       string,
     ];
-    // „Kaltmiete 19,75 €/m²: 2.350 €“ (geteilter Text von ImmoScout24): der Betrag nach dem Doppelpunkt.
+    // „Kaltmiete 12,59 €/m²: 754,76 €“ (geteilter Text von ImmoScout24, erfundene Beträge): der Betrag nach dem Doppelpunkt.
     const nachM2 = /€\s*\/\s*m²\s*:\s*(.+)$/.exec(gleich);
     if (nachM2) yield nachM2[1] ?? '';
     else if (gleich) yield gleich;
@@ -363,12 +363,58 @@ export interface GeleseneAdresse {
   ort: string;
   /** Mittlerer Teil wie „Eimsbüttel“ in „Lindenring 3, Eimsbüttel, 20259 Hamburg“. */
   stadtteil: string | null;
+  /** DP73 B2: Lage im Haus wie „2. OG“ oder „Erdgeschoss“, wie im Inserat geschrieben. */
+  lage?: string;
 }
 
 // Eine Straße: endet auf eine übliche Endung oder trägt eine Hausnummer. So bleiben Zeilen wie „SCHUFA
 // BonitätsCheck“ oder eine Postleitzahl allein außen vor.
 const STRASSE = String.raw`([A-ZÄÖÜ][^\n,()]*?(?:(?:straße|str\.|weg|allee|ring|platz|damm|chaussee|gasse|ufer|kamp|stieg|twiete|markt|berg|feld|hof)|\d+\s*[a-z]?))`;
 const ORT = String.raw`([A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß .\-/]*[A-Za-zÄÖÜäöüß])`;
+// PC92 K7 (DP68): Das Geschoss steht oft zwischen Straße und Postleitzahl („Lindenring 8, 2. OG, 20259 Hamburg“).
+// Es ist kein Stadtteil und trägt eine Ziffer; ohne dieses Stück fiel die ganze Adresse durch. DP73 B2 (PC106): Das
+// Heft heißt weiter ohne Geschoss, die Lage kommt aber in den Rest der Adresse (`lage`, zweite Zeile im Heft).
+const GESCHOSS = String.raw`(?:\d{1,2}\s*\.?\s*(?:OG|Og|og|Obergeschoss|OBERGESCHOSS|Etage|Stock|Geschoss)|EG|Erdgeschoss|Hochparterre|Parterre|DG|Dachgeschoss|UG|Untergeschoss|Souterrain)(?:\s+(?:links|rechts|Mitte|mitte|li\.?|re\.?))?`;
+
+// PC118 (F8a): Teil des Hauses direkt hinter der Hausnummer, ohne Komma („Musterweg 7 HS.2“, wie ImmoScout24 beim
+// Teilen). Er ist Lage im Haus (F4, DP73 B2), nicht Teil des Namens.
+const HAUSTEIL = String.raw`(?:HS\.?\s*\d+|Haus\s+\d+|HH|VH|SF|Hinterhaus|Vorderhaus|Seitenflügel|Gartenhaus)`;
+
+const STRASSEN_ENDUNG =
+  /(straße|str\.|weg|allee|ring|platz|damm|chaussee|gasse|ufer|kamp|stieg|twiete|markt|berg|feld|hof)$/i;
+/** Wörter, die zum Namen der Straße gehören, wenn sie davor stehen: „Am Lindenring“, „An der Alster“. */
+const VORWORT = new Set(
+  'Am An Auf Im In Zum Zur Alte Alter Altes Große Großer Kleine Kleiner Neue Neuer Hohe Lange Obere Untere Sankt St.'.split(
+    ' ',
+  ),
+);
+
+/**
+ * PC95 N2 (DP67): Als Straße zählt nur Straße und Hausnummer. Eine Beschriftung vor dem Doppelpunkt („Adresse:“,
+ * „Lage:“) fällt weg, ebenso ein Satz davor („… mit Balkon in der Beispielstraße 1“). Ohne erkennbare Straße
+ * bleibt der Text, wie er ist, nur ohne Beschriftung.
+ */
+export function strasseBereinigen(roh: string): string {
+  const s = roh.replace(/^[^:\d]{1,25}:\s*/, '').trim();
+  const w = s.split(/\s+/);
+  let i = w.length - 1;
+  while (i > 0 && /^\d/.test(w[i]!)) i--;
+  if (i === w.length - 1 || !STRASSEN_ENDUNG.test(w[i]!)) return s;
+  let start = i;
+  // „Alte Straße …“: Steht die Endung allein, gehört das Wort davor dazu.
+  if (/^(Straße|Str\.|Weg|Allee|Ring|Platz|Damm|Chaussee|Gasse|Ufer|Markt)$/.test(w[i]!) && i > 0)
+    start = i - 1;
+  // „An der …“, „Auf dem …“
+  if (start >= 2 && /^(der|dem|den)$/.test(w[start - 1]!) && VORWORT.has(w[start - 2]!)) start -= 2;
+  while (start > 0 && VORWORT.has(w[start - 1]!)) start--;
+  return w.slice(start).join(' ');
+}
+
+/** DP73 B2: die Lage im Haus, wie geschrieben, mit einfachen Leerzeichen. */
+function lageAus(roh: string | undefined): { lage?: string } {
+  const lage = roh?.replace(/\s+/g, ' ').trim();
+  return lage ? { lage } : {};
+}
 
 /**
  * Die erste Adresse im Text, in der Reihenfolge der Seite: Die Lage des Inserats steht oben, die des
@@ -377,39 +423,109 @@ const ORT = String.raw`([A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß .\-/]*[A-Za-
  * in zwei Zeilen. Lieber keine als eine falsche.
  */
 export function adresseLesen(text: string): GeleseneAdresse | null {
+  const alle = adressenLesen(text);
+  // PC124 (N26, W10): Nennt das Inserat mehrere Wohnungen mit eigener Adresse, rät Hefta nicht; das Feld bleibt leer.
+  // Sonst gilt die erste Adresse: Weiter unten steht oft die des Anbieters (Probe 2).
+  if (mehrereWohnungen(alle)) return null;
+  return alle[0]?.adresse ?? null;
+}
+
+/**
+ * PC124 (N26): Nennt das Inserat mehrere Wohnungen mit eigener Adresse? So gilt es, wenn mindestens zwei
+ * verschiedene Adressen jeweils in einer Zeile mit Angaben zur Wohnung stehen (Zimmer, m², €, kalt, warm). Die
+ * Adresse des Anbieters weiter unten zählt nicht mit, denn neben ihr stehen keine solchen Angaben.
+ */
+export function mehrereAdressen(text: string): boolean {
+  return mehrereWohnungen(adressenLesen(text));
+}
+
+const WOHNUNGSANGABE = /\b(?:Zimmer|Zi\.)|m²|€|\bkalt\b|\bwarm\b/i;
+
+function mehrereWohnungen(alle: { mitAngaben: boolean }[]): boolean {
+  return alle.filter((a) => a.mitAngaben).length > 1;
+}
+
+/** Alle Adressen im Text, in ihrer Reihenfolge; dieselbe Straße mit derselben Postleitzahl nur einmal. */
+function adressenLesen(text: string): { adresse: GeleseneAdresse; mitAngaben: boolean }[] {
+  const gefunden: { adresse: GeleseneAdresse; mitAngaben: boolean }[] = [];
+  const merken = (a: GeleseneAdresse, zeile: string) => {
+    const schluessel = (x: GeleseneAdresse) => `${x.strasse.toLowerCase()}|${x.plz}`;
+    const da = gefunden.find((x) => schluessel(x.adresse) === schluessel(a));
+    const mitAngaben = WOHNUNGSANGABE.test(zeile);
+    if (da) da.mitAngaben ||= mitAngaben;
+    else gefunden.push({ adresse: a, mitAngaben });
+  };
   const zeilen = bereinigen(text)
     .split('\n')
     .map((z) => z.trim());
   const eine = new RegExp(
-    '^' + STRASSE + String.raw`\s*(?:,|\s-\s)\s*(?:([^,\n\d]+?),\s*)?(\d{5})\s+` + ORT,
+    '^' +
+      STRASSE +
+      String.raw`\s*(?:,|\s-\s)\s*(?:(` +
+      GESCHOSS +
+      String.raw`)\s*,\s*)?(?:([^,\n\d]+?),\s*)?(\d{5})\s+` +
+      ORT,
   );
   const klammer = new RegExp(
-    '^' + STRASSE + String.raw`\s*,\s*(?:([^,\n\d]+?),\s*)?` + ORT + String.raw`\s*\((\d{5})\)`,
+    '^' +
+      STRASSE +
+      String.raw`\s*,\s*(?:(` +
+      GESCHOSS +
+      String.raw`)\s*,\s*)?(?:([^,\n\d]+?),\s*)?` +
+      ORT +
+      String.raw`\s*\((\d{5})\)`,
   );
-  const nurStrasse = new RegExp('^' + STRASSE + '$');
-  const plzZeile = new RegExp(String.raw`^(\d{5})\s+` + ORT);
+  // Straße allein oder mit Geschoss in einer Zeile, Postleitzahl und Ort in der nächsten.
+  const nurStrasse = new RegExp(
+    '^' + STRASSE + String.raw`(?:\s+(` + HAUSTEIL + String.raw`))?(?:\s*,\s*(` + GESCHOSS + '))?$',
+  );
+  // PC118 (F8a): ImmoScout24 schreibt „12345 Stadtteil, Stadt“; dann ist der zweite Teil der Ort.
+  const plzZeile = new RegExp(String.raw`^(\d{5})\s+` + ORT + String.raw`(?:\s*,\s*` + ORT + ')?');
   for (let i = 0; i < zeilen.length; i++) {
     const z = zeilen[i] ?? '';
     let m = eine.exec(z);
-    if (m)
-      return {
-        strasse: m[1]!.trim(),
-        plz: m[3]!,
-        ort: m[4]!.trim(),
-        stadtteil: m[2]?.trim() || null,
-      };
+    if (m) {
+      merken(
+        {
+          strasse: strasseBereinigen(m[1]!),
+          plz: m[4]!,
+          ort: m[5]!.trim(),
+          stadtteil: m[3]?.trim() || null,
+          ...lageAus(m[2]),
+        },
+        z,
+      );
+      continue;
+    }
     m = klammer.exec(z);
-    if (m)
-      return {
-        strasse: m[1]!.trim(),
-        plz: m[4]!,
-        ort: m[3]!.trim(),
-        stadtteil: m[2]?.trim() || null,
-      };
-    if (nurStrasse.test(z)) {
+    if (m) {
+      merken(
+        {
+          strasse: strasseBereinigen(m[1]!),
+          plz: m[5]!,
+          ort: m[4]!.trim(),
+          stadtteil: m[3]?.trim() || null,
+          ...lageAus(m[2]),
+        },
+        z,
+      );
+      continue;
+    }
+    const s = nurStrasse.exec(z);
+    if (s) {
       const n = plzZeile.exec(zeilen[i + 1] ?? '');
-      if (n) return { strasse: z, plz: n[1]!, ort: n[2]!.trim(), stadtteil: null };
+      if (n)
+        merken(
+          {
+            strasse: strasseBereinigen(s[1]!),
+            plz: n[1]!,
+            ort: (n[3] ?? n[2]!).trim(),
+            stadtteil: n[3] ? n[2]!.trim() : null,
+            ...lageAus([s[2], s[3]].filter(Boolean).join(', ')),
+          },
+          `${z} ${zeilen[i + 1] ?? ''}`,
+        );
     }
   }
-  return null;
+  return gefunden;
 }

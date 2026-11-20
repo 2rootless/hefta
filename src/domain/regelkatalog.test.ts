@@ -10,6 +10,8 @@ import {
   rollenText,
   ohneTrennstellen,
   unterlagenFuer,
+  warumInhalt,
+  type Dokumenttyp,
 } from './regelkatalog';
 import { leereSelbstauskunft } from './selbstauskunft';
 
@@ -167,7 +169,12 @@ describe('Stand einer Person', () => {
     const doks = ['selbstauskunft', 'gehaltsnachweis', 'bonitaet'].map((t) => dokument(t));
     const versionen = doks.flatMap((d) => version(d.id, 3));
     const ausgefuellt = person({
-      kontakt: { telefon: '0171 3920001', email: '' },
+      kontakt: {
+        telefon: '0171 3920001',
+        telefonLand: 'DE',
+        telefonE164: '+491713920001',
+        email: '',
+      },
       nettoeinkommen: 2800,
       selbstauskunft: {
         ...leereSelbstauskunft(),
@@ -231,5 +238,36 @@ describe('Studium oder Ausbildung', () => {
     expect(typ('studium').text).toBe('BAföG oder Unterhalt');
     expect(typ('ausbildung').text.replaceAll('\u00ad', '')).toBe('Ausbildungsvertrag');
     expect(typ('studium').jeVariante).toBe(true);
+  });
+});
+
+describe('PC81 B12 (QA14): eigene Quellen unter „Gut zu wissen“', () => {
+  const typ = (id: string) =>
+    katalog.dokumenttypen.find((d) => d.id === id)! as unknown as Dokumenttyp;
+  /** Sätze zu Bürgschaft und Kaution, die die Orientierungshilfe nicht trägt, brauchen ihre eigene Quelle. */
+  const ohneEigeneQuelle = (i: NonNullable<ReturnType<typeof warumInhalt>>) =>
+    i.gutZuWissen.filter(
+      (satz, n) => /Nettokaltmieten|Unterschrift auf Papier/.test(satz) && !i.gutZuWissenQuellen[n],
+    );
+
+  it('Bürgschaftserklärung: drei Nettokaltmieten mit § 551 Abs. 1 BGB, Schriftform mit § 766 BGB', () => {
+    for (const an of ['du', 'ihr'] as const) {
+      const i = warumInhalt(typ('buergschaftserklaerung'), an)!;
+      expect(i.gutZuWissen[0]).toContain('drei Nettokaltmieten');
+      expect(i.gutZuWissenQuellen[0]).toBe(
+        '§ 551 Abs. 1 BGB und Rechtsprechung des Bundesgerichtshofs',
+      );
+      expect(i.gutZuWissen[1]).toContain('Unterschrift auf Papier');
+      expect(i.gutZuWissenQuellen[1]).toBe('§ 766 BGB');
+      expect(ohneEigeneQuelle(i)).toEqual([]);
+    }
+  });
+
+  it('Gegenprobe: ohne eigene Quellen schlägt die Prüfung bei beiden Sätzen an', () => {
+    const { warumGutZuWissenQuellen: _weg, ...ohne } = typ('buergschaftserklaerung');
+    void _weg;
+    const i = warumInhalt(ohne as Dokumenttyp)!;
+    expect(i.gutZuWissenQuellen).toEqual([]);
+    expect(ohneEigeneQuelle(i)).toHaveLength(2);
   });
 });

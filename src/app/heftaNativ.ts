@@ -42,8 +42,6 @@ export interface HeftaNativPlugin {
   teilen(o: {
     dateien: string[];
     text?: string;
-    /** Derselbe Text als HTML, nur für Gmail (PC64 Punkt 2, W14). */
-    html?: string;
     betreff: string;
   }): Promise<{ geteilt: boolean; app?: string }>;
   /** Nur iOS: Läuft ein Testbau (TestFlight)? Im App Store nie (PC25 B6). */

@@ -103,7 +103,8 @@ export function mailLink(
   an: string | null = null,
 ): { href: string; nurBetreff: boolean } {
   const kurz = `mailto:${an ?? ''}?subject=${encodeURIComponent(betreff)}`;
-  const voll = `${kurz}&body=${encodeURIComponent(text)}`;
+  // PC87 (W14): Umbrüche als %0D%0A, wie RFC 6068 es für `mailto:` verlangt.
+  const voll = `${kurz}&body=${encodeURIComponent(text.replace(/\r\n|\r|\n/g, '\r\n'))}`;
   return voll.length > MAIL_LINK_GRENZE
     ? { href: kurz, nurBetreff: true }
     : { href: voll, nurBetreff: false };

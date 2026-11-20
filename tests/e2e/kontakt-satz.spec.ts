@@ -19,3 +19,18 @@ test('Kontakt: Satz unter den Angaben, eine Angabe reicht', async ({ page }) => 
   });
   expect(unter).toBe(true);
 });
+
+// PC130 K7: Der Satz steht im offenen Teil einmal, nicht noch einmal als „Eine Angabe genügt“ im Kopf. Zugeklappt
+// steht der kurze Satz, denn dort fehlt der lange.
+test('K7: „Eine Angabe genügt/reicht“ steht im offenen Teil „Kontakt“ einmal', async ({ page }) => {
+  await szenarioLaden(page, '02-neustart', '/selbstauskunft/p-02-neustart-0');
+  const knopf = page.getByRole('button', { name: /^Kontakt/ }).first();
+  if (await knopf.isVisible().catch(() => false)) {
+    // Zugeklappt: der kurze Satz, einmal.
+    await expect(knopf).toContainText('Eine Angabe genügt');
+    await knopf.click();
+  }
+  const offen = page.locator('section.teil.offen');
+  await expect(offen.getByText('Eine Angabe reicht, die zweite ist freiwillig.')).toBeVisible();
+  await expect(offen.getByText(/Eine Angabe (genügt|reicht)/)).toHaveCount(1);
+});

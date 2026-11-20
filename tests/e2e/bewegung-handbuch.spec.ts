@@ -29,7 +29,8 @@ const HEFT = {
   ereignisse: { ...leer },
   notiz: '',
   angaben: {
-    titel: 'Neubau mit Aufzug',
+    // E236: Mit Adresse hieße das Heft nach der Straße; der Name für die Prüfungen steht darum als Merkmal.
+    merkmal: 'Neubau mit Aufzug',
     stadtteil: 'Eimsbüttel',
     warm: 1390,
     zimmer: 3,

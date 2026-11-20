@@ -51,7 +51,13 @@ describe('Datenschutzerklärung', () => {
 
     it('trägt den Text vollständig und die Ergänzung davor', () => {
       const ende = text.indexOf('</h1>') + '</h1>'.length;
-      expect(html).toContain(text.slice(0, ende));
+      // PC81 B11: In der Überschrift kommt nur ein weiches Trennzeichen hinzu; ohne es ist sie der Wortlaut.
+      const kopf = text
+        .slice(0, ende)
+        .replace('Datenschutzerklärung</h1>', 'Datenschutz&shy;erklärung</h1>');
+      expect(kopf).not.toBe(text.slice(0, ende));
+      expect(kopf.replace('&shy;', '')).toBe(text.slice(0, ende));
+      expect(html).toContain(kopf);
       expect(html).toContain(text.slice(ende));
       expect(html.indexOf('Cloudflare')).toBeLessThan(html.indexOf('Präambel'));
       // Vom Auftraggeber am 6.11.2026 freigegeben: kein Vermerk „Entwurf“ mehr.

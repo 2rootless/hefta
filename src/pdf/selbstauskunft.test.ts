@@ -9,7 +9,12 @@ const MAX = {
   vorname: 'Max',
   nachname: 'Mustermann',
   rufname: 'Max',
-  kontakt: { telefon: '0171 3920001', email: 'max.mustermann@example.com' },
+  kontakt: {
+    telefon: '0171 3920001',
+    telefonLand: 'DE',
+    telefonE164: '+491713920001',
+    email: 'max.mustermann@example.com',
+  },
   lebenssituation: 'angestellt',
   beruf: 'Elektroniker',
   arbeitgeber: 'Musterfirma GmbH, Hamburg',

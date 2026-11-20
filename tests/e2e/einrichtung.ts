@@ -13,7 +13,7 @@ export interface NeuePerson {
 
 async function personAusfuellen(page: Page, p: NeuePerson) {
   await page.getByLabel('Vorname').fill(p.vorname);
-  await page.getByLabel('Nachname').fill(p.nachname ?? 'Mustermann');
+  await page.getByLabel('Nachname', { exact: true }).fill(p.nachname ?? 'Mustermann');
   await page.getByRole('radio', { name: p.bezeichnung, exact: true }).click();
   if (p.einkommen) await page.getByLabel(/Einkommen\?$/).selectOption({ label: p.einkommen });
 }
@@ -41,8 +41,9 @@ export async function appHinweisNochmal(page: Page) {
 }
 
 /** Schritt 1 vom leeren Zustand aus. */
-export async function erstePerson(page: Page, p: NeuePerson) {
-  await page.goto('/');
+/** `start`: Adresse der App, auf der Website `/mappe/`. */
+export async function erstePerson(page: Page, p: NeuePerson, start = '/') {
+  await page.goto(start);
   await ersterStart(page);
   await expect(page.getByRole('heading', { level: 1, name: 'Wer bist du?' })).toBeVisible();
   await personAusfuellen(page, p);
@@ -88,8 +89,8 @@ export async function haushaltDesAuftraggebers(page: Page) {
 }
 
 /** Nur Max, angestellt, bis zur Übersicht (Rutsch auf später). */
-export async function haushaltMitMax(page: Page) {
-  await erstePerson(page, { vorname: 'Max', bezeichnung: 'Hauptmieter' });
+export async function haushaltMitMax(page: Page, start = '/') {
+  await erstePerson(page, { vorname: 'Max', bezeichnung: 'Hauptmieter' }, start);
   await page.getByRole('link', { name: 'Haushalt anlegen' }).click();
   await appHinweisNochmal(page);
   await page.getByRole('button', { name: 'Später', exact: true }).click();

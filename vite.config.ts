@@ -1,6 +1,6 @@
 /// <reference types="vitest/config" />
 import { svelte } from '@sveltejs/vite-plugin-svelte';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import { heftaBau } from './build/hefta-plugin.ts';
 
@@ -23,7 +23,9 @@ export default defineConfig({
     chunkSizeWarningLimit: 1600,
   },
   test: {
-    include: ['src/**/*.test.ts', 'build/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'build/**/*.test.ts', 'pakete/**/src/**/*.test.ts'],
+    // Die Website liegt nur im Hauptrepository (web/); im öffentlichen Repository der App fehlt ihr Test.
+    exclude: existsSync('web') ? [] : ['build/webseite.test.ts'],
     environment: 'node',
   },
 });

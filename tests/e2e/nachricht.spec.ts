@@ -1,31 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
-import { HEUTE, SZENARIEN, datensaetze } from './szenarien';
+import { HEUTE } from './szenarien';
+import { szenarioLaden } from './szenario-laden';
 
 // Feinschliff (design/mappe-feinschliff.md) und Nachricht ans Inserat (design/nachricht-ans-inserat.md).
 
+// Mit den Dateien der Unterlagen (szenarioLaden): Ohne sie hielte das Blatt aus K5 die Mappe an (PC126, PC127).
 async function laden(page: Page, szenario: string, pfad: string) {
   await page.clock.setFixedTime(HEUTE);
-  await page.goto('/');
-  await page.locator('h1').first().waitFor();
-  await page.evaluate(
-    async ({ daten }) => {
-      const db = await new Promise<IDBDatabase>((ok) => {
-        const r = indexedDB.open('hefta');
-        r.onsuccess = () => ok(r.result);
-      });
-      const orte = [...db.objectStoreNames];
-      const tx = db.transaction(orte, 'readwrite');
-      for (const ort of orte) tx.objectStore(ort).clear();
-      for (const [ort, liste] of Object.entries(daten))
-        for (const d of liste as object[]) tx.objectStore(ort).put(d);
-      await new Promise((ok) => (tx.oncomplete = ok));
-      db.close();
-    },
-    { daten: datensaetze(SZENARIEN.find((s) => s.id === szenario)!) },
-  );
-  await page.goto('about:blank');
-  await page.goto(`/#${pfad}`);
-  await page.locator('main h1').first().waitFor();
+  await szenarioLaden(page, szenario, pfad);
 }
 
 test.describe('Feinschliff', () => {

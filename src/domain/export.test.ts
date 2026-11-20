@@ -11,6 +11,7 @@ import {
   einstellungenNachLaden,
   standardEinstellungen,
   strassenteil,
+  ohneUnterlagen,
   type ExportEinstellungen,
 } from './export';
 import type { DateiVersion, Dokument, Person } from './modell';
@@ -28,7 +29,12 @@ function person(id: string, teil: Partial<Person> = {}): Person {
     vorname: id,
     nachname: 'Mustermann',
     rufname: id,
-    kontakt: { telefon: '0170', email: '' },
+    kontakt: {
+      telefon: '0171 3920001',
+      telefonLand: 'DE',
+      telefonE164: '+491713920001',
+      email: '',
+    },
     lebenssituation: 'angestellt',
     beruf: '',
     arbeitgeber: '',
@@ -263,6 +269,20 @@ describe('Dateinamen (06-export.md)', () => {
     expect(strassenteil('Große Beispielstraße 1a')).toBe('GrosseBeispielstr1a');
   });
 
+  it('PC120 (§8, 5): eine Spanne von Hausnummern behält ihren Strich', () => {
+    expect(mappenDateiname(['Mustermann'], 'Musterweg 7–9\n00100 Musterstadt')).toBe(
+      'Bewerbung_Mustermann_Musterweg7-9.pdf',
+    );
+    expect(strassenteil('Musterweg 7-9')).toBe('Musterweg7-9');
+    expect(strassenteil('Musterweg 7 – 9a, 2. OG')).toBe('Musterweg7-9a');
+    expect(strassenteil('Musterweg 7/9')).toBe('Musterweg7-9');
+    expect(strassenteil('Muster-Beispiel-Straße 1')).toBe('MusterBeispielstr1');
+    expect(strassenteil('Musterweg 7')).toBe('Musterweg7');
+    expect(strassenteil('')).toBe('');
+    // Gegenprobe: die alte Fassung machte aus 7–9 die Zahl 79.
+    expect(strassenteil('Musterweg 7–9')).not.toBe('Musterweg79');
+  });
+
   it('ohne Wohnung, zwei Nachnamen, Umlaute', () => {
     expect(mappenDateiname(['Müller', 'Öztürk'], '')).toBe('Bewerbung_Mueller-Oeztuerk.pdf');
   });
@@ -342,5 +362,23 @@ describe('E49: „Datensparsam“ wird „Eigene Auswahl“ mit gleichem Inhalt'
       true,
     );
     expect(auskunftAntwortenImmer({ ...e, modus: 'datensparsam' })).toBe(false);
+  });
+});
+
+describe('PC126 K5: „Diesmal weglassen“ (DP83 a)', () => {
+  it('macht „Eigene Auswahl“ ohne die ganze Unterlage; alles andere bleibt, wie es gewählt war', () => {
+    const vorher = E();
+    const nachher = ohneUnterlagen(vorher, haushalt(), [
+      { personId: 'Max', typ: 'gehaltsnachweis' },
+    ]);
+    expect(nachher.modus).toBe('eigene_auswahl');
+    const v = Object.fromEntries(ids(vorher));
+    const n = Object.fromEntries(ids(nachher));
+    expect(v['Max']).toContain('gehaltsnachweis');
+    expect(n['Max']).toEqual(v['Max'].filter((typ: string) => typ !== 'gehaltsnachweis'));
+    expect(n['Lea']).toEqual(v['Lea']);
+    expect(n['Petra']).toEqual(v['Petra']);
+    // Gegenprobe: ohne etwas wegzulassen bleibt die Auswahl unverändert.
+    expect(ohneUnterlagen(vorher, haushalt(), [])).toBe(vorher);
   });
 });

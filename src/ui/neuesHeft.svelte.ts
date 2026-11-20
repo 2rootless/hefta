@@ -4,7 +4,7 @@ import { gehe } from '../app/router.svelte';
 import type { HeftAngaben } from '../domain/modell';
 import { adresseAus, angabenAus } from '../lesen/angaben';
 import { anbieterLesen } from '../lesen/anbieter';
-import { adresseLesen, lesen, type Gelesen } from '../lesen/leser';
+import { adresseLesen, lesen, mehrereAdressen, type Gelesen } from '../lesen/leser';
 
 // Entwurf eines neuen Hefts zwischen „Text einfügen“ und „Heft anlegen“ (B23). Er lebt nur im Speicher
 // der Seite: Gespeichert wird erst mit „Heft anlegen“ (Lesesatz in B23). Schließt man die App, ist er weg.
@@ -24,6 +24,18 @@ export const entwurf = $state<{
   bildHoch: boolean;
   /** Aus einer Portal-App an Hefta geteilt (E81, B23 `quelle=teilen`). */
   geteilt: boolean;
+  /**
+   * PC118 (F8a): der Text, den die Portal-App beim Teilen mitschickt (ImmoScout24: Miete, Fläche, Zimmer, Adresse).
+   * Er kommt vor der Seite; nur was darin fehlt, liest Hefta aus der Seite.
+   */
+  geteilterText: string;
+  /**
+   * DP79: Woraus die Angaben stammen. `inserat`: Seite oder eingesetzter Text des Inserats (dazu vielleicht der
+   * geteilte Text); `geteilt`: nur der geteilte Text; `nichts`: Hefta hat nichts gelesen („Selbst ausfüllen“).
+   */
+  lesung: Lesung;
+  /** PC124 (N26): Das Inserat nennt mehrere Wohnungen mit eigener Adresse; Hefta hat keine übernommen. */
+  mehrereAdressen: boolean;
 }>({
   text: '',
   link: '',
@@ -35,7 +47,12 @@ export const entwurf = $state<{
   bild: null,
   bildHoch: false,
   geteilt: false,
+  geteilterText: '',
+  lesung: 'nichts',
+  mehrereAdressen: false,
 });
+
+export type Lesung = 'inserat' | 'geteilt' | 'nichts';
 
 /**
  * Stand der Vorschau (B23 Bildschirm 2) für genau einen Link: Zurück aus der Kontrolle zeigt ihn wieder,
@@ -46,11 +63,20 @@ export const zuletzt = $state<{ heftId: string | null }>({ heftId: null });
 
 export const vorschauStand = $state<{
   link: string;
-  zustand: 'laden' | 'ok' | 'zeit' | 'netz' | 'leer' | 'liste' | 'schon';
+  /** Die Fälle aus DP79, Abschnitt 2 (siehe `VorschauZustand`). */
+  zustand: VorschauZustand;
   roh: InseratGelesen | null;
   /** PC19 A4: Uhrzeit des letzten Versuchs, damit „Noch einmal versuchen“ sichtbar etwas tut. */
   versuchtUm?: Date;
 }>({ link: '', zustand: 'laden', roh: null });
+
+/**
+ * DP79 (E235), Abschnitt 2: `weg` A (404, 410), `gesperrt` B (401, 403, 429, 451, Roboterprüfung), `nichts` C (Seite
+ * da, keine Eckdaten), `netz` D (das Gerät ist offline), `offen` F (zu lange, 5xx, anderer Fehler, Verbindungsfehler
+ * bei Netz). E ist `ok` mit `entwurf.lesung` `geteilt`: Die Eckdaten kommen aus dem geteilten Text, die Seite war B, C, D oder F.
+ */
+export type VorschauZustand =
+  'laden' | 'ok' | 'weg' | 'gesperrt' | 'nichts' | 'netz' | 'offen' | 'liste' | 'schon';
 
 /** Liest den eingefügten Text. Einmal: „Heft anlegen“ übernimmt nur, was hier gelesen ist (E72). */
 export function entwurfLesen(): void {
@@ -63,6 +89,8 @@ export function entwurfLesen(): void {
   entwurf.adresse = adresseAus(a);
   entwurf.gelesenAngaben = { ...angabenAus(g, a, null, link || null), anbieter };
   entwurf.gelesenAdresse = entwurf.adresse;
+  entwurf.lesung = 'inserat';
+  entwurf.mehrereAdressen = !a && mehrereAdressen(entwurf.text);
 }
 
 export function entwurfVergessen(): void {
@@ -76,6 +104,9 @@ export function entwurfVergessen(): void {
   entwurf.bild = null;
   entwurf.bildHoch = false;
   entwurf.geteilt = false;
+  entwurf.geteilterText = '';
+  entwurf.lesung = 'nichts';
+  entwurf.mehrereAdressen = false;
   vorschauStand.link = '';
   vorschauStand.roh = null;
 }
@@ -85,11 +116,15 @@ export function entwurfVergessen(): void {
  * Titel nach Probe 3: die Überschrift der Seite vor `og:title`, dann der Titel des Dokuments.
  */
 export function entwurfAusVorschau(g: InseratGelesen, link: string): void {
-  const text = g.text ?? '';
+  const seite = g.text ?? '';
   const url = g.url || link;
-  const gelesen = lesen({ text, url });
-  const a = adresseLesen(text);
+  // PC118 (F8a): Der geteilte Text kommt zuerst; die Seite ergänzt nur, was darin fehlt.
+  const geteilt = entwurf.geteilterText;
+  const ausText = geteilt ? lesen({ text: geteilt, url: link }) : null;
+  const gelesen = mitText(lesen({ text: seite, url }), ausText);
+  const a = (geteilt ? adresseLesen(geteilt) : null) ?? adresseLesen(seite);
   const titel = (g.h1 || g.ogTitle || g.titel || '').trim() || null;
+  const text = [geteilt, seite].filter(Boolean).join('\n\n');
   entwurf.text = text;
   entwurf.link = link;
   entwurf.gelesen = gelesen;
@@ -101,6 +136,58 @@ export function entwurfAusVorschau(g: InseratGelesen, link: string): void {
   entwurf.gelesenAdresse = entwurf.adresse;
   entwurf.bild = g.bild ?? null;
   entwurf.bildHoch = !!g.bildHoch;
+  // DP79: Nur eine Seite, die ankam (Status unter 400), zählt als gelesenes Inserat.
+  const seiteGelesen = g.zustand === 'ok' && (g.http ?? 200) < 400 && !!seite.trim();
+  entwurf.lesung = seiteGelesen ? 'inserat' : geteilt ? 'geteilt' : 'nichts';
+  entwurf.mehrereAdressen =
+    !a && ((!!geteilt && mehrereAdressen(geteilt)) || mehrereAdressen(seite));
+}
+
+/**
+ * DP79, Fall B: Merkmale einer Roboterprüfung, aus der Teilen-Probe vom 11.11. (PC120, Abschnitt 4). Echte Inserate
+ * ruft Hefta dafür nicht ab.
+ */
+export function istRoboterpruefung(text: string | undefined): boolean {
+  return /ich bin kein roboter|gleich geht[’']s weiter/i.test(text ?? '');
+}
+
+/** DP79, Abschnitt 2: der Fall aus dem, was der Leser liefert (`zustand`, `http`, `text`), ohne den geteilten Text. */
+export function vorschauFall(
+  g: InseratGelesen,
+  online = typeof navigator === 'undefined' || navigator.onLine !== false,
+): Exclude<VorschauZustand, 'laden' | 'liste' | 'schon'> {
+  if (g.zustand === 'netz') return online ? 'offen' : 'netz';
+  if (g.zustand !== 'ok') return 'offen';
+  const http = g.http ?? 200;
+  if (http === 404 || http === 410) return 'weg';
+  if ([401, 403, 429, 451].includes(http) || istRoboterpruefung(g.text)) return 'gesperrt';
+  if (http >= 400) return 'offen';
+  return 'ok';
+}
+
+/** Was der geteilte Text sagt, gilt vor der Seite; die Seite füllt nur Lücken. */
+function mitText(seite: Gelesen, text: Gelesen | null): Gelesen {
+  if (!text) return seite;
+  const aus: Record<string, unknown> = { ...seite };
+  for (const [k, v] of Object.entries(text)) if (v !== undefined && v !== false) aus[k] = v;
+  return aus as Gelesen;
+}
+
+/**
+ * PC118 (F8a): Reicht der geteilte Text allein? Dann lädt Hefta die Seite gar nicht. Nötig sind Adresse, Kaltmiete,
+ * Warmmiete, Fläche und Zimmer.
+ */
+export function geteilterTextReicht(): boolean {
+  const t = entwurf.geteilterText;
+  if (!t) return false;
+  const g = lesen({ text: t, url: entwurf.link || undefined });
+  return (
+    !!adresseLesen(t) &&
+    g.kalt !== undefined &&
+    g.warm !== undefined &&
+    g.flaeche !== undefined &&
+    g.zimmer !== undefined
+  );
 }
 
 /** Hat das Lesen etwas gefunden, das im Kopf eines Hefts steht? */
@@ -117,10 +204,11 @@ export function zurKontrolle(): void {
   gehe('/wohnung-neu/kontrolle');
 }
 
-export function geteiltOeffnen(link: string): void {
+export function geteiltOeffnen(link: string, text = ''): void {
   entwurfVergessen();
   entwurf.link = link;
   entwurf.geteilt = true;
+  entwurf.geteilterText = text.trim();
   if (linkWegDa()) gehe('/wohnung-neu/vorschau');
   else {
     // Android: Die unsichtbare Vorschau gibt es bisher nur auf dem iPhone. Dann gleich zur Kontrolle, mit

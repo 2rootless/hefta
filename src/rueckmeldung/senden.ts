@@ -9,15 +9,21 @@ import type { Antwort, Frage } from './fragen';
 export const EMPFANG = 'https://hefta.de/api/rueckmeldung';
 
 /**
- * PC23 A3: Der Empfang auf hefta.de ist noch nicht deployt (ein POST bekommt 405). Bis er live ist, zeigt
- * Hefta die Fragen zum Abschicken nicht an, statt einen Fehler zu melden. Mit dem Deploy des Empfangs
- * (nur mit „Ja, deployen“) `EMPFANG_DEPLOYT` auf `true` setzen. Unter Android bleibt die Mail (RueckmeldungMail).
+ * PC23 A3: Bis der Empfang auf hefta.de live war, zeigte Hefta die Fragen zum Abschicken nicht an.
+ * PC92 (E194, K1): Die Rückmeldung kommt mit 2.0. Der Empfang geht mit dem Deploy der Website live, und der kommt
+ * vor dem Einreichen (Release-Mappe, Ablauf am Tag). Bis dahin meldet die App beim Abschicken „Gerade keine
+ * Verbindung“, und nichts wird nachgeschickt. Unter Android bleibt die Mail (RueckmeldungMail).
  */
-const EMPFANG_DEPLOYT = false;
+const EMPFANG_DEPLOYT = true;
 
-/** Ist der Empfang da? Browsertests schalten ihn mit `__heftaEmpfangTest` an, um das Verhalten zu prüfen. */
-export const empfangLive = (): boolean =>
-  EMPFANG_DEPLOYT || (globalThis as { __heftaEmpfangTest?: boolean }).__heftaEmpfangTest === true;
+/**
+ * Ist der Empfang da? Browsertests schalten ihn mit `__heftaEmpfangTest` an (`true`) oder aus (`false`), um beide
+ * Wege zu prüfen; ohne den Schalter gilt `EMPFANG_DEPLOYT`.
+ */
+export const empfangLive = (): boolean => {
+  const test = (globalThis as { __heftaEmpfangTest?: boolean }).__heftaEmpfangTest;
+  return test === undefined ? EMPFANG_DEPLOYT : test;
+};
 
 export async function abschicken(
   f: Frage,

@@ -1,6 +1,7 @@
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { ANHANG_FASSUNG, ANHANG_NAME, anhangLesen, type HeftaAnhang } from '../pdf/anhang';
 import '../pdf/stromPolyfill';
+import { papierLesen } from './papier';
 import { lesehilfePasst } from './regel';
 import { t } from './texte';
 
@@ -35,6 +36,11 @@ export interface Mappe {
   /** Null: keine Lesehilfe oder eine, die nicht passt. */
   anhang: HeftaAnhang | null;
   passtNicht: boolean;
+  /**
+   * PC126 K3 (DP82 L1, PC130): Die Lesehilfe liegt bei, lässt sich aber nicht lesen (der Leser lehnt sie ab, auch
+   * eine alte Form). Dann sagt die Seite das, statt „keine Lesehilfe“ zu behaupten.
+   */
+  lesehilfeUnlesbar: boolean;
   neuereFassung: boolean;
 }
 
@@ -51,13 +57,6 @@ async function anhangAus(dok: PdfDok): Promise<Uint8Array | null> {
   const treffer = [...anhaenge.entries()].find(([, a]) => a.filename === ANHANG_NAME);
   if (!treffer) return null;
   return (await dok.getAttachmentContent(treffer[0])) ?? null;
-}
-
-async function ersteSeite(dok: PdfDok): Promise<string> {
-  const seite = await dok.getPage(1);
-  const inhalt = await seite.getTextContent();
-  seite.cleanup();
-  return inhalt.items.map((i) => ('str' in i ? i.str : '')).join(' ');
 }
 
 /** Liest eine Datei. `doppelt` sagt, welche Nummer die gleiche Datei in der Liste schon hat. */
@@ -85,8 +84,9 @@ export async function einlesen(
     const seiten = dok.numPages;
     const roh = await anhangAus(dok).catch(() => null);
     const gelesen = roh ? anhangLesen(roh) : null;
-    const text = gelesen ? await ersteSeite(dok).catch(() => '') : '';
-    const passt = !!gelesen && lesehilfePasst(gelesen, seiten, text);
+    // Punkt 7: Was die Lesehilfe zeigt, muss auf dem Papier stehen (E223).
+    const papier = gelesen ? await papierLesen(dok, gelesen).catch(() => null) : null;
+    const passt = !!gelesen && !!papier && lesehilfePasst(gelesen, seiten, papier);
     return {
       art: 'mappe',
       mappe: {
@@ -96,7 +96,10 @@ export async function einlesen(
         seiten,
         sha,
         anhang: passt ? gelesen : null,
-        passtNicht: !!roh && !passt,
+        // PC107: Eine Lesehilfe, die sich nicht lesen lässt (etwa eine alte Form), öffnet wie eine Mappe ohne
+        // Lesehilfe, ohne Meldung. „Passt nicht“ heißt: gelesen, aber nicht zum Papier passend (Punkte 1 bis 7).
+        passtNicht: !!gelesen && !passt,
+        lesehilfeUnlesbar: !!roh && !gelesen,
         neuereFassung: passt && gelesen.hefta > ANHANG_FASSUNG,
       },
     };

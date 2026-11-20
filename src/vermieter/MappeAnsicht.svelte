@@ -17,6 +17,7 @@
     NB,
     ORIENTIERUNGSHILFE,
     personenGesamt,
+    kontaktwege,
     pruefPunkte,
     rolleText,
     seitenText,
@@ -30,6 +31,7 @@
     vollstaendigkeit,
   } from './regel';
   import { t } from './texte';
+  import { SCHRITT_SATZ } from '../../pakete/hefta-json/src/index';
 
   let {
     mappe,
@@ -63,7 +65,7 @@
     return null;
   });
   // Fassung 3 (E17): Telefon und Mail der Kontaktperson, nur geprüft gegen Seite 1 (lesehilfePasst).
-  const kontakt = $derived(a?.haushalt.kontakt ?? null);
+  const kontakt = $derived(a ? kontaktwege(a) : null);
   const liste = (teile: string[]) =>
     teile.length > 1
       ? `${teile.slice(0, -1).join(', ')} und ${teile[teile.length - 1]}`
@@ -121,12 +123,12 @@
   {@const angabe = unterlageAngabe(u)}
   {@const hinweis = unterlageHinweis(u, u === ersteDsk)}
   {@const quelle = unterlageQuelle(u)}
-  <button type="button" class="vs-d" onclick={() => oeffnen(u.seiten[0])}>
+  <button type="button" class="vs-d" onclick={() => oeffnen(u.seiten_mappe.von)}>
     <span class="vs-dl">
       <b class="vs-db">{unterlageText(u)}</b>
       {#if angabe}<small class="vs-ds">{angabe}</small>{/if}
     </span>
-    <span class="vs-dp">{seitenText(u.seiten)}</span>
+    <span class="vs-dp">{seitenText(u.seiten_mappe)}</span>
     <span class="vs-ch"><Symbol name="weiter" groesse={16} /></span>
   </button>
   {#if hinweis}<p class="vs-dh">{hinweis}</p>{/if}
@@ -138,8 +140,19 @@
     {@render zurueck()}
     <p class="vs-kick">{t('mappe.kopfOhne', { nummer, gesamt })}</p>
     <h2 class="vs-t vs-tf" data-titel tabindex="-1"><Dateiname name={mappe.name} /></h2>
-    <p class="vs-lead">{t(mappe.passtNicht ? 'mappe.passtNicht' : 'mappe.ohne')}</p>
-    {#if !mappe.passtNicht}<p class="vs-sub">{t('mappe.ohneWarum')}</p>{/if}
+    <p class="vs-lead">
+      {t(
+        mappe.passtNicht
+          ? 'mappe.passtNicht'
+          : mappe.lesehilfeUnlesbar
+            ? 'mappe.unlesbar'
+            : 'mappe.ohne',
+      )}
+    </p>
+    <!-- Der Satz, warum eine Lesehilfe fehlt, passt nur, wenn wirklich keine beiliegt (PC126 K3). -->
+    {#if !mappe.passtNicht && !mappe.lesehilfeUnlesbar}<p class="vs-sub">
+        {t('mappe.ohneWarum')}
+      </p>{/if}
     {@render aktion()}
     {@render loeschen()}
     {@render schritteLink()}
@@ -241,7 +254,8 @@
 
       <section class="vs-was sec">
         <h3 class="vs-h3">{t('mappe.beiliegt')}</h3>
-        {#if a.modus === 'datensparsam'}
+        <!-- E227: nur mit einem bekannten Schritt, dessen fester Satz auf dem Deckblatt steht (V23: kein `modus`). -->
+        {#if a.schritt && a.schritt in SCHRITT_SATZ}
           <p class="vs-note">
             <span class="vs-info" aria-hidden="true">i</span>
             <span>{t('mappe.sparsam', { gehoert: gehoertText(stand.ziel) })}</span>

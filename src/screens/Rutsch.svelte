@@ -909,12 +909,8 @@
     white-space: nowrap;
   }
 
-  /* Bis 300 px brechen die Reiter um; der aktive steht unten, damit er an der Karte hängt. */
-  @container (max-width: 300px) {
-    .reiter.an {
-      order: 1;
-    }
-  }
+  /* DP70 U1 (2.0.1): Brechen die Reiter um, bleibt die Reihenfolge des Haushalts, Max oben. Bild und Vorlesen
+     stimmen so überein; der aktive Reiter rückte früher nach unten an die Karte. */
 
   .karte {
     --hl-grund: var(--p-tint);

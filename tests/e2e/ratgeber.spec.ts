@@ -9,7 +9,7 @@ import { pruefen } from './pruef-c';
 const SEITEN = [
   {
     id: 'RG1-mieter',
-    url: 'http://localhost:4173/was-darf-der-vermieter-verlangen/',
+    url: 'http://localhost:4175/ratgeber/was-darf-der-vermieter-verlangen/',
     titel: 'Was darf der Vermieter verlangen?',
   },
   {
@@ -46,7 +46,7 @@ test('Die App schiebt sich nicht vor den Ratgeber, auch mit Service Worker', asy
   page,
   browserName,
 }) => {
-  await page.goto('http://localhost:4173/');
+  await page.goto('http://localhost:4175/mappe/');
   test.skip(!(await serviceWorkerBereit(page)), `Kein Service Worker in ${browserName}`);
   await page.goto(SEITEN[0]!.url);
   await expect(page.getByRole('heading', { level: 1, name: SEITEN[0]!.titel })).toBeVisible();
@@ -62,7 +62,7 @@ test('Die Vermieter-Seite führt zum Ratgeber, und der zurück', async ({ page }
 });
 
 for (const [name, url, recht] of [
-  ['App', 'http://localhost:4173/datenschutz/', /einstellungen\/rechtliches$/],
+  ['Website', 'http://localhost:4175/datenschutz/', /\/impressum\/$/],
   ['Vermieter-Seite', 'http://localhost:4174/datenschutz/', /#\/rechtliches$/],
 ] as const) {
   test(`Datenschutzerklärung über die ${name}`, async ({ page, browserName }) => {
@@ -181,3 +181,52 @@ test.describe('Prüfkatalog Ratgeber', () => {
     });
   }
 });
+
+// DP36 (PC39): Ratgeber im Kleid der Landingpage. Nach E98 in vier Breiten, hell und dunkel: nichts ragt heraus,
+// „Auf dieser Seite“ erst ab 761 px, der Stapel höchstens 300 px und nachgeladen, kein „eine PDF“, kein „du“.
+for (const schema of ['light', 'dark'] as const) {
+  test(`DP36: Ratgeber und Übersicht, ${schema}`, async ({ browser, browserName }) => {
+    test.skip(browserName !== 'chromium', 'Breiten genügen in Chromium');
+    for (const breite of [320, 390, 768, 1280]) {
+      const k = await browser.newContext({
+        viewport: { width: breite, height: 900 },
+        colorScheme: schema,
+      });
+      const page = await k.newPage();
+      for (const url of [SEITEN[0]!.url, 'http://localhost:4175/ratgeber/']) {
+        await page.goto(url);
+        await page.evaluate(() => document.fonts.ready);
+        const breit = await page.evaluate(() => document.documentElement.scrollWidth);
+        expect(breit, `${url} ${breite}`).toBeLessThanOrEqual(breite);
+        await expect(
+          page.getByRole('link', { name: 'Ratgeber', exact: true }).first(),
+        ).toHaveAttribute('aria-current', 'page');
+      }
+      await page.goto(SEITEN[0]!.url);
+      const text = await page.locator('main').innerText();
+      expect(text).not.toMatch(/\beine PDF\b/);
+      expect(text).not.toMatch(/\b(du|dich|dir|dein\w*)\b/i);
+      await expect(page.getByRole('navigation', { name: 'Auf dieser Seite' })).toBeVisible({
+        visible: breite > 760,
+      });
+      const stapel = page.locator('.mappe .mappe-stapel');
+      expect((await stapel.boundingBox())!.width).toBeLessThanOrEqual(300);
+      await expect(stapel.locator('img:not([loading="lazy"])')).toHaveCount(0);
+      // Rot nur für Zurück (DP41, W5, PC51): Kicker grau, Ziffern der Schritte in Tinte.
+      const rot = await page.evaluate(() => {
+        const akzent = getComputedStyle(document.querySelector('.zurueck')!).color;
+        return [...document.querySelectorAll('main *')]
+          .filter(
+            (e) =>
+              e.childNodes.length &&
+              [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent!.trim()),
+          )
+          .filter((e) => getComputedStyle(e).color === akzent)
+          .filter((e) => !e.closest('.zurueck'))
+          .map((e) => e.textContent!.slice(0, 30));
+      });
+      expect(rot).toEqual([]);
+      await k.close();
+    }
+  });
+}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { versionKurz } from '../app/version';
   import { backupKlick, istAndroidApp, istApp } from '../app/plattform';
   // Einstellungen in Gruppen (design/mappe-erstellen-einstellungen.md, Abschnitt 2, S1/S2):
   // Sicherung, Speicher, App, Daten. Backup erstellen, einspielen und alles löschen sind eigene Seiten.
@@ -28,6 +29,7 @@
   import { einstellungenAendern } from '../storage/speicher';
   import { stillLaden } from '../app/daten.svelte';
   import SchalterZeile from '../ui/SchalterZeile.svelte';
+  import MitUmbruch from '../ui/MitUmbruch.svelte';
 
   const meldung = einstellungenZustand.meldung;
   einstellungenZustand.meldung = '';
@@ -122,6 +124,11 @@
 
   // DP29: Rückmeldung als Zeile mit Blatt; nach einer Antwort „Danke, beantwortet am …“.
   let rueckOffen = $state(false);
+  // PC92 K6 (E166): „Mehr zu sagen? Schreib an {adresse}.“ An der Stelle der Adresse steht der Link.
+  const mehrTeile = $derived(t('rueckmeldung.mehr', { adresse: '\u0000' }).split('\u0000'));
+  // Das Leerzeichen am Ende bleibt: Bildschirmleser lesen sonst „anhallo“.
+  const mehrVor = $derived(mehrTeile[0] ?? '');
+  const mehrNach = $derived(mehrTeile[1] ?? '');
   const rueckAm = $derived.by(() => {
     const am = daten.einstellungen?.rueckmeldungAm;
     return am
@@ -303,11 +310,13 @@
       {/if}
       <li>
         <div class="listenzeile rueck">
+          <!-- PC92 K6 (E166): „Mehr zu sagen? Schreib an hallo@hefta.de.“ Die Adresse steht als Link im Satz, die
+               erste Zeile endet vor ihr. -->
           <span class="tx"
-            ><b>{t('rueckmeldung.mehr')}</b><a
-              class="adresse"
-              href={rueckmeldungLink(t('einstellungen.rueckmeldungBetreff'))}
-              >{RUECKMELDUNG_ADRESSE.replace('@', '@​')}</a
+            ><b>{mehrVor}</b><span
+              ><a class="adresse" href={rueckmeldungLink(t('einstellungen.rueckmeldungBetreff'))}
+                ><MitUmbruch text={RUECKMELDUNG_ADRESSE} nach="@" /></a
+              >{mehrNach}</span
             ></span
           >
           <button type="button" class="kopieren" onclick={adresseKopieren}
@@ -354,7 +363,10 @@
         <div class="listenzeile">
           <span class="tx"
             ><b>{t('einstellungen.version')}</b><small
-              >{t('einstellungen.versionWert', { version: __APP_VERSION__, stand })}</small
+              >{t('einstellungen.versionWert', {
+                version: versionKurz(__APP_VERSION__),
+                stand,
+              })}</small
             ></span
           >
         </div>

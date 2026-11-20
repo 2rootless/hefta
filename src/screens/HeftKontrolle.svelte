@@ -9,7 +9,7 @@
   import { daten, db, stillLaden } from '../app/daten.svelte';
   import { abschliessen, abschliessenMit, route } from '../app/router.svelte';
   import { sicherungMs, wechselArt } from '../ui/wechsel';
-  import { onMount, untrack } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import { heftTitel } from '../domain/heftKarte';
   import type { HeftAngaben } from '../domain/modell';
   import { monatVorher, urteile, type Urteil } from '../domain/urteile';
@@ -84,7 +84,10 @@
     name: string;
     art: Art;
     wert: string | null;
-    /** Fehlt der Wert: gedämpft „nicht angegeben“ (PC19 B4) oder nur ein Strich (Angaben, die oft fehlen). */
+    /**
+     * Fehlt der Wert: gedämpft „nicht gefunden“, wenn Hefta gelesen hat, sonst „–“ (DP79; vorher „nicht angegeben“,
+     * PC19 B4), oder nur ein Strich (Angaben, die oft fehlen).
+     */
     fehlt?: 'eintragen' | 'strich';
     urteil?: Urteil | null;
     /** Hinweis mit (i), ohne Urteil (Staffel oder Index). */
@@ -125,7 +128,8 @@
    */
   function gelesenWert(z: Zeile): string | null | undefined {
     const g = entwurf.gelesenAngaben;
-    if (!g) return undefined;
+    // DP79: Hat Hefta nichts gelesen, gibt es nichts zum Zurücksetzen und keinen Satz „Im Inserat: …“ (W10).
+    if (!g || entwurf.lesung === 'nichts') return undefined;
     if (z.art === 'adresse')
       return entwurf.gelesenAdresse.trim()
         ? entwurf.gelesenAdresse.trim().replace('\n', ', ')
@@ -276,7 +280,13 @@
   function grund(z: Zeile): string {
     const ur = z.urteil;
     if (!ur || !wu) return '';
-    if (!z.wert) return ur.art === 'offen' ? t('neuesHeft.grundFehlt') : '';
+    // DP79: „steht nicht im Inserat“ nur, wenn Hefta das Inserat gelesen hat; aus dem geteilten Text „nicht gefunden“.
+    if (!z.wert)
+      return ur.art !== 'offen' || entwurf.lesung === 'nichts'
+        ? ''
+        : entwurf.lesung === 'geteilt'
+          ? t('neuesHeft.nichtGefunden')
+          : t('neuesHeft.grundFehlt');
     if (ur.art === 'passt') return '';
     if (ur.art === 'offen')
       return z.schluessel === 'adresse' && !entwurf.adresse.trim()
@@ -328,6 +338,24 @@
   let offen = $state<string | null>(null);
   let eingabe = $state('');
   let eingabe2 = $state('');
+
+  /** DP79: Satz des Blocks, wenn die Adresse fehlt, nach dem, was Hefta gelesen hat. */
+  const ADRESSE_SATZ: Record<typeof entwurf.lesung, TextSchluessel> = {
+    inserat: 'neuesHeft.adresseInserat',
+    geteilt: 'neuesHeft.adresseGeteilt',
+    nichts: 'neuesHeft.adresseNichts',
+  };
+
+  /** „Adresse eintragen ›“ öffnet dasselbe wie ein Tipp auf „Lage“. */
+  async function adresseEintragen() {
+    const z = wohnung.find((x) => x.schluessel === 'adresse');
+    if (!z) return;
+    oeffnen(z);
+    await tick();
+    const feld = document.getElementById('f-adresse');
+    feld?.scrollIntoView({ block: 'center' });
+    feld?.focus();
+  }
 
   function oeffnen(z: Zeile) {
     offen = z.schluessel;
@@ -472,7 +500,9 @@
             <span class="v">{z.wert}</span>
           {:else if z.fehlt === 'eintragen'}
             <!-- PC19 B4: gedämpft, kein Knopf; ändern geht wie bei jedem Wert über die Zeile. -->
-            <span class="v ein">{t('neuesHeft.nichtAngegeben')}</span>
+            <span class="v ein"
+              >{entwurf.lesung === 'nichts' ? '–' : t('neuesHeft.nichtGefunden')}</span
+            >
           {:else}
             <span class="v">–</span>
           {/if}
@@ -494,10 +524,21 @@
             <!-- Wortlaute des Designs (12.11.): Wert aus dem Inserat, nicht gefunden, oder gerechnet (E78). -->
             <span
               >{gw === null
-                ? t('neuesHeft.imInseratFehlt')
+                ? t(
+                    entwurf.lesung === 'geteilt'
+                      ? 'neuesHeft.geteiltFehlt'
+                      : 'neuesHeft.imInseratFehlt',
+                  )
                 : z.schluessel === 'warm' && entwurf.gelesenAngaben?.warmCa
                   ? t('neuesHeft.gerechnetWar', { wert: gw })
-                  : t('neuesHeft.gelesenWar', { wert: gw })}</span
+                  : t(
+                      entwurf.lesung === 'geteilt'
+                        ? 'neuesHeft.geteiltWar'
+                        : 'neuesHeft.gelesenWar',
+                      {
+                        wert: gw,
+                      },
+                    )}</span
             >
             <button type="button" onclick={() => zuruecksetzen(z)}
               >{t('neuesHeft.zuruecksetzen')}</button
@@ -544,8 +585,32 @@
     {/if}
     <h1 class="h2">{t('neuesHeft.kontrolle')}</h1>
     <p class="sub">{titel}</p>
+    {#if entwurf.lesung === 'geteilt'}
+      <!-- DP79, Abschnitt 3: die Quelle, nur wenn alles aus dem geteilten Text kommt. -->
+      <p class="herkunft">{t('neuesHeft.quelleGeteilt')}</p>
+    {/if}
+    {#if !entwurf.adresse.trim()}
+      <!-- DP79: Fehlt die Adresse, fragt ein Block danach, gebaut wie „Wünsche festlegen“; kein Tintenrand (W33). -->
+      <div class="zus adresse">
+        <!-- PC124 (N26): Nennt das Inserat mehrere Wohnungen mit eigener Adresse, sagt Hefta das, statt zu raten. -->
+        <p class="zf">
+          <!-- PC127 (DP83 b, W10): Hefta weiß nur, dass es mehrere Adressen fand, nicht, dass es Wohnungen sind. -->
+          {t(
+            entwurf.mehrereAdressen
+              ? entwurf.lesung === 'geteilt'
+                ? 'neuesHeft.adresseMehrereGeteilt'
+                : 'neuesHeft.adresseMehrereInserat'
+              : ADRESSE_SATZ[entwurf.lesung],
+          )}
+        </p>
+        <button class="wlink" type="button" onclick={adresseEintragen}
+          >{t('neuesHeft.adresseEintragen')}</button
+        >
+      </div>
+    {/if}
 
-    {#if !hatEckdaten(a)}
+    <!-- DP79: „keine Eckdaten gefunden“ nur, wenn Hefta etwas gelesen hat. -->
+    {#if !hatEckdaten(a) && entwurf.lesung !== 'nichts'}
       <p class="zus keine">{t('neuesHeft.keineEckdaten')}</p>
     {:else if u.length}
       <div class="zus">
@@ -588,7 +653,11 @@
     <h2 class="gr" style:--i={3}>{t('neuesHeft.gruppeBewerbung')}</h2>
     {@render liste(bewerbung, 3)}
 
-    <p class="tipp">{t(ihr ? 'neuesHeft.tippHinweisIhr' : 'neuesHeft.tippHinweisDu')}</p>
+    <p class="tipp">
+      {entwurf.lesung === 'nichts'
+        ? t(ihr ? 'neuesHeft.tippEintragenIhr' : 'neuesHeft.tippEintragenDu')
+        : t(ihr ? 'neuesHeft.tippHinweisIhr' : 'neuesHeft.tippHinweisDu')}
+    </p>
 
     <div class="cta">
       <Hauptbutton text={t('neuesHeft.anlegen')} onclick={anlegen} />
@@ -640,6 +709,27 @@
     border: 1px solid var(--line);
     border-radius: 14px;
     background: var(--surface);
+  }
+
+  /* DP79: die Quelle 4 px unter dem Titel, 12 px bis zum Nächsten (W22). */
+  .herkunft {
+    margin: -8px 0 12px;
+    color: var(--ink-muted);
+    font-size: calc(14 * var(--px));
+    line-height: 20px;
+  }
+
+  .zus.adresse {
+    margin-bottom: 12px;
+  }
+
+  button.wlink {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
   }
 
   .zus.keine {

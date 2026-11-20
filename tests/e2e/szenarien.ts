@@ -507,7 +507,12 @@ export function datensaetze(s: Szenario) {
       // Selbstauskunft „da“ heißt: alle Angaben beisammen (sie entsteht in der App, nicht als Datei).
       ...(p.unterlagen.selbstauskunft === 'da'
         ? {
-            kontakt: { telefon: '0171 3920001', email: '' },
+            kontakt: {
+              telefon: '0171 3920001',
+              telefonLand: 'DE',
+              telefonE164: '+491713920001',
+              email: '',
+            },
             nettoeinkommen: 2800,
             selbstauskunft: {
               einkommenArt: 'betrag',

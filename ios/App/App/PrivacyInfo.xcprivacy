@@ -5,7 +5,8 @@
 	<!-- Hefta verfolgt nichts. Erfasst wird nur die freiwillige Rückmeldung (E54, E57): eine Antwort auf
 	     eine feste Frage, nach Rückfrage, nicht mit der Person verknüpft, als Zählung je Tag, Zweck Analyse.
 	     Grund nach Apples Liste: @capacitor/filesystem liest Zeitstempel von Dateien im eigenen Container
-	     der App (C617.1). -->
+	     der App (C617.1). Hefta selbst merkt sich in UserDefaults nur das gewählte Aussehen, hell oder dunkel
+	     (MainViewController, HeftaNativPlugin), für die App selbst (CA92.1; PC91). -->
 	<key>NSPrivacyTracking</key>
 	<false/>
 	<key>NSPrivacyTrackingDomains</key>
@@ -33,6 +34,14 @@
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>C617.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
 			</array>
 		</dict>
 	</array>

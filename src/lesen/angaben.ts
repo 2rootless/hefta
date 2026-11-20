@@ -57,7 +57,9 @@ export function angabenAus(
 
 /** Die Adresse im Format der Hefte: erste Zeile Straße, zweite Postleitzahl und Ort. */
 export function adresseAus(a: GeleseneAdresse | null): string {
-  return a ? `${a.strasse}\n${a.plz} ${a.ort}` : '';
+  // DP73 B2: Die Lage steht vorn in der zweiten Zeile („2. OG, 12345 Musterstadt“). So heißt das Heft nach der ersten
+  // Zeile weiter nur Straße und Hausnummer (K7), und Deckblatt, `wohnung.rest` und `teile.lage` tragen die Lage.
+  return a ? `${a.strasse}\n${a.lage ? `${a.lage}, ` : ''}${a.plz} ${a.ort}` : '';
 }
 
 /** Für den Abgleich mit den Wünschen (urteile.ts). */

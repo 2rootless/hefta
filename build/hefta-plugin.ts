@@ -6,6 +6,7 @@ import type { Plugin } from 'vite';
 import { cspMeta, headersFile } from './csp.ts';
 import { DATENSCHUTZ_PFAD, RATGEBER_ORDNER, RATGEBER_PFAD, ratgeberSchreiben } from './ratgeber.ts';
 import { RUECKMELDUNG_PFAD, rueckmeldungSchreiben } from './rueckmeldungSeite.ts';
+import { WEB_ORDNER, webseiteBauen } from './webseite.ts';
 
 const wurzel = join(import.meta.dirname, '..');
 const pdfjs = join(wurzel, 'node_modules', 'pdfjs-dist');
@@ -178,6 +179,9 @@ export function heftaBau(): Plugin {
         .replace("'__VERSION__'", JSON.stringify(version.digest('hex').slice(0, 12)))
         .replace("'__DATEIEN__'", JSON.stringify(['./', ...dateien]));
       writeFileSync(join(ziel, 'sw.js'), sw);
+      // Die Website (B22): Landingpage auf „/“, die Mappe von eben unter /mappe/ (build/webseite.ts). Nur wo ihre
+      // Quelle liegt: Das öffentliche Repository der App trägt web/ nicht, sein Bau in GitHub Actions baut die App.
+      if (existsSync(join(wurzel, 'web'))) webseiteBauen(ziel, join(wurzel, WEB_ORDNER));
     },
   };
 }

@@ -8,13 +8,18 @@ import { geteiltOeffnen } from '../ui/neuesHeft.svelte';
 // Nur in der App: Zurück-Knopf von Android, PDFs, die andere Apps an Hefta schicken, und Inserate, die eine
 // Portal-App an Hefta teilt (E81: `hefta://teilen?link=…` von der Erweiterung HeftaTeilen).
 
+/** So viel geteilter Text reicht für jedes Inserat; mehr nimmt Hefta nicht an. */
+const TEXT_HOECHSTENS = 8000;
+
 function adresseOeffnen(url: string | undefined) {
   if (!url) return;
   try {
     const u = new URL(url);
     if (u.protocol !== 'hefta:' || u.hostname !== 'teilen') return;
     const link = u.searchParams.get('link');
-    if (link && /^https?:\/\//.test(link)) geteiltOeffnen(link);
+    // PC118 (F8a): Den Text, den die Portal-App mitschickt, gibt die Erweiterung mit; Hefta liest ihn zuerst.
+    const text = (u.searchParams.get('text') ?? '').slice(0, TEXT_HOECHSTENS);
+    if (link && /^https?:\/\//.test(link)) geteiltOeffnen(link, text);
   } catch {
     // keine gültige Adresse: nichts tun
   }

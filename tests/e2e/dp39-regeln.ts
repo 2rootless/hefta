@@ -12,7 +12,13 @@ export function registerPruefen(): string[] {
   if (!an) return ['kein aktiver Reiter'];
   const a = an.getBoundingClientRect();
   const k = karte.getBoundingClientRect();
-  if (Math.abs(a.bottom - k.top) > 0.5) f.push('aktiver Reiter hängt nicht an der Karte');
+  // DP70 U1 (PC95, 2.0.1): Bricht das Register um, bleibt die Reihenfolge des Haushalts. Steht der aktive
+  // Reiter dann nicht in der letzten Reihe, kann er nicht an der Karte hängen; geprüft wird er nur dort.
+  const letzteReihe = Math.max(
+    ...[...nav.querySelectorAll<HTMLElement>('.reiter')].map((r) => r.getBoundingClientRect().top),
+  );
+  if (Math.abs(a.top - letzteReihe) <= 2 && Math.abs(a.bottom - k.top) > 0.5)
+    f.push('aktiver Reiter hängt nicht an der Karte');
   const ton = getComputedStyle(karte).backgroundColor;
   if (getComputedStyle(an).backgroundColor !== ton) f.push('aktiver Reiter nicht in der Tönung');
   for (const r of nav.querySelectorAll<HTMLElement>('.reiter')) {

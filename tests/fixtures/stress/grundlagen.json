@@ -1,0 +1,239 @@
+{
+  "LH0": {
+    "hefta": 1,
+    "erstellt": "2026-11-18T05:41:53+01:00",
+    "fassung": 1,
+    "seitenzahl": 11,
+    "bewerbung": {
+      "kennung": "4410abc5-525b-4ec0-9b5a-f811c7ac9f44",
+      "wohnung": {
+        "strasse": "Beispielstraße 1",
+        "rest": "12345 Musterstadt",
+        "teile": {
+          "strasse": "Beispielstraße",
+          "hausnummer": "1",
+          "plz": "12345",
+          "ort": "Musterstadt",
+          "lage": "",
+          "land": "DE"
+        }
+      }
+    },
+    "haushalt": {
+      "personen": [
+        {
+          "name": "Lea Muster-Beispiel",
+          "vorname": "Lea",
+          "nachname": "Muster-Beispiel",
+          "rolle": "hauptmieter",
+          "kontakt": true,
+          "telefon": "0171 3920001",
+          "telefon_e164": "+491713920001",
+          "email": "lea.muster-beispiel@example.com",
+          "unterlagen": [
+            {
+              "typ": "selbstauskunft",
+              "seiten_mappe": {
+                "von": 2,
+                "bis": 2
+              }
+            },
+            {
+              "typ": "gehaltsnachweis",
+              "seiten_mappe": {
+                "von": 3,
+                "bis": 5
+              },
+              "monate": ["2026-09", "2026-10", "2026-11"]
+            },
+            {
+              "typ": "bonitaet",
+              "seiten_mappe": {
+                "von": 6,
+                "bis": 6
+              },
+              "vom": "2026-11-10"
+            }
+          ]
+        },
+        {
+          "name": "Aylin",
+          "vorname": "Aylin",
+          "nachname": "",
+          "rolle": "mitmieter",
+          "unterlagen": [
+            {
+              "typ": "selbstauskunft",
+              "seiten_mappe": {
+                "von": 7,
+                "bis": 7
+              }
+            },
+            {
+              "typ": "gehaltsnachweis",
+              "seiten_mappe": {
+                "von": 8,
+                "bis": 10
+              },
+              "monate": ["2026-09", "2026-10", "2026-11"]
+            },
+            {
+              "typ": "bonitaet",
+              "seiten_mappe": {
+                "von": 11,
+                "bis": 11
+              },
+              "vom": "2026-11-10"
+            }
+          ]
+        }
+      ],
+      "mitziehende": []
+    }
+  },
+  "BSP0": {
+    "hefta": 1,
+    "erstellt": "2026-11-06T12:00:00+01:00",
+    "fassung": 1,
+    "seitenzahl": 16,
+    "bewerbung": {
+      "kennung": "d2e0f734-0b59-41ea-95f4-c9715acbe034",
+      "wohnung": {
+        "strasse": "Lindenring 3",
+        "rest": "Erdgeschoss, 20259 Hamburg",
+        "teile": {
+          "strasse": "Lindenring",
+          "hausnummer": "3",
+          "plz": "20259",
+          "ort": "Hamburg",
+          "lage": "Erdgeschoss",
+          "land": "DE"
+        }
+      }
+    },
+    "haushalt": {
+      "personen": [
+        {
+          "name": "Max Mustermann",
+          "vorname": "Max",
+          "nachname": "Mustermann",
+          "rolle": "hauptmieter",
+          "kontakt": true,
+          "telefon": "0171 3920001",
+          "telefon_e164": "+491713920001",
+          "email": "max.mustermann@example.com",
+          "unterlagen": [
+            {
+              "typ": "selbstauskunft",
+              "seiten_mappe": {
+                "von": 2,
+                "bis": 2
+              }
+            },
+            {
+              "typ": "gehaltsnachweis",
+              "seiten_mappe": {
+                "von": 3,
+                "bis": 5
+              },
+              "monate": ["2026-08", "2026-09", "2026-10"]
+            },
+            {
+              "typ": "bonitaet",
+              "seiten_mappe": {
+                "von": 6,
+                "bis": 6
+              },
+              "vom": "2026-10-28"
+            }
+          ]
+        },
+        {
+          "name": "Lea Mustermann",
+          "vorname": "Lea",
+          "nachname": "Mustermann",
+          "rolle": "mitmieter",
+          "unterlagen": [
+            {
+              "typ": "selbstauskunft",
+              "seiten_mappe": {
+                "von": 7,
+                "bis": 7
+              }
+            },
+            {
+              "typ": "gehaltsnachweis",
+              "seiten_mappe": {
+                "von": 8,
+                "bis": 10
+              },
+              "monate": ["2026-08", "2026-09", "2026-10"]
+            },
+            {
+              "typ": "bonitaet",
+              "seiten_mappe": {
+                "von": 11,
+                "bis": 11
+              },
+              "vom": "2026-10-30"
+            },
+            {
+              "typ": "mietzahlung",
+              "seiten_mappe": {
+                "von": 12,
+                "bis": 12
+              },
+              "vom": "2026-10-15"
+            }
+          ]
+        },
+        {
+          "name": "Petra Mustermann",
+          "vorname": "Petra",
+          "nachname": "Mustermann",
+          "rolle": "buerge",
+          "unterlagen": [
+            {
+              "typ": "buergschaftserklaerung",
+              "seiten_mappe": {
+                "von": 13,
+                "bis": 13
+              },
+              "vom": "2026-10-20"
+            },
+            {
+              "typ": "selbstauskunft",
+              "seiten_mappe": {
+                "von": 14,
+                "bis": 14
+              }
+            },
+            {
+              "typ": "rentenbescheid",
+              "seiten_mappe": {
+                "von": 15,
+                "bis": 15
+              },
+              "vom": "2026-07-01"
+            },
+            {
+              "typ": "bonitaet",
+              "seiten_mappe": {
+                "von": 16,
+                "bis": 16
+              },
+              "vom": "2026-10-21"
+            }
+          ]
+        }
+      ],
+      "mitziehende": [
+        {
+          "text": "Ein Kind",
+          "anzahl": 1,
+          "art": "kind"
+        }
+      ]
+    }
+  }
+}

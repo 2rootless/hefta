@@ -42,6 +42,7 @@ import {
   BOGEN_SEITE,
   EINZUG,
   GRAU,
+  TINTE,
   LINIE_PUNKTE,
   VERZEICHNIS_ZEILEN,
   ZEICHEN,
@@ -66,6 +67,9 @@ export interface MappenPerson {
   buerge?: boolean;
   /** Rolle als Kennung, für die Lesehilfe. */
   rolleId?: Rolle;
+  /** Vor- und Nachname wie auf dem Deckblatt, für die Lesehilfe (Fassung 1). */
+  vorname?: string;
+  nachname?: string;
 }
 
 export interface MappenQuelle {
@@ -74,6 +78,8 @@ export interface MappenQuelle {
   seiten?: number[] | null;
   /** Text rechts in der Kopfzeile, wenn er von der Unterlage abweicht („Gehaltsnachweis August 2026“). */
   kopf?: string;
+  /** Kennung der Datei in Hefta, falls sie sich nicht öffnen lässt (PC126 K5). */
+  datei?: string;
 }
 
 /** Eine Zeile im Inhalt; bei Serien mehrere Dateien (z. B. drei Monate). */
@@ -115,6 +121,8 @@ export interface BewerbungAuftrag {
   einzug?: string;
   /** B14, E39: „Fassung 2 vom 8. November 2026“, leise unten in der Leiste. */
   fassung?: string;
+  /** Dieselben Angaben als Werte für die Lesehilfe (Fassung 1): Portal, Einzug `JJJJ-MM-TT`, Nummer. */
+  lesehilfeWerte?: { portal?: string; einzug?: string; fassung?: number };
   /** Kinder und weitere Personen ohne Vertrag, je Art ein Eintrag: „Zwei Kinder“. */
   mitziehende: Mitziehend[];
   /** „Erstellt mit …“ klein auf dem Deckblatt, dazu die Lesehilfe als Anhang. */
@@ -128,7 +136,7 @@ export interface BewerbungAuftrag {
   bitte?: string;
   kontakt: string[];
   /** Telefon und Mail aus `kontakt` einzeln, für die Lesehilfe (Fassung 3). */
-  kontaktwege?: { telefon?: string; email?: string };
+  kontaktwege?: { telefon?: string; telefonE164?: string; email?: string };
   bloecke: MappenBlock[];
   deckblatt: boolean;
   /** Steht auf dem Deckblatt; ist es aus, gibt es keins. */
@@ -153,6 +161,15 @@ export interface UnlesbareDatei {
   name: string;
   /** Seite der Unterlage. */
   href?: string;
+  /** PC126 K5 (DP83 a): wessen Unterlage, für „Diesmal weglassen“ und den Satz im Blatt. */
+  personId?: string;
+  typ?: string;
+  /** Rufname oder Vorname, „… von Aylin“. */
+  person?: string;
+  /** Die Unterlage, wie sie im Verzeichnis steht (W6): „Gehaltsnachweise, September bis November“. */
+  unterlage?: string;
+  /** Kennung der Datei, die sich nicht öffnen ließ; die Unterlage markiert sie. */
+  datei?: string;
 }
 
 export interface BewerbungErgebnis {
@@ -302,7 +319,7 @@ function kopfzeile(
 }
 
 /**
- * Fußzeile (DP30): links „Bewerbung {Straße}, {Namen}“, rechts „Seite {n} von {N}“, 8 pt grau, darüber eine
+ * Fußzeile (DP30): links „Bewerbung {Straße}, {Namen}“, rechts „Seite {n} von {N}“, 8 pt in Tinte (DP71), darüber eine
  * feine Linie. Auf dem Briefbogen (Deckblatt, Selbstauskunft) mit dessen Rändern, sonst wie bisher.
  */
 function fussleiste(
@@ -337,7 +354,7 @@ function fussleiste(
       y: FUSS_TEXT + (zeilen.length - 1) * 3.5 - i * 7.5,
       size: groesse,
       font: s.regular,
-      color: GRAU,
+      color: TINTE,
     }),
   );
   seite.drawText(rechts, {
@@ -345,7 +362,7 @@ function fussleiste(
     y: FUSS_TEXT,
     size: 8,
     font: s.regular,
-    color: GRAU,
+    color: TINTE,
   });
 }
 
@@ -415,8 +432,15 @@ interface Eintrag {
   monate: { titel: string; seite: number }[];
 }
 
+/** V6 (E223): „– Seite 6“ oder „– Seiten 3 bis 5“ hinter dem Wortlaut; so liest auch ein fremder Leser die Zeile. */
 const ziffern = (e: Pick<Eintrag, 'von' | 'bis'>) =>
-  e.von === e.bis ? String(e.von) : `${e.von}–${e.bis}`;
+  e.von === e.bis ? `– Seite ${e.von}` : `– Seiten ${e.von} bis ${e.bis}`;
+
+const DECK_DATUM = new Intl.DateTimeFormat('de-DE', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
 
 /** „Gehaltsnachweise, August bis Oktober“, aber „Bonitätsnachweis vom 28. Oktober 2026“ (PC28: ohne Komma). */
 const beschriftung = (t: MappenTeil) =>
@@ -500,7 +524,7 @@ function deckblattSetzen(
   // 1. Kopf: „Bewerbung um die Wohnung“, die Straße, darunter Geschoss und Ort.
   let y = H - BOGEN_OBEN - 12 * MM;
   if (strasse) {
-    text('Bewerbung um die Wohnung', x0, y - 9, 9, s.regular, GRAU);
+    text('Bewerbung um die Wohnung', x0, y - 9, 9, s.regular, TINTE);
     y -= 9 * 1.35 + 2;
     const g = passendeGroesse(strasse, s.bold, 22, 15, breite, s);
     const zeilen = umbrechen(zeichenbar(strasse, s), s.bold, g, breite);
@@ -521,7 +545,7 @@ function deckblattSetzen(
   for (const zeile of [a.inserat, a.einzug].filter((z): z is string => !!z?.trim()))
     for (const teil of umbrechen(zeichenbar(zeile, s), s.regular, 9, breite)) {
       y -= 9 * 1.35;
-      text(teil, x0, y, 9, s.regular, GRAU);
+      text(teil, x0, y, 9, s.regular, TINTE);
     }
 
   // 2. und 3. Leitsatz und Satz der Bewerber.
@@ -548,7 +572,7 @@ function deckblattSetzen(
   const farbeVon = (person: MappenPerson) => hex(deckFarbe(aussehen, person.farbe));
   const spaltenUnten: number[] = [];
   const etikett = (t: string, x: number, yy: number) => {
-    text(t, x, yy - 8.5, 8.5, s.regular, GRAU);
+    text(t, x, yy - 8.5, 8.5, s.regular, TINTE);
     return yy - 8.5 * 1.35 - 2 * MM;
   };
   const person = (
@@ -569,7 +593,7 @@ function deckblattSetzen(
     if (unter)
       for (const zeile of umbrechen(zeichenbar(unter, s), s.regular, 8.5, w)) {
         zy -= 8.5 * 1.35;
-        text(zeile, x + EINZUG, zy, 8.5, s.regular, GRAU);
+        text(zeile, x + EINZUG, zy, 8.5, s.regular, TINTE);
       }
     return zy - 3 * MM;
   };
@@ -751,7 +775,7 @@ function deckblattSetzen(
       }
       if (erste) {
         y -= 5 * MM;
-        text('Bürgschaft', x0, y - 8.5, 8.5, s.regular, GRAU);
+        text('Bürgschaft', x0, y - 8.5, 8.5, s.regular, TINTE);
         y -= 8.5 * 1.35;
       }
       block(b);
@@ -764,21 +788,30 @@ function deckblattSetzen(
     const unten = FUSS_LINIE + 6 * MM;
     bitteZeilen.forEach((t, i) => {
       const yy = unten + (bitteZeilen.length - 1 - i) * 8 * 1.35;
-      schreiben(erste, t, s, { x: x0, y: yy, size: 8, font: s.regular, color: GRAU });
+      schreiben(erste, t, s, { x: x0, y: yy, size: 8, font: s.regular, color: TINTE });
     });
   }
   if (a.hinweis && erste) {
     const unten = FUSS_LINIE + 6 * MM;
     const lesehilfe = `Lesehilfe: ${VERMIETER_DOMAIN}`;
     const zeilen = [
-      ...(a.fassung ? [a.fassung] : []),
+      // V7 (E223): „Fassung n vom …“ steht immer da, auch ohne Heft, mit demselben Zeitpunkt wie `erstellt`.
+      `Fassung ${a.lesehilfeWerte?.fassung ?? 1} vom ${DECK_DATUM.format(a.datum ?? new Date())}`,
       ...bitteZeilen,
       `Erstellt mit ${APP_NAME}`,
       lesehilfe,
     ];
     zeilen.forEach((t, i) => {
       const yy = unten + (zeilen.length - 1 - i) * 8 * 1.35;
-      schreiben(erste, t, s, { x: x0, y: yy, size: 8, font: s.regular, color: GRAU });
+      // DP71: Fassung und Bitte in Tinte; „Erstellt mit …“ und die Lesehilfe dürfen grau bleiben.
+      const leise = t === `Erstellt mit ${APP_NAME}` || t === lesehilfe;
+      schreiben(erste, t, s, {
+        x: x0,
+        y: yy,
+        size: 8,
+        font: s.regular,
+        color: leise ? GRAU : TINTE,
+      });
     });
     links.push({
       seite: 0,
@@ -832,7 +865,9 @@ function lesezeichenSetzen(pdf: PDFDocument, punkte: Punkt[], s: S) {
   pdf.catalog.set(PDFName.of('PageMode'), PDFName.of('UseOutlines'));
 }
 
-export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErgebnis> {
+export async function bewerbungBauen(auftrag: BewerbungAuftrag): Promise<BewerbungErgebnis> {
+  // Ein Zeitpunkt für alles: Fassungszeile, Erstelldatum der PDF und `erstellt` der Lesehilfe (V7, V11).
+  const a: BewerbungAuftrag = { ...auftrag, datum: auftrag.datum ?? new Date() };
   // updateMetadata: false verhindert Producer/Creator mit Softwarenamen.
   const pdf = await PDFDocument.create({ updateMetadata: false });
   pdf.registerFontkit(fontkit);
@@ -910,7 +945,12 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
         await weiter();
         if (!uebernommen) {
           const meldung = teil.meldung ?? { name: `${kopf}, ${block.person.name}` };
-          unlesbar.set(meldung.name, meldung);
+          // PC126 K5: die Unterlage, wie sie im Verzeichnis stünde, und die Datei, die nicht aufging.
+          unlesbar.set(meldung.name, {
+            ...meldung,
+            unterlage: beschriftung(teil),
+            datei: q.datei ?? unlesbar.get(meldung.name)?.datei,
+          });
           continue;
         }
         if (q.kopf) eintrag.monate.push({ titel: q.kopf, seite: pdf.getPageCount() + 1 });
@@ -999,12 +1039,24 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
       );
     }
   }
+  const fussLinks = a.kurz ? `Bewerbung ${a.kurz}, ${a.fussName}` : `Bewerbung, ${a.fussName}`;
   if (a.fusszeile) {
     for (const b of baender) kopfzeile(b.seite, b.person, b.rechts, s, aussehen);
-    const links = a.kurz ? `Bewerbung ${a.kurz}, ${a.fussName}` : `Bewerbung, ${a.fussName}`;
     seiten.forEach((seite, i) =>
-      fussleiste(seite, links, i + 1, gesamt, s, bogen.has(seite) ? BOGEN_SEITE : UNTERLAGE_SEITE),
+      fussleiste(
+        seite,
+        fussLinks,
+        i + 1,
+        gesamt,
+        s,
+        bogen.has(seite) ? BOGEN_SEITE : UNTERLAGE_SEITE,
+      ),
     );
+  } else if (a.deckblatt && a.hinweis && a.kennung) {
+    // V8 (E223): „Seite 1 von N“ steht immer im Fuß des Deckblatts, sobald eine Lesehilfe beiliegt, auch ohne
+    // Kopf- und Fußzeile. Die übrigen Seiten bleiben ohne.
+    for (const seite of deckblaetter)
+      fussleiste(seite, fussLinks, seiten.indexOf(seite) + 1, gesamt, s, BOGEN_SEITE);
   }
 
   // Lesezeichen: Person, darunter ihre Unterlagen, bei Serien die Monate; Bürgen unter „Bürgschaft“.
@@ -1036,22 +1088,33 @@ export async function bewerbungBauen(a: BewerbungAuftrag): Promise<BewerbungErge
   else punkte.push(...buergen);
   lesezeichenSetzen(pdf, punkte, s);
 
-  const datum = a.datum ?? new Date();
+  const datum = a.datum!;
   // Die Lesehilfe für Vermieter, nur mit Deckblatt und Hinweis (docs/format-hefta-json.md).
-  if (a.deckblatt && a.hinweis) {
+  // Fassung 1: ohne Kennung der Bewerbung keine Lesehilfe (E21, Schema).
+  if (a.deckblatt && a.hinweis && a.kennung) {
     // Dieselben Ersetzungen wie auf dem Papier: Regel 1 des Formats, P26.
     const anhang = anhangBauen({
       datum,
       kennung: a.kennung,
       adresse: a.adresse.map(s.ersetzen),
+      fassung: a.lesehilfeWerte?.fassung,
+      portal: a.lesehilfeWerte?.portal && s.ersetzen(a.lesehilfeWerte.portal),
+      einzug: a.lesehilfeWerte?.einzug,
       personen: a.bloecke.map((b) => ({
         name: s.ersetzen(b.person.name),
+        ...(b.person.vorname !== undefined
+          ? {
+              vorname: s.ersetzen(b.person.vorname),
+              nachname: s.ersetzen(b.person.nachname ?? ''),
+            }
+          : {}),
         rolle: b.person.rolleId,
         buerge: b.person.buerge,
       })),
       kontakt: a.kontakt.some(Boolean),
       kontaktwege: a.kontaktwege && {
         telefon: a.kontaktwege.telefon && s.ersetzen(a.kontaktwege.telefon),
+        telefonE164: a.kontaktwege.telefonE164,
         email: a.kontaktwege.email && s.ersetzen(a.kontaktwege.email),
       },
       mitziehende: a.mitziehende.map((m) => ({ ...m, text: s.ersetzen(m.text) })),

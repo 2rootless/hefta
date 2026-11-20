@@ -139,6 +139,10 @@ test('Mappe erstellen: Vorschau, Modi, Bürgin abwählen, Adresse, Download', as
   ]);
   expect(zweiter.suggestedFilename()).toBe('Bewerbung_Mustermann_Beispielstr1.pdf');
 
+  // PC81 B3, Gegenprobe: Als ein PDF der Lead mit Deckblatt, keine Zeile zur Ausgabe.
+  await expect(page.getByText(/^Ein PDF mit Deckblatt und Lesehilfe\./)).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Ausgabe:/ })).toHaveCount(0);
+
   // Mappe anpassen (X8): Einzeldateien, dann „Alle teilen“ und eine Liste der Dateien (X7).
   await page.evaluate(() => (location.hash = '#/mappe/anpassen'));
   await expect(page.getByRole('heading', { level: 1, name: 'Mappe anpassen' })).toBeVisible();
@@ -152,6 +156,20 @@ test('Mappe erstellen: Vorschau, Modi, Bürgin abwählen, Adresse, Download', as
     .click();
   await expect(page.getByText(/^01_.?Selbst/)).toBeVisible();
   await page.keyboard.press('Escape');
+
+  // PC81 B3 (QA4): Lead ohne Deckblatt; „Ausgabe: Einzeldateien ›“ führt zur Wahl der Ausgabe.
+  await expect(page.locator('.titelblock .lead')).toHaveText(
+    'Eine Datei je Unterlage, ohne Deckblatt.',
+  );
+  await expect(page.getByText(/Ein PDF mit Deckblatt/)).toHaveCount(0);
+  const ausgabe = page.getByRole('link', { name: /^Ausgabe: Einzeldateien/ });
+  await expect(ausgabe).toHaveAttribute('href', '#/mappe/anpassen');
+  await ausgabe.click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Mappe anpassen' })).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Einzeldateien' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
 
   expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
 });

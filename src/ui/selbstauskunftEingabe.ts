@@ -1,8 +1,10 @@
+import { DEUTSCHLAND, telefonPruefen, telefonSpeichern, type Land } from '../domain/telefon';
 import {
   ERKLAERUNG,
   fehlendeAngaben,
   haushaltsAngaben,
   selbstauskunftVon,
+  teile as teileDerAuskunft,
 } from '../domain/selbstauskunft';
 import type { HaushaltsAngaben, Selbstauskunft } from '../domain/selbstauskunft';
 import type { Haushalt, Person, Rolle } from '../domain/modell';
@@ -14,6 +16,8 @@ import type { HaushaltAnsicht } from '../storage/speicher';
 
 export interface SelbstauskunftEingabe {
   telefon: string;
+  /** E222: Land der Nummer, ISO 3166-1; vorgewählt ist Deutschland. */
+  telefonLand: string;
   email: string;
   /** Wird hier nicht bearbeitet, bleibt aber erhalten. */
   anschrift?: string;
@@ -27,6 +31,17 @@ export interface SelbstauskunftEingabe {
 }
 
 /** Haushaltsangaben aus dem geladenen Stand (mit Rückfall auf ältere Daten an Personen). */
+/**
+ * PC126 K1 (DP82 T1, DP77): Im Telefon steht eine Eingabe mit Fehler. Solange das so ist, ist „Kontakt“ nicht fertig:
+ * kein Haken, kein „Weiter“, kein „Fertig, 1 Seite“. TL22 (Nummer passt nicht zum gewählten Land) bleibt, wie es ist.
+ * Eine gespeicherte alte Nummer, die sich nicht umsetzen lässt, zählt hier nicht (DP77, Abschnitt 5).
+ */
+export function telefonEingabeFehler(e: { telefon: string; telefonLand: string }): boolean {
+  if (!e.telefon.trim()) return false;
+  const r = telefonPruefen(e.telefon, (e.telefonLand || DEUTSCHLAND) as Land);
+  return r.art === 'fehler' && r.fehler !== 'land';
+}
+
 export function haushaltsAngabenAus(ansicht: HaushaltAnsicht | null): HaushaltsAngaben {
   if (!ansicht) return haushaltsAngaben(null);
   return haushaltsAngaben(
@@ -38,6 +53,7 @@ export function haushaltsAngabenAus(ansicht: HaushaltAnsicht | null): HaushaltsA
 export function eingabeAus(person: Person, hh: HaushaltsAngaben): SelbstauskunftEingabe {
   return {
     telefon: person.kontakt.telefon,
+    telefonLand: person.kontakt.telefonLand ?? DEUTSCHLAND,
     email: person.kontakt.email,
     ...(person.kontakt.anschrift ? { anschrift: person.kontakt.anschrift } : {}),
     beruf: person.beruf,
@@ -59,7 +75,7 @@ export function angabenAus(e: SelbstauskunftEingabe): Partial<Person> {
     e.sa[f] === 'ja' ? (e.sa[ERKLAERUNG[f]] ?? '').trim() : '';
   return {
     kontakt: {
-      telefon: e.telefon.trim(),
+      ...telefonSpeichern(e.telefon, e.telefonLand as Land),
       email: e.email.trim(),
       ...(e.anschrift ? { anschrift: e.anschrift } : {}),
     },
@@ -106,7 +122,8 @@ export function grundFuer(
   rolle: Rolle,
   e: SelbstauskunftEingabe,
 ): string | undefined {
-  const fehlt = fehlendeAngaben({ ...person, ...angabenAus(e) }, rolle, e.hh);
+  const mitEingabe = { ...person, ...angabenAus(e) };
+  const fehlt = fehlendeAngaben(mitEingabe, rolle, e.hh);
   if (!fehlt.length) return undefined;
   const fragen = fehlt.filter((f) => ['insolvenz', 'raeumungstitel'].includes(f));
   // Reihenfolge wie im Akkordeon: Kontakt, Einkommen, Fragen, Haustiere, Ort.
@@ -116,8 +133,12 @@ export function grundFuer(
   if (fragen.length) teile.push(t('selbstauskunft.fehltFragen', { anzahl: fragen.length }));
   if (fehlt.includes('haustiere')) teile.push(t('selbstauskunft.fehlt.haustiere'));
   if (fehlt.includes('ort')) teile.push(t('selbstauskunft.fehlt.ort'));
-  // Ab drei Teilen nur die Zahl: Die Teile stehen als Schritte darüber, und der Satz wurde bei großer
-  // Schrift dreizeilig (selbstauskunft-person-serie.md, 4.11.).
-  if (teile.length >= 3) return t('selbstauskunft.grundZahl', { anzahl: teile.length });
+  // Ab drei Angaben nur die Zahl: Die Teile stehen als Schritte darüber, und der Satz wurde bei großer
+  // Schrift dreizeilig (selbstauskunft-person-serie.md, 4.11.). PC81 B1 (QA2): Die Zahl zählt Teile wie der
+  // Kopf (Kontakt, Einkommen, Fragen, Haushalt), nicht die Angaben; Haustiere und Ort sind ein Teil.
+  if (teile.length >= 3) {
+    const offen = teileDerAuskunft(mitEingabe, rolle, e.hh).filter((x) => !x.fertig).length;
+    return t('selbstauskunft.grundZahl', { anzahl: offen });
+  }
   return t('selbstauskunft.grund', { liste: teile.join(', ') });
 }

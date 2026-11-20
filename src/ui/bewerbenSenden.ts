@@ -4,7 +4,7 @@
 import { ablageLeeren, ablegen, appTeilenWohin, istApp, istIosApp } from '../app/plattform';
 import type { BewerbungsWeg } from '../domain/bewerben';
 import { teilenWerten, teilenZiel } from '../domain/teilenZiel';
-import { gmailHtml, mailLink } from '../domain/nachricht';
+import { mailLink } from '../domain/nachricht';
 import { sichern } from './mappeErstellen';
 
 export type Gesendet = 'gesendet' | 'geoeffnet' | 'abgebrochen' | 'anhangSelbst';
@@ -37,7 +37,6 @@ export async function mailMitMappe(o: {
     const { geteilt, app } = await HeftaNativ.teilen({
       dateien: anhaenge.map((a) => a.uri),
       text: o.text,
-      html: gmailHtml(o.text),
       betreff: o.betreff,
     });
     return alsGesendet(teilenWerten(app, geteilt, 'mail'));
@@ -60,6 +59,20 @@ export async function mailMitMappe(o: {
   sichern(o.dateien);
   mailLinkOeffnen(mailLink(o.an, o.betreff, o.text));
   return 'anhangSelbst';
+}
+
+/**
+ * PC81 B2 (QA3): Kann diese Umgebung die Mappe nicht an die Mail hängen? Das ist der Browser ohne Teilen von
+ * Dateien; dann lädt Hefta die Mappe und öffnet einen Mail-Link. Geprüft mit einer leeren PDF, wie beim Senden.
+ */
+export function mappeHaengtNichtAn(): boolean {
+  if (istApp()) return false;
+  try {
+    const probe = new File([''], 'mappe.pdf', { type: 'application/pdf' });
+    return !navigator.canShare?.({ files: [probe], text: '' });
+  } catch {
+    return true;
+  }
 }
 
 /** PC31: Was nie als Bewerbung zählt (WhatsApp, Dateien …), behandelt das Bewerben wie abgebrochen. */
