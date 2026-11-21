@@ -221,8 +221,13 @@
           Ihre: ihre,
         }),
       );
-    } else if (neuGewaehlt && neuerVorname.trim()) {
-      liste.push(t('personSeite.folgen.ersatzNeu', { name: neuerVorname.trim() }));
+    } else if (neuGewaehlt) {
+      // DP117: Solange kein Vorname da ist, „Die neue Person …“; ab dem ersten Buchstaben der Name.
+      liste.push(
+        neuerVorname.trim()
+          ? t('personSeite.folgen.ersatzNeu', { name: neuerVorname.trim() })
+          : t('personSeite.folgen.ersatzNeuOhneName'),
+      );
     }
     // 2. Was mit der Person geschieht
     if (rolleGewaehlt === 'buerge') {

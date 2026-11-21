@@ -880,7 +880,8 @@
       "miteinUnterlagen": "{Ihre} Unterlagen bleiben gespeichert, kommen aber nicht in die Mappe.",
       "vorn": "{name} steht dann vorn im Mietvertrag und wird {rolle}.",
       "ersatzBuerge": "{name} wird {rolle}. {Ihre} Bürgschafts­erklärung bleibt gespeichert, kommt aber nicht mehr in die Mappe.",
-      "ersatzNeu": "{name} steht dann vorn im Mietvertrag."
+      "ersatzNeu": "{name} steht dann vorn im Mietvertrag.",
+      "ersatzNeuOhneName": "Die neue Person steht dann vorn im Mietvertrag."
     },
     "rolleWahl": {
       "vertrag": "Im Mietvertrag",

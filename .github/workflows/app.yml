@@ -41,6 +41,10 @@ on:
         description: AAB für Google Play bauen
         type: boolean
         default: false
+      store_bilder:
+        description: Store-Bilder im Simulator aufnehmen (PC188), sonst nichts
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -59,6 +63,7 @@ jobs:
   # 16.11.: GitHub teilte keine Intel-Macs (macos-15-intel) mehr zu („not acquired by Runner“); seitdem
   # Apple Silicon. Ohne feste Architektur, Xcode 26 wird unten gewählt.
   pruefen-ios:
+    if: ${{ !inputs.store_bilder }}
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -84,6 +89,7 @@ jobs:
           CODE_SIGNING_ALLOWED=NO build | tail -n 40
 
   pruefen-android:
+    if: ${{ !inputs.store_bilder }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -245,4 +251,51 @@ jobs:
           name: hefta-android-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
+          retention-days: 14
+
+  # PC188 (E349): Store-Bilder 01 bis 09 im Simulator, nur von Hand (Haken „Store-Bilder“). Der Bau für die
+  # Aufnahmen (VITE_AUFNAHMEN=1) spielt das Musterbackup mit Haushalt A ein und geht die Bildschirme selbst
+  # durch; scripts/store-aufnahmen.sh nimmt sie in zwei Größen auf. Keine anderen Daten, nichts vom Auftraggeber.
+  # Die Musterdateien kommen aus der Vorschau app-2-1 (noindex, nur Musterdaten, W7). Ergebnis: Artefakt.
+  store-bilder:
+    if: github.event_name == 'workflow_dispatch' && inputs.store_bilder
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Musterdateien aus der Vorschau
+        run: |
+          mkdir -p public/aufnahme
+          for f in hefta-muster.hefta gehalt-selin-august.pdf gehalt-selin-september.pdf gehalt-selin-oktober.pdf inserat-rotdornbogen.html; do
+            curl -fsSL "https://app-2-1.hefta.pages.dev/muster/$f" -o "public/aufnahme/$f"
+          done
+          ls -l public/aufnahme
+      - name: Bau für die Aufnahmen
+        run: npm run build
+        env:
+          VITE_AUFNAHMEN: '1'
+      - run: npx cap sync ios
+      - name: Xcode 26 wählen
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)
+          test -n "$X" || { echo "Kein Xcode 26 auf diesem Runner"; exit 1; }
+          sudo xcode-select -s "$X/Contents/Developer"
+          xcodebuild -version
+      - name: Für den Simulator bauen (Debug, damit die Konsole der App mitläuft)
+        run: >
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug
+          -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath build-sim CODE_SIGNING_ALLOWED=NO build | tail -n 20
+      - name: Aufnehmen
+        run: sh scripts/store-aufnahmen.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: store-bilder-2-1
+          path: aufnahmen/
           retention-days: 14

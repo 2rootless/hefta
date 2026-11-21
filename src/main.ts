@@ -22,3 +22,8 @@ const fenster = window as unknown as { __heftaInseratTest?: unknown; __heftaTeil
 if (fenster.__heftaInseratTest)
   void import('./ui/neuesHeft.svelte').then((m) => (fenster.__heftaTeilen = m.geteiltOeffnen));
 // (geteiltOeffnen nimmt Link und, wie die Erweiterung HeftaTeilen, den geteilten Text.)
+
+// PC188: Nur im Bau für die Store-Aufnahmen (VITE_AUFNAHMEN=1). Sonst fällt der Zweig beim Bauen weg, und
+// `aufnahmen.ts` ist nicht im Paket.
+if (import.meta.env.VITE_AUFNAHMEN === '1')
+  void import('./app/aufnahmen').then((m) => m.aufnahmenStarten());

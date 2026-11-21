@@ -126,8 +126,18 @@ test('wunsch-W42 Fall 5: niemand sonst im Haushalt: eine neue Person mit Vorname
   await page.getByRole('radio', { name: 'Nicht mehr dabei' }).click();
   const speichern = page.getByRole('button', { name: 'Speichern', exact: true });
   await expect(speichern).toHaveAttribute('aria-disabled', 'true');
+  // DP117: ohne Vorname „Die neue Person …“; ab dem ersten Buchstaben der Name. Gegenprobe: kein leerer Name
+  // („ steht dann vorn …“) und kein Satz mit dem Namen, bevor er dasteht.
+  const ohneName = page.getByText('Die neue Person steht dann vorn im Mietvertrag.');
+  await expect(ohneName).toBeVisible();
+  await expect(page.getByText(/^ steht dann vorn im Mietvertrag\.$/)).toHaveCount(0);
+  const feld = page.locator('fieldset.nachfolge').getByLabel('Vorname');
+  await feld.fill('S');
+  await expect(page.getByText('S steht dann vorn im Mietvertrag.')).toBeVisible();
+  await expect(ohneName).toHaveCount(0);
   // Das Feld der Nachfolge, nicht der eigene Vorname im Abschnitt „Über Max“.
-  await page.locator('fieldset.nachfolge').getByLabel('Vorname').fill('Selin');
+  await feld.fill('Selin');
+  await expect(page.getByText('Selin steht dann vorn im Mietvertrag.')).toBeVisible();
   await expect(speichern).not.toHaveAttribute('aria-disabled', 'true');
   await speichern.click();
   await expect(page).not.toHaveURL(/person-aendern/);
