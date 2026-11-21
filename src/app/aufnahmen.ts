@@ -31,7 +31,8 @@ async function bereit(nr: string) {
   await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined)));
   melde(`BEREIT ${nr}`);
   // Zeit für die Aufnahme; der Lauf antwortet nicht, er nimmt nur auf.
-  await warte(6000);
+  // 15 Sekunden: Die Konsole kommt im Simulator manchmal einige Sekunden später beim Lauf an (CP115).
+  await warte(15000);
 }
 
 async function dateiAus(pfad: string, name: string, typ: string): Promise<File> {

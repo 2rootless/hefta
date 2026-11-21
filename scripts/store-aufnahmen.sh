@@ -7,6 +7,9 @@ APP=$(find build-sim/Build/Products -maxdepth 2 -name App.app | head -n 1)
 test -n "$APP" || { echo "App.app nicht gefunden"; exit 1; }
 BUNDLE=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")
 mkdir -p aufnahmen
+# CP115: Der Simulator übernimmt die Zeitzone des Macs; die Umgebung der App erreicht den Web-Teil nicht.
+sudo systemsetup -settimezone Europe/Berlin > /dev/null 2>&1 || echo "Zeitzone nicht gesetzt"
+echo "Zeitzone: $(date +%Z)" | tee aufnahmen/zeitzone.txt
 xcrun simctl list devicetypes > aufnahmen/geraetetypen.txt
 RUNTIME=$(xcrun simctl list runtimes -j | python3 -c '
 import json, sys
