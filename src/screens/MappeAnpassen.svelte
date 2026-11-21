@@ -65,7 +65,7 @@
   let vorschauFehler = $state(false);
   // PC70 (W8): Der Platz der Vorschau steht von Anfang an frei, so hoch wie die letzte Vorschau. Bis ihre
   // Bilder geladen sind, hält auch die fertige Vorschau diese Höhe; danach merkt sich Hefta ihr Verhältnis.
-  const verhaeltnis = vorschauVerhaeltnis();
+  const verhaeltnis = vorschauVerhaeltnis(window.innerWidth);
   let vorschauBreite = $state(0);
   let vorschauHoehe = $state(0);
   let kopfBild = $state<HTMLImageElement>();

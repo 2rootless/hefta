@@ -8,9 +8,19 @@ const SCHLUESSEL = 'hefta-vorschau-verhaeltnis';
 
 /**
  * Beim ersten Mal: gemessen bei 390 px mit dem Musterhaushalt (Max, Lea, Petra), Aussehen „Farben der Personen“. Bei 320 px
- * ist die Vorschau verhältnismäßig etwas höher (0,7188); beim ersten Mal rückt dort darum einmal etwa 15 px.
+ * ist die Vorschau verhältnismäßig höher (0,7188). PC187: Dazwischen geht das erste Verhältnis mit der Breite des
+ * Fensters; vorher galt 0,6732 überall, und bei 320 px rückte es einmal um 15 px (unter Linux 29 px).
  */
 export const ERSTES_VERHAELTNIS = 0.6732;
+const ERSTES_SCHMAL = 0.7188;
+
+export function erstesVerhaeltnis(fensterBreite: number): number {
+  const anteil = Math.min(1, Math.max(0, (390 - fensterBreite) / (390 - 320)));
+  return (
+    Math.round((ERSTES_VERHAELTNIS + anteil * (ERSTES_SCHMAL - ERSTES_VERHAELTNIS)) * 10_000) /
+    10_000
+  );
+}
 
 /** Ohne Browser-Speicher: das Verhältnis bis zum nächsten Start. */
 let ohneSpeicher: number | null = null;
@@ -20,14 +30,14 @@ function gueltig(v: number): boolean {
 }
 
 /** Höhe durch Breite der zuletzt gezeigten Vorschau, sonst das feste vom ersten Mal. */
-export function vorschauVerhaeltnis(): number {
+export function vorschauVerhaeltnis(fensterBreite = 390): number {
   try {
     const v = Number(localStorage.getItem(SCHLUESSEL));
     if (gueltig(v)) return v;
   } catch {
     // privates Surfen: weiter mit dem Wert dieses Starts
   }
-  return ohneSpeicher ?? ERSTES_VERHAELTNIS;
+  return ohneSpeicher ?? erstesVerhaeltnis(fensterBreite);
 }
 
 /** Merkt sich das Verhältnis einer fertigen Vorschau. */

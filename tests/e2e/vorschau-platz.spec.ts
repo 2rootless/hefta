@@ -82,7 +82,8 @@ for (const breite of [390, 320]) {
     page,
   }) => {
     await page.setViewportSize({ width: breite, height: 844 });
-    // Beim ersten Mal gilt die feste Höhe, gemessen bei 390 px; bei 320 px rückt es einmal etwa 15 px.
+    // Beim ersten Mal gilt das Verhältnis aus der Messung bei dieser Breite (PC187). Unter Linux liegt die Schrift
+    // anders; dort waren es 14 px mehr als hier. Darum bleibt die Grenze bei 320 px 20 px.
     await page.evaluate((s) => localStorage.removeItem(s), SCHLUESSEL);
     const erstes = await lageVorUndNach(page);
     expect(Math.abs(erstes.nach - erstes.vor)).toBeLessThanOrEqual(breite === 390 ? 1 : 20);
