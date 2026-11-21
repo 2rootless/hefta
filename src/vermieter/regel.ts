@@ -1,3 +1,4 @@
+import { groesseWieDateien } from '../domain/mailGroesse';
 import katalogRoh from '../../data/regelkatalog.de.json';
 import { passt, type Papier } from '../../pakete/hefta-json/src/index';
 import type { AnhangPerson, AnhangUnterlage, HeftaAnhang } from '../pdf/anhang';
@@ -125,9 +126,9 @@ export function seitenText({ von, bis }: { von: number; bis: number }): string {
   return von === bis ? `Seite${NB}${von}` : `Seiten${NB}${von}${WORTLOS}–${WORTLOS}${bis}`;
 }
 
+/** PC186: wie in der App und in „Dateien“ (1 MB = 1 000 000 Byte), mit geschütztem Leerzeichen. */
 export function groesseText(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))}${NB}KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')}${NB}MB`;
+  return groesseWieDateien(bytes).replace(' ', NB);
 }
 
 export function seitenzahlText(n: number): string {
@@ -287,8 +288,8 @@ export function pruefPunkte(a: HeftaAnhang): { punkte: PruefPunkt[]; quelle: str
         titel: `Bonitätsnachweis von ${wer}`,
         text:
           u.pruefweg === 'pruefcode'
-            ? `Der ${weg.name} steht auf dem Zertifikat (${seitenText(u.seiten_mappe)}). Online prüfen lässt er sich ${frist}, mit dem Code und dem Geburtsdatum von ${p.name}. Beides steht auf dem Zertifikat. Endet die Frist, wird der Nachweis dadurch nicht ungültig.`
-            : `Steht auf dem Zertifikat ein ${weg.name}, lässt er sich ${frist} online prüfen. Endet die Frist, wird der Nachweis dadurch nicht ungültig.`,
+            ? `Der ${weg.name} steht auf dem Zertifikat (${seitenText(u.seiten_mappe)}). Online prüfen lässt er sich ${frist}, mit dem Code und dem Geburtsdatum von ${p.name}. Beides steht auf dem Zertifikat. Nach Ablauf der Frist lässt sich der Nachweis nur nicht mehr online prüfen.`
+            : `Steht auf dem Zertifikat ein ${weg.name}, lässt er sich ${frist} online prüfen. Nach Ablauf der Frist lässt sich der Nachweis nur nicht mehr online prüfen.`,
         link: { text: `Auf ${weg.adresse} prüfen`, url: weg.url },
       });
     }

@@ -98,7 +98,7 @@
           {#if bearbeiten === 'haustiere'}
             <div class="bearbeiten">
               <b>{t('selbstauskunft.haustiereIhr')}</b>
-              <small>{t('selbstauskunft.haustiereHinweis')}</small>
+              <small>{t('angabeSatz.haustiere')}</small>
               <div class="jn" role="radiogroup" aria-label={t('selbstauskunft.haustiereIhr')}>
                 {#each ['ja', 'nein'] as const as w (w)}
                   <button

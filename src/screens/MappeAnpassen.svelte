@@ -35,8 +35,10 @@
   import Schalter from '../ui/Schalter.svelte';
   import { staendeAus, standardDateiname } from '../ui/mappeDaten';
   import type { AussehenVorschau } from '../ui/mappeVorschau';
+  import { ansichtFuerHeft } from '../domain/buergschaft';
   import SeitenAnsicht from '../ui/SeitenAnsicht.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
+  import { vorschauMerken, vorschauVerhaeltnis } from '../ui/vorschauPlatz';
 
   let bewerbung = $state<Bewerbung | null>(null);
   let e = $state<ExportEinstellungen>(standardEinstellungen());
@@ -61,6 +63,24 @@
   const fertigeVorschauen: Record<string, AussehenVorschau> = {};
   let vorschauLauf = 0;
   let vorschauFehler = $state(false);
+  // PC70 (W8): Der Platz der Vorschau steht von Anfang an frei, so hoch wie die letzte Vorschau. Bis ihre
+  // Bilder geladen sind, hält auch die fertige Vorschau diese Höhe; danach merkt sich Hefta ihr Verhältnis.
+  const verhaeltnis = vorschauVerhaeltnis();
+  let vorschauBreite = $state(0);
+  let vorschauHoehe = $state(0);
+  let kopfBild = $state<HTMLImageElement>();
+  let deckBild = $state<HTMLImageElement>();
+  let bilderDa = $state(false);
+  function bilderPruefen() {
+    bilderDa = !!kopfBild?.complete && !!deckBild?.complete;
+  }
+  $effect(() => {
+    void vorschau;
+    bilderPruefen();
+  });
+  $effect(() => {
+    if (vorschau && bilderDa) vorschauMerken(vorschauBreite, vorschauHoehe);
+  });
   const staende = $derived(daten.ansicht ? staendeAus(daten.ansicht) : []);
   const allein = $derived(staende.filter((s) => s.rolle !== 'buerge').length === 1);
   const beispielSatz = $derived(
@@ -89,7 +109,7 @@
         const { vorschauBauen } = await import('../ui/mappeVorschau');
         fertig = await vorschauBauen(
           await db(),
-          daten.ansicht,
+          ansichtFuerHeft(daten.ansicht, null),
           bewerbung,
           $state.snapshot(e),
           wahl,
@@ -184,7 +204,7 @@
       const { pdfOeffnen, pdfSchliessen } = await import('../pdf/pdfjs');
       const bytes = await ganzeMappe(
         await db(),
-        daten.ansicht,
+        ansichtFuerHeft(daten.ansicht, null),
         bewerbung,
         $state.snapshot(e),
         $state.snapshot(aussehen),
@@ -310,6 +330,9 @@
       <button
         type="button"
         class="vorschau"
+        style:aspect-ratio={bilderDa ? null : `1 / ${verhaeltnis}`}
+        bind:offsetWidth={vorschauBreite}
+        bind:offsetHeight={vorschauHoehe}
         aria-label={vorschauName}
         aria-busy={grossLaedt}
         onclick={grossZeigen}
@@ -318,7 +341,7 @@
           <span class="unter beispiel">{beispielSatz}</span>
         {/if}
         <span class="bild">
-          <img src={vorschau.kopf} alt="" />
+          <img src={vorschau.kopf} alt="" bind:this={kopfBild} onload={bilderPruefen} />
           <span class="unter"
             >{e.fusszeile
               ? t('mappe.aussehen.kopf', { name: vorschau.rufname })
@@ -326,7 +349,7 @@
           >
         </span>
         <span class="bild">
-          <img src={vorschau.deck} alt="" />
+          <img src={vorschau.deck} alt="" bind:this={deckBild} onload={bilderPruefen} />
           <span class="unter"
             >{grossLaedt
               ? t('mappe.aussehen.grossLaedt')
@@ -342,10 +365,13 @@
       {#if grossFehler}
         <p class="hinweis" role="alert">{t('mappe.aussehen.grossFehler')}</p>
       {/if}
-    {:else if vorschauFehler}
-      <p class="hinweis" role="status">{t('mappe.aussehen.keineVorschau')}</p>
     {:else}
-      <p class="hinweis" role="status">{t('mappe.aussehen.laedt')}</p>
+      <!-- PC70: Platz im Ton der Vorschau, so hoch wie sie; auch ohne Vorschau springt darunter nichts. -->
+      <div class="vorschau platz" style:aspect-ratio={`1 / ${verhaeltnis}`}>
+        <p class="hinweis" role="status">
+          {vorschauFehler ? t('mappe.aussehen.keineVorschau') : t('mappe.aussehen.laedt')}
+        </p>
+      </div>
     {/if}
     <div class="arten" role="radiogroup" aria-label={t('mappe.aussehen.titel')}>
       <button
@@ -600,6 +626,16 @@
     cursor: pointer;
   }
 
+  .vorschau.platz {
+    place-items: center;
+    cursor: default;
+  }
+
+  .vorschau.platz .hinweis {
+    margin: 0;
+    text-align: center;
+  }
+
   .bild {
     display: block;
   }
@@ -825,10 +861,11 @@
     color: var(--ink-muted);
   }
 
+  /* PC79 (C33): Chips mit 8 px Abstand, nicht 6. */
   .segmente {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
   }
 
   .segmente .chip {
@@ -849,7 +886,8 @@
   }
 
   .name:focus-within {
-    box-shadow: inset 0 0 0 2px var(--ink);
+    /* DP49b, W33: kein Tintenrand beim Fokus; den Fokus zeigt der Cursor. */
+    box-shadow: none;
   }
 
   .name input {

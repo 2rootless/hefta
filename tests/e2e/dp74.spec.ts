@@ -1,5 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { szenarioLaden } from './szenario-laden';
+import { stimmungMuster } from './stimmung-muster';
+
+/** W37: „Alles da …“ wechselt täglich (P4); jede Fassung zählt. */
+const startklar = stimmungMuster('P4', { teil: 'satz', an: 'ihr' });
 
 // DP74, Teil 1 (PC109, F7): Ein Name ohne Nachnamen (C3). NN1 bis NN11 aus pruef74.py, die acht Gegenproben aus
 // DP74, Abschnitt 6, und die beiden Fälle aus Abschnitt 4, in Chromium und WebKit (W12), hell und dunkel, 390 px
@@ -112,10 +116,12 @@ function messen(page: Page) {
       fokusRing: s(box).outlineStyle !== 'none' && parseFloat(s(box).outlineWidth) >= 3,
       fokusInnen: /inset/.test(s(box).boxShadow),
       ueberLeiste: kasten(satz).bottom <= kasten(leiste).top,
+      // NN2 nach der W30-Regel: Der Satz steht mindestens 8 px über dem Beginn des Verlaufs, nicht nur über dem Knopf.
+      ueberVerlauf: Math.round(kasten(leiste.closest('.leiste')!).top - kasten(satz).bottom),
       ueberlauf:
         zeile.scrollWidth > zeile.clientWidth + 1 ||
         document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
-      rot: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+      rot: getComputedStyle(document.documentElement).getPropertyValue('--accent-text').trim(),
     };
   });
 }
@@ -165,7 +171,8 @@ for (const [breite, zoom, schema] of [
     page,
   }) => {
     await page.emulateMedia({ colorScheme: schema });
-    await page.setViewportSize({ width: breite, height: 844 });
+    // Bei 320 px die Höhe des kleinsten iPhones (568 px), wie der Prüfkatalog in 320-text130 (NN2 mit Verlauf).
+    await page.setViewportSize({ width: breite, height: breite === 320 ? 568 : 844 });
     await aylin(page);
     if (zoom !== 1)
       await page.evaluate(
@@ -188,6 +195,7 @@ for (const [breite, zoom, schema] of [
     await expect(page.getByRole('heading', { level: 2, name: 'Über Aylin' })).toBeFocused();
     const aus = await messen(page);
     expect(aus.ueberLeiste, 'Feld, Haken und Satz über der Leiste').toBe(true);
+    expect(aus.ueberVerlauf, 'Satz mindestens 8 px über dem Verlauf').toBeGreaterThanOrEqual(8);
     expect(verstoesse(aus)).toEqual([]);
     expect(aus.feldNurLesen).toBe(false);
     // NN3: mit Haken leer, nicht beschreibbar, „kein Nachname“.
@@ -207,15 +215,15 @@ test('NN1, NN3: Haken setzen und speichern, danach kein offener Punkt, „Alles 
   page,
 }) => {
   await aylin(page);
-  await expect(page.getByText('Alles da. Ihr seid startklar.')).toHaveCount(0);
+  await expect(page.getByText(startklar)).toHaveCount(0);
   await oeffnenVomPunkt(page);
   await page.getByRole('checkbox', { name: 'Aylin hat keinen Nachnamen' }).check();
   await page.getByRole('button', { name: 'Speichern', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Eure Mappe' })).toBeVisible();
   await expect(punkt(page)).toHaveCount(0);
-  await expect(page.getByText('Alles da. Ihr seid startklar.')).toBeVisible();
+  await expect(page.getByText(startklar)).toBeVisible();
   await page.reload();
-  await expect(page.getByText('Alles da. Ihr seid startklar.')).toBeVisible();
+  await expect(page.getByText(startklar)).toBeVisible();
   await expect(punkt(page)).toHaveCount(0);
   // Unter „Aylin ändern“ steht der Haken; die Personenseite bleibt, wie sie ist.
   const person = await page.evaluate(async () => {
@@ -253,7 +261,7 @@ test('Fall „Haken aus Versehen“: Haken weg, dann fragt Hefta wieder; ein get
   // Haken wieder weg: Der offene Punkt kommt zurück.
   await page.goto('/#/haushalt');
   await expect(page.getByRole('heading', { level: 1, name: 'Euer Haushalt' })).toBeVisible();
-  await page.getByRole('link', { name: /^Ändern Aylin/ }).click();
+  await page.getByRole('link', { name: /^Rolle von Aylin/ }).click();
   await expect(page.locator('label.ohne-nachname')).toBeVisible();
   await page.getByRole('checkbox', { name: 'Aylin hat keinen Nachnamen' }).uncheck();
   await page.getByRole('button', { name: 'Speichern', exact: true }).click();
@@ -269,7 +277,7 @@ test('Fall „Nachname vergessen“: Nachnamen eintragen, danach startklar', asy
   await page.getByLabel('Nachname', { exact: true }).fill('Muster');
   await page.getByRole('button', { name: 'Speichern', exact: true }).click();
   await expect(punkt(page)).toHaveCount(0);
-  await expect(page.getByText('Alles da. Ihr seid startklar.')).toBeVisible();
+  await expect(page.getByText(startklar)).toBeVisible();
 });
 
 test('NN8: Fokus als Ring am Kästchen, kein Tintenrand innen (W33)', async ({ page }) => {
@@ -311,7 +319,9 @@ test('Gegenproben aus DP74, Abschnitt 6: jede wird rot', async ({ page }) => {
   await weg();
 
   await haken.check();
-  await regel('.ohne-nachname input:checked + .kaestchen{background:var(--accent) !important}');
+  await regel(
+    '.ohne-nachname input:checked + .kaestchen{background:var(--accent-text) !important}',
+  );
   expect(verstoesse(await messen(page))).toContain('NN10 Rot');
   await weg();
 

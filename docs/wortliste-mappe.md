@@ -24,24 +24,26 @@ Im Inhalt und in den Lesezeichen steht die Kurzform (I, L), in der Kopfzeile die
 | --- | --- | --- | --- |
 | `selbstauskunft` | Selbstauskunft | (eigener Kopf der Selbstauskunft) | `dokumenttypen[0].text` |
 | `gehaltsnachweis` | Gehaltsnachweise | Gehaltsnachweis | `dokumenttypen[1].text`, `dokumenttypen[1].textEinzeln` |
-| `einkommen_selbststaendig` | Einkommensnachweis | Einkommensnachweis | `dokumenttypen[2].text`, `dokumenttypen[2].text` |
-| `einkommen_ausbildung` | BAföG-Bescheid oder Ausbildungsvertrag | BAföG-Bescheid oder Ausbildungsvertrag | `dokumenttypen[3].text`, `dokumenttypen[3].text` |
-| `einkommen_ausbildung:bafoeg` | BAföG-Bescheid | BAföG-Bescheid | `dokumenttypen[3].varianten[0].text` |
-| `einkommen_ausbildung:unterhalt` | Unterhaltsnachweis | Unterhaltsnachweis | `dokumenttypen[3].varianten[1].text` |
-| `einkommen_ausbildung:beides` | BAföG und Unterhalt | BAföG und Unterhalt | `dokumenttypen[3].varianten[2].text` |
-| `einkommen_ausbildung:ausbildungsvertrag` | Ausbildungsvertrag | Ausbildungsvertrag | `dokumenttypen[3].varianten[3].text` |
-| `einkommen_ausbildung:anderes` | Anderer Nachweis | Anderer Nachweis | `dokumenttypen[3].varianten[4].text` |
-| `rentenbescheid` | Rentenbescheid | Rentenbescheid | `dokumenttypen[4].text`, `dokumenttypen[4].text` |
-| `mietuebernahme_amt` | Nachweis der Mietübernahme | Nachweis der Mietübernahme | `dokumenttypen[5].text`, `dokumenttypen[5].text` |
-| `einkommen_sonstig` | Sonstiger Einkommensnachweis | Sonstiger Einkommensnachweis | `dokumenttypen[6].text`, `dokumenttypen[6].text` |
-| `bonitaet` | Bonitätsnachweis | Bonitätsnachweis | `dokumenttypen[7].text`, `dokumenttypen[7].text` |
-| `mietzahlung` | Mietzahlungen | Mietzahlungen | `dokumenttypen[8].textKurz`, `dokumenttypen[8].textKurz` |
-| `buergschaftserklaerung` | Bürgschaftserklärung | Bürgschaftserklärung | `dokumenttypen[9].text`, `dokumenttypen[9].text` |
-| `anschreiben` | (nicht in der Mappe) | | `dokumenttypen[10].text` |
-| `empfehlung_vorvermieter` | Empfehlung des Vorvermieters | Empfehlung des Vorvermieters | `dokumenttypen[11].text`, `dokumenttypen[11].text` |
-| `wbs` | Wohnberechtigungsschein | Wohnberechtigungsschein | `dokumenttypen[12].text`, `dokumenttypen[12].text` |
-| `ausweiskopie` | Ausweiskopie | Ausweiskopie | `dokumenttypen[13].text`, `dokumenttypen[13].text` |
-| `schufa_datenkopie` | SCHUFA-Datenkopie | SCHUFA-Datenkopie | `dokumenttypen[14].text`, `dokumenttypen[14].text` |
+| `arbeitsvertrag` | Arbeitsvertrag | Arbeitsvertrag | `dokumenttypen[2].text`, `dokumenttypen[2].text` |
+| `einkommen_selbststaendig` | Einkommensnachweis | Einkommensnachweis | `dokumenttypen[3].text`, `dokumenttypen[3].text` |
+| `einkommen_ausbildung` | BAföG-Bescheid oder Ausbildungsvertrag | BAföG-Bescheid oder Ausbildungsvertrag | `dokumenttypen[4].text`, `dokumenttypen[4].text` |
+| `einkommen_ausbildung:bafoeg` | BAföG-Bescheid | BAföG-Bescheid | `dokumenttypen[4].varianten[0].text` |
+| `einkommen_ausbildung:unterhalt` | Unterhaltsnachweis | Unterhaltsnachweis | `dokumenttypen[4].varianten[1].text` |
+| `einkommen_ausbildung:beides` | BAföG und Unterhalt | BAföG und Unterhalt | `dokumenttypen[4].varianten[2].text` |
+| `einkommen_ausbildung:ausbildungsvertrag` | Ausbildungsvertrag | Ausbildungsvertrag | `dokumenttypen[4].varianten[3].text` |
+| `einkommen_ausbildung:anderes` | Anderer Nachweis | Anderer Nachweis | `dokumenttypen[4].varianten[4].text` |
+| `rentenbescheid` | Rentenbescheid | Rentenbescheid | `dokumenttypen[5].text`, `dokumenttypen[5].text` |
+| `mietuebernahme_amt` | Nachweis der Mietübernahme | Nachweis der Mietübernahme | `dokumenttypen[6].text`, `dokumenttypen[6].text` |
+| `einkommen_sonstig` | Sonstiger Einkommensnachweis | Sonstiger Einkommensnachweis | `dokumenttypen[7].text`, `dokumenttypen[7].text` |
+| `bonitaet` | Bonitätsnachweis | Bonitätsnachweis | `dokumenttypen[8].text`, `dokumenttypen[8].text` |
+| `mietzahlung` | Mietzahlungen | Mietzahlungen | `dokumenttypen[9].textKurz`, `dokumenttypen[9].textKurz` |
+| `buergschaftserklaerung` | Bürgschaftserklärung | Bürgschaftserklärung | `dokumenttypen[10].text`, `dokumenttypen[10].text` |
+| `anschreiben` | (nicht in der Mappe) | | `dokumenttypen[11].text` |
+| `empfehlung_vorvermieter` | Empfehlung des Vorvermieters | Empfehlung des Vorvermieters | `dokumenttypen[12].text`, `dokumenttypen[12].text` |
+| `wbs` | Wohnberechtigungsschein | Wohnberechtigungsschein | `dokumenttypen[13].text`, `dokumenttypen[13].text` |
+| `mitgliedschaft` | Mitgliedschaft | Mitgliedschaft | `dokumenttypen[14].text`, `dokumenttypen[14].text` |
+| `ausweiskopie` | Ausweiskopie | Ausweiskopie | `dokumenttypen[15].text`, `dokumenttypen[15].text` |
+| `schufa_datenkopie` | SCHUFA-Datenkopie | SCHUFA-Datenkopie | `dokumenttypen[16].text`, `dokumenttypen[16].text` |
 
 ## Serien und Daten
 

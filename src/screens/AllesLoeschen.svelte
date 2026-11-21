@@ -3,6 +3,7 @@
   // was gelöscht wird, in Zahlen; ist das Backup alt oder fehlt Neues darin, ein starker Hinweis.
   import { onMount } from 'svelte';
   import { daten, db, neuLaden } from '../app/daten.svelte';
+  import { backupWort } from '../ui/backupWort';
   import { abschliessen, zurueckGehen } from '../app/router.svelte';
   import { tageSeit } from '../domain/zeit';
   import { t } from '../i18n';
@@ -30,8 +31,10 @@
     if (!zuletzt) return t('loeschenSeite.backupKeins');
     const tage = tageSeit(zuletzt);
     if (tage <= 30 && neu === 0) return null;
-    const wann =
-      tage === 0 ? t('loeschenSeite.backupHeute') : t('loeschenSeite.backupVor', { anzahl: tage });
+    const wann = backupWort(
+      tage === 0 ? t('loeschenSeite.backupHeute') : t('loeschenSeite.backupVor', { anzahl: tage }),
+      daten.einstellungen,
+    );
     return neu ? `${wann} ${t('loeschenSeite.seitdem', { anzahl: neu })}` : wann;
   });
 
@@ -64,8 +67,8 @@
         {#if bestand.unterlagen}<li class="eintrag">
             {t('loeschenSeite.unterlagen', { anzahl: bestand.unterlagen })}
           </li>{/if}
-        {#if bestand.bewerbungen}<li class="eintrag">
-            {t('loeschenSeite.bewerbungen', { anzahl: bestand.bewerbungen })}
+        {#if bestand.hefte}<li class="eintrag">
+            {t('loeschenSeite.hefte', { anzahl: bestand.hefte })}
           </li>{/if}
         <li class="eintrag">{t('loeschenSeite.einstellungen')}</li>
       </ul>

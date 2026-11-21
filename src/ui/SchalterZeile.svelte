@@ -8,12 +8,15 @@
     titel,
     text = '',
     gesperrt = false,
+    schlicht = false,
     onclick,
   }: {
     an: boolean;
     titel: string;
     text?: string;
     gesperrt?: boolean;
+    /** DP50: Ein ganzer Satz als Titel (eine Frage) steht in normaler Stärke, nicht fett. */
+    schlicht?: boolean;
     onclick: () => void;
   } = $props();
 </script>
@@ -21,6 +24,7 @@
 <button
   type="button"
   class="zeile"
+  class:schlicht
   role="switch"
   aria-checked={an}
   aria-disabled={gesperrt}
@@ -28,22 +32,23 @@
     if (!gesperrt) onclick();
   }}
 >
-  <span class="tx"
-    ><b>{titel}</b>{#if text}<small>{text}</small>{/if}</span
-  >
-  <span class="bahn" aria-hidden="true">
-    <span class="knopf"
-      >{#if an}<Symbol name="haken" groesse={16} />{/if}</span
+  <span class="innen">
+    <span class="tx"
+      ><b>{titel}</b>{#if text}<small>{text}</small>{/if}</span
     >
+    <span class="bahn" aria-hidden="true">
+      <span class="knopf"
+        >{#if an}<Symbol name="haken" groesse={16} />{/if}</span
+      >
+    </span>
   </span>
 </button>
 
 <style>
   .zeile {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    display: block;
     width: 100%;
+    container-type: inline-size;
     min-height: var(--tap-target);
     padding: 10px 0;
     border: 0;
@@ -61,6 +66,12 @@
     padding-left: 16px;
   }
 
+  .innen {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
   .tx {
     display: grid;
     flex: 1;
@@ -68,10 +79,46 @@
     min-width: 0;
   }
 
+  /* DP50 Ü5: Schmal (320 px mit 130 %) überlappte der Satz den Schalter. Dann stehen Titel und Schalter in
+     einer Zeile, der Satz darunter über die ganze Breite. */
+  @container (max-width: 260px) {
+    .innen {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 2px 12px;
+    }
+
+    .tx {
+      display: contents;
+    }
+
+    .tx b {
+      grid-column: 1;
+      grid-row: 1;
+      align-self: center;
+    }
+
+    .bahn {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .tx small {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+  }
+
   .tx b {
     font-size: calc(15 * var(--px));
     line-height: calc(19 * var(--px));
     font-weight: 800;
+  }
+
+  .schlicht .tx b {
+    font-size: calc(16 * var(--px));
+    line-height: calc(22 * var(--px));
+    font-weight: 500;
   }
 
   .tx small {

@@ -14,6 +14,7 @@
     listenText,
     offeneDinge,
     personStand,
+    hilfeFuer,
     rollenText,
     type PersonStand,
   } from '../domain/regelkatalog';
@@ -29,6 +30,7 @@
     type RutschStand,
   } from '../domain/rutsch';
   import { monatName, t, zahlwort } from '../i18n';
+  import { stimmung } from '../i18n/stimmung';
   import {
     dokumentAendern,
     einstellungenAendern,
@@ -48,7 +50,8 @@
   import Haarlinie, { type HaarStueck, type HaarZustand } from '../ui/Haarlinie.svelte';
   import Notiz from '../ui/Notiz.svelte';
   import Symbol from '../ui/Symbol.svelte';
-  import { alterGrenze, tagKurz } from '../ui/texte';
+  import BonitaetErkennen from '../ui/BonitaetErkennen.svelte';
+  import { alterGrenze, serieSatz, tagKurz } from '../ui/texte';
   import { passend, TITEL_BREIT } from '../ui/passend';
   import { tonStil } from '../ui/personTon';
   import Zurueck from '../ui/Zurueck.svelte';
@@ -93,7 +96,6 @@
   let fehler = $state('');
   // Serien (z. B. drei Gehaltsnachweise): nach dem ersten Monat gleich den nächsten anbieten.
   let serie = $state<{
-    drin: string;
     fenster: { monat: string; da: boolean }[];
     fehlend: string[];
     vorschlag: string;
@@ -226,6 +228,32 @@
   // Schon erledigt (man ist dorthin zurückgesprungen): Man kann eine neuere Datei wählen oder weiter.
   const schonDa = $derived(!!aktuell && !nochOffen(posten));
 
+  // DP49 Punkt 2: Rollt die Reihe, blendet der Rand aus; reichen die Reiter bis an den Rand, ist die Karte oben
+  // rechts gerade. Der vordere Reiter steht immer ganz da.
+  let rahmenEl = $state<HTMLElement | null>(null);
+  let registerEl = $state<HTMLElement | null>(null);
+  let rollt = $state(false);
+  let randVoll = $state(false);
+  $effect(() => {
+    const r = rahmenEl;
+    const n = registerEl;
+    void stand.index;
+    if (!r || !n) return;
+    const messen = () => {
+      rollt = n.scrollWidth > n.clientWidth + 1;
+      const letzter = n.lastElementChild?.getBoundingClientRect();
+      randVoll = rollt || (!!letzter && letzter.right >= r.getBoundingClientRect().right - 1);
+      n.querySelector<HTMLElement>('.reiter.an')?.scrollIntoView({
+        block: 'nearest',
+        inline: 'nearest',
+      });
+    };
+    messen();
+    const beobachter = new ResizeObserver(messen);
+    beobachter.observe(r);
+    return () => beobachter.disconnect();
+  });
+
   const proPerson = $derived(
     staende
       .map((s) => ({
@@ -341,7 +369,6 @@
       const vorschlag = fehlend.at(-1);
       if (vorschlag) {
         serie = {
-          drin: monatName(neuester),
           fenster: fenster.map((m) => ({ monat: m, da: alle.includes(m) })),
           fehlend,
           vorschlag,
@@ -410,8 +437,8 @@
     nichtsZuTun
       ? t('rutsch.endeTitelNichts')
       : ergebnisse.hochgeladen
-        ? t('rutsch.endeTitel')
-        : t('rutsch.endeTitelSpaeter'),
+        ? stimmung('P10a', { teil: 'satz' })
+        : stimmung('P10b', { teil: 'satz' }),
   );
   // Nichts übersprungen: keine Null im Satz und kein leerer Kasten (Prüfkatalog R10, C19).
   // R3e: In dieser Runde war nichts zu tun, aber bei anderen ist noch etwas offen.
@@ -457,11 +484,8 @@
   {#if aktuell}
     {#if serie}
       <p class="hilfe" role="status">
-        {t('rutsch.serieNoch', {
-          anzahl: serie.fehlend.length,
-          monat: serie.drin,
-          zahl: zahlwort(serie.fehlend.length),
-        })}
+        <!-- K10 (DP96, Wortlaut F): nennt jeden Monat, der drin ist, und jeden, der fehlt. -->
+        {serieSatz(serie.fenster)}
       </p>
       <ul class="marken">
         {#each serie.fenster as f (f.monat)}
@@ -483,7 +507,15 @@
         })}
       </p>
     {:else if aktuell.stand.typ.hilfe}
-      <p class="hilfe">{aktuell.stand.typ.hilfe}</p>
+      <!-- DP49 Punkt 6 (B3): Bei Bürgen ein eigener Satz zur Bonität. -->
+      <p class="hilfe">
+        {hilfeFuer(
+          aktuell.stand.typ,
+          aktuell.rolle,
+          aktuell.bezeichnung,
+          aktuell.person.rufname || aktuell.person.vorname,
+        )}
+      </p>
     {/if}
   {/if}
 {/snippet}
@@ -495,10 +527,12 @@
   </div>
   {#if aktuell}
     {@const aktiv = proPerson.findIndex((x) => x.person.id === aktuell.person.id)}
-    <div class="register-rahmen">
+    <div class="register-rahmen" bind:this={rahmenEl}>
       {#if proPerson.length > 1}
-        <!-- DP39, 1.3 (W18): Reiter je Person, in der Reihenfolge des Haushalts; Namen nie gekürzt. -->
-        <nav class="register" aria-label={t('rutsch.navi')}>
+        <!-- DP49 Punkt 2 (W13, W18): Trennblätter im Ordner. Das Blatt der Person liegt vorn, sein Reiter wächst
+             aus der Kante; die anderen stecken 8 px tiefer dahinter. Auf den Reitern nur der Name, nie gekürzt;
+             passt die Reihe nicht, rollt sie seitlich. -->
+        <nav class="register" class:rollt bind:this={registerEl} aria-label={t('rutsch.navi')}>
           {#each proPerson as x, i (x.person.id)}
             <button
               type="button"
@@ -508,16 +542,20 @@
               aria-current={i === aktiv ? 'true' : undefined}
               onclick={() => springen(ersterVon(x.person.id))}
             >
-              {@render zeichen(x.farbe, buergeVon(x.person.id))}<span class="reiter-name"
-                >{rufname(x.person)}</span
-              ><small>{fertigVon(x.person.id)}/{x.anzahl}</small>
+              <span class="reiter-name">{rufname(x.person)}</span>
+              {#if fertigVon(x.person.id) >= x.anzahl}<span class="reiter-fertig"
+                  ><Symbol name="haken" groesse={12} /><span class="visually-hidden"
+                    >{t('selbstauskunft.fertigMarke')}</span
+                  ></span
+                >{/if}
             </button>
           {/each}
         </nav>
       {/if}
       <div
         class="karte person-ton"
-        class:ecke={aktiv === 0 && proPerson.length > 1}
+        class:ecke={proPerson.length > 1}
+        class:ecke-rechts={proPerson.length > 1 && randVoll}
         style={tonStil(aktuell.farbe)}
       >
         <div class="linie">
@@ -530,6 +568,13 @@
               {@render zeichen(aktuell.farbe, aktuell.rolle === 'buerge')}{t('rutsch.fuer', {
                 name: rufname(aktuell.person),
               })}
+              <!-- DP49 Punkt 2: Der Fortschritt steht im Blatt, nicht mehr auf dem Reiter. -->
+              {#if proPerson.length > 1}<span class="im-blatt"
+                  >{t('allgemein.schrittVon', {
+                    schritt: fertigVon(aktuell.person.id),
+                    gesamt: proPerson[aktiv]?.anzahl ?? 0,
+                  })}</span
+                >{/if}
             </p>
             <h1
               class="unterlage"
@@ -605,17 +650,18 @@
       </ul>
       {#if hatUebersprungen}
         <p class="legende">
+          <!-- Derselbe Pfeil wie in der Haarlinie (DP49). -->
           <svg
-            viewBox="0 0 12 12"
-            width="12"
-            height="12"
+            viewBox="0 0 16 16"
+            width="16"
+            height="16"
             fill="none"
             stroke="currentColor"
             stroke-width="1.6"
             stroke-linecap="round"
             stroke-linejoin="round"
             aria-hidden="true"
-            ><path d="M2 8.5C2.6 5 6.5 3.4 9.4 5.6" /><path d="M9.6 2.9v2.9H6.7" /></svg
+            ><path d="M2.5 12.5A5 5 0 0 1 12.5 12.5" /><path d="M10 10 12.5 12.5 15 10" /></svg
           >{t('rutsch.legende')}
         </p>
       {/if}
@@ -685,6 +731,10 @@
             {#if fehler}
               <!-- D7: starker Hinweis über der Kachel; man versucht es direkt nochmal. -->
               <div class="datei-fehler"><Notiz stark><p role="alert">{fehler}</p></Notiz></div>
+            {/if}
+            {#if aktuell.stand.typ.id === 'bonitaet'}
+              <!-- DP50 Punkt 13: was was ist, ohne Rot. -->
+              <BonitaetErkennen />
             {/if}
             <label class="kachel">
               <Symbol name="datei" groesse={24} />
@@ -868,41 +918,93 @@
 
   .register {
     display: flex;
-    flex-wrap: wrap;
     align-items: flex-end;
     gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
   }
 
+  .register::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Passt die Reihe nicht, rollt sie; der Rand blendet über 32 px aus. */
+  .register.rollt {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 32px,
+      #000 calc(100% - 32px),
+      transparent
+    );
+  }
+
+  /* Hintere Reiter: 14 px, 600, Tinte 72 %, im leiseren Ton derselben Farbe, 8 px unter der Kante. */
   .reiter {
+    position: relative;
     display: flex;
-    flex: 0 1 auto;
+    flex: none;
     align-items: center;
     gap: 8px;
-    min-width: 0;
     min-height: 44px;
-    margin-bottom: 4px;
-    padding: 12px 16px;
+    padding: 0 16px 8px;
     border: 0;
-    border-radius: 14px 14px 0 0;
-    background: var(--track);
-    color: var(--ink-muted);
+    border-radius: 12px 12px 0 0;
+    background: color-mix(in srgb, var(--p-tint) 55%, var(--ground));
+    color: color-mix(in srgb, var(--ink) 72%, transparent);
     font: inherit;
-    font-size: calc(15 * var(--px));
-    font-weight: 500;
-    overflow-wrap: anywhere;
-    text-align: left;
+    font-size: calc(14 * var(--px));
+    font-weight: 600;
+    white-space: nowrap;
     cursor: pointer;
+    transform: translateY(8px);
   }
 
+  /* Der vordere Reiter: 15 px, 650, Tinte, 44 px hoch, ohne Naht aus der Kante. */
   .reiter.an {
-    margin-bottom: 0;
+    z-index: 1;
+    padding-bottom: 0;
     background: var(--p-tint);
     color: var(--ink);
+    font-size: calc(15 * var(--px));
     font-weight: 650;
+    transform: none;
   }
 
-  .reiter small {
-    font-size: calc(13 * var(--px));
+  /* Am Fuß nach innen gerundet, 12 px; am linken Rand beginnt das Register, dort ohne Rundung. */
+  .reiter.an::before,
+  .reiter.an::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    width: 12px;
+    height: 12px;
+    pointer-events: none;
+  }
+
+  .reiter.an::before {
+    left: -12px;
+    background: radial-gradient(circle at 0 0, transparent 11.5px, var(--p-tint) 12px);
+  }
+
+  .reiter.an::after {
+    right: -12px;
+    background: radial-gradient(circle at 100% 0, transparent 11.5px, var(--p-tint) 12px);
+  }
+
+  .reiter.an:first-child::before,
+  .reiter.an:last-child::after {
+    display: none;
+  }
+
+  .reiter-fertig {
+    display: grid;
+    color: currentColor;
+  }
+
+  .im-blatt {
+    margin-left: auto;
     font-weight: 500;
     color: var(--ink-muted);
     font-variant-numeric: tabular-nums;
@@ -922,6 +1024,10 @@
 
   .karte.ecke {
     border-top-left-radius: 0;
+  }
+
+  .karte.ecke-rechts {
+    border-top-right-radius: 0;
   }
 
   .linie {

@@ -1,5 +1,6 @@
 import type { Einstellungen, Heft } from '../domain/modell';
 import { markeSetzen } from './marke';
+import { nurNeuestes } from './neuestes';
 import { rueckgaengigVergessen } from './rueckgaengig.svelte';
 import { datenbankOeffnen, type HeftaDb } from '../storage/db';
 import {
@@ -62,7 +63,7 @@ function verbindungVerloren(e: unknown): boolean {
 let hauptmieterGeprueft = false;
 let telefoneGeprueft = false;
 
-async function laden(): Promise<void> {
+async function lesen() {
   const verbindung = await db();
   if (!daten.einstellungen?.version1Eingeordnet) await hefteAusVersion1EinordnenEinmal(verbindung);
   if (!hauptmieterGeprueft) {
@@ -78,6 +79,10 @@ async function laden(): Promise<void> {
   const einstellungen = await einstellungenLaden(verbindung);
   const ansicht = await haushaltLaden(verbindung, einstellungen.aktiverHaushalt);
   const hefte = await hefteLaden(verbindung, ansicht?.haushalt.id ?? null);
+  return { einstellungen, ansicht, hefte };
+}
+
+function uebernehmen({ einstellungen, ansicht, hefte }: Awaited<ReturnType<typeof lesen>>): void {
   daten.ansicht = ansicht;
   daten.hefte = hefte;
   daten.einstellungen = einstellungen;
@@ -89,6 +94,9 @@ async function laden(): Promise<void> {
     .then((m) => m.erinnerungenAbgleichen({ hefte, ansicht, einstellungen }))
     .catch(() => {});
 }
+
+// Überholen sich zwei Ladevorgänge, gewinnt das zuletzt begonnene (src/app/neuestes.ts).
+const laden = nurNeuestes(lesen, uebernehmen);
 
 export async function neuLaden(): Promise<void> {
   rueckgaengigVergessen();

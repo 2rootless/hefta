@@ -28,6 +28,7 @@ import {
   farbeSetzen,
   haushaltAnlegen,
   haushaltLaden,
+  haushaltLoeschen,
   haushaltZaehlen,
   hauptmieterSichern,
   hefteAusVersion1EinordnenEinmal,
@@ -155,7 +156,7 @@ describe('Datenbank', () => {
     alt.close();
 
     const db = await datenbankOeffnen(name);
-    expect(db.version).toBe(2);
+    expect(db.version).toBe(3);
     const hefte = await db.getAll('hefte');
     expect(hefte).toHaveLength(1);
     expect(hefte[0]).toMatchObject({
@@ -860,6 +861,7 @@ describe('Backup-Vorschau und Zahlen (S6–S9, U15)', () => {
       kinder: 1,
       weitere: 0,
       unterlagen: 0,
+      hefte: 0,
       bewerbungen: 0,
       vertragNamen: ['Max Mustermann', 'Lea Mustermann'],
       buergenNamen: ['Petra Mustermann'],
@@ -1140,5 +1142,32 @@ describe('Mehrere Haushalte, Modell (E53)', () => {
     const [d] = await db.getAll('dokumente');
     expect(d && 'zugehoerigkeitId' in d).toBe(false);
     db.close();
+  });
+});
+
+describe('Unterlagen des Haushalts (DP45 G1, W28)', () => {
+  it('der WBS liegt beim Haushalt, nicht bei einer Person, und geht mit dem Haushalt', async () => {
+    const db = await neueDb();
+    const haushalt = await haushaltDesAuftraggebers(db);
+    await unterlageSpeichern(db, {
+      personId: haushalt.id,
+      typ: 'wbs',
+      serie: null,
+      original: new Blob(['PDF WBS'], { type: 'application/pdf' }),
+      aufbereitet: null,
+      ausstellungsdatum: null,
+      abrechnungsmonat: null,
+      variante: null,
+      seiten: null,
+      gerastert: false,
+    });
+    const ansicht = (await haushaltLaden(db, haushalt.id))!;
+    expect(ansicht.haushaltDokumente?.map((d) => d.typ)).toEqual(['wbs']);
+    expect(ansicht.dokumente.some((d) => d.typ === 'wbs')).toBe(false);
+    expect(ansicht.versionen.some((v) => v.dokumentId === ansicht.haushaltDokumente![0]!.id)).toBe(
+      true,
+    );
+    await haushaltLoeschen(db, haushalt.id);
+    expect(await db.getAllFromIndex('dokumente', 'personId', haushalt.id)).toEqual([]);
   });
 });

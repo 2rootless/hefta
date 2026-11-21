@@ -32,7 +32,10 @@ export function rutschListe(staende: PersonStand[], mitFormularen: boolean): Rut
   ];
   return reihenfolge.flatMap((s) => {
     const offen = (status: UnterlagenStand['status']) =>
-      s.unterlagen.filter((u) => u.status === status && (mitFormularen || !u.typ.inAppErstellt));
+      s.unterlagen.filter(
+        // DP49 Punkt 5: Was je Wohnung gilt (Bürgschaftserklärung), ist kein Schritt im Rutsch.
+        (u) => u.status === status && !u.typ.jeWohnung && (mitFormularen || !u.typ.inAppErstellt),
+      );
     return [...offen('fehlt'), ...offen('bald')].map((u) => ({
       personId: s.person.id,
       typ: u.typ.id,

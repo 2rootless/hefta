@@ -452,7 +452,7 @@
   /* Felder (B28b, DP21): weiche Fläche, das Feld im Satz, Einheit direkt daneben. */
   .feld {
     margin: 0 0 12px;
-    padding: 14px 16px;
+    padding: 16px;
     border-radius: 20px;
     background: var(--surface);
   }

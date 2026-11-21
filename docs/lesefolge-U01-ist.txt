@@ -56,9 +56,6 @@ Zugänglichkeitsbaum aus Chromium (Szenario 01-standard). Das ist NICHT VoiceOve
       - /url: "#/person/p-01-standard-2"
   - list:
     - listitem:
-      - link "Bürgschaftserklärung vom 1. Oktober da":
-        - /url: "#/unterlage/p-01-standard-2/buergschaftserklaerung"
-    - listitem:
       - link "Selbstauskunft fertig, 1 Seite da":
         - /url: "#/selbstauskunft/p-01-standard-2"
     - listitem:
@@ -67,6 +64,16 @@ Zugänglichkeitsbaum aus Chromium (Szenario 01-standard). Das ist NICHT VoiceOve
     - listitem:
       - link "Bonitätsnachweis fehlt noch":
         - /url: "#/unterlage/p-01-standard-2/bonitaet"
+  - region "Für den ganzen Haushalt":
+    - heading "Für den ganzen Haushalt" [level=2]
+    - list:
+      - listitem:
+        - link "Wohnberechtigungsschein Nur für Sozialwohnungen. Habt ihr einen, legt ihn hier einmal ab.":
+          - /url: "#/haushalt-unterlage/wbs"
+      - listitem:
+        - link "Genossenschaft Seid ihr Mitglied, steht es in jedem Heft für diese Genossenschaft.":
+          - /url: "#/haushalt-unterlage/genossenschaft/neu"
+    - paragraph: Was hier liegt, kommt in jedes Heft, in dem es zählt. Ihr ladet es nur einmal hoch.
   - text: Letztes Backup vor 3 Tagen
   - link "Jetzt sichern":
     - /url: "#/einstellungen/backup"

@@ -67,8 +67,26 @@ test('Großes Bild: mit zwei Fingern vergrößern, der Punkt unter den Fingern b
     .getByText(/^\d+ Seiten$/)
     .first()
     .waitFor({ timeout: 30_000 });
-  await page.getByRole('button', { name: 'Deckblatt groß ansehen' }).click();
-  await page.getByRole('button', { name: 'Ganze Mappe ansehen' }).click();
+  // DP50 P2: Die ganze Mappe öffnet den neuen Leser (dort fehlen zwei Finger noch, Nachtbericht Offen).
+  // Die Seitenansicht mit zwei Fingern gilt weiter für die Einzeldateien.
+  await expect(async () => {
+    await page.evaluate(() => (location.hash = '#/mappe/anpassen'));
+    await expect(page.getByRole('radio', { name: 'Einzeldateien' })).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 20000 });
+  await page.getByRole('radio', { name: 'Einzeldateien' }).click();
+  await page
+    .getByRole('link', { name: /Mappe teilen|Zurück/ })
+    .first()
+    .click();
+  await page.getByText(/^\d+ Dateien$/).waitFor({ timeout: 30000 });
+  await page
+    .getByRole('button', { name: /^Dateien ansehen/ })
+    .first()
+    .click();
+  await page
+    .getByRole('button', { name: /\.pdf ansehen$/ })
+    .first()
+    .click();
   const ansicht = page.getByRole('dialog', { name: /^Seite 1 von \d+$/ });
   await expect(ansicht.getByRole('img', { name: 'Seite 1' })).toBeVisible();
   const ganz = ansicht.getByRole('button', { name: 'Ganz' });
@@ -271,7 +289,7 @@ test('Scan mit Textschicht: wird kleiner, der Text bleibt lesbar und markierbar'
   await moeglich.waitFor({ timeout: 120_000 });
   const groesse = (s: string) => {
     const m = /([\d,]+) (KB|MB)/.exec(s)!;
-    return parseFloat(m[1]!.replace(',', '.')) * (m[2] === 'MB' ? 1024 : 1);
+    return parseFloat(m[1]!.replace(',', '.')) * (m[2] === 'MB' ? 1000 : 1);
   };
   const geschaetzt = groesse(/etwa (.*)\./.exec(await moeglich.innerText())![1]!);
   const vorher = groesse(

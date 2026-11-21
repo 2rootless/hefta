@@ -1,4 +1,5 @@
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { zuGross } from './grenze';
 import { ANHANG_FASSUNG, ANHANG_NAME, anhangLesen, type HeftaAnhang } from '../pdf/anhang';
 import '../pdf/stromPolyfill';
 import { papierLesen } from './papier';
@@ -11,7 +12,7 @@ const adresse = (pfad: string) => new URL(pfad, document.baseURI).href;
 pdfjs.GlobalWorkerOptions.workerSrc = adresse('./pdfjs/huelle.mjs');
 const arbeiter = new pdfjs.PDFWorker();
 
-export const GRENZE_BYTES = 100 * 1024 * 1024;
+export { GRENZE_BYTES } from './grenze';
 
 export type PdfDok = pdfjs.PDFDocumentProxy;
 
@@ -65,7 +66,7 @@ export async function einlesen(
   doppelt: (sha: string) => number | undefined,
 ): Promise<Gelesen> {
   if (!(await istPdf(datei))) return { art: 'fehler', text: t('fehler.keinePdf') };
-  if (datei.size > GRENZE_BYTES) return { art: 'fehler', text: t('fehler.zuGross') };
+  if (zuGross(datei.size)) return { art: 'fehler', text: t('fehler.zuGross') };
   let daten: Uint8Array;
   let sha: string;
   try {

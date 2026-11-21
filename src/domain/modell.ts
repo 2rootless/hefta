@@ -26,6 +26,16 @@ export type Rolle = 'hauptmieter' | 'mitmieter' | 'buerge';
 
 export type AusbildungArt = 'studium' | 'ausbildung';
 
+/** DP47 G5: eine weitere Lebenslage einer Person, mit ihren Angaben für die Selbstauskunft. */
+export interface Lebenslage {
+  id: Id;
+  situation: Lebenssituation;
+  ausbildungArt?: AusbildungArt | null;
+  beruf?: string;
+  arbeitgeber?: string;
+  nettoeinkommen?: number | null;
+}
+
 export interface Person extends Basis {
   vorname: string;
   nachname: string;
@@ -52,6 +62,22 @@ export interface Person extends Basis {
   arbeitgeber: string;
   nettoeinkommen: number | null;
   abrechnungMeist: 'anfang' | 'mitte' | 'ende' | null;
+  /**
+   * DP45 G3: „Seit Kurzem“ im Job, mit dem Tag des Anfangs (eigene Angabe der Person). Gehaltsabrechnungen
+   * zählen dann erst ab diesem Monat; dazu kommt der Arbeitsvertrag. Fehlt es: „Länger als drei Monate“.
+   */
+  neuImJob?: { seit: Tag | null } | null;
+  /**
+   * DP47 G5: weitere Lebenslagen (Einkommensquellen) nach der ersten, in Reihenfolge. Die erste steht wie
+   * bisher in `lebenssituation`, `beruf`, `arbeitgeber` und `nettoeinkommen`. „Angestellt“ darf mehrfach
+   * vorkommen (zwei Arbeitgeber).
+   */
+  weitereLagen?: Lebenslage[];
+  /**
+   * DP47b K1: „Einkommen trotzdem angeben“ bei „Leistungen vom Amt“. Aus (Standard) gilt Version 1: Das
+   * Amt übernimmt die Miete, Einkommen und Nachweise der anderen Lagen stehen nicht im Bogen.
+   */
+  einkommenTrotzdem?: boolean;
   /** Antworten der Selbstauskunft (M4); fehlt bei älteren Daten und wird dann leer gelesen. */
   selbstauskunft?: import('./selbstauskunft').Selbstauskunft;
   /**
@@ -121,6 +147,12 @@ export interface Zugehoerigkeit extends Basis {
   herausgenommenAm?: string | null;
   /** E3d: Die Frage „Seit drei Monaten herausgenommen …“ wurde mit „Behalten“ beantwortet; nie wieder. */
   behalten?: boolean;
+  /**
+   * W42 Fall 7 (DP93, DP94): „Zieht nur mit ein“. Die Person ist herausgenommen (nicht in der Mappe), zählt aber unter
+   * „Weitere Erwachsene“ des Haushalts mit; der Haushalt trägt sie in `weitereErwachsene`. Holt man sie zurück, zählt
+   * sie dort nicht mehr. Keine eigene Rolle: So kennt jede Version die Daten (CP88, W42 F1).
+   */
+  ziehtMitEin?: boolean;
 }
 
 export interface Dokument extends Basis {
@@ -139,6 +171,20 @@ export interface Dokument extends Basis {
   /** Für „höchstens zweimal pro Monat fragen“: in welchem Monat zuletzt „Noch nicht“, wie oft. */
   stummMonat?: Monat | null;
   stummAnzahl?: number;
+  /** DP45 G2: Mitgliedschaft in einer Genossenschaft (Typ `mitgliedschaft`, beim Haushalt). */
+  genossenschaft?: { name: string; nummer: string };
+  /**
+   * DP45 G4 (K1): „Wie ist es bei dir?“ beim Bonitätsnachweis. Bei „keiner“ steht die Angabe wörtlich in der
+   * Mappe; der Grund ist freiwillig, ohne Grund heißt es nur „noch keiner möglich“.
+   */
+  bonitaet?: BonitaetAngabe;
+}
+
+export interface BonitaetAngabe {
+  art: 'habe' | 'bestelle' | 'keiner';
+  grund: 'keine_vertraege' | 'eigener' | null;
+  /** Bei „Eigener Grund“: in den Worten der Person. */
+  text?: string;
 }
 
 export interface Schwaerzung {
@@ -171,10 +217,22 @@ export interface VersionFakten {
 
 export interface DateiVersion extends Basis {
   dokumentId: Id;
+  /**
+   * Nur bei Typen mit `jeWohnung` (Bürgschaftserklärung, DP49 Punkt 5): das Heft, für das diese Fassung gilt.
+   * Fehlt es, gilt sie für keine bestimmte Wohnung (hochgeladen vor DP49 oder ohne Heft); dann kommt sie in
+   * eine Mappe, solange es für deren Wohnung keine eigene gibt.
+   */
+  heftId?: Id | null;
   /** Name der hochgeladenen Datei; fehlt bei älteren Versionen. */
   dateiname?: string | null;
   ausstellungsdatum: Tag | null;
   abrechnungsmonat: Monat | null;
+  /**
+   * Nur beim Wohnberechtigungsschein (DP45 G1): was darauf steht. „Gültig bis“ wörtlich vom Schein oder
+   * selbst eingetragen (W10); Personen und Räume oder Wohnfläche, wie sie die Orientierungshilfe für
+   * Stufe 1 nennt. Fehlt bei allen anderen Unterlagen.
+   */
+  wbs?: { gueltigBis: Tag | null; personen: number | null; raeume: string | null };
   /** Bei Typen mit Alternative, z. B. 'gehaltsabrechnung' | 'kontoauszug'. */
   variante: string | null;
   original: Id;
@@ -311,6 +369,18 @@ export interface Heft extends Basis {
   angaben?: HeftAngaben;
   /** Fragen für die Besichtigung (E52): Häkchen, Antworten und eigene Fragen dieses Hefts. */
   fragen?: import('./besichtigungsFragen').HeftFragen;
+  /**
+   * DP45 G1 (W28): Sozialwohnung, also Wohnberechtigungsschein nötig. Dann kommt der Schein des Haushalts
+   * in die Mappe dieses Hefts; das Heft wählt ihn nur aus, hochgeladen wird er beim Haushalt.
+   */
+  sozialwohnung?: boolean;
+  /** K3 (PC56): Ein abgelaufener Schein geht nur mit, wenn man es hier anschaltet. */
+  wbsAbgelaufenMit?: boolean;
+  /**
+   * DP45 G2: Diese Wohnung ist von einer Genossenschaft, in der der Haushalt Mitglied ist: Kennung des
+   * Dokuments der Mitgliedschaft. Dann kommt sie in die Mappe dieses Hefts; das Heft wählt nur aus.
+   */
+  genossenschaft?: Id | null;
 }
 
 /** Was Hefta aus einem Inserat übernimmt; jeder Wert ist bestätigt oder selbst eingetragen. */
@@ -384,6 +454,11 @@ export interface Einstellungen {
   id: 'app';
   updatedAt: Zeitpunkt;
   letztesBackup: Zeitpunkt | null;
+  /**
+   * DP106: Nach einem reinen Download im Browser weiß Hefta nur, dass er begonnen hat. Dann heißt es überall
+   * „Letzter Download“ statt „Letztes Backup“. Es zählt der letzte Vorgang; fehlt das Feld, war es ein Backup.
+   */
+  letztesBackupWeg?: 'download' | null;
   speicherAngefragt: boolean;
   homescreenHinweisGezeigt: boolean;
   /** G4b: „Später“ gesagt; Hefta fragt höchstens noch einmal, wenn der Haushalt angelegt ist. */
@@ -412,10 +487,14 @@ export interface Einstellungen {
    * dort schon beantwortet.
    */
   ausgeblendeteFragen?: import('./besichtigungsFragen').AusgeblendeteFrage[];
+  /** DP50 Punkt 10: Fragen von Hefta, in den Einstellungen ausgeschaltet; fehlen in jedem Heft (E5). */
+  fragenAus?: import('./besichtigungsFragen').Thema[];
   /** Erinnerungen (Zeile 9, B21): „Besichtigungen und Nachfassen“; fehlt der Wert, sind sie an. */
   erinnerungBesichtigungen?: boolean;
-  /** Erinnerungen: „Neuer Monat beim Gehaltsnachweis“; fehlt der Wert, sind sie an. */
+  /** Erinnerungen: „Neue Monate und Ablauf von Unterlagen“ (PC62, auch der WBS); fehlt der Wert, an. */
   erinnerungGehalt?: boolean;
+  /** W48: dritter Schalter „Unterlagen, bevor sie zu alt werden“; fehlt er, ist er an. */
+  erinnerungZuAlt?: boolean;
 }
 
 /** Eine gespeicherte Datei. `daten` ist ein Blob oder, wo Blobs nicht gehen, ein ArrayBuffer. */
@@ -433,11 +512,28 @@ export const AUSSEHEN_STANDARD: MappenAussehen = { art: 'personen' };
 
 export function rufnameAus(vorname: string): string {
   // E257 (PC138): Titel am Anfang („Dr.“, „Prof.“, „Dipl.-Ing.“) zählen nicht. Ein Titel ist ein Wort,
-  // das mit einem Punkt endet. Besteht der Vorname nur aus Titeln, gilt die alte Regel.
+  // das mit einem Punkt endet, oder (PC148) „Dr“, „Prof“, „Dipl-Ing“ ohne Punkt. Titel zählen nur, wenn
+  // danach noch ein Wort folgt; besteht der Vorname nur aus Titeln, gilt die alte Regel.
+  return rufnameOhneTitel(vorname, istTitel);
+}
+
+/** PC148: Titel ohne Punkt. Nur ganze Wörter, also nie „Drago“ oder „Professor“. */
+const TITEL_OHNE_PUNKT = new Set(['dr', 'prof', 'dipl-ing']);
+
+function istTitel(wort: string): boolean {
+  return wort.endsWith('.') || TITEL_OHNE_PUNKT.has(wort.toLowerCase());
+}
+
+function rufnameOhneTitel(vorname: string, titel: (wort: string) => boolean): string {
   const woerter = vorname.trim().split(/\s+/);
-  const ab = woerter.findIndex((w) => !w.endsWith('.'));
+  const ab = woerter.findIndex((w) => !titel(w));
   if (ab < 0) return rufnameNachAlterRegel(vorname);
   return rufnameNachAlterRegel(woerter.slice(ab).join(' '));
+}
+
+/** Die Regel in 2.0.1: nur Titel mit Punkt wurden übersprungen. */
+function rufnameNach201(vorname: string): string {
+  return rufnameOhneTitel(vorname, (w) => w.endsWith('.'));
 }
 
 /** Die Regel bis 2.0: Vorname bis zum ersten Leerzeichen oder Bindestrich, auch wenn das ein Titel ist. */
@@ -445,10 +541,14 @@ function rufnameNachAlterRegel(vorname: string): string {
   return vorname.trim().split(/[\s-]/)[0] ?? '';
 }
 
-/** Selbst gebildet: der Rufname, den Hefta aus diesem Vornamen bildet oder bis 2.0 gebildet hat. */
+/** Selbst gebildet: der Rufname, den Hefta aus diesem Vornamen bildet oder bis 2.0.1 gebildet hat. */
 function rufnameSelbstGebildet(vorname: string, rufname: string): boolean {
   const r = rufname.trim();
-  return r === rufnameAus(vorname) || r === rufnameNachAlterRegel(vorname);
+  return (
+    r === rufnameAus(vorname) ||
+    r === rufnameNachAlterRegel(vorname) ||
+    r === rufnameNach201(vorname)
+  );
 }
 
 /** Rufname nach einer Änderung des Vornamens: Er folgt, außer er wurde eigens gewählt. */
@@ -458,13 +558,14 @@ export function rufnameFolgt(alterVorname: string, neuerVorname: string, rufname
 }
 
 /**
- * E257: Ein gespeicherter Rufname, den Hefta bis 2.0 selbst aus einem Titel gebildet hat („Dr.“), wird beim
- * Lesen neu gebildet. Ein eigens gewählter Rufname bleibt. Gespeichert wird dabei nichts.
+ * E257: Ein gespeicherter Rufname, den Hefta bis 2.0.1 selbst aus einem Titel gebildet hat („Dr.“, „Dr“),
+ * wird beim Lesen neu gebildet. Ein eigens gewählter Rufname bleibt. Gespeichert wird dabei nichts.
  */
 export function rufnameGelesen<P extends { vorname: string; rufname: string }>(person: P): P {
   const r = person.rufname.trim();
   const neu = rufnameAus(person.vorname);
-  if (r && r !== neu && r === rufnameNachAlterRegel(person.vorname) && r.endsWith('.')) {
+  const alt = r === rufnameNachAlterRegel(person.vorname) || r === rufnameNach201(person.vorname);
+  if (r && r !== neu && alt && istTitel(r)) {
     return { ...person, rufname: neu };
   }
   return person;

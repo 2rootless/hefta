@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { stimmungMuster } from './stimmung-muster';
 import { haushaltMitMax } from './einrichtung';
 import { ganzesBild } from './hefte-hilfen';
 
@@ -109,9 +110,11 @@ test('Bewerben per Portal: Anschreiben, Angaben, Mappe, Text kopieren, dann der 
   );
   await expect(page.getByText(/Im Portal: Text ins Nachrichtenfeld einsetzen\./)).toBeVisible();
   const anschreiben = page.locator('.mailblatt');
-  await expect(anschreiben).toContainText('Sehr geehrte Frau Hansen,');
+  // W37: Anrede, Einstieg und Einzug wechseln je Heft; fest bleiben der Name, das Datum und der Kern.
+  await expect(anschreiben).toContainText(/(Sehr geehrte|Guten Tag,) Frau Hansen,/);
+  await expect(anschreiben).toContainText(/1\. Januar 2027[^.]*\. Meine Mappe/);
   await expect(anschreiben).toContainText(
-    'ich möchte mich um die Wohnung im Lindenring 3 bewerben. Ich kann zum 1. Januar 2027 einziehen.',
+    'Meine Mappe mit den üblichen Unterlagen schicke ich Ihnen gern, sobald Sie mir eine Mailadresse nennen.',
   );
   await expect(anschreiben).toContainText('Einzug: 1. Januar 2027');
   await expect(anschreiben).toContainText('Wer einzieht: Eine Person im Mietvertrag.');
@@ -231,8 +234,9 @@ test('Aussehen in den Einstellungen: System, Hell, Dunkel (12.11.)', async ({ pa
   await page.emulateMedia({ colorScheme: 'light' });
   await haushaltMitMax(page);
   await page.goto('/#/einstellungen');
-  // PC81 U5: Der Stand zeigt seine Version, nicht „0.0.1“ wie die Vorschau vorher. PC134: 2.0.1.
-  await expect(page.getByText(/^2\.0\.1, Regeln für Unterlagen vom /)).toBeVisible();
+  await page.getByRole('tab', { name: 'App', exact: true }).click();
+  // PC81 U5: Der Stand zeigt seine Version, nicht „0.0.1“ wie die Vorschau vorher. PC134: 2.0.1, PC187: 2.1.
+  await expect(page.getByText(/^2\.1, Regeln für Unterlagen vom /)).toBeVisible();
   await expect(page.getByText(/0\.0\.1/)).toHaveCount(0);
   const gruppe = page.getByRole('radiogroup', { name: 'Aussehen' });
   await expect(gruppe.getByRole('radio', { name: 'System' })).toHaveAttribute(
@@ -246,6 +250,7 @@ test('Aussehen in den Einstellungen: System, Hell, Dunkel (12.11.)', async ({ pa
   // Bleibt nach dem Neuladen, auch wenn das System hell ist.
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByRole('tab', { name: 'App', exact: true }).click();
   await gruppe.getByRole('radio', { name: 'Hell' }).click();
   await page.emulateMedia({ colorScheme: 'dark' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
@@ -260,7 +265,10 @@ test('Tab „Mappe“ mit nur einer Person: der Satz ohne doppelte Liste (12.11.
   await haushaltMitMax(page);
   await page.goto('/#/');
   const kasten = page.locator('section.aufgaben');
-  await expect(kasten.getByRole('heading', { level: 2 })).toContainText(/dann bist du startklar/);
+  // W37: Der Satz kommt aus Pool P2, in der Du-Form.
+  await expect(kasten.getByRole('heading', { level: 2 })).toHaveText(
+    stimmungMuster('P2', { anzahl: 3, an: 'du' }),
+  );
   await expect(kasten.locator('ul')).toBeHidden();
 });
 
@@ -269,6 +277,7 @@ test('Aussehen: kein Rahmen um die Zeile nach dem Tippen, Rückmeldung an hallo@
 }) => {
   await haushaltMitMax(page);
   await page.goto('/#/einstellungen');
+  await page.getByRole('tab', { name: 'App', exact: true }).click();
   const zeile = page.locator('.aussehen-zeile');
   await page.getByRole('radio', { name: 'Hell' }).click();
   await expect(zeile).toHaveCSS('outline-style', 'none');

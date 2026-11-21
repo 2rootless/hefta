@@ -188,9 +188,10 @@ async function kontaktFertigOeffnen(page: Page) {
   // Wie Lea bei Design (DP82): Mit Mail ist „Kontakt“ auch ohne Telefon fertig; offen hält ihn nur der Fehler.
   await page.getByLabel('E-Mail').fill('max.mustermann@example.com');
 }
-// Der Knopf unten im Teil, nicht „Fertig“ in der Leiste (die speichert und verlässt die Seite).
-const teilFertig = (page: Page) =>
-  page.locator('section.teil.offen').getByRole('button', { name: 'Fertig', exact: true });
+// K9 (DP96, Weg B): Auf der Seite gibt es keinen Knopf im Teil mehr, nur den Hauptknopf unten. Fehlt nur der
+// Kontakt (Fehler im Telefon), ist er ein blasses „Fertig“ und führt ins Feld; ist alles da, ein „Fertig“, das speichert
+// und die Seite verlässt.
+const hauptknopf = (page: Page) => page.locator('.leiste button.haupt');
 const kontaktKopf = (page: Page) =>
   page.locator('section.teil.offen h3').filter({ hasText: 'Kontakt' }).locator('small');
 
@@ -202,7 +203,9 @@ test('K1: mit Fehler im Telefon schließt „Fertig“ den Teil „Kontakt“ ni
     // Einmal mit Verlassen des Felds (wie Design), einmal direkt aus dem Feld heraus.
     await feld(page).fill(nummer);
     if (nr !== 'TL9') await page.getByLabel('E-Mail').focus();
-    await teilFertig(page).click();
+    await expect(hauptknopf(page), nr).toHaveAttribute('aria-disabled', 'true');
+    // Der blasse Knopf ist nicht gesperrt (DP96): Antippen führt ins Feld. Playwright hält aria-disabled für gesperrt.
+    await hauptknopf(page).click({ force: true });
     await expect(feld(page), nr).toBeFocused();
     await expect(feld(page), nr).toHaveAttribute('aria-invalid', 'true');
     await expect(kontaktKopf(page), nr).toHaveText('Telefonnummer bitte prüfen');
@@ -222,14 +225,15 @@ test('K1: mit Fehler im Telefon schließt „Fertig“ den Teil „Kontakt“ ni
     .first()
     .click();
   await eintragen(page, '0171 3920001');
-  await teilFertig(page).click();
-  await expect(page.locator('section.teil.offen h3').filter({ hasText: 'Kontakt' })).toHaveCount(0);
+  await expect(hauptknopf(page)).toHaveText('Fertig');
+  await expect(hauptknopf(page)).not.toHaveAttribute('aria-disabled', 'true');
 
   // Gegenprobe: eine gültige Nummer, und „Fertig“ schließt „Kontakt“ mit Haken; oben steht wieder „Fertig …“.
   await kontaktFertigOeffnen(page);
   await eintragen(page, '0171 3920001');
   await expect(kontaktKopf(page)).toHaveText('Fertig');
-  await teilFertig(page).click();
-  await expect(page.locator('section.teil.offen h3').filter({ hasText: 'Kontakt' })).toHaveCount(0);
   await expect(page.locator('.bogen b')).not.toHaveText('Noch nicht fertig');
+  await expect(hauptknopf(page)).not.toHaveAttribute('aria-disabled', 'true');
+  await hauptknopf(page).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Selbstauskunft' })).toHaveCount(0);
 });

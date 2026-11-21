@@ -42,13 +42,16 @@ for (const [breite, hoehe] of BREITEN) {
       // Bezug: die Zeile „Backup erstellen“ in der Karte darüber.
       const bezug = await abstaende(page, 'a.listenzeile', 'ul.zeilen', '.tx', 'svg');
       expect(bezug.links).toBeGreaterThanOrEqual(12);
-      for (const i of [0, 1]) {
+      // DP50 Punkt 10: ein Schalter je Reiter, „Hefte“ und „Mappe“.
+      for (const reiter of ['Hefte', 'Mappe']) {
+        await page.getByRole('tab', { name: reiter, exact: true }).click();
         const s = await page
           .getByRole('switch')
-          .nth(i)
+          .first()
           .evaluate((z) => {
             const k = z.closest('ul.zeilen')!.getBoundingClientRect();
-            const t = z.querySelector('.tx')!.getBoundingClientRect();
+            // Der Titel, nicht .tx: Schmal (DP50 Ü5) ist .tx `display: contents` und hat keinen eigenen Kasten.
+            const t = z.querySelector('.tx b')!.getBoundingClientRect();
             const b = z.querySelector('.bahn')!.getBoundingClientRect();
             return { links: Math.round(t.left - k.left), rechts: Math.round(k.right - b.right) };
           });

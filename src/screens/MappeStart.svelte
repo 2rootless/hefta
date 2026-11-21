@@ -7,10 +7,13 @@
   import { daten, db, gehe, stillLaden } from '../app/daten.svelte';
   import { nachLoeschen } from '../app/haushaltGeloescht.svelte';
   import { VERMIETER_ADRESSE, VERMIETER_DOMAIN } from '../app/name';
-  import { t } from '../i18n';
+  import { t, tIn } from '../i18n';
   import { haushaltAendern, haushaltVonVorn } from '../storage/speicher';
   import { aufgehen, lauf } from '../ui/bewegung';
   import DeckblattBild from '../ui/DeckblattBild.svelte';
+  import MappeBild from '../ui/MappeBild.svelte';
+  import { geloescht } from '../ui/heftGeloescht.svelte';
+  import { heftLoeschen, heftZurueckholen } from '../storage/speicher';
   import { homescreenFragen } from '../ui/homescreen';
   import Sheet from '../ui/Sheet.svelte';
   import Symbol from '../ui/Symbol.svelte';
@@ -94,8 +97,30 @@
     await stillLaden();
   }
 
-  // Der Hinweis nach „Haushalt löschen“ gilt nur, bis man die Seite verlässt.
-  onDestroy(() => (nachLoeschen.offen = false));
+  // Der Hinweis nach „Haushalt löschen“ gilt nur, bis man die Seite verlässt; mit ihm „Rückgängig“ nach
+  // „Hefte auch löschen“ (DP50 Punkt 1, wie H1 in DP49). Danach räumt Hefta die Fotos weg.
+  onDestroy(() => {
+    nachLoeschen.offen = false;
+    geloescht.mehrere = [];
+  });
+  const hefteDa = $derived(daten.hefte.length);
+  async function hefteAuchLoeschen() {
+    const verbindung = await db();
+    const weg = [];
+    for (const h of daten.hefte) {
+      const alt = await heftLoeschen(verbindung, h.id);
+      if (alt) weg.push(alt);
+    }
+    geloescht.mehrere = weg;
+    await stillLaden();
+  }
+  async function hefteZurueck() {
+    const verbindung = await db();
+    for (const h of $state.snapshot(geloescht.mehrere)) await heftZurueckholen(verbindung, h);
+    geloescht.mehrere = [];
+    nachLoeschen.offen = false;
+    await stillLaden();
+  }
 
   let vonVornOffen = $state(false);
   async function vonVorn() {
@@ -114,150 +139,40 @@
   </p>
 {/snippet}
 
-{#snippet mini(n: 1 | 2 | 3)}
-  <svg viewBox="0 0 120 213.33" aria-hidden="true">
-    <rect
-      x="8"
-      y="8"
-      width="104"
-      height="197.33"
-      rx="14"
-      fill="var(--surface)"
-      stroke="var(--ink)"
-      stroke-width="2.2"
-    />
-    {#if n === 1}
-      {#each [1, 4] as farbe, i (farbe)}
-        <rect
-          x="22"
-          y={40 + i * 44}
-          width="26"
-          height="26"
-          rx="5"
-          fill="var(--person-{farbe})"
-          stroke="var(--on-person)"
-          stroke-width="1.4"
-        />
-        <rect
-          x="58"
-          y={48 + i * 44}
-          width={40 - i * 8}
-          height="8"
-          rx="4"
-          fill="var(--line-strong)"
-        />
-      {/each}
-      <rect
-        x="22"
-        y="128"
-        width="26"
-        height="26"
-        rx="5"
-        fill="none"
-        stroke="var(--accent)"
-        stroke-width="2.2"
-        stroke-dasharray="5 4"
-      />
-      <path
-        d="M35 134v14M28 141h14"
-        stroke="var(--accent)"
-        stroke-width="2.2"
-        stroke-linecap="round"
-      />
-    {:else if n === 2}
-      {#each [0, 1, 2] as i (i)}
-        <rect
-          x={26 + i * 8}
-          y={36 + i * 12}
-          width="60"
-          height="78"
-          rx="6"
-          fill="var(--surface)"
-          stroke="var(--ink)"
-          stroke-width="2"
-        />
-        <rect
-          x={36 + i * 8}
-          y={50 + i * 12}
-          width="36"
-          height="6"
-          rx="3"
-          fill="var(--line-strong)"
-        />
-        <rect
-          x={36 + i * 8}
-          y={62 + i * 12}
-          width="28"
-          height="6"
-          rx="3"
-          fill="var(--line-strong)"
-        />
-      {/each}
-      <circle cx="86" cy="160" r="15" fill="var(--passt)" />
-      <path
-        d="M79 160l5 5 9-10"
-        fill="none"
-        stroke="var(--passt-text)"
-        stroke-width="2.6"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    {:else}
-      <rect
-        x="24"
-        y="34"
-        width="62"
-        height="86"
-        rx="6"
-        fill="var(--surface)"
-        stroke="var(--ink)"
-        stroke-width="2"
-      />
-      <rect x="24" y="34" width="18" height="86" rx="6" fill="var(--accent-soft)" />
-      <rect x="48" y="46" width="30" height="6" rx="3" fill="var(--ink)" />
-      <rect x="48" y="60" width="28" height="5" rx="2.5" fill="var(--line-strong)" />
-      <rect x="48" y="72" width="24" height="5" rx="2.5" fill="var(--line-strong)" />
-      <path
-        d="M60 150h34M84 140l10 10-10 10"
-        fill="none"
-        stroke="var(--accent)"
-        stroke-width="3"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-      <rect
-        x="22"
-        y="138"
-        width="30"
-        height="24"
-        rx="4"
-        fill="none"
-        stroke="var(--ink)"
-        stroke-width="2"
-      />
-      <path d="M22 140l15 11 15-11" fill="none" stroke="var(--ink)" stroke-width="2" />
-    {/if}
-  </svg>
-{/snippet}
-
 <main class="seite">
   {#if nachLoeschen.offen && !ansicht}
-    <!-- E96: Nach „Haushalt löschen“ einmal die Frage nach den Heften; der Link löscht nicht selbst. -->
-    <p class="geloescht" role="status">
-      {nachLoeschen.du ? t('mappeStart.geloeschtDu') : t('mappeStart.geloescht')}
-      <a href="#/einstellungen/loeschen">{t('mappeStart.allesLoeschen')}</a>
-    </p>
+    <!-- DP50 Punkt 1: Nach „Haushalt löschen“ einmal die Frage nach den Heften, als Karte. „Hefte auch
+         löschen“ in Tinte, nicht Rot (W5); danach „Rückgängig“ an der Stelle der Karte. -->
+    {#if geloescht.mehrere.length}
+      <p class="weg-zeile" role="status">
+        <span>{t('mappeStart.hefteGeloescht', { anzahl: geloescht.mehrere.length })}</span>
+        <button type="button" class="textlink" onclick={() => void hefteZurueck()}
+          >{t('mappeStart.rueckgaengig')}</button
+        >
+      </p>
+    {:else if hefteDa}
+      <section class="geloescht" aria-labelledby="geloescht-titel">
+        <h2 id="geloescht-titel">{t('mappeStart.geloeschtTitel')}</h2>
+        <p>
+          {tIn(nachLoeschen.du ? 'du' : 'ihr', 'mappeStart.geloeschtHefte', { anzahl: hefteDa })}
+        </p>
+        <div class="knopfreihe">
+          <button type="button" class="btn" onclick={() => void hefteAuchLoeschen()}
+            >{t('mappeStart.hefteAuchLoeschen', { anzahl: hefteDa })}</button
+          >
+          <button type="button" class="textlink" onclick={() => (nachLoeschen.offen = false)}
+            >{t('mappeStart.behalten')}</button
+          >
+        </div>
+      </section>
+    {/if}
   {/if}
   {#if !angefangen}
-    <div class="held">
-      <div class="heldt">
-        <h1 class="h2">{t('mappeStart.titel')}</h1>
-        <p class="sub">{t('mappeStart.satz')}</p>
-      </div>
-      <div class="bild" bind:this={bild}>
-        <DeckblattBild personen={[]} breite={104} label={t('mappeStart.deckblattLeer')} />
-      </div>
-    </div>
+    <!-- DP50 Punkt 1 (L1): oben die Mappe wie auf dem Tisch, darunter Knopf und drei Schritte. -->
+    <p class="kicker leer-kicker">{t('mappeStart.mappe')}</p>
+    <h1 class="h2 leer-titel">{t('mappeStart.titel')}</h1>
+    <p class="leer-sub">{t('mappeStart.satz')}</p>
+    <div class="leer-bild" bind:this={bild}><MappeBild /></div>
     <a
       class="btn los"
       href="#{anlegenZiel}"
@@ -266,22 +181,21 @@
         void los(anlegenZiel);
       }}>{t('mappeStart.anlegen')}</a
     >
-    {@render vermieter()}
     <section class="anl" aria-labelledby="anleitung-mappe">
-      <h2 id="anleitung-mappe" class="h3">{t('mappeStart.anleitungTitel')}</h2>
+      <h2 id="anleitung-mappe" class="kicker anl-titel">{t('mappeStart.anleitungTitel')}</h2>
       <ol>
         {#each [1, 2, 3] as const as n (n)}
           <li>
-            <span class="mb">{@render mini(n)}</span>
+            <span class="nr" aria-hidden="true">{n}</span>
             <span class="mt"
-              ><b>{n}. {t(`mappeStart.schritt${n}Titel`)}</b><span
-                >{t(`mappeStart.schritt${n}`)}</span
+              ><b>{t(`mappeStart.schritt${n}Titel`)}</b><span>{t(`mappeStart.schritt${n}`)}</span
               ></span
             >
           </li>
         {/each}
       </ol>
     </section>
+    {@render vermieter()}
   {:else}
     <div class="held">
       <div class="heldt">
@@ -462,24 +376,98 @@
   }
 
   .geloescht {
-    margin: 0 0 16px;
-    padding: 12px 14px;
-    border-radius: 14px;
+    margin: 4px 0 20px;
+    padding: 16px;
+    border-radius: 20px;
     background: var(--surface);
-    border: 1px solid var(--line);
+  }
+
+  .geloescht h2 {
+    margin: 0;
+    font-size: calc(16 * var(--px));
+    line-height: calc(21 * var(--px));
+    font-weight: 700;
+  }
+
+  .geloescht p {
+    margin: 4px 0 12px;
+    color: var(--ink-muted);
+    font-size: calc(14 * var(--px));
+    line-height: calc(20 * var(--px));
+  }
+
+  .knopfreihe {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 20px;
+  }
+
+  .knopfreihe .btn {
+    min-height: 48px;
+    font-size: calc(15 * var(--px));
+  }
+
+  .knopfreihe .textlink {
+    min-height: var(--tap-target);
+    font-size: calc(15 * var(--px));
+    font-weight: 700;
+  }
+
+  .weg-zeile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 4px 0 20px;
+    padding: 4px 16px;
+    min-height: 52px;
+    border-radius: 16px;
+    background: var(--weich-karte);
+    color: var(--ink-muted);
     font-size: calc(14 * var(--px));
   }
 
-  .geloescht a {
-    display: inline-flex;
-    align-items: center;
+  .weg-zeile .textlink {
     min-height: var(--tap-target);
     color: var(--ink);
     font-weight: 700;
   }
 
+  .kicker.leer-kicker {
+    margin-top: 16px;
+    color: var(--ink-muted);
+  }
+
+  .leer-titel {
+    margin: 6px 0 0;
+    text-wrap: balance;
+  }
+
+  .leer-sub {
+    margin: 8px 0 0;
+    color: var(--ink-muted);
+  }
+
+  .leer-bild {
+    margin: 20px auto 0;
+    max-width: 300px;
+  }
+
+  .nr {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1.5px var(--ink-muted);
+    font-size: calc(13 * var(--px));
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
   .verm {
-    margin: 12px 2px 0;
+    margin: 14px 4px 0;
     color: var(--ink-muted);
     font-size: calc(13 * var(--px));
   }
@@ -489,46 +477,35 @@
   }
 
   .anl {
-    margin-top: 22px;
-    padding-top: 16px;
-    border-top: 1px solid var(--line);
+    margin-top: 24px;
   }
 
-  .h3 {
-    margin: 0 2px 10px;
-    font-size: calc(16 * var(--px));
-    font-weight: 650;
+  .kicker.anl-titel {
+    margin: 0 4px 8px;
+    color: var(--ink-muted);
+    line-height: 18px;
   }
 
   .anl ol {
     display: grid;
-    gap: 10px;
     margin: 0;
-    padding: 0;
+    padding: 4px 16px;
+    border-radius: 20px;
+    background: var(--surface);
     list-style: none;
   }
 
+  /* Nummern an der ersten Zeile, nicht mittig (DP50, wie Ü2). */
   .anl li {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr);
+    grid-template-columns: 26px minmax(0, 1fr);
     gap: 14px;
-    align-items: center;
-    padding: 8px 12px 8px 8px;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: var(--surface);
+    align-items: start;
+    padding: 12px 0;
   }
 
-  .mb {
-    display: block;
-    width: 44px;
-    aspect-ratio: 9 / 16;
-  }
-
-  .mb :global(svg) {
-    display: block;
-    width: 100%;
-    height: 100%;
+  .anl li + li {
+    border-top: 1px solid var(--track);
   }
 
   .mt b {
@@ -537,8 +514,10 @@
   }
 
   .mt span {
+    display: block;
     color: var(--ink-muted);
     font-size: calc(13.5 * var(--px));
+    line-height: calc(19 * var(--px));
   }
 
   .kicker {
@@ -580,7 +559,7 @@
     display: grid;
     grid-template-columns: 24px minmax(0, 1fr);
     gap: 12px;
-    padding: 14px;
+    padding: 16px;
     border: 1px solid var(--line);
     border-radius: 14px;
     background: var(--surface);

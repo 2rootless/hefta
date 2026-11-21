@@ -16,15 +16,15 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   await page.getByRole('button', { name: 'Ausfüllen' }).click();
 
   // Kontakt: Enter führt von Feld zu Feld, im letzten Feld zum nächsten offenen Teil.
-  await page.getByLabel('Telefon').fill('0171 3920001');
-  await page.getByLabel('Telefon').press('Enter');
-  await expect(page.getByLabel('E-Mail')).toBeFocused();
-  await page.getByLabel('E-Mail').press('Enter');
+  await page.getByRole('textbox', { name: /^Telefon/ }).fill('0171 3920001');
+  await page.getByRole('textbox', { name: /^Telefon/ }).press('Enter');
+  await expect(page.getByRole('textbox', { name: /^E-Mail/ })).toBeFocused();
+  await page.getByRole('textbox', { name: /^E-Mail/ }).press('Enter');
   await expect(page.getByRole('textbox', { name: 'Netto im Monat' })).toBeFocused();
   await expect(page.getByRole('button', { name: /^Kontakt .*Ändern/ })).toBeVisible();
 
   // Einkommen offen lassen und zu den Fragen: Der gedämpfte Knopf führt zurück zum ersten fehlenden Teil.
-  await page.getByRole('button', { name: /^Fragen, die Vermieter stellen dürfen/ }).click();
+  await page.getByRole('button', { name: /^Drei Fragen aus dem Musterbogen/ }).click();
   await expect(page.getByRole('textbox', { name: 'Netto im Monat' })).toHaveCount(0);
   const weiter = page.getByRole('button', { name: 'Speichern und weiter' });
   await expect(weiter).toHaveAttribute('aria-disabled', 'true');
@@ -34,7 +34,7 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   await page.getByRole('radio', { name: 'Mindestens' }).click();
 
   // Ein Ja als letzte Antwort lässt den Teil offen, die Erklärung darunter ist freiwillig (A3).
-  const fragen = page.getByRole('button', { name: /^Fragen, die Vermieter stellen dürfen/ });
+  const fragen = page.getByRole('button', { name: /^Drei Fragen aus dem Musterbogen/ });
   await fragen.click();
   const antwort = (frage: string, wert: string) =>
     page
@@ -60,7 +60,7 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   await expect(page.getByRole('radiogroup', { name: /Mietrückstände/ })).toHaveCount(0);
 
   // Alle drei Fragen beantwortet: Erst dann geht der nächste Teil von selbst auf.
-  await page.getByRole('button', { name: /^Fragen, die Vermieter stellen dürfen/ }).click();
+  await page.getByRole('button', { name: /^Drei Fragen aus dem Musterbogen/ }).click();
   await antwort('Räumungstitel', 'Nein');
   await expect(page.getByRole('radiogroup', { name: /Mietrückstände/ })).toBeVisible();
   await antwort('Mietrückstände', 'Nein');
@@ -71,8 +71,8 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   await page.getByRole('button', { name: /^Einkommen .*Ändern/ }).click();
   await page.getByRole('textbox', { name: 'Netto im Monat' }).fill('');
   await page.getByRole('button', { name: /^Kontakt .*Ändern/ }).click();
-  await page.getByLabel('E-Mail').fill('max@example.org');
-  await page.getByLabel('E-Mail').focus();
+  await page.getByRole('textbox', { name: /^E-Mail/ }).fill('max@example.org');
+  await page.getByRole('textbox', { name: /^E-Mail/ }).focus();
   await page.getByRole('button', { name: 'Weiter: Einkommen' }).click();
   await expect(page.getByRole('textbox', { name: 'Netto im Monat' })).toBeFocused();
 
@@ -80,15 +80,15 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   await page.getByRole('button', { name: /^Kontakt .*Ändern/ }).click();
   await page.getByRole('button', { name: 'Angaben löschen' }).click();
   await page.getByRole('button', { name: 'Abbrechen' }).click();
-  await expect(page.getByLabel('Telefon')).toHaveValue('0171 3920001');
+  await expect(page.getByRole('textbox', { name: /^Telefon/ })).toHaveValue('0171 3920001');
   await page.getByRole('button', { name: 'Angaben löschen' }).click();
   await expect(page.getByText(/^Angaben in diesem Teil löschen\?/)).toBeVisible();
   await page.getByRole('button', { name: 'Löschen', exact: true }).click();
-  await expect(page.getByLabel('Telefon')).toHaveValue('');
+  await expect(page.getByRole('textbox', { name: /^Telefon/ })).toHaveValue('');
   await expect(page.getByRole('button', { name: 'Angaben löschen' })).toHaveCount(0);
-  // PC130 K7: Offen steht der Satz einmal, unter den Feldern; „Eine Angabe genügt“ steht nur zugeklappt.
+  // PC130 K7 und DP50: Offen steht der Satz einmal, oben im Teil; „Eine Angabe genügt“ steht nur zugeklappt.
   await expect(page.locator('section.offen')).toContainText(
-    'Eine Angabe reicht, die zweite ist freiwillig.',
+    'Eine Angabe reicht, Telefon oder E-Mail',
   );
   await expect(page.locator('section.offen')).not.toContainText('Eine Angabe genügt');
   expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);

@@ -42,7 +42,7 @@
   />
   <path
     d="M11 1.1H62V{H - 1.1}H11A9.9 9.9 0 0 1 1.1 {H - 11}V11A9.9 9.9 0 0 1 11 1.1z"
-    fill="var(--accent-soft)"
+    fill="var(--foto-grund)"
   />
   {#each plaetze as p, i (p?.id ?? 'frei')}
     {@const y = 18 + i * 44}
@@ -75,13 +75,13 @@
         height="36"
         rx="6"
         fill="none"
-        stroke="var(--accent)"
+        stroke="var(--ink-quiet)"
         stroke-width="2.4"
         stroke-dasharray="5 4"
       />
       <path
         d="M30 {y + 10}v16M22 {y + 18}h16"
-        stroke="var(--accent)"
+        stroke="var(--ink-quiet)"
         stroke-width="2.6"
         stroke-linecap="round"
       />

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import { telefonFuerMappe } from '../domain/telefon';
-  import { zurueckZumHeft } from '../domain/heftKarte';
+  import { heftOrt, zurueckZumHeft } from '../domain/heftKarte';
   // Bewerben in einer Minute (Zeile 8, B23 `s=bewerben`, B12a, Planung 11i): Weg wählen (Portal, Mail,
   // Website), dann vier Schritte als Angebot: Anschreiben, was das Inserat wissen will, Mappe, Abschicken.
   // Jeder Schritt lässt sich überspringen. Hefta verschickt nichts selbst; es merkt sich, was hinausging,
@@ -11,12 +11,14 @@
   import { adresseZeilen } from '../domain/adresse';
   import {
     anschreibenText,
+    betreffWohnung,
     bewerbungsText,
     einzugText,
     wegVorschlag,
     werZiehtEin,
     type BewerbungsWeg,
   } from '../domain/bewerben';
+  import { ansichtFuerHeft } from '../domain/buergschaft';
   import { spurAn, spurEintragen } from '../domain/datenspur';
   import { deckZeilen } from '../domain/deckZeilen';
   import {
@@ -28,8 +30,11 @@
   import type { HeftEreignisse } from '../domain/modell';
   import { angabenWerte, erkennen } from '../domain/nachricht';
   import { listenText, ohneTrennstellen } from '../domain/regelkatalog';
+  import { haushaltFuerHeft } from '../domain/haushaltUnterlagen';
+  import { tagAus } from '../domain/fristen';
   import { einziehend } from '../domain/selbstauskunft';
   import { t, type TextSchluessel } from '../i18n';
+  import { groesseWieDateien, mailZuGross } from '../domain/mailGroesse';
   import { heftAendern } from '../storage/speicher';
   import {
     mailMitMappe,
@@ -49,7 +54,8 @@
   let { id }: { id: string } = $props();
 
   const heft = $derived(daten.hefte.find((h) => h.id === id) ?? null);
-  const ansicht = $derived(daten.ansicht);
+  // DP49 Punkt 5: Die Mappe dieses Hefts nimmt die Bürgschaftserklärung für dieses Heft.
+  const ansicht = $derived(daten.ansicht ? ansichtFuerHeft(daten.ansicht, id) : null);
   const aktive = $derived(
     (ansicht?.mitglieder ?? []).filter((m) => !m.zugehoerigkeit.herausgenommenAm),
   );
@@ -74,18 +80,23 @@
   let alles = $state(false);
   // PC126 K5 (DP83 a): „Diesmal weglassen“ gilt für diesen Besuch; die Unterlage bleibt in Hefta.
   let weggelassen = $state<{ personId: string; typ: string }[]>([]);
+  // W49: „Kleiner machen ›“ verkleinert Scans und Bilder für diesen Besuch (X6c), wie in „Mappe erstellen“.
+  let kleiner = $state(false);
   const einstellungen = $derived<ExportEinstellungen>(
     ohneUnterlagen(
       {
         ...standardEinstellungen(),
         ...(heft?.export ?? {}),
         ...(alles ? { modus: 'alles' as const } : {}),
+        ...(kleiner ? { kleiner: true } : {}),
       },
       ansicht ? staendeAus(ansicht, heute) : [],
       weggelassen,
     ),
   );
   // Schritt 1: Anschreiben. „Ändern“ macht daraus einen eigenen Text für diesen Besuch.
+  // W37: Die Bausteine wählt die Kennung des Hefts; „Andere Fassung“ zählt alle eins weiter, für diesen Besuch.
+  let versatz = $state(0);
   const vorschlag = $derived(
     anschreibenText({
       wir: ihr,
@@ -96,6 +107,9 @@
       weg: weg ?? 'mail',
       // PC126 K5: Nach „Diesmal weglassen“ (oder mit eigener Auswahl) liegen nicht die üblichen Unterlagen bei.
       eigeneAuswahl: einstellungen.modus === 'eigene_auswahl',
+      heftId: heft?.id,
+      versatz,
+      inserat: !!(heft?.inseratText?.trim() || heft?.link),
     }),
   );
   let eigenerText = $state<string | null>(null);
@@ -140,6 +154,8 @@
       bewerbungsText({
         anrede: vorschlag.anrede,
         text: vorschlag.text,
+        schluss: vorschlag.schluss,
+        gruss: vorschlag.gruss,
         angaben,
         name: person ? `${person.vorname} ${person.nachname}`.trim() : '',
         telefon: (person && telefonFuerMappe(person.kontakt)?.anzeige) ?? '',
@@ -150,6 +166,16 @@
   const unterlagen = $derived.by(() => {
     if (!ansicht) return [];
     const namen: string[] = [];
+    // DP45 G1 (W28): Was das Heft vom Haushalt auswählt, steht vor den Personen.
+    for (const h of haushaltFuerHeft(
+      ansicht.haushaltDokumente,
+      ansicht.versionen,
+      heft,
+      tagAus(heute),
+    ))
+      namen.push(
+        h.typ === 'wbs' ? t('haushaltUnterlagen.wbs') : t('haushaltUnterlagen.mitgliedschaft'),
+      );
     for (const b of bloecke(staendeAus(ansicht, heute), einstellungen))
       for (const teil of b.teile) {
         const name =
@@ -185,6 +211,10 @@
           bitteSatz: heft.bitteSatz,
           // B14, E39: Inserat, Einzug und Fassung aufs Deckblatt.
           ...deckZeilen($state.snapshot(heft), heute),
+          // DP45 G1 (W28): Sozialwohnung, dann mit dem Schein des Haushalts.
+          sozialwohnung: heft.sozialwohnung,
+          wbsAbgelaufenMit: heft.wbsAbgelaufenMit,
+          genossenschaft: heft.genossenschaft,
         },
         $state.snapshot(einstellungen) as ExportEinstellungen,
       );
@@ -248,8 +278,10 @@
     await stillLaden();
   }
 
+  // W37 (PD101 U2): die Straße wie im Heft, ohne Straße „in“ und der Ort, ohne beides nur „die Wohnung“.
+  const imBetreff = $derived(heft ? betreffWohnung(strasse, heftOrt(heft)) : '');
   const betreff = $derived(
-    strasse ? t('bewerben.betreff', { wohnung: strasse }) : t('bewerben.betreffOhne'),
+    imBetreff ? t('bewerben.betreff', { wohnung: imBetreff }) : t('bewerben.betreffOhne'),
   );
 
   // PC81 B2 (QA3): Im Browser ohne Teilen von Dateien steht gleich oben, dass ihr die Mappe selbst anhängt.
@@ -386,9 +418,17 @@
           >
         </div>
         <p class="mt">{text}</p>
-        <button class="mini" type="button" onclick={() => (aendert = true)}
-          >{t('bewerben.aendern')}</button
-        >
+        <div class="mt-fuss">
+          <button class="mini" type="button" onclick={() => (aendert = true)}
+            >{t('bewerben.aendern')}</button
+          >
+          <!-- W37: Was ihr selbst geändert habt, bleibt; dann gibt es keine andere Fassung mehr. -->
+          {#if eigenerText === null}
+            <button class="mini" type="button" onclick={() => versatz++}
+              >{t('bewerben.andereFassung')}</button
+            >
+          {/if}
+        </div>
       {/if}
     </div>
 
@@ -421,12 +461,23 @@
             alles ? 'bewerben.alles' : 'bewerben.nurVerlangt',
           )}{#if mappe && !mappeBaut}{TRENNER}{t('bewerben.seiten', {
               anzahl: mappe.seiten,
-            })}{/if}</small
+            })}{#if weg === 'mail'}, <span class="mailgroesse"
+                >{groesseWieDateien(mappe.groesse)}</span
+              >{/if}{/if}</small
         >
         <button class="mini" type="button" onclick={() => (alles = !alles)}
           >{t(alles ? 'bewerben.nurVerlangtMitschicken' : 'bewerben.allesMitschicken')}</button
         >
       </div>
+      {#if weg === 'mail' && mappe && !mappeBaut && mailZuGross(mappe.groesse)}
+        <!-- W49: ein Hinweis in Grau, keine Warnung (W5): kein Bernstein, kein Warnzeichen. -->
+        <p class="hinweis mailgross">
+          {t('bewerben.mailGross')}{#if !kleiner}
+            <button class="textknopf" type="button" onclick={() => (kleiner = true)}
+              >{t('bewerben.kleinerMachen')}</button
+            >{/if}
+        </p>
+      {/if}
       {#if mappeBaut}<p class="hinweis" role="status">{t('bewerben.mappeBaut')}</p>{/if}
       {#if mappeFehler}<p class="hinweis" role="alert">{t('bewerben.mappeFehler')}</p>{/if}
     </div>
@@ -565,6 +616,12 @@
     margin-top: 8px;
   }
 
+  .mt-fuss {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 24px;
+  }
+
   .mt {
     margin: 10px 0 4px;
     line-height: 1.45;
@@ -586,6 +643,25 @@
     font: inherit;
     line-height: 1.45;
     resize: vertical;
+  }
+
+  /* W49: Textknopf in Tinte im grauen Satz, mit Tippfläche ab 44 px. */
+  .textknopf {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .mailgroesse {
+    white-space: nowrap;
   }
 
   .mini {

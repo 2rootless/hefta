@@ -1,7 +1,9 @@
 import { APP_NAME } from '../app/name';
 import katalogRoh from '../../data/regelkatalog.de.json';
-import { bewerten, type Bewertung, type Fristen } from './fristen';
+import { bewerten, erwarteterMonat, type Bewertung, type Fristen } from './fristen';
 import { vollstaendig, type HaushaltsAngaben } from './selbstauskunft';
+import { wirksameLagen, type LageAngabe } from './lagen';
+export { lagenVon, wirksameLagen, type LageAngabe } from './lagen';
 import type {
   AusbildungArt,
   Bezeichnung,
@@ -9,7 +11,9 @@ import type {
   Dokument,
   Lebenssituation,
   Person,
+  BonitaetAngabe,
   Rolle,
+  Tag,
   Zugehoerigkeit,
 } from './modell';
 
@@ -41,12 +45,20 @@ export interface Dokumenttyp {
   hilfe?: string;
   /** Hilfesatz in der Liste an andere (Version 2.0, Entwurf L2), wo `hilfe` nicht passt. */
   hilfeAndere?: string;
+  /** DP49 Punkt 6 (B3): Satz im Kopf des Rutschs, wenn die Person bürgt; `{buerge}` nach der Karte. */
+  hilfeBuerge?: string;
   symbol: Symbol;
   etikett: Etikett;
   schritt?: string;
   rollen?: Rolle[];
   /** Gehört zur Zugehörigkeit, nicht zur Person: gilt nur im eigenen Haushalt (E53, Bürgschaft). */
   jeHaushalt?: boolean;
+  /**
+   * Gilt je Wohnung und ist freiwillig (DP49 Punkt 5, Bürgschaftserklärung): kein Schritt im Rutsch, zählt
+   * nicht in „{x} von {y} da“, steht nicht auf der Haarlinie und fehlt nie. Welche Fassung zu welchem Heft
+   * gehört, sagt `DateiVersion.heftId`.
+   */
+  jeWohnung?: boolean;
   situationen?: Lebenssituation[];
   serie?: { anzahl: number; einheit: string };
   datum?: 'abrechnungsmonat' | 'ausstellungsdatum';
@@ -64,9 +76,23 @@ export interface Dokumenttyp {
     >
   >;
   alternative?: string;
+  /**
+   * DP45 G3: Teil einer anderen Unterlage, keine eigene Zeile. Der Arbeitsvertrag gehört bei „Neu im Job“
+   * zu den Gehaltsnachweisen; er steht als `zusatz` an deren Stand und geht mit in die Mappe.
+   */
+  teilVon?: string;
+  /**
+   * DP47 G5 (L4): abgeleiteter Typ für die zweite Reihe desselben Nachweises, etwa `gehaltsnachweis2` beim
+   * zweiten Arbeitgeber. Hier steht der Grundtyp; Texte, Fristen und Etiketten kommen von ihm.
+   */
+  basis?: string;
   schwaerzenVorschlagen?: boolean;
   freierName?: boolean;
-  ebene?: 'bewerbung';
+  /**
+   * Nicht an der Person: `bewerbung` gehört zum Heft (Anschreiben), `haushalt` zum ganzen Haushalt und
+   * kommt in jedes Heft, in dem es zählt (DP45 G1, W28).
+   */
+  ebene?: 'bewerbung' | 'haushalt';
   inAppErstellt?: boolean;
   spaeter?: boolean;
   reihenfolge: number;
@@ -173,6 +199,22 @@ export function etikettBeschreibung(etikett: Etikett): string {
   return katalog.etiketten[etikett].beschreibung;
 }
 
+/**
+ * Satz im Kopf einer Unterlage (W30). Bei Bürgen der eigene Satz, wenn der Katalog einen hat (DP49 Punkt 6):
+ * „… so viel wert, wie die Bürgin zahlen kann.“ Neutral steht der Name.
+ */
+export function hilfeFuer(
+  typ: Pick<Dokumenttyp, 'hilfe' | 'hilfeBuerge'>,
+  rolle: Rolle,
+  bezeichnung: Bezeichnung,
+  name: string,
+): string {
+  if (rolle !== 'buerge' || !typ.hilfeBuerge) return typ.hilfe ?? '';
+  const wer =
+    bezeichnung === 'weiblich' ? 'die Bürgin' : bezeichnung === 'maennlich' ? 'der Bürge' : name;
+  return typ.hilfeBuerge.replace('{buerge}', wer);
+}
+
 /** Rollenbezeichnung in der gewünschten Form, z. B. „Mitmieterin“. */
 export function rollenText(rolle: Rolle, bezeichnung: Bezeichnung): string {
   const r = katalog.rollen[rolle]!;
@@ -185,7 +227,17 @@ export function rollenText(rolle: Rolle, bezeichnung: Bezeichnung): string {
 export const DOKUMENTTYPEN: readonly Dokumenttyp[] = katalog.dokumenttypen;
 
 export function dokumenttyp(id: string): Dokumenttyp | undefined {
-  return katalog.dokumenttypen.find((d) => d.id === id);
+  const typ = katalog.dokumenttypen.find((d) => d.id === id);
+  if (typ) return typ;
+  // DP47 G5 (L4): „gehaltsnachweis2“ ist die zweite Reihe Gehaltsnachweise (zweiter Arbeitgeber).
+  const m = /^([a-z_]+?)([2-9])$/.exec(id);
+  const basis = m ? (katalog.dokumenttypen as Dokumenttyp[]).find((d) => d.id === m[1]) : undefined;
+  return basis?.situationen ? { ...basis, id, basis: basis.id } : undefined;
+}
+
+/** Der Grundtyp: für abgeleitete Reihen (L4) der Typ aus dem Katalog, sonst die Kennung selbst. */
+export function basisId(typ: Pick<Dokumenttyp, 'id' | 'basis'>): string {
+  return typ.basis ?? typ.id;
 }
 
 /**
@@ -199,11 +251,47 @@ export function unterlagenFuer(
   art?: AusbildungArt | null,
 ): Dokumenttyp[] {
   return (katalog.dokumenttypen as Dokumenttyp[])
-    .filter((d) => d.ebene !== 'bewerbung' && !d.spaeter)
+    .filter((d) => !d.ebene && !d.spaeter && !d.teilVon)
     .filter((d) => d.rollen?.includes(rolle))
     .filter((d) => !d.situationen || (situation !== null && d.situationen.includes(situation)))
     .sort((a, b) => a.reihenfolge - b.reihenfolge)
     .map((d) => (art && d.jeArt?.[art] ? { ...d, ...d.jeArt[art] } : d));
+}
+
+/**
+ * DP47 G5: Unterlagen aus allen Lagen, jede nur einmal. Reihenfolge: Bürgschaftserklärung (Bürgen),
+ * Selbstauskunft, die Einkommensnachweise in der Reihenfolge der Lagen, Bonitätsnachweis, der Rest.
+ */
+export function unterlagenFuerPerson(
+  rolle: Rolle,
+  person: Pick<
+    Person,
+    'lebenssituation' | 'ausbildungArt' | 'weitereLagen' | 'einkommenTrotzdem' | 'arbeitgeber'
+  >,
+): { typ: Dokumenttyp; lage: LageAngabe | null }[] {
+  const lagen = wirksameLagen(person);
+  if (!lagen.length) return unterlagenFuer(rolle, null).map((typ) => ({ typ, lage: null }));
+  const liste: { typ: Dokumenttyp; lage: LageAngabe | null; rang: number }[] = [];
+  lagen.forEach((lage, i) => {
+    for (const grund of unterlagenFuer(rolle, lage.situation, lage.art)) {
+      let typ = grund;
+      if (liste.some((x) => x.typ.id === typ.id)) {
+        // L4: Zweimal angestellt gibt eine zweite Reihe Gehaltsnachweise, mit eigenen Dokumenten.
+        if (lage.situation !== 'angestellt' || !grund.situationen) continue;
+        const n = liste.filter((x) => basisId(x.typ) === grund.id).length + 1;
+        typ = dokumenttyp(`${grund.id}${n}`) ?? grund;
+        if (typ === grund) continue;
+      }
+      const einkommen = !!typ.situationen;
+      liste.push({
+        typ,
+        lage: einkommen ? lage : null,
+        // Einkommensnachweise stehen an ihrem Platz im Katalog, untereinander nach den Lagen.
+        rang: einkommen ? typ.reihenfolge + i / 100 : typ.reihenfolge,
+      });
+    }
+  });
+  return liste.sort((a, b) => a.rang - b.rang).map(({ typ, lage }) => ({ typ, lage }));
 }
 
 export type Status = 'da' | 'bald' | 'fehlt' | 'optional';
@@ -215,6 +303,20 @@ export interface UnterlagenStand extends Bewertung {
   dokument: Dokument | null;
   /** Alle Versionen, neueste zuletzt. */
   versionen: DateiVersion[];
+  /**
+   * DP47 G5: die Lebenslage, zu der dieser Einkommensnachweis gehört. Nur gesetzt, wenn die Person mehr als
+   * eine Lage hat; dann steht sie vorn in der kleinen Zeile.
+   */
+  lage?: LageAngabe;
+  /** DP45 G3: Teil dieser Unterlage mit eigenem Dokument, etwa der Arbeitsvertrag bei „Neu im Job“. */
+  zusatz?: UnterlagenStand | null;
+  /** DP45 G3: „Neu im Job“ seit diesem Tag; Abrechnungen zählen erst ab diesem Monat. */
+  neuSeit?: Tag | null;
+  /**
+   * DP45 G4: „Ich bekomme noch keinen“. Zählt weder als da noch als offen, steht nicht auf der Haarlinie
+   * und als Zeile ohne Seitenzahl in der Mappe.
+   */
+  keinerMoeglich?: BonitaetAngabe | null;
 }
 
 /** Stand einer Unterlage aus ihren Versionen und den Fristen des Katalogs. */
@@ -251,6 +353,139 @@ export interface PersonStand {
 
 const DRINGLICHKEIT: Record<Status, number> = { fehlt: 0, bald: 1, da: 2, optional: 3 };
 
+/** Monate von `a` bis `b` („JJJJ-MM“), negativ, wenn `b` vor `a` liegt. */
+function monateVon(a: string, b: string): number {
+  const [ja, ma] = a.split('-').map(Number) as [number, number];
+  const [jb, mb] = b.split('-').map(Number) as [number, number];
+  return (jb - ja) * 12 + (mb - ma);
+}
+
+/**
+ * DP45 G3: Gehaltsnachweise bei „Neu im Job“. Es zählen nur Monate ab dem Anfang, die heute schon
+ * abgerechnet sein können; nach früheren fragt Hefta nicht. Dazu gehört der Arbeitsvertrag (oder eine
+ * Bestätigung des Arbeitgebers) als Zusatz; fehlt er, sind die Gehaltsnachweise noch nicht vollständig.
+ */
+function neuImJobStand(
+  stand: UnterlagenStand,
+  person: Person,
+  dokumente: Dokument[],
+  versionen: DateiVersion[],
+  heute: Date,
+): UnterlagenStand {
+  const seit = person.neuImJob?.seit ?? null;
+  const typVertrag = dokumenttyp('arbeitsvertrag');
+  const dokVertrag =
+    dokumente.find((d) => d.personId === person.id && d.typ === 'arbeitsvertrag') ?? null;
+  const zusatz = typVertrag
+    ? unterlagenStand(
+        typVertrag,
+        dokVertrag,
+        dokVertrag ? versionen.filter((v) => v.dokumentId === dokVertrag.id) : [],
+        person,
+        heute,
+      )
+    : null;
+  let s = stand;
+  const serie = stand.typ.serie;
+  if (seit && serie) {
+    const erwartet = erwarteterMonat(heute, person.abrechnungMeist);
+    const anzahl = Math.min(serie.anzahl, Math.max(0, monateVon(seit.slice(0, 7), erwartet) + 1));
+    if (anzahl === 0) s = { ...stand, status: 'da', grund: '', fehlend: [], veraltet: false };
+    else if (anzahl < serie.anzahl)
+      s = {
+        ...unterlagenStand(
+          { ...stand.typ, serie: { ...serie, anzahl } },
+          stand.dokument,
+          stand.versionen,
+          person,
+          heute,
+        ),
+        typ: stand.typ,
+      };
+  }
+  // Ohne „Neu im Job“ ist der Vertrag freiwillig (etwa statt eines Bonitätsnachweises, G4): Er geht mit,
+  // sobald er da ist, fehlt aber nie.
+  if (!person.neuImJob) return { ...stand, zusatz };
+  if (zusatz && !zusatz.versionen.length && s.status !== 'fehlt')
+    s = { ...s, status: 'fehlt', grund: 'Fehlt noch' };
+  return { ...s, zusatz, neuSeit: seit };
+}
+
+/**
+ * Die Zeilen der Person: was auf dem Pfad liegt, dazu an seiner Stelle der Bonitätsnachweis mit „noch
+ * keiner möglich“ (G4), der dort steht, aber nicht zählt.
+ */
+export function personZeilen(stand: PersonStand): UnterlagenStand[] {
+  return stand.unterlagen.filter((u) => stand.pfad.includes(u) || u.keinerMoeglich);
+}
+
+/**
+ * Die Zeile unter dem Namen auf dem Deckblatt nach der Rolle: Beruf oder Tätigkeit (DP47 G5).
+ * - Bei mehreren Lagen der Beruf der ersten, sonst der einer weiteren (L5: kein „Im Studium“, wenn ein
+ *   Beruf da ist).
+ * - Danach „auch …“ mit jeder Lage, aus der der Beruf nicht stammt (PC62 K1): „Kellnerin, auch im
+ *   Studium“, nie „Kellnerin, auch angestellt“.
+ * - Steht nur das Amt im Bogen (K5), nennt sie keine andere Lage und keinen Beruf daraus.
+ */
+export function deckTaetigkeit(
+  person: Pick<
+    Person,
+    | 'lebenssituation'
+    | 'ausbildungArt'
+    | 'weitereLagen'
+    | 'einkommenTrotzdem'
+    | 'arbeitgeber'
+    | 'beruf'
+  >,
+): string {
+  const lagen = wirksameLagen(person);
+  const ersteWirkt = !lagen.length || lagen.some((l) => l.lageId === null);
+  const berufVon = (l: { lageId: string | null }) =>
+    (l.lageId
+      ? (person.weitereLagen?.find((x) => x.id === l.lageId)?.beruf ?? '')
+      : ersteWirkt
+        ? person.beruf
+        : ''
+    ).trim();
+  // Woher der Beruf kommt: die erste Lage mit Beruf; ohne Beruf die Tätigkeit der ersten (Studium).
+  const quelle = lagen.find((l) => berufVon(l)) ?? null;
+  const taetigkeit = quelle
+    ? berufVon(quelle)
+    : ersteWirkt && person.lebenssituation === 'studierend_azubi' && person.ausbildungArt
+      ? situationText(person.lebenssituation, person.ausbildungArt)
+      : '';
+  // Hinter „auch“ nie die Lage, aus der der Beruf kommt; ohne Beruf nie die erste.
+  const ohneQuelle = quelle ?? lagen.find((l) => l.lageId === null);
+  const auch = lagen
+    .filter((l) => l !== ohneQuelle)
+    .map((l) => {
+      const text = situationText(l.situation, l.art);
+      return l.situation === 'leistungsbezug' ? text : text.charAt(0).toLowerCase() + text.slice(1);
+    });
+  return [taetigkeit, auch.length ? `auch ${auch.join(' und ')}` : ''].filter(Boolean).join(', ');
+}
+
+/** G3c: Liegt der Anfang mehr als drei Monate zurück? Dann schlägt Hefta „Länger als drei Monate“ vor. */
+export function neuImJobLange(person: Pick<Person, 'neuImJob'>, heute: Date): boolean {
+  const seit = person.neuImJob?.seit;
+  if (!seit) return false;
+  const [j, m, d] = seit.split('-').map(Number) as [number, number, number];
+  return (
+    new Date(j, m - 1 + 3, d) < new Date(heute.getFullYear(), heute.getMonth(), heute.getDate())
+  );
+}
+
+/** Eine Unterlage der Person, auch als Zusatz (G3) oder „nicht mehr nötig“. */
+export function standFinden(stand: PersonStand | null, typId: string): UnterlagenStand | null {
+  if (!stand) return null;
+  return (
+    stand.unterlagen.find((u) => u.typ.id === typId) ??
+    stand.unterlagen.map((u) => u.zusatz).find((z) => z?.typ.id === typId) ??
+    stand.nichtMehrNoetig.find((u) => u.typ.id === typId) ??
+    null
+  );
+}
+
 export function personStand(
   person: Person,
   platz: Rolle | Pick<Zugehoerigkeit, 'rolle' | 'farbe' | 'bezeichnung'>,
@@ -262,11 +497,20 @@ export function personStand(
 ): PersonStand {
   const { rolle, farbe, bezeichnung } =
     typeof platz === 'string' ? { rolle: platz, farbe: 1, bezeichnung: 'neutral' as const } : platz;
-  const unterlagen = unterlagenFuer(rolle, person.lebenssituation, person.ausbildungArt).map(
-    (typ) => {
+  const mehrereLagen = wirksameLagen(person).length > 1;
+  const liste = unterlagenFuerPerson(rolle, person);
+  const unterlagen = liste
+    .map(({ typ }) => {
       const dokument = dokumente.find((d) => d.personId === person.id && d.typ === typ.id) ?? null;
       const eigene = dokument ? versionen.filter((v) => v.dokumentId === dokument.id) : [];
       const stand: UnterlagenStand = unterlagenStand(typ, dokument, eigene, person, heute);
+      // DP49 Punkt 5: Freiwillig und je Wohnung; fehlt nie, auch wenn das Etikett „Üblich“ sagt.
+      if (typ.jeWohnung)
+        return {
+          ...stand,
+          status: eigene.length ? ('da' as const) : ('optional' as const),
+          grund: eigene.length ? stand.grund : '',
+        };
       // In der App erstellt (Selbstauskunft): da, sobald alle Angaben beisammen sind.
       if (typ.inAppErstellt) {
         const fertig = vollstaendig(person, rolle, hh);
@@ -276,11 +520,28 @@ export function personStand(
           grund: fertig ? '' : 'Fehlt noch',
         };
       }
+      if (typ.id === 'gehaltsnachweis')
+        return neuImJobStand(stand, person, dokumente, versionen, heute);
+      // DP45 G4: „Ich bekomme noch keinen“: weder da noch offen.
+      if (dokument?.bonitaet?.art === 'keiner')
+        return {
+          ...stand,
+          status: 'optional' as const,
+          grund: '',
+          keinerMoeglich: dokument.bonitaet,
+        };
       return stand;
-    },
-  );
+    })
+    .map((u, i) => {
+      // Mehr als eine Lage: Der Einkommensnachweis sagt vorn, zu welcher Lage er gehört.
+      const lage = liste[i]?.lage;
+      return mehrereLagen && lage ? { ...u, lage } : u;
+    });
   const pfad = unterlagen.filter(
-    (u) => u.typ.etikett === 'ueblich' || (u.typ.etikett === 'kann_helfen' && u.status === 'da'),
+    (u) =>
+      !u.typ.jeWohnung &&
+      !u.keinerMoeglich &&
+      (u.typ.etikett === 'ueblich' || (u.typ.etikett === 'kann_helfen' && u.status === 'da')),
   );
   // Erst „fehlt“ vor „läuft bald ab“, dann Katalog-Reihenfolge (sort ist stabil).
   const offen = unterlagen
@@ -288,11 +549,15 @@ export function personStand(
     .sort((a, b) => DRINGLICHKEIT[a.status] - DRINGLICHKEIT[b.status]);
   // Hefta löscht nie, was nicht mehr gebraucht wird (design/unterlage-warum-haushalt.md, Abschnitt 3).
   const nichtMehrNoetig = dokumente
-    .filter((d) => d.personId === person.id && !unterlagen.some((u) => u.typ.id === d.typ))
+    .filter(
+      (d) =>
+        d.personId === person.id &&
+        !unterlagen.some((u) => u.typ.id === d.typ || u.zusatz?.typ.id === d.typ),
+    )
     .flatMap((d) => {
       const typ = dokumenttyp(d.typ);
       const eigene = versionen.filter((v) => v.dokumentId === d.id);
-      if (!typ || typ.ebene === 'bewerbung' || !eigene.length) return [];
+      if (!typ || typ.ebene || !eigene.length) return [];
       return [unterlagenStand(typ, d, eigene, person, heute)];
     })
     .sort((a, b) => a.typ.reihenfolge - b.typ.reihenfolge);

@@ -4,7 +4,15 @@
   import { untrack } from 'svelte';
   import { daten, db, neuLaden } from '../app/daten.svelte';
   import { einstieg, route, zumEinstieg } from '../app/router.svelte';
-  import { ERKLAERUNG, einziehend, einziehendText, vollstaendig } from '../domain/selbstauskunft';
+  import {
+    ERKLAERUNG,
+    einziehend,
+    einziehendText,
+    hauptknopf,
+    teile,
+    type TeilId,
+    vollstaendig,
+  } from '../domain/selbstauskunft';
   import { t, tagZusammen } from '../i18n';
   import { haushaltAendern, personAendern } from '../storage/speicher';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
@@ -12,6 +20,7 @@
   import {
     angabenAus,
     eingabeAus,
+    grundFuer,
     haushaltAus,
     haushaltsAngabenAus,
     type SelbstauskunftEingabe,
@@ -53,6 +62,38 @@
       vollstaendig({ ...mitglied.person, ...angabenAus(eingabe) }, rolle, eingabe.hh) &&
       // PC126 K1: kein „Fertig, 1 Seite“, solange im Telefon ein Fehler steht.
       !telefonEingabeFehler(eingabe),
+  );
+
+  // K9 (DP96, Weg B): Der Hauptknopf heißt „Weiter“ mit dem nächsten offenen Teil, bis alles ausgefüllt ist. Ist nur
+  // noch der geöffnete Teil offen, steht ein blasses „Fertig“, darüber der Satz, was fehlt; antippen führt ins Feld.
+  let offenTeil = $state<TeilId | null>(null);
+  let akkordeon = $state<{
+    weiterZu: (ziel: TeilId) => void;
+    fehlendenOeffnen: () => void;
+    kontaktFragt: () => boolean;
+  }>();
+  const kontaktNachfrage = $derived(akkordeon?.kontaktFragt() ?? false);
+  const standTeile = $derived(
+    mitglied && eingabe
+      ? teile({ ...mitglied.person, ...angabenAus(eingabe) }, rolle, eingabe.hh).map((s) =>
+          // PC126 K1: Mit Fehler im Telefon ist „Kontakt“ nicht fertig.
+          s.id === 'kontakt' && telefonEingabeFehler(eingabe!) ? { ...s, fertig: false } : s,
+        )
+      : [],
+  );
+  const knopf = $derived(hauptknopf(standTeile, offenTeil));
+  // Fehlt nur noch der Kontakt, weil im Telefon ein Fehler steht (PC126 K1), sagt der Satz das; der Teil nennt es gleich.
+  const knopfGrund = $derived(
+    knopf.art === 'blass' && mitglied && eingabe
+      ? grundFuer(mitglied.person, rolle, eingabe)
+      : undefined,
+  );
+  const zielName = $derived(
+    knopf.art === 'weiter' ? t(`selbstauskunft.teil.${knopf.ziel}`) : undefined,
+  );
+  // DP116, Frage 1: In der zweiten Zeile steht immer die Kurzform (feste Liste); vorgelesen wird der lange Name.
+  const zielKurz = $derived(
+    knopf.art === 'weiter' ? t(`selbstauskunft.teilKurz.${knopf.ziel}`) : undefined,
   );
 
   // Sofort speichern: kurz nach jeder Änderung, ohne Knopf (A4: „Änderungen werden sofort gespeichert.“).
@@ -172,14 +213,32 @@
         }}
         start="zu"
         {feld}
+        bind:this={akkordeon}
+        bind:offen={offenTeil}
+        teilKnopf={false}
       />
     </div>
   {/if}
 </main>
 {#if mitglied && eingabe}
+  <!-- Eine Leiste für alle Fälle: Nur Text und Ziel wechseln, nichts baut sich neu auf (W8). -->
   <Aktionsleiste
-    text={t('selbstauskunft.fertigKnopf')}
+    text={knopf.art === 'weiter'
+      ? t(kontaktNachfrage ? 'selbstauskunft.stimmt' : 'selbstauskunft.weiterKnopf')
+      : t('selbstauskunft.fertigKnopf')}
+    unterzeile={knopf.art === 'weiter' && !kontaktNachfrage ? zielKurz : undefined}
+    ansage={knopf.art === 'weiter' && !kontaktNachfrage
+      ? t('selbstauskunft.weiterAnsage', { teil: zielName ?? '' })
+      : undefined}
+    grund={knopfGrund}
+    grundOben
+    fokusHalten={knopf.art === 'weiter'}
+    beiGrund={() => akkordeon?.fehlendenOeffnen()}
     onclick={async () => {
+      if (knopf.art === 'weiter') {
+        akkordeon?.weiterZu(knopf.ziel);
+        return;
+      }
       await speichern();
       zumEinstieg(ablauf, zurueckZu);
     }}
@@ -212,7 +271,7 @@
     align-items: center;
     gap: 14px;
     margin-top: var(--space-5);
-    padding: 14px 16px;
+    padding: 16px;
     border-radius: 20px;
     background: var(--surface);
   }

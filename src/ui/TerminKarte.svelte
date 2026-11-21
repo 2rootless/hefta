@@ -82,7 +82,7 @@
     column-gap: 14px;
     align-items: start;
     margin-top: 16px;
-    padding: 14px 16px 12px 15px;
+    padding: 16px 16px 12px 15px;
     border: 1px solid var(--line);
     border-left: 3px solid var(--termin);
     border-radius: 14px;

@@ -72,6 +72,12 @@ export type MappenAnlass = Pick<Bewerbung, 'adresse' | 'satz' | 'bitteSatz'> & {
   deckPortal?: string;
   deckEinzugTag?: string;
   deckFassungNr?: number;
+  /** DP45 G1 (W28): Mappe für eine Sozialwohnung, dann mit dem Schein des Haushalts. */
+  sozialwohnung?: boolean;
+  /** K3: abgelaufenen Schein trotzdem mitschicken. */
+  wbsAbgelaufenMit?: boolean;
+  /** DP45 G2: gewählte Mitgliedschaft (Dokument des Haushalts). */
+  genossenschaft?: string | null;
 };
 
 export function bauSchluessel(
@@ -90,10 +96,14 @@ export function bauSchluessel(
     bewerbung?.deckInserat ?? null,
     bewerbung?.deckEinzug ?? null,
     bewerbung?.deckFassung ?? null,
+    bewerbung?.sozialwohnung ?? false,
+    bewerbung?.wbsAbgelaufenMit ?? false,
+    bewerbung?.genossenschaft ?? null,
     aussehen ?? ansicht.haushalt.mappeAussehen ?? null,
     ansicht.haushalt,
     ansicht.mitglieder,
     ansicht.dokumente,
+    ansicht.haushaltDokumente ?? [],
     ansicht.versionen,
   ]);
 }

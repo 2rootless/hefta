@@ -194,7 +194,8 @@
 
   .feld:focus {
     outline: 0;
-    box-shadow: inset 0 0 0 2px var(--ink);
+    /* DP49b, W33: kein Tintenrand beim Fokus; den Fokus zeigt der Cursor. */
+    box-shadow: none;
   }
 
   .zz {

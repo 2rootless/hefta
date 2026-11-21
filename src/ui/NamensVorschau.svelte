@@ -1,9 +1,11 @@
 <script lang="ts">
   // RU4, DP39 1.4: Ausschnitt der Seite, auf der der Name einer anderen Person steht, der Name wie mit
   // Textmarker hinterlegt. Liest nur auf dem Gerät. Findet Hefta den Namen nicht (Scan, Foto), bleibt
-  // die Vorschau weg; die Frage darüber steht trotzdem.
+  // die Vorschau weg; die Frage darüber steht trotzdem. Mit `suchen` zeigt sie statt eines Namens eine
+  // andere Stelle, etwa „Gültig bis“ auf dem Wohnberechtigungsschein (DP45 G1).
   import { db } from '../app/daten.svelte';
   import type { DateiVersion } from '../domain/modell';
+  import type { TextStueck } from '../domain/datumErkennen';
   import { nameFinden, type Stelle } from '../domain/nameFinden';
   import { t } from '../i18n';
   import {
@@ -19,16 +21,22 @@
   let {
     dokument = null,
     version,
-    vorname,
-    nachname,
+    vorname = '',
+    nachname = '',
+    suchen,
+    beschreibung,
     ansehen,
   }: {
     /** Beim Hochladen: das schon geöffnete PDF. */
     dokument?: PdfDokument | null;
     /** In der Unterlage: die gespeicherte Version, deren Datei Hefta selbst öffnet. */
     version?: DateiVersion;
-    vorname: string;
-    nachname: string;
+    vorname?: string;
+    nachname?: string;
+    /** Statt des Namens diese Stelle suchen. */
+    suchen?: (stuecke: TextStueck[]) => Stelle | null;
+    /** Name des Ausschnitts für Screenreader, wenn er keinen Namen zeigt. */
+    beschreibung?: string;
     /** Lupe: öffnet die Seite groß (Nummer ab 1). Ohne bleibt der Ausschnitt ein Bild. */
     ansehen?: (seite: number) => void;
   } = $props();
@@ -39,8 +47,9 @@
   const ZOOM = 1.6;
 
   let rahmen = $state<HTMLElement>();
-  let blatt = $state<HTMLDivElement>();
   let bild = $state('');
+  /** Seitenverhältnis des Bilds (Höhe durch Breite), für die Lage im Ausschnitt. */
+  let verhaeltnis = $state(1.414);
   let stelle = $state.raw<Stelle | null>(null);
   let seite = $state(1);
   /**
@@ -62,6 +71,7 @@
     const nach = nachname;
     const offen = dokument;
     const v = version;
+    const finde = suchen;
     let vorbei = false;
     let eigenes: PdfDokument | null = null;
     let url = '';
@@ -82,12 +92,21 @@
         nummern ??= Array.from({ length: d.numPages }, (_, i) => i + 1);
         const messen = messer();
         for (const nummer of nummern.slice(0, SEITEN_LESEN)) {
-          const gefunden = nameFinden(await seitenStuecke(d, nummer), vor, nach, messen);
+          const stuecke = await seitenStuecke(d, nummer);
+          const gefunden = finde ? finde(stuecke) : nameFinden(stuecke, vor, nach, messen);
           if (vorbei) return;
           if (!gefunden) continue;
           const breite = Math.min(2400, Math.round((rahmen?.clientWidth || 340) * ZOOM * 2));
           url = await miniatur(d, nummer, breite);
           if (vorbei) return URL.revokeObjectURL(url);
+          const probe = new Image();
+          await new Promise((fertig) => {
+            probe.onload = fertig;
+            probe.onerror = fertig;
+            probe.src = url;
+          });
+          if (vorbei) return;
+          if (probe.naturalWidth) verhaeltnis = probe.naturalHeight / probe.naturalWidth;
           stelle = gefunden;
           seite = nummer;
           bild = url;
@@ -108,38 +127,49 @@
     };
   });
 
-  /** Den Namen in die Mitte des Ausschnitts holen, am Rand der Seite nicht darüber hinaus. */
-  function ausrichten() {
-    if (!rahmen || !blatt || !stelle) return;
-    blatt.style.width = `${ZOOM * 100}%`;
-    const b = blatt.offsetWidth;
-    const h = blatt.offsetHeight;
-    const links = (stelle.x + stelle.breite / 2) * b - rahmen.clientWidth / 2;
-    const oben = (stelle.y + stelle.hoehe / 2) * h - rahmen.clientHeight / 2;
-    const x = Math.max(0, Math.min(b - rahmen.clientWidth, links));
-    const y = Math.max(0, Math.min(h - rahmen.clientHeight, oben));
-    blatt.style.transform = `translate(${-x}px, ${-y}px)`;
-  }
-
-  /** Lage der Markierung, über CSSOM gesetzt (keine Inline-Styles wegen der Inhaltsrichtlinie). */
-  function lage(element: HTMLElement, s: Stelle) {
-    const setzen = (f: Stelle) => {
-      element.style.left = `calc(${f.x * 100}% - 3px)`;
-      element.style.top = `calc(${f.y * 100}% - 2px)`;
-      element.style.width = `calc(${f.breite * 100}% + 6px)`;
-      element.style.height = `calc(${f.hoehe * 100}% + 4px)`;
+  /**
+   * Die Seite liegt als Hintergrund im Ausschnitt, vergrößert, die Stelle in der Mitte, am Rand der Seite
+   * nicht darüber hinaus. So ragt kein Element über den Rahmen oder den Bildschirm (G5, Prüfkatalog C11).
+   * Alles über CSSOM gesetzt (keine Inline-Styles wegen der Inhaltsrichtlinie).
+   */
+  function zeichnen(
+    rahmenEl: HTMLElement,
+    o: { bild: string; stelle: Stelle; verhaeltnis: number },
+  ) {
+    let jetzt = o;
+    const setzen = () => {
+      const { bild: url, stelle: s, verhaeltnis: v } = jetzt;
+      const cw = rahmenEl.clientWidth;
+      const ch = rahmenEl.clientHeight;
+      const b = cw * ZOOM;
+      const h = b * v;
+      const x = Math.max(0, Math.min(b - cw, (s.x + s.breite / 2) * b - cw / 2));
+      const y = Math.max(0, Math.min(h - ch, (s.y + s.hoehe / 2) * h - ch / 2));
+      rahmenEl.style.backgroundImage = `url("${url}")`;
+      rahmenEl.style.backgroundSize = `${b}px ${h}px`;
+      rahmenEl.style.backgroundPosition = `${-x}px ${-y}px`;
+      const marke = rahmenEl.querySelector<HTMLElement>('.marke');
+      if (marke) {
+        marke.style.left = `${s.x * b - x - 3}px`;
+        marke.style.top = `${s.y * h - y - 2}px`;
+        marke.style.width = `${s.breite * b + 6}px`;
+        marke.style.height = `${s.hoehe * h + 4}px`;
+      }
     };
-    setzen(s);
-    return { update: setzen };
+    const beobachter = new ResizeObserver(setzen);
+    beobachter.observe(rahmenEl);
+    setzen();
+    return {
+      update(neu: typeof o) {
+        jetzt = neu;
+        setzen();
+      },
+      destroy() {
+        beobachter.disconnect();
+      },
+    };
   }
 </script>
-
-{#snippet blattMitMarke(s: Stelle)}
-  <div class="blatt" bind:this={blatt}>
-    <img src={bild} alt="" onload={ausrichten} />
-    <span class="marke" use:lage={s}></span>
-  </div>
-{/snippet}
 
 {#if bild && stelle}
   {#if ansehen}
@@ -147,20 +177,24 @@
       type="button"
       class="ausschnitt knopf"
       bind:this={rahmen}
-      aria-label={t('pruef.nameVorschauGross', { name: `${vorname} ${nachname}`.trim() })}
+      use:zeichnen={{ bild, stelle, verhaeltnis }}
+      aria-label={beschreibung ??
+        t('pruef.nameVorschauGross', { name: `${vorname} ${nachname}`.trim() })}
       onclick={() => ansehen(seite)}
     >
-      {@render blattMitMarke(stelle)}
+      <span class="marke"></span>
       <span class="lupe" aria-hidden="true"><Symbol name="lupe" groesse={16} /></span>
     </button>
   {:else}
     <div
       class="ausschnitt"
       bind:this={rahmen}
+      use:zeichnen={{ bild, stelle, verhaeltnis }}
       role="img"
-      aria-label={t('pruef.nameVorschau', { name: `${vorname} ${nachname}`.trim() })}
+      aria-label={beschreibung ??
+        t('pruef.nameVorschau', { name: `${vorname} ${nachname}`.trim() })}
     >
-      {@render blattMitMarke(stelle)}
+      <span class="marke"></span>
     </div>
   {/if}
 {:else}
@@ -179,7 +213,8 @@
     overflow: hidden;
     border: 0;
     border-radius: 10px;
-    background: #fff;
+    background-color: #fff;
+    background-repeat: no-repeat;
     box-shadow: 0 0 0 1px var(--line);
   }
 
@@ -198,19 +233,6 @@
     border-radius: 16px;
     background: rgba(38, 34, 30, 0.75);
     color: #fff;
-  }
-
-  .blatt {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 160%;
-  }
-
-  .blatt img {
-    display: block;
-    width: 100%;
-    height: auto;
   }
 
   /* DP39 1.4: wie mit Textmarker, ohne Rahmen, Ecken leicht unregelmäßig. */

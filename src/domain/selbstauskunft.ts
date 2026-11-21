@@ -1,6 +1,7 @@
 import katalogDaten from '../../data/regelkatalog.de.json' with { type: 'json' };
 import { telefonFuerMappe } from './telefon';
 import type { AusbildungArt, Haushalt, Lebenssituation, Person, Rolle } from './modell';
+import { lagenVon, wirksameLagen, type LageAngabe } from './lagen';
 import { nameImPdf, nameText } from './namen';
 
 // Selbstauskunft (docs/04-regeln-und-hinweise.md, DSK-Muster; Meilenstein M4). Gefragt wird nur, was
@@ -157,10 +158,51 @@ export function einziehendText(e: Einziehend): string {
 type PersonFuerAuskunft = Pick<
   Person,
   'kontakt' | 'nettoeinkommen' | 'lebenssituation' | 'selbstauskunft'
->;
+> &
+  Partial<Pick<Person, 'ausbildungArt' | 'weitereLagen' | 'einkommenTrotzdem' | 'arbeitgeber'>>;
+
+/** DP47 G5: Netto einer Lage; die erste steht an der Person. */
+function nettoVon(
+  person: Pick<Person, 'nettoeinkommen'> & Partial<Pick<Person, 'weitereLagen'>>,
+  lage: LageAngabe,
+): number | null {
+  if (!lage.lageId) return person.nettoeinkommen;
+  return person.weitereLagen?.find((l) => l.id === lage.lageId)?.nettoeinkommen ?? null;
+}
+
+/**
+ * DP47 G5: Fehlt ein Netto? Jede wirksame Lage außer „Leistungen vom Amt“ braucht einen Betrag. Ohne
+ * Lebenslage gilt wie bisher das Netto der Person.
+ */
+function nettoFehlt(person: PersonFuerAuskunft): boolean {
+  const lagen = wirksameLagen({ ...person, arbeitgeber: person.arbeitgeber ?? '' });
+  if (!lagen.length) return !(person.nettoeinkommen && person.nettoeinkommen > 0);
+  return lagen.some((l) => {
+    if (l.situation === 'leistungsbezug') return false;
+    const netto = nettoVon(person, l);
+    return !(netto && netto > 0);
+  });
+}
 
 /** Die vier Teile im Akkordeon (Kontakt, Einkommen, Fragen, Haushalt), Bürgen ohne Haushalt. */
 export type TeilId = 'kontakt' | 'einkommen' | 'fragen' | 'haushalt';
+
+/** Hauptknopf unten auf der Seite der Selbstauskunft (K9, DP96 Weg B). */
+export type Hauptknopf = { art: 'weiter'; ziel: TeilId } | { art: 'blass' } | { art: 'fertig' };
+
+/**
+ * K9 (DP96, Weg B): Der Hauptknopf heißt „Weiter“, bis alles ausgefüllt ist. Ziel ist der nächste offene Teil, zuerst
+ * nach dem geöffneten gesucht, dann wieder von vorn. Ist nur noch der geöffnete Teil offen (DP96 Fall 5: Einkommen),
+ * steht ein blasses „Fertig“, und darüber der Satz, was fehlt. Ist alles ausgefüllt, „Fertig“ wie bisher.
+ */
+export function hauptknopf(stand: Pick<Teil, 'id' | 'fertig'>[], offen: TeilId | null): Hauptknopf {
+  const offene = stand.filter((s) => !s.fertig);
+  if (!offene.length) return { art: 'fertig' };
+  if (offene.length === 1 && offene[0]!.id === offen) return { art: 'blass' };
+  const i = offen ? stand.findIndex((s) => s.id === offen) : -1;
+  const reihe = i < 0 ? stand : [...stand.slice(i + 1), ...stand.slice(0, i)];
+  return { art: 'weiter', ziel: reihe.find((s) => !s.fertig)!.id };
+}
 export interface Teil {
   id: TeilId;
   fertig: boolean;
@@ -201,13 +243,14 @@ export function fehlendeAngaben(
     // sie ist ein eigener offener Punkt im Überblick, und nur sie fehlt in der Mappe, nicht die Selbstauskunft.
     if (f.id === 'kontakt' && !telefonFuerMappe(person.kontakt) && !person.kontakt.email.trim())
       fehlt.push(f.id);
-    if (f.id === 'nettoeinkommen' && !(person.nettoeinkommen && person.nettoeinkommen > 0))
-      fehlt.push(f.id);
+    if (f.id === 'nettoeinkommen' && nettoFehlt(person)) fehlt.push(f.id);
     if (f.id === 'haustiere' && hh.haustiere === null) fehlt.push(f.id);
     if (f.id === 'insolvenz' && sa.insolvenz === null) fehlt.push(f.id);
     if (f.id === 'raeumungstitel' && sa.raeumungstitel === null) fehlt.push(f.id);
     // Mietrückstände fehlen nie: Die Frage kommt erst, wenn der Vermieter sich entschieden hat.
   }
+  if (!fehlt.includes('nettoeinkommen') && person.weitereLagen?.length && nettoFehlt(person))
+    fehlt.push('nettoeinkommen');
   if (rolle !== 'buerge' && !hh.ort.trim()) fehlt.push('ort');
   return fehlt;
 }
@@ -330,7 +373,12 @@ export function selbstauskunftBloecke(
   const namen = berufBezeichnungen(person);
   const art = artVon(person);
   const taetigkeit = art ? katalogDaten.lebenssituationen.studierend_azubi.arten[art].text : '';
-  const beruf = person.beruf.trim();
+  // DP47b K1/K5: Ist eine Lage „Leistungen vom Amt“ und der Schalter aus, steht nur das Amt im Bogen. Beruf
+  // und Arbeitgeber einer anderen ersten Lage folgen dem Schalter und bleiben dann weg.
+  const alleLagen = lagenVon(person);
+  const lagen = wirksameLagen(person);
+  const ersteWirkt = lagen.some((l) => l.lageId === null);
+  const beruf = ersteWirkt ? person.beruf.trim() : '';
   const bloecke: FormBlock[] = [
     {
       id: 'person',
@@ -353,7 +401,7 @@ export function selbstauskunftBloecke(
         beruf || !taetigkeit
           ? text('beruf', namen.beruf, beruf)
           : text('beruf', 'Tätigkeit', taetigkeit),
-        text('arbeitgeber', namen.arbeitgeber, person.arbeitgeber.trim()),
+        text('arbeitgeber', namen.arbeitgeber, ersteWirkt ? person.arbeitgeber.trim() : ''),
       ],
     },
   ];
@@ -399,29 +447,10 @@ export function selbstauskunftBloecke(
     });
   }
 
-  const lage = person.lebenssituation
-    ? katalogDaten.lebenssituationen[person.lebenssituation].text
-    : '';
   bloecke.push({
     id: 'einkommen',
     titel: 'Einkommen',
-    zeilen: [
-      text('nettoeinkommen', 'Lebenslage', lage),
-      person.lebenssituation === 'leistungsbezug'
-        ? {
-            id: 'nettoeinkommen',
-            etikett: 'Einkommen',
-            art: 'hinweis',
-            wert: 'Die Miete übernimmt vollständig eine öffentliche Stelle. Nach dem Musterbogen (B.5) entfallen Fragen zum Einkommen dann.',
-          }
-        : text(
-            'nettoeinkommen',
-            person.lebenssituation === 'rente'
-              ? 'Rente im Monat, netto'
-              : feld('nettoeinkommen').pdfText,
-            betragText(person),
-          ),
-    ],
+    zeilen: einkommenZeilen(person, lagen, alleLagen, text, feld('nettoeinkommen').pdfText),
   });
   bloecke.push({
     id: 'fragen',
@@ -429,6 +458,94 @@ export function selbstauskunftBloecke(
     zeilen: [frage('insolvenz'), frage('raeumungstitel'), frage('mietrueckstaende')],
   });
   return bloecke;
+}
+
+const AMT_SATZ =
+  'Die Miete übernimmt vollständig eine öffentliche Stelle. Nach dem Musterbogen (B.5) entfallen Fragen zum Einkommen dann.';
+
+/** Name einer Lage im Bogen; nach „dazu“ klein, außer was mit einem Hauptwort beginnt (wie in der App). */
+function lageName(l: LageAngabe, klein = false): string {
+  const t =
+    l.situation === 'studierend_azubi' && l.art
+      ? katalogDaten.lebenssituationen.studierend_azubi.arten[l.art].text
+      : katalogDaten.lebenssituationen[l.situation].text;
+  return klein && l.situation !== 'leistungsbezug' ? t.charAt(0).toLowerCase() + t.slice(1) : t;
+}
+
+/**
+ * Teil „Einkommen“ im Bogen.
+ * - Eine Lage: wie bisher.
+ * - Nur „Leistungen vom Amt“ wirkt (Schalter aus, K5): „Lebenslage“ nennt nur das Amt, kein Wort zur
+ *   zweiten Lage, dazu der Satz aus Version 1.
+ * - Mehrere Lagen (DP47 G5): „Lebenslage: Angestellt, dazu …“, die Summe nur, wenn jede Quelle einen
+ *   Betrag hat (DP47b, L14), darunter je Quelle eine Zeile mit Beruf und Arbeitgeber.
+ */
+function einkommenZeilen(
+  person: Person,
+  lagen: LageAngabe[],
+  alleLagen: LageAngabe[],
+  text: (id: string, etikett: string, wert: string) => FormZeile,
+  nettoEtikett: string,
+): FormZeile[] {
+  const euro0 = (n: number) => `${euro.format(n)} €`;
+  if (lagen.length <= 1) {
+    const einzige = lagen[0] ?? alleLagen[0] ?? null;
+    const name = einzige ? lageName(einzige) : '';
+    if (einzige?.situation === 'leistungsbezug')
+      return [
+        text('nettoeinkommen', 'Lebenslage', name),
+        { id: 'nettoeinkommen', etikett: 'Einkommen', art: 'hinweis', wert: AMT_SATZ },
+      ];
+    const netto = einzige ? nettoVon(person, einzige) : person.nettoeinkommen;
+    return [
+      text('nettoeinkommen', 'Lebenslage', name),
+      text(
+        'nettoeinkommen',
+        einzige?.situation === 'rente' ? 'Rente im Monat, netto' : nettoEtikett,
+        einzige?.lageId ? (netto ? euro0(netto) : '') : betragText(person),
+      ),
+    ];
+  }
+  const [erste, ...weitere] = lagen;
+  const zeilen: FormZeile[] = [
+    text(
+      'nettoeinkommen',
+      'Lebenslage',
+      `${lageName(erste!)}, dazu ${weitere.map((l) => lageName(l, true)).join(' und ')}`,
+    ),
+  ];
+  const betraege = lagen.map((l) =>
+    l.situation === 'leistungsbezug' ? null : nettoVon(person, l),
+  );
+  if (betraege.every((b) => b && b > 0))
+    zeilen.push(
+      text(
+        'nettoeinkommen',
+        nettoEtikett,
+        euro0(betraege.reduce<number>((s, b) => s + (b ?? 0), 0)),
+      ),
+    );
+  lagen.forEach((l, i) => {
+    const angaben = l.lageId ? person.weitereLagen?.find((x) => x.id === l.lageId) : person;
+    const berufTeil = (angaben?.beruf ?? '').trim();
+    const arbeitgeberTeil = (angaben?.arbeitgeber ?? '').trim();
+    const etikett = [
+      lageName(l),
+      [berufTeil, arbeitgeberTeil ? `bei ${arbeitgeberTeil}` : ''].filter(Boolean).join(' '),
+    ]
+      .filter(Boolean)
+      .join(', ');
+    zeilen.push(
+      l.situation === 'leistungsbezug'
+        ? { id: `quelle-${i}`, etikett, art: 'hinweis', wert: 'Die Miete übernimmt das Amt.' }
+        : // Gleiche Regel wie das Netto (wann es dran ist), eigene Kennung je Quelle.
+          {
+            ...text('nettoeinkommen', etikett, betraege[i] ? euro0(betraege[i]!) : ''),
+            id: `quelle-${i}`,
+          },
+    );
+  });
+  return zeilen;
 }
 
 /** Alle Angaben einzeln zum Kopieren (A6), für Portale mit eigenem Formular. Leere fehlen. */

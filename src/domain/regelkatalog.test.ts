@@ -199,7 +199,8 @@ describe('Stand einer Person', () => {
       [],
       HEUTE,
     );
-    expect(offeneDinge([max, petra])).toBe(3 + 4);
+    // DP49 Punkt 5: Die Bürgschaftserklärung gilt je Wohnung und zählt nicht mit.
+    expect(offeneDinge([max, petra])).toBe(3 + 3);
   });
 });
 

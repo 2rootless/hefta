@@ -255,6 +255,7 @@ test('erster Start: „Später“ fragt höchstens noch einmal, „Ich habe ein 
   await page.goto('/');
   // Hefta 2: Ohne Haushalt spielt man das Backup über die Einstellungen ein (B15).
   await page.getByRole('link', { name: 'Einstellungen' }).click();
+  await page.getByRole('tab', { name: 'App', exact: true }).click();
   await page.getByRole('link', { name: /^Backup einspielen/ }).click();
   // Erst der Hinweis auf die App: In Safari eingespielt, fehlt das Backup später in der App.
   await expect(

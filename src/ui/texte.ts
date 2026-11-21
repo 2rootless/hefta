@@ -1,7 +1,7 @@
 import { pruefcodeStand } from '../domain/pruefhinweise';
 import { faelligAb, monatPlus } from '../domain/fristen';
-import type { Person } from '../domain/modell';
-import { eintragenText, type UnterlagenStand } from '../domain/regelkatalog';
+import type { BonitaetAngabe, Bezeichnung, Person } from '../domain/modell';
+import { eintragenText, situationText, type UnterlagenStand } from '../domain/regelkatalog';
 import { monatName, t, tagText, tagZusammen, zahlwort } from '../i18n';
 
 // Texte zum Stand einer Unterlage, gemeinsam für Übersicht und Personenansicht.
@@ -31,6 +31,32 @@ function monateListe(monate: string[], heute: Date): string {
 
 function lueckenlos(monate: string[]): boolean {
   return monate.every((m, i) => i === 0 || monatPlus(monate[i - 1]!, 1) === m);
+}
+
+/**
+ * K10 (DP96, Wortlaut F): Satz im Rutsch, sobald ein Monat einer Serie drin ist. Nennt, was drin ist, und jeden
+ * fehlenden Monat: „September und November sind drin. Oktober fehlt noch.“ Monate in Kalenderfolge und ohne Jahr,
+ * auch über den Jahreswechsel; ihr und du lauten gleich.
+ */
+export function serieSatz(fenster: { monat: string; da: boolean }[]): string {
+  const sortiert = [...fenster].sort((a, b) => a.monat.localeCompare(b.monat));
+  // Ohne Jahr: monatName nennt das Jahr nur, wenn es nicht das „heutige“ ist; hier ist es immer das des Monats.
+  const liste = (monate: string[]) =>
+    new Intl.ListFormat('de-DE', { type: 'conjunction' }).format(
+      monate.map((m) => monatName(m, new Date(Number(m.slice(0, 4)), 0, 1))),
+    );
+  const drin = sortiert.filter((f) => f.da).map((f) => f.monat);
+  const fehlend = sortiert.filter((f) => !f.da).map((f) => f.monat);
+  const teil1 =
+    drin.length === 1
+      ? t('rutsch.serieDrinEins', { monat: liste(drin) })
+      : t('rutsch.serieDrinListe', { monate: liste(drin) });
+  if (!fehlend.length) return teil1;
+  const teil2 =
+    fehlend.length === 1
+      ? t('unterlage.monatFehlt', { monate: liste(fehlend) })
+      : t('unterlage.monateFehlen', { monate: liste(fehlend) });
+  return `${teil1} ${teil2}`;
 }
 
 /** „August fehlt noch.“, „August und Juli fehlen noch.“ */
@@ -74,7 +100,9 @@ export function standText(u: UnterlagenStand, heute = new Date()): string {
       datum: tagKurz(u.neuestesDatum, heute),
     });
   }
-  if (ohneDatum(u)) return t('person.standOhneDatum');
+  // W48: „erinnert“ nur, wenn es stimmt (in der App, Schalter an, Mitteilungen erlaubt).
+  if (ohneDatum(u))
+    return t(erinnertJetzt() ? 'person.standOhneDatum' : 'person.standOhneDatumZeigt');
   if (u.status === 'da') return t('person.standDa');
   if (u.status === 'fehlt') return t('person.standFehlt');
   return u.typ.kurz ?? t('person.standFreiwillig');
@@ -114,6 +142,15 @@ export function naechsterText(
 }
 
 /** Höchstalter aus den Fristen des Katalogs in Worten: 90 Tage → „drei Monate“ (Z2, Z5). */
+/**
+ * W48: Ob Hefta wirklich erinnert. Die Quelle setzt der Teil der App, der die Mitteilungen plant
+ * (erinnerungen.svelte.ts); bis dahin, und im Browser, gilt „zeigt“ (W10).
+ */
+let erinnertJetzt: () => boolean = () => false;
+export function erinnertQuelleSetzen(quelle: () => boolean): void {
+  erinnertJetzt = quelle;
+}
+
 export function alterGrenze(u: Pick<UnterlagenStand, 'typ'>): string {
   const tage = u.typ.fristen?.warnungTage ?? 90;
   const monate = Math.max(1, Math.round(tage / 30));
@@ -195,6 +232,28 @@ export function tagKurzAus(tag: Date): string {
  * („vom 6. Nov.“, „fehlt noch“), Monate bleiben groß („Aug. bis Okt.“). Bei der Bonität mit Prüfcode
  * „prüfbar bis 27. Dez.“.
  */
+/**
+ * DP45 G4 (K1): „Noch keiner möglich: bisher keine Verträge auf ihren Namen. Steht so in der Mappe.“ Ohne
+ * Grund nur „Noch keiner möglich. Steht so in der Mappe.“ Das Fürwort folgt der Bezeichnung; allein „deinen“.
+ */
+export function keinerText(angabe: BonitaetAngabe, bezeichnung: Bezeichnung, du: boolean): string {
+  const grund =
+    angabe.grund === 'keine_vertraege'
+      ? t(
+          du
+            ? 'bonitaetWahl.grundDu'
+            : bezeichnung === 'weiblich'
+              ? 'bonitaetWahl.grundIhren'
+              : bezeichnung === 'maennlich'
+                ? 'bonitaetWahl.grundSeinen'
+                : 'bonitaetWahl.grundNeutral',
+        )
+      : angabe.grund === 'eigener'
+        ? (angabe.text ?? '').trim().replace(/[.!]+$/, '')
+        : '';
+  return grund ? t('bonitaetWahl.zeileGrund', { grund }) : t('bonitaetWahl.zeileOhne');
+}
+
 export function blattText(u: UnterlagenStand, heute = new Date()): string {
   if (u.status === 'fehlt' && !u.typ.serie && !u.veraltet) return t('mappeTab.fehltNoch');
   if (u.neuestesDatum && u.status !== 'bald') {
@@ -205,4 +264,43 @@ export function blattText(u: UnterlagenStand, heute = new Date()): string {
   return /^(Vom|Fehlt|Fertig|Bald|Zu|Neuer|Ohne|Freiwillig|Da)\b/.test(s)
     ? s.charAt(0).toLowerCase() + s.slice(1)
     : s;
+}
+
+/** „Max’ Liste“, „Leas Liste“: Genitiv eines Namens (DP47 G5). */
+export function genitiv(name: string): string {
+  return /[sßxz]$/i.test(name) ? `${name}’` : `${name}s`;
+}
+
+const UND = new Intl.ListFormat('de-DE', { type: 'conjunction' });
+
+/**
+ * DP47 G5: Lebenslagen in einer Zeile, „Angestellt, dazu selbstständig oder freiberuflich und in Rente“.
+ * Nach „dazu“ klein, außer was mit einem Hauptwort beginnt. Mit einer Lage wie bisher nur ihr Name.
+ */
+export function lagenText(
+  person: Pick<Person, 'lebenssituation' | 'ausbildungArt' | 'weitereLagen'>,
+): string | null {
+  if (!person.lebenssituation) return null;
+  const erste = situationText(person.lebenssituation, person.ausbildungArt);
+  const weitere = (person.weitereLagen ?? []).map((l) => {
+    const text = situationText(l.situation, l.ausbildungArt);
+    // „Miete zahlt eine öffentliche Stelle“ beginnt mit einem Hauptwort und bleibt groß.
+    return l.situation === 'leistungsbezug' ? text : text.charAt(0).toLowerCase() + text.slice(1);
+  });
+  return weitere.length ? t('lagen.kopfDazu', { erste, weitere: UND.format(weitere) }) : erste;
+}
+
+/**
+ * DP47 G5: Hat die Person mehr als eine Lage, steht vor dem Stand eines Einkommensnachweises seine Lage:
+ * „Angestellt. August bis Oktober“. Mit einer Lage bleibt alles wie bisher.
+ */
+export function mitLage(u: UnterlagenStand, text: string): string {
+  if (!u.lage) return text;
+  // L4: Bei zwei Arbeitgebern nennt die Zeile den Arbeitgeber; ohne Angabe „Noch ein Arbeitgeber“.
+  const vorn = u.lage.mitArbeitgeber
+    ? u.lage.arbeitgeber ||
+      (u.typ.basis ? t('lagen.nochArbeitgeberKurz') : situationText(u.lage.situation, u.lage.art))
+    : situationText(u.lage.situation, u.lage.art);
+  // Nach dem Punkt groß, auch wo der Stand sonst klein beginnt („fehlt noch“ im Blatt).
+  return `${vorn}. ${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 }

@@ -106,19 +106,41 @@
       link?.click();
       return;
     }
-    navigator.share({ files: [datei] }).then(gesichert, (e: unknown) => {
-      // Abgebrochen oder der Tipp war zu lange her: Jetzt steht „Backup sichern“ da (S3b).
-      zweiterTipp = e instanceof DOMException && e.name === 'NotAllowedError';
-    });
+    navigator.share({ files: [datei] }).then(
+      () => gesichert(),
+      (e: unknown) => {
+        // Abgebrochen oder der Tipp war zu lange her: Jetzt steht „Backup sichern“ da (S3b).
+        zweiterTipp = e instanceof DOMException && e.name === 'NotAllowedError';
+      },
+    );
   }
 
-  async function gesichert() {
+  /** W50 (DP103, DP106): Zahlen aus derselben Zählung wie beim Einspielen. */
+  const zahlen = $derived(
+    bestand
+      ? {
+          hefte: t('zahlen.hefte', { anzahl: bestand.hefte }),
+          unterlagen: t('zahlen.unterlagen', { anzahl: bestand.unterlagen }),
+        }
+      : null,
+  );
+
+  async function gesichert(weg: 'backup' | 'download' = 'backup') {
+    // Der Satz braucht die Zahlen; sie sind gezählt, bevor das Backup fertig ist.
+    const z = zahlen ?? {
+      hefte: t('zahlen.hefte', { anzahl: 0 }),
+      unterlagen: t('zahlen.unterlagen', { anzahl: 0 }),
+    };
     await einstellungenAendern(await db(), {
       letztesBackup: new Date().toISOString(),
+      letztesBackupWeg: weg === 'download' ? 'download' : null,
       ohnePasswortHinweisGezeigt: true,
     });
     await neuLaden();
-    einstellungenZustand.meldung = t('einstellungen.gesichert');
+    einstellungenZustand.meldung =
+      weg === 'download'
+        ? t('einstellungen.downloadGestartet', z)
+        : t('einstellungen.gesichert', z);
     abschliessen('/einstellungen');
   }
 </script>
@@ -131,7 +153,9 @@
     <!-- S3b: fertig, nur noch sichern. -->
     <div class="titelblock">
       <BackupZeichen {mitPasswort} />
-      <h1 class="display">{t('backupSeite.fertigTitel')}</h1>
+      <h1 class="display">
+        {zahlen ? t('backupSeite.fertigZahlen', zahlen) : t('backupSeite.fertigTitel')}
+      </h1>
       <p class="lead">{t('backupSeite.fertigText')}</p>
     </div>
     <section class="abschnitt">
@@ -157,7 +181,7 @@
         bind:this={link}
         href={url}
         download={datei.name}
-        onclick={() => void gesichert()}>{t('backupSeite.alsDatei')}</a
+        onclick={() => void gesichert('download')}>{t('backupSeite.alsDatei')}</a
       >
     </section>
   {:else}

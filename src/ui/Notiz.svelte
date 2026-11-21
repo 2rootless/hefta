@@ -1,8 +1,10 @@
 <script lang="ts">
-  // Hinweis (DP33 A1): weiche Fläche ohne Linie, Zeichen aus B11 links; „stark“ heißt Warnung, dann
-  // steht das Zeichen in Akzent.
+  // Hinweis (DP33 A1): weiche Fläche ohne Linie, Zeichen aus B11 links. „stark“ heißt Warnung oder Fehler: dann
+  // steht das Warnzeichen in Bernstein (DP63b, DP63c F2, W5). Hebt die Notiz nur hervor, bleibt das Zeichen „info“
+  // in Tinte.
   import type { Snippet } from 'svelte';
   import Symbol from './Symbol.svelte';
+  import Warnzeichen from './Warnzeichen.svelte';
 
   let {
     stark = false,
@@ -14,7 +16,9 @@
 </script>
 
 <div class="notiz" class:stark>
-  <span class="ic" aria-hidden="true"><Symbol name="info" groesse={20} /></span>
+  <span class="ic" aria-hidden="true"
+    >{#if stark}<Warnzeichen />{:else}<Symbol name="info" groesse={20} />{/if}</span
+  >
   <div class="inhalt">{@render children()}</div>
 </div>
 
@@ -43,7 +47,7 @@
     margin-bottom: -10px;
   }
 
-  /* DP33 A1: ohne Linie; das Zeichen aus B11 links, bei einer Warnung in Akzent. */
+  /* DP33 A1: ohne Linie; das Zeichen aus B11 links. Bei einer Warnung das Warnzeichen (DP63c F2). */
   .ic {
     display: grid;
     place-items: center;
@@ -51,9 +55,5 @@
     width: 20px;
     height: 21px;
     color: var(--ink);
-  }
-
-  .stark .ic {
-    color: var(--accent-text);
   }
 </style>

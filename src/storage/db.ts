@@ -87,6 +87,10 @@ const MIGRATIONEN: ((db: HeftaDb, tx: Upgrade) => void)[] = [
           await tx.objectStore('hefte').put(heft);
       });
   },
+  // Schema 3, Hefta 2.1 (W42, CP88): nichts wird umgebaut und nichts gelöscht. Neu ist nur `ziehtMitEin` an der
+  // Zugehörigkeit. Die höhere Nummer sorgt dafür, dass 2.0.1 ein Backup aus 2.1 sauber ablehnt („aus einer neueren
+  // Version“), statt es halb zu verstehen.
+  () => {},
 ];
 
 export const SCHEMA_VERSION = MIGRATIONEN.length;
@@ -128,6 +132,8 @@ export const DATEN_MIGRATIONEN: Record<
     ...daten,
     hefte: hefteAusBewerbungen((daten.bewerbungen ?? []) as Bewerbung[]),
   }),
+  // Schema 3 (W42): Es kommt nur `ziehtMitEin` dazu; alte Daten haben es nicht und bleiben, wie sie sind.
+  2: (daten) => daten,
 };
 
 export function datenMigrieren(

@@ -59,12 +59,12 @@ const petra = personStand(
 const max = personStand(person('p1', 'Max'), 'hauptmieter', [], [], HEUTE);
 
 describe('Liste an andere schicken (Version 2.0)', () => {
+  // DP49 Punkt 5: Die Bürgschaftserklärung gilt je Wohnung und ist freiwillig; sie steht nicht auf der Liste.
   it('schreibt die Nachricht wie im Entwurf L2', () => {
     expect(listeAlsText(petra, { von: 'Max' })).toBe(
       [
         'Hallo Petra, für unsere Wohnungsbewerbung brauchen wir noch von dir:',
         '',
-        '• Bürgschaftserklärung: unterschrieben auf Papier, für die Mappe reicht ein Scan.',
         '• Rentenbescheid: der aktuelle Bescheid der Rentenversicherung.',
         '• Bonitätsnachweis: die Auskunft für Vermieter (SCHUFA-BonitätsCheck), nicht die kostenlose Datenkopie. Meist nicht älter als drei Monate.',
         '• Selbstauskunft: die füllen wir zusammen aus, ich frage dich kurz nach deiner Rente und drei Ja-Nein-Fragen.',

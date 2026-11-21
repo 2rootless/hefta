@@ -33,6 +33,38 @@ export function monatsSpanne(monate: string[], jahr: boolean): string {
 /** „vom 20. Oktober 2026“ für Unterlagen mit Datum. */
 export const vomText = (tag: string) => `vom ${TAG.format(alsDatum(tag))}`;
 
+/** DP45 G1: „gültig bis 31. März 2027“, abgelaufen „abgelaufen am 31. März 2027“. */
+export const gueltigBisText = (tag: string, abgelaufen = false) =>
+  `${abgelaufen ? 'abgelaufen am' : 'gültig bis'} ${TAG.format(alsDatum(tag))}`;
+
+/** DP45 G3: „neu im Job seit 1. Oktober 2026“. */
+export const neuImJobText = (tag: string) => `neu im Job seit ${TAG.format(alsDatum(tag))}`;
+
+/**
+ * DP45 G4 (K1): die Zeile im Verzeichnis, wörtlich und ohne Seitenzahl.
+ * Ohne Grund: „Bonitätsnachweis: noch keiner möglich“. Mit Grund: „…. Angabe von Lea: bisher keine
+ * Verträge auf ihren Namen“. Das Fürwort folgt der Bezeichnung im Haushalt, neutral ohne Fürwort.
+ */
+export function bonitaetZeile(
+  angabe: { grund: 'keine_vertraege' | 'eigener' | null; text?: string },
+  name: string,
+  bezeichnung: 'maennlich' | 'weiblich' | 'neutral',
+): string {
+  const kopf = 'Bonitätsnachweis: noch keiner möglich';
+  const fuerwort =
+    bezeichnung === 'weiblich' ? 'ihren' : bezeichnung === 'maennlich' ? 'seinen' : 'den eigenen';
+  const grund =
+    angabe.grund === 'keine_vertraege'
+      ? `bisher keine Verträge auf ${fuerwort} Namen`
+      : angabe.grund === 'eigener'
+        ? (angabe.text ?? '').trim().replace(/[.\s]+$/, '')
+        : '';
+  return grund ? `${kopf}. Angabe von ${name}: ${grund}` : kopf;
+}
+
+/** Überschrift im Verzeichnis und in der Kopfzeile für Unterlagen des ganzen Haushalts (DP45). */
+export const FUER_DEN_HAUSHALT = 'Für den Haushalt';
+
 /** „ein Kind“, „zwei weitere Personen“: Zahlen bis zwölf als Wort (T6). */
 const ZAHLWORT = [
   '',

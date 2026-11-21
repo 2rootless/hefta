@@ -3,6 +3,7 @@ import {
   ausstellungstag,
   datenFinden,
   datenZurAuswahl,
+  gueltigBis,
   monatFinden,
   monatNummer,
   type TextStueck,
@@ -196,5 +197,31 @@ describe('Monat mit abgeschnittener Unterlänge (PC64, Punkt 5)', () => {
     // Kurze Formen und der Anfang bleiben fest: kein „Jan“ aus „an“, kein „Aug“ aus „Au“.
     expect(monatNummer('an')).toBeUndefined();
     expect(monatNummer('Au')).toBeUndefined();
+  });
+});
+
+describe('Gültig bis vom Schein (DP45 G1)', () => {
+  const funde = (...zeilen: TextStueck[][]) =>
+    zeilen.flatMap((z) => datenFinden(z, HEUTE, true).map((f) => ({ ...f, seite: 1 })));
+
+  it('liest den Tag nach „Gültig bis“, auch in der Zukunft', () => {
+    const f = funde(
+      zeile(0.1, 'Ausgestellt am 01.04.2026'),
+      zeile(0.2, 'Gültig bis 31. März 2027'),
+    );
+    expect(gueltigBis(f)).toEqual({ tag: '2027-03-31', seite: 1 });
+  });
+
+  it('nimmt in einer Zeile mit beiden Tagen den späteren', () => {
+    const f = funde(zeile(0.1, 'Ausgestellt 01.04.2026, gültig bis 31.03.2027'));
+    expect(gueltigBis(f)?.tag).toBe('2027-03-31');
+  });
+
+  it('schlägt ohne passendes Wort nichts vor', () => {
+    expect(gueltigBis(funde(zeile(0.1, 'Ausgestellt am 01.04.2026')))).toBeNull();
+  });
+
+  it('ohne „zukunft“ bleiben spätere Tage weg wie bisher', () => {
+    expect(datenFinden(zeile(0.1, 'Gültig bis 31.03.2027'), HEUTE)).toEqual([]);
   });
 });

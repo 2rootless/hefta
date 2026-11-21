@@ -61,6 +61,28 @@ export async function serviceWorkerBereit(page: Page): Promise<boolean> {
  * Wartet, bis das Überblenden vorbei ist: Es läuft auch mit „Bewegung reduzieren“ (150 ms), und mitten
  * darin messen Kontrast-Prüfungen und Bilder blasse Farben.
  */
+/**
+ * PC79 (Aufräumen 1): ganz ruhig vor einem Bildvergleich. Zweimal auf `document.getAnimations()` warten, mit
+ * zwei Bildern dazwischen: Ein Übergang, der erst nach dem ersten Warten anläuft (Hover, nachgeladenes Bild),
+ * zählt sonst nicht mit. Dazu müssen alle Bilder geladen sein.
+ */
+export async function ganzRuhig(page: Page) {
+  for (let i = 0; i < 2; i++) {
+    await animationenFertig(page);
+    await page.evaluate(
+      () => new Promise((fertig) => requestAnimationFrame(() => requestAnimationFrame(fertig))),
+    );
+  }
+  await page.waitForFunction(
+    () =>
+      document
+        .getAnimations()
+        .every(
+          (a) => a.playState !== 'running' || a.effect?.getComputedTiming().iterations === Infinity,
+        ) && [...document.images].every((b) => b.complete),
+  );
+}
+
 export function animationenFertig(page: Page) {
   return page.evaluate(() =>
     Promise.all(

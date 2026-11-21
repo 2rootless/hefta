@@ -79,7 +79,7 @@ export interface Frist {
   kurz: string;
   /** Am Rand: „Online prüfbar bis 19. Dezember 2026.“ */
   lang: string;
-  /** Endet die Frist, wird der Nachweis dadurch nicht ungültig (Bericht 57, Punkt 4). */
+  /** Nach Ablauf der Frist lässt sich der Nachweis nur nicht mehr online prüfen (Bericht 57, Punkt 4; Satz aus E310). */
   hinweis: string;
   quelle: string;
   vorbei: boolean;
@@ -98,7 +98,7 @@ export function bonitaetFrist(u: AnhangUnterlage, heute: Date): Frist | null {
     bis,
     kurz: `prüfbar bis ${t}.${NB}${MONATE_KURZ[m! - 1]}`,
     lang: `Online prüfbar bis ${datumText(bis)}.`,
-    hinweis: 'Endet die Frist, wird der Nachweis dadurch nicht ungültig.',
+    hinweis: 'Nach Ablauf der Frist lässt sich der Nachweis nur nicht mehr online prüfen.',
     quelle: `Quelle: ${weg.quelle}, Stand ${weg.stand}`,
     vorbei: bis < tagVon(heute),
   };

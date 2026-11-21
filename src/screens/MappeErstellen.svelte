@@ -24,7 +24,7 @@
   } from '../domain/export';
   import { adresseTeile, adresseZeilen } from '../domain/adresse';
   import type { Bewerbung } from '../domain/modell';
-  import { lateinFehlt } from '../domain/namen';
+  import { lateinFehlt, nameImPdf, nameText } from '../domain/namen';
   import {
     dokumenttyp,
     listenText,
@@ -43,6 +43,7 @@
   import Eingeklappt from '../ui/Eingeklappt.svelte';
   import Schalter from '../ui/Schalter.svelte';
   import Sheet from '../ui/Sheet.svelte';
+  import Warnzeichen from '../ui/Warnzeichen.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import WerIstDabeiAuswahl from '../ui/WerIstDabeiAuswahl.svelte';
   import WarumBlatt from '../ui/WarumBlatt.svelte';
@@ -51,6 +52,7 @@
   import { unlesbarMerken } from '../app/unlesbar.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
   import { staendeAus, zeichenFunde } from '../ui/mappeDaten';
+  import { ansichtFuerHeft } from '../domain/buergschaft';
   import { werIstDabeiKurz } from '../domain/mappeWoerter';
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
   import { passend, TITEL } from '../ui/passend';
@@ -98,7 +100,8 @@
   let e = $state<ExportEinstellungen>(standardEinstellungen());
   let geladen = $state(false);
 
-  const ansicht = $derived(daten.ansicht);
+  // DP49 Punkt 5: Ohne Heft kommt nur eine Bürgschaftserklärung ohne bestimmte Wohnung mit.
+  const ansicht = $derived(daten.ansicht ? ansichtFuerHeft(daten.ansicht, null) : null);
   const staende = $derived(ansicht ? staendeAus(ansicht) : []);
   // Abwählen lassen sich nur Bürgen; wer inzwischen im Vertrag steht, ist immer dabei.
   const dabei = $derived(
@@ -293,7 +296,7 @@
       const { mappeGebaut } = await import('../ui/mappeErstellen');
       const neu = await mappeGebaut(
         verbindung,
-        daten.ansicht,
+        ansicht ?? daten.ansicht,
         gespeichert,
         plain,
         undefined,
@@ -411,8 +414,35 @@
     e = ohneUnterlagen(e, staende, [{ personId: d.personId, typ: d.typ }]);
   }
 
+  // DP50 Punkt 9 (P2): Die ganze Mappe im Leser mit Abschnitt, Verzeichnis und Blätterer.
+  let Leser = $state<typeof import('../ui/MappeLeser.svelte').default | null>(null);
+  let leserOffen = $state(false);
+  let leserDatei = $state.raw<File | null>(null);
+  const leserMarken = $derived(
+    Object.fromEntries(
+      dabei.map((s) => [
+        nameText(nameImPdf(s.person)),
+        {
+          farbe: `var(--person-${s.farbe})`,
+          buerge: s.rolle === 'buerge',
+          kurz: s.person.rufname || s.person.vorname,
+        },
+      ]),
+    ),
+  );
   async function ansehen(datei: File | undefined, index = 0) {
     if (!datei || angehalten(() => void ansehen(ergebnis?.dateien[0], index))) return;
+    if (
+      ergebnis &&
+      datei === ergebnis.dateien[0] &&
+      e.ausgabe === 'eine' &&
+      ergebnis.inhalt.length
+    ) {
+      Leser = (await import('../ui/MappeLeser.svelte')).default;
+      leserDatei = datei;
+      leserOffen = true;
+      return;
+    }
     const { pdfOeffnen } = await import('../pdf/pdfjs');
     const modul = await import('../ui/SeitenAnsicht.svelte');
     await pdfZu();
@@ -438,7 +468,9 @@
       clearTimeout(zeitgeber);
       // Schon einmal gebaut: sofort da. Gespeichert wird die Wahl trotzdem.
       const schon = daten.ansicht
-        ? gebauteMappen.holen(bauSchluessel(daten.ansicht, bewerbung, $state.snapshot(e)))
+        ? gebauteMappen.holen(
+            bauSchluessel(ansicht ?? daten.ansicht, bewerbung, $state.snapshot(e)),
+          )
         : undefined;
       if (schon) {
         const nummer = ++lauf;
@@ -527,7 +559,7 @@
       (u) =>
         u.typ.id !== 'anschreiben' &&
         u.typ.etikett !== 'meist_unnoetig' &&
-        (vorhanden(u) || u.typ.etikett === 'ueblich'),
+        (vorhanden(u) || (u.typ.etikett === 'ueblich' && !u.typ.jeWohnung)),
     );
   function istAn(s: PersonStand, u: UnterlagenStand): boolean {
     return (
@@ -675,8 +707,12 @@
         <!-- Alles, was man vor dem Senden wissen sollte, an einer Stelle. Die Größe ist die letzte Zeile. -->
         <section class="karte vorher" aria-label={t('mappe.vorherLabel')}>
           <div class="vorher-kopf">
-            <span class="ic" class:warnung={unlesbar.length > 0} aria-hidden="true"
-              ><Symbol name="info" groesse={20} /></span
+            <!-- DP63c F3: Fehlt eine Datei, steht das Warnzeichen in Bernstein; sonst „info“ in Tinte. -->
+            <span class="ic" aria-hidden="true"
+              >{#if unlesbar.length > 0}<Warnzeichen />{:else}<Symbol
+                  name="info"
+                  groesse={20}
+                />{/if}</span
             >
             <p role="status">
               <b
@@ -882,7 +918,7 @@
         {#each liste as h, i (i)}
           {#if h.art === 'ohneBonitaet'}
             <div class="notiz">
-              <span class="ic" aria-hidden="true"><Symbol name="info" groesse={20} /></span>
+              <span class="ic" aria-hidden="true"><Warnzeichen /></span>
               <div>
                 <p>{t('mappe.ohneBonitaet')}</p>
                 <button type="button" class="textlink" onclick={bonitaetDazu}
@@ -898,7 +934,7 @@
             </div>
           {:else if h.art === 'zusageOffen'}
             <div class="notiz">
-              <span class="ic" aria-hidden="true"><Symbol name="info" groesse={20} /></span>
+              <span class="ic" aria-hidden="true"><Warnzeichen /></span>
               <div>
                 <p>{t('mappe.zusageOffen', { namen: h.namen.join(', ') })}</p>
               </div>
@@ -980,6 +1016,18 @@
   <WarumBlatt bind:offen={warumOffen} typ={warumTyp} zurueck={warumKnopf} />
 {/if}
 
+{#if Leser && leserDatei}
+  <Leser
+    bind:offen={leserOffen}
+    datei={leserDatei}
+    titel={wohnung.strasse
+      ? t('mappeLeser.titel', { wohnung: wohnung.strasse })
+      : t('mappeLeser.mappe')}
+    inhalt={ergebnis?.inhalt ?? []}
+    marken={leserMarken}
+    teilen={() => void teilenKlick()}
+  />
+{/if}
 {#if Ansicht}
   <Ansicht bind:offen={ansichtOffen} bind:index={ansichtIndex} seiten={ansichtSeiten} />
 {/if}
@@ -1243,7 +1291,7 @@
   }
 
   .karte {
-    padding: 14px;
+    padding: 16px;
     border-radius: 20px;
     background: var(--surface);
     box-shadow: 0 8px 18px rgb(25 26 44 / 0.1);
@@ -1439,10 +1487,11 @@
     font-weight: 700;
   }
 
+  /* PC79 (C33): Der Trennpunkt ist ein Zeichen, 4 px Abstand zu beiden Seiten. */
   .zahlen {
     display: inline-flex;
     flex-wrap: wrap;
-    gap: 0 5px;
+    gap: 0 4px;
   }
 
   .still {
@@ -1503,11 +1552,6 @@
     width: 20px;
     height: 21px;
     color: var(--ink);
-  }
-
-  .ic.warnung,
-  .notiz .ic {
-    color: var(--accent-text);
   }
 
   .vorher ul {
@@ -1735,7 +1779,8 @@
   /* DP33 A4: Fokus 2 px Tinte innen. */
   textarea:focus-visible {
     outline: 0;
-    box-shadow: inset 0 0 0 2px var(--ink);
+    /* DP49b, W33: kein Tintenrand beim Fokus; den Fokus zeigt der Cursor. */
+    box-shadow: none;
   }
 
   .knopf {

@@ -560,7 +560,7 @@
   }
 
   .t {
-    padding: 14px 16px 4px;
+    padding: 16px 16px 4px;
   }
 
   .q {

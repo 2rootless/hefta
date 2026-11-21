@@ -20,8 +20,11 @@
   } from '../domain/heftLage';
   import { terminNaehe } from '../domain/terminNaehe';
   import { tagKurz } from '../domain/heftKarte';
+  import { adresseZeilen } from '../domain/adresse';
+  import { zusageNamen, zusageTag, zusageWofuer } from '../domain/zusage';
   import { t, type TextSchluessel } from '../i18n';
   import { anrede } from '../i18n/anrede.svelte';
+  import { stimmung } from '../i18n/stimmung';
   import { abschliessen, abschnitt, hoeheGleitet, lauf, ruhig, wechseln } from './bewegung';
 
   let {
@@ -36,6 +39,8 @@
     kalenderMeldung = '',
     aendern,
     rueckmeldung,
+    namen = [],
+    andere = 0,
   }: {
     heft: Heft;
     jetzt: Date;
@@ -51,6 +56,10 @@
     kalenderMeldung?: string;
     aendern: (neu: HeftEreignisse) => Promise<void>;
     rueckmeldung?: import('svelte').Snippet;
+    /** DP109: Rufnamen im Mietvertrag, ohne Bürgen und Kinder; leer ohne Haushalt. */
+    namen?: string[];
+    /** DP50 Z2: andere Hefte, die noch im Spiel sind („Andere Hefte ablegen“). */
+    andere?: number;
   } = $props();
 
   const NB = ' ';
@@ -70,6 +79,10 @@
   interface Inhalt {
     titel: string;
     satz?: string;
+    /** Zweiter Satz, grau (DP50 Z2). */
+    satzLeise?: string;
+    /** DP109: Der Satz darf trennen (lange Namen von Hefts oder Personen). */
+    trennen?: boolean;
     karte?: boolean;
     frage?: string;
     antworten: Antwort[];
@@ -111,7 +124,8 @@
       case 'gemerktOhne':
         return {
           titel: t('stand.gemerkt.titel'),
-          satz: t('stand.gemerkt.satz', { datum: tagKurz(heft.createdAt) }),
+          // W37: Datum fest, der Satz danach aus P11.
+          satz: `${t('stand.gemerkt.satzFest', { datum: tagKurz(heft.createdAt) })} ${stimmung('P11', { teil: 'satz' })}`,
           frage: t('stand.gemerkt.frage'),
           antworten: [
             x.art === 'gemerkt'
@@ -166,7 +180,7 @@
             ? t('stand.beworben.titelHeute')
             : t('stand.beworben.titel', { datum: tagKurz(e.beworben!.am) }),
           satz: x.heute
-            ? t('stand.beworben.satzHeute')
+            ? stimmung('P6', { teil: 'satz' })
             : t('stand.beworben.satzTage', { tage: x.tage ?? 0 }),
           frage: t('stand.beworben.frage'),
           antworten: [einladung(), absage()],
@@ -175,7 +189,7 @@
       case 'keineAntwort':
         return {
           titel: t('stand.keine.titel'),
-          satz: t('stand.keine.satz', { datum: tagKurz(e.beworben!.am) }),
+          satz: `${t('stand.keine.satzFest', { datum: tagKurz(e.beworben!.am) })} ${stimmung('P7', { teil: 'satz' })}`,
           frage: t('stand.keine.frage'),
           antworten: [
             {
@@ -191,7 +205,7 @@
       case 'nachgefragt':
         return {
           titel: t('stand.nachgefragt.titel', { datum: tagKurz(e.nachgefasstAm!) }),
-          satz: t('stand.nachgefragt.satz', { datum: tagKurz(e.beworben!.am) }),
+          satz: `${t('stand.nachgefragt.satzFest', { datum: tagKurz(e.beworben!.am) })} ${stimmung('P8', { teil: 'satz' })}`,
           frage: t('stand.beworben.frage'),
           antworten: [einladung(), absage(), ohneAntwort()],
         };
@@ -227,26 +241,58 @@
           ],
           zurueck: { text: t('stand.termin.entfernen'), tun: terminWeg },
         };
-      case 'zusage':
+      case 'zusage': {
+        // DP109 (W37 mit Z2): Anfang aus P9 mit den Rufnamen, fest der Tag nur aus „Zusage am“ (W10) und die
+        // Wohnung, leise darunter „Das Heft bleibt hier …“. „Jetzt dran“ nur, wenn etwas offen ist (DP50 Z2).
+        const wer = zusageNamen(namen, (anzahl) => t('stand.zusage.ihrZahl', { anzahl }));
+        const p9 = stimmung('P9', { teil: 'satz' });
+        // Ohne Haushalt keine Namen: dann der Anfang ohne Anrede („Glückwunsch.“).
+        const anfang = wer ? p9.replace('{namen}', wer) : p9.replace(', {namen}', '');
+        const wofuer = zusageWofuer(
+          (adresseZeilen(heft.adresse)[0] ?? '').split(',')[0] ?? '',
+          heft.angaben?.merkmal ?? '',
+        );
+        const fuer = !wofuer
+          ? ''
+          : wofuer.art === 'strasse'
+            ? t('stand.zusage.fuerStrasse', { strasse: wofuer.text })
+            : t('stand.zusage.fuerName', { name: wofuer.text });
+        const tag = zusageTag(e.ergebnis?.am, jetzt);
+        const fest =
+          tag.art === 'heute'
+            ? t('stand.zusage.festHeute', { fuer })
+            : tag.art === 'gestern'
+              ? t('stand.zusage.festGestern', { fuer })
+              : tag.art === 'am'
+                ? t('stand.zusage.festAm', { tag: tag.text, fuer })
+                : t('stand.zusage.ohneDatum');
+        const offen: Antwort[] = [];
+        if (mietrueckZiel)
+          offen.push({
+            text: t('stand.zusage.mietrueckJetzt'),
+            unter: t('stand.zusage.mietrueckJetztUnter'),
+            leise: true,
+            aktion: { href: mietrueckZiel },
+          });
+        if (andere > 0)
+          offen.push({
+            text: t('stand.zusage.andereAblegen'),
+            unter: t('stand.zusage.andereImSpiel', { anzahl: andere }),
+            leise: true,
+            aktion: { href: '#/wohnungen' },
+          });
         return {
           titel: t('stand.zusage.titel'),
-          satz: t('stand.zusage.satz'),
-          ...(mietrueckZiel
-            ? {
-                frage: t('stand.zusage.frage'),
-                antworten: [
-                  {
-                    text: t('stand.zusage.mietrueck'),
-                    unter: t('stand.zusage.mietrueckUnter'),
-                    leise: true,
-                    aktion: { href: mietrueckZiel },
-                  },
-                ],
-              }
+          satz: `${anfang} ${fest}`,
+          trennen: true,
+          satzLeise: t('stand.zusage.bleibt'),
+          ...(offen.length
+            ? { frage: t('stand.zusage.jetztDran'), antworten: offen }
             : { antworten: [] }),
           zurueck: { text: t('stand.ergebnis.zurueck'), tun: dochNochOffen },
           rueck: true,
         };
+      }
       case 'absage':
       case 'nichtMehr':
       case 'ohneAntwort': {
@@ -421,7 +467,8 @@
   {@const i = inhalt(x, e)}
   <div class="lage">
     <h2>{i.titel}</h2>
-    {#if i.satz}<p class="satz">{i.satz}</p>{/if}
+    {#if i.satz}<p class="satz" class:trennen={i.trennen}>{i.satz}</p>{/if}
+    {#if i.satzLeise}<p class="satz leise">{i.satzLeise}</p>{/if}
     {#if i.karte && termin && terminTag}
       <!-- Termin-Karte im Stand: weiche Fläche im Ton des Termins, ohne Rahmen (DP21). -->
       <div class="karte">
@@ -475,6 +522,7 @@
 
 <section
   class="stand"
+  class:zusage={l.art === 'zusage'}
   aria-label={t('stand.ansage', { ort: ortWort(l.ort), titel: inhalt(l).titel })}
 >
   <div class="weg" aria-hidden="true">
@@ -624,6 +672,60 @@
     position: relative;
   }
 
+  /* DP50 Z2: Die Zusage nimmt den Ton von „passt“ an; Linie und Punkte ganz in diesem Ton. */
+  .stand {
+    transition: background-color var(--bw-mittel) var(--bw-weich);
+  }
+
+  .stand.zusage {
+    background: var(--passt);
+  }
+
+  .stand.zusage .weg .spur {
+    background: color-mix(in srgb, var(--passt-text) 22%, transparent);
+  }
+
+  .stand.zusage .weg .voll,
+  .stand.zusage .ort.war,
+  .stand.zusage .marke {
+    border-color: var(--passt-text);
+    background: var(--passt-text);
+  }
+
+  .stand.zusage .ort {
+    background: var(--passt);
+  }
+
+  .stand.zusage .marke {
+    box-shadow: 0 0 0 4px var(--passt);
+  }
+
+  .stand.zusage .lage h2 {
+    color: var(--passt-text);
+    font-size: min(calc(34 * var(--px)), 14cqi);
+    font-weight: 700;
+    font-stretch: 100%;
+  }
+
+  .satz.leise {
+    color: var(--ink-muted);
+  }
+
+  /* „Jetzt dran“: Zeilen in Tinte, 15/650, mit feiner Linie dazwischen (DP50-3). */
+  .stand.zusage .antw.leise {
+    min-height: var(--tap-target);
+    padding: 10px 4px;
+    color: var(--ink);
+    font-size: calc(15 * var(--px));
+    font-weight: 650;
+  }
+
+  .stand.zusage .antw.leise + .antw.leise {
+    margin-top: 0;
+    border-top: 1px solid color-mix(in srgb, var(--passt-text) 18%, transparent);
+    border-radius: 0;
+  }
+
   .lage {
     padding-top: 12px;
   }
@@ -645,6 +747,12 @@
     font-weight: 780;
     font-stretch: 110%;
     line-height: 1.12;
+  }
+
+  /* DP109: Auch ein langer Name ohne Leerzeichen bricht um. */
+  .satz.trennen {
+    hyphens: auto;
+    overflow-wrap: break-word;
   }
 
   .satz {
@@ -765,7 +873,7 @@
     align-items: flex-start;
     gap: 14px;
     margin-top: 12px;
-    padding: 14px;
+    padding: 16px;
     border-radius: 16px;
     background: var(--termin-soft);
   }
@@ -844,7 +952,7 @@
 
   .rueck {
     margin-top: 16px;
-    padding: 14px;
+    padding: 16px;
     border-radius: 16px;
     background: var(--ground);
   }

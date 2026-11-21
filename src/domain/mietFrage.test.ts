@@ -40,7 +40,9 @@ describe('Texte zu Mietrückständen', () => {
   it('Wortlaut: kein Satz an der Frage beginnt mit „Erst beantworten“, kein „Pflicht“ als Kennzeichen', () => {
     const texte = alleTexte(de);
     expect(texte.filter(([, s]) => /^Erst beantworten/.test(s)).map(([p]) => p)).toEqual([]);
-    expect(de.selbstauskunft.teil.einkommenOffen).toBe('Wird fast immer gefragt');
+    expect(de.selbstauskunft.teil.einkommenOffen).toBe(
+      'Gehört zu fast jeder Bewerbung, netto im Monat',
+    );
     expect(de.selbstauskunft.zusageHinweisDu).toMatch(/^Nach der Orientierungshilfe/);
     expect(de.selbstauskunft.zusageHinweisDu).toMatch(
       /Freiwillig kannst du es schon jetzt beantworten\.$/,

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { erinnert } from '../app/erinnerungen.svelte';
   // Datum eintragen, ändern, entfernen (design/nachtraeglich-ordnen.md, OR9, OR9b). Das Datum ist
   // freiwillig: Es lässt sich jederzeit wieder entfernen, sofort und mit „Rückgängig“.
   import { daten, db, neuLaden } from '../app/daten.svelte';
@@ -6,7 +7,13 @@
   import { einmal } from '../ui/einmal';
   import { rueckgaengigAnbieten } from '../app/rueckgaengig.svelte';
   import { aktuelleVersionen, tagAus } from '../domain/fristen';
-  import { eintragenText, listenText, ohneTrennstellen, personStand } from '../domain/regelkatalog';
+  import {
+    eintragenText,
+    listenText,
+    ohneTrennstellen,
+    personStand,
+    standFinden,
+  } from '../domain/regelkatalog';
   import { t } from '../i18n';
   import { istGescannt, pdfOeffnen, pdfSchliessen, type PdfDokument } from '../pdf/pdfjs';
   import { dateiLesen, versionDatumSetzen } from '../storage/speicher';
@@ -36,9 +43,8 @@
       : null;
   });
   const u = $derived(
-    stand?.unterlagen.find((x) => x.typ.id === typId) ??
-      stand?.nichtMehrNoetig.find((x) => x.typ.id === typId) ??
-      null,
+    // Auch ein Zusatz wie der Arbeitsvertrag bei „Neu im Job“ (DP45 G3).
+    standFinden(stand, typId),
   );
   const version = $derived.by(() => {
     if (!u) return null;
@@ -63,7 +69,9 @@
     }
   });
 
-  let seiten = $state.raw<{ dokument: PdfDokument; nummer: number; schluessel: string }[]>([]);
+  let seiten = $state.raw<
+    { dokument: PdfDokument; nummer: number; schluessel: string; drin: boolean }[]
+  >([]);
   let gescannt = $state(false);
   let auswahlOffen = $state(false);
   $effect(() => {
@@ -79,10 +87,14 @@
         dokument = await pdfOeffnen(new Uint8Array(await datei.arrayBuffer()));
         if (vorbei) return void pdfSchliessen(dokument);
         const dok = dokument;
-        const nummern = auswahl?.length
-          ? auswahl.map((s) => s + 1)
-          : Array.from({ length: dok.numPages }, (_, n) => n + 1);
-        seiten = nummern.map((nummer) => ({ dokument: dok, nummer, schluessel: String(nummer) }));
+        // DP49 Punkt 11: alle Seiten; die nicht in die Mappe gehen, zählen nur, wenn sonst keins passt.
+        const nummern = Array.from({ length: dok.numPages }, (_, n) => n + 1);
+        seiten = nummern.map((nummer) => ({
+          dokument: dok,
+          nummer,
+          schluessel: String(nummer),
+          drin: !auswahl?.length || auswahl.includes(nummer - 1),
+        }));
         gescannt = await istGescannt(dok);
       } catch {
         // Datei nicht lesbar: Das Feld geht trotzdem.
@@ -156,12 +168,19 @@
           >
         {/if}
       </div>
-      <p class="klein">{t('unterlage.datumSatz', form)}</p>
+      <p class="klein">
+        {t(erinnert() ? 'unterlage.datumSatzErinnert' : 'unterlage.datumSatz', form)}
+      </p>
       {#if version.ausstellungsdatum}
         <button type="button" class="textlink entfernen" onclick={entfernen}
           >{t('unterlage.datumEntfernen')}</button
         >
-        <p class="klein">{t('unterlage.datumEntfernenSatz', form)}</p>
+        <p class="klein">
+          {t(
+            erinnert() ? 'unterlage.datumEntfernenSatz' : 'unterlage.datumEntfernenSatzZeigt',
+            form,
+          )}
+        </p>
       {/if}
     </div>
     <DatumAuswahl
@@ -209,10 +228,11 @@
     margin-top: 20px;
   }
 
+  /* PC79 (C33): Chips mit 8 px Abstand. */
   .wege {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
     margin-top: 8px;
   }
 

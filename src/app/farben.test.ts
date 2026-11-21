@@ -3,9 +3,10 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PERSONENFARBEN } from '../domain/personenfarben';
 
-// Farbe nach B28a, Weg B (Nachricht 13f): Akzent Signalrot. Geprüft werden die Kontraste aus Abschnitt 1 des
-// Berichts, der Abstand des Akzents zu den zwölf Personenfarben nach dem Maß aus B25 n1 und die Regel, dass Text
-// in Akzentfarbe immer accent-text nimmt.
+// Farbe nach DP63b (A1 Siegellack warm) und DP63c (Akzent ohne Flächen), 2.1 (PC176). Geprüft werden die Werte
+// der Tokens, die Kontraste (AK3), der Abstand von Akzent und Fehler zu den Personenfarben (Maß B25 n1, AK5), dass
+// der Akzent nur an Zurück, am gewählten Reiter und am Zähler über der Grenze steht (AK9), dass Fehler in Bernstein
+// stehen (AK4) und dass das App-Symbol A1 ist (AK1, AK2). Davor B28a, Weg B.
 
 const css = readFileSync('design/tokens.css', 'utf8');
 function token(thema: 'light' | 'dark', name: string): string {
@@ -88,7 +89,7 @@ function deltaE00Lab([L1, a1, b1]: number[], [L2, a2, b2]: number[]): number {
 /** Maß aus B25 n1: zu nah, wenn ΔE00 unter 20 und der Unterschied in der Helligkeit unter 30 liegt. */
 const zuNah = (a: string, b: string) => deltaE00(a, b) < 20 && Math.abs(lab(a)[0] - lab(b)[0]) < 30;
 
-describe('Farbe nach B28a, Weg B', () => {
+describe('Farbe nach DP63b und DP63c (A1 Siegellack warm)', () => {
   it('ΔE00 stimmt mit den Referenzpaaren von Sharma, Wu und Dalal (2005) überein', () => {
     for (const [a, b, soll] of [
       [[50, 2.6772, -79.7751], [50, 0, -82.7485], 2.0425],
@@ -102,52 +103,120 @@ describe('Farbe nach B28a, Weg B', () => {
       expect(deltaE00Lab([...a], [...b])).toBeCloseTo(soll, 4);
   });
 
-  it('Tokens tragen die Werte aus dem Bericht', () => {
-    expect(['accent', 'accent-text', 'accent-soft'].map((n) => token('light', n))).toEqual([
-      '#d9402b',
-      '#b8331c',
-      '#f2e8e6',
-    ]);
-    expect(['accent', 'accent-text', 'accent-soft'].map((n) => token('dark', n))).toEqual([
-      '#f2552e',
-      '#f2552e',
-      '#33170f',
-    ]);
+  it('Tokens tragen die Werte aus DP63b und DP63c; --accent und --accent-soft gibt es nicht mehr', () => {
+    const werte = (thema: 'light' | 'dark') =>
+      ['accent-text', 'fehler', 'fehler-soft', 'app-zeichen'].map((n) => token(thema, n));
+    expect(werte('light')).toEqual(['#a3271e', '#a85a00', '#fdf5e8', '#b3261e']);
+    expect(werte('dark')).toEqual(['#f26b5b', '#f5a524', '#3a2a10', '#b3261e']);
+    expect(css).not.toMatch(/--accent:|--accent-soft:/);
   });
 
-  it('Kontraste aus Abschnitt 1 halten', () => {
-    const hell = (n: string) => token('light', n);
-    const dunkel = (n: string) => token('dark', n);
-    // Text in Akzentfarbe, hell
-    expect(kontrast(hell('accent-text'), hell('ground'))).toBeGreaterThanOrEqual(4.5);
-    expect(kontrast(hell('accent-text'), hell('surface'))).toBeGreaterThanOrEqual(4.5);
-    expect(kontrast(hell('accent-text'), hell('accent-soft'))).toBeGreaterThanOrEqual(4.5);
-    // Weiße Schrift auf einem Knopf in accent-text
-    expect(kontrast('#ffffff', hell('accent-text'))).toBeGreaterThanOrEqual(4.5);
-    // Der Akzent selbst: für Linien und Flächen mindestens 3 : 1, für Text zu schwach
-    expect(kontrast(hell('accent'), hell('ground'))).toBeGreaterThanOrEqual(3);
-    expect(kontrast(hell('accent'), hell('ground'))).toBeLessThan(4.5);
-    // Dunkel
-    expect(kontrast(dunkel('accent-text'), dunkel('ground'))).toBeGreaterThanOrEqual(4.5);
-    expect(kontrast(dunkel('accent-text'), dunkel('surface'))).toBeGreaterThanOrEqual(4.5);
-    expect(kontrast(dunkel('accent-text'), dunkel('accent-soft'))).toBeGreaterThanOrEqual(4.5);
-    expect(kontrast(dunkel('ground'), dunkel('accent'))).toBeGreaterThanOrEqual(4.5);
-  });
-
-  it('Der Akzent steht weit genug von jeder Personenfarbe, in App und Druck (Maß B25 n1)', () => {
-    const nah: string[] = [];
-    for (const [thema, name] of [
-      ['light', 'accent'],
-      ['light', 'accent-text'],
-      ['dark', 'accent'],
-    ] as const) {
-      const wert = token(thema, name);
-      for (const p of PERSONENFARBEN)
-        for (const satz of ['app', 'druckton'] as const)
-          if (zuNah(wert, p[satz])) nah.push(`${name} ${thema} gegen ${p.name} ${satz}`);
+  it('AK3: Kontraste halten, hell und dunkel', () => {
+    for (const thema of ['light', 'dark'] as const) {
+      const k = (n: string) => token(thema, n);
+      // Akzent nur als Schrift (Zurück, Reiter, Zähler): mindestens 4,5 : 1 auf Grund und Karte.
+      expect(kontrast(k('accent-text'), k('ground')), thema).toBeGreaterThanOrEqual(4.5);
+      expect(kontrast(k('accent-text'), k('surface')), thema).toBeGreaterThanOrEqual(4.5);
+      // Fehler in Bernstein: Schrift auf Grund, Karte und Fehler-Fläche; das „!“ in --surface auf Bernstein.
+      expect(kontrast(k('fehler'), k('ground')), thema).toBeGreaterThanOrEqual(4.5);
+      expect(kontrast(k('fehler'), k('surface')), thema).toBeGreaterThanOrEqual(4.5);
+      expect(kontrast(k('fehler'), k('fehler-soft')), thema).toBeGreaterThanOrEqual(4.5);
+      expect(kontrast(k('surface'), k('fehler')), thema).toBeGreaterThanOrEqual(4.5);
+      // DP112 (E334): „knapp“ in Oliv, jede Schrift mindestens 4,5 : 1 auf jeder Fläche, auf der sie steht.
+      // --weich ist die Karte (--surface); --weich-karte steht in global.css: hell #f1ebe1, dunkel wie --ground.
+      const weichKarte = thema === 'light' ? '#f1ebe1' : k('ground');
+      for (const [name, grund] of [
+        ['knapp', k('knapp')],
+        ['surface', k('surface')],
+        ['ground', k('ground')],
+        ['weich-karte', weichKarte],
+      ] as const)
+        expect(
+          kontrast(k('knapp-text'), grund),
+          `${thema} knapp-text auf ${name}`,
+        ).toBeGreaterThanOrEqual(4.5);
     }
-    // Seit B28a-n1 (#d9402b, Planung 13i) ohne Ausnahme; vorher lag der helle Akzent bei 19,97 gegen Apricot.
-    expect(nah).toEqual([]);
+    // DP112: die Werte von Oliv, und weiter weg vom Bernstein als das Ocker von 2.0.
+    expect([token('light', 'knapp-text'), token('dark', 'knapp-text')]).toEqual([
+      '#6f640c',
+      '#c7bf48',
+    ]);
+    expect([token('light', 'knapp'), token('dark', 'knapp')]).toEqual(['#f4ebcc', '#3b381f']);
+    for (const thema of ['light', 'dark'] as const)
+      expect(deltaE00(token(thema, 'knapp-text'), token(thema, 'fehler')), thema).toBeGreaterThan(
+        19,
+      );
+    // Gegenprobe: das Ocker von 2.0 lag hell bei ΔE00 12,1 zum Bernstein.
+    expect(deltaE00('#7a5200', token('light', 'fehler'))).toBeLessThan(19);
+  });
+
+  it('AK5 (DP112, E334): Bernstein nur als Warnzeichen mit „!“ und Satz, Personenfarben nie mit „!“; ΔE00 notiert', () => {
+    // DP112, Abschnitt 4: Die Grenze aus DP63b (CIE76) hielt als Messung nicht; in ΔE00 liegen im Dunkeln sechs Paare
+    // unter 22. Was Fehler und Personen trennt, ist die Form: Bernstein nur im Warnzeichen (Kreis 16 px mit „!“, Satz
+    // daneben), Personenfarben nur mit Buchstaben oder Namen. Der Abstand wird notiert, ohne Grenze.
+    const regeln = (dateien: [string, string][]) => {
+      const aus: string[] = [];
+      for (const [pfad, text] of dateien) {
+        // 1. Eine Fläche in Bernstein gibt es nur als Warnzeichen.
+        for (const m of text.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
+          const kopf = m[1]!.trim().split('\n').pop()!.trim();
+          if (
+            /(background(-color)?|fill)\s*:\s*var\(--fehler\)/.test(m[2]!) &&
+            !/\.warnzeichen\b/.test(kopf)
+          )
+            aus.push(`${pfad}: Fläche in Bernstein ohne Warnzeichen (${kopf})`);
+        }
+        if (/fill="var\(--fehler\)"/.test(text)) aus.push(`${pfad}: Fläche in Bernstein im Bild`);
+        const markup = text.split('<style')[0]!;
+        // 2. Jedes Warnzeichen trägt „!“.
+        for (const m of markup.matchAll(/<span class="warnzeichen"[^>]*>([^<]*)<\/span>/g))
+          if (m[1]!.trim() !== '!') aus.push(`${pfad}: Warnzeichen ohne „!“`);
+        // 3. Ein Satz in Bernstein hat sein Warnzeichen. Bernstein heißt: Die Klasse setzt in dieser Datei
+        //    `color: var(--fehler)`; geprüft wird der ganze Klassenname (nicht „datei-fehler“).
+        const bernstein = new Set<string>();
+        for (const m of text.matchAll(/([^{}]*)\{([^{}]*)\}/g))
+          if (/(^|[\s;])color\s*:\s*var\(--fehler\)/.test(m[2]!))
+            for (const k of m[1]!.matchAll(/\.([\w-]+)/g)) bernstein.add(k[1]!);
+        for (const m of markup.matchAll(/<(p|div|span)\s+class="([^"]*)"[^>]*>([\s\S]*?)<\/\1>/g))
+          if (
+            m[2]!.split(/\s+/).some((k) => bernstein.has(k) && k !== 'warnzeichen') &&
+            !/warnzeichen|<Warnzeichen/.test(m[3]!)
+          )
+            aus.push(`${pfad}: Satz in Bernstein ohne Warnzeichen`);
+        // 4. Ein Personenzeichen trägt nie „!“.
+        for (const zeile of markup.split('\n'))
+          if (/person-ton|tonStil\(/.test(zeile) && />\s*!\s*</.test(zeile))
+            aus.push(`${pfad}: Personenzeichen mit „!“`);
+      }
+      return aus;
+    };
+    expect(regeln(appDateien())).toEqual([]);
+    // Das Warnzeichen hat keine Farbe von außen: kein Prop, nur Bernstein.
+    expect(readFileSync('src/ui/Warnzeichen.svelte', 'utf8')).not.toMatch(/\$props/);
+    // Notiert, ohne Grenze (DP112): ΔE00 von Fehler und Akzent zu jeder Personenfarbe.
+    const notiz = (['light', 'dark'] as const).flatMap((thema) =>
+      ['fehler', 'accent-text'].flatMap((name) =>
+        PERSONENFARBEN.map((p) => deltaE00(token(thema, name), p.app)),
+      ),
+    );
+    expect(notiz.every((d) => Number.isFinite(d) && d > 0)).toBe(true);
+    // Gegenproben: eine Fläche in Bernstein ohne „!“, ein Personenzeichen mit „!“, ein Fehlersatz ohne Zeichen (DP112 B1).
+    expect(regeln([['probe.svelte', '.kasten {\n  background: var(--fehler);\n}']])).toHaveLength(
+      1,
+    );
+    expect(
+      regeln([['probe.svelte', '<i class="zeichen-p person-ton" style={tonStil(1)}>!</i>']]),
+    ).toHaveLength(1);
+    // So stand es bis DP112 B1 auf der Bürgschaftsseite: Satz in Bernstein ohne Zeichen.
+    const b1 = [
+      '<p class="fehler-bau" role="alert">{t(\'x\')}</p>',
+      '<style>',
+      '  .fehler-bau {',
+      '    color: var(--fehler);',
+      '  }',
+      '</style>',
+    ].join('\n');
+    expect(regeln([['probe.svelte', b1]])).toHaveLength(1);
   });
 
   it('„nah“ steht weit genug von jeder Personenfarbe und jedem anderen Token (B28a-n1/n2, P003)', () => {
@@ -204,11 +273,80 @@ describe('Farbe nach B28a, Weg B', () => {
     expect(treffer).toEqual([]);
   });
 
+  /** Akzent außerhalb der drei erlaubten Stellen (DP63c, Abschnitt 4), je Datei. Vermieterseite und Websites
+   * haben eigene Tokens und eigene Zweige. */
+  function akzentFalsch(dateien: [string, string][]): string[] {
+    const aus: string[] = [];
+    for (const [pfad, text] of dateien) {
+      if (/var\(--accent(-soft)?[),]/.test(text)) aus.push(`${pfad}: --accent`);
+      for (const m of text.matchAll(/([^{}]*)\{([^{}]*var\(--accent-text\)[^{}]*)\}/g)) {
+        const kopf = m[1]!.trim().split('\n').pop()!.trim();
+        const erlaubt =
+          /--on-zurueck\s*:/.test(m[2]!) || /\.zurueck\b|aria-current|\.zu-lang\b/.test(kopf);
+        if (!erlaubt) aus.push(`${pfad}: ${kopf}`);
+      }
+    }
+    return aus;
+  }
+  const appDateien = (): [string, string][] => {
+    const aus: [string, string][] = [];
+    const durch = (ordner: string) => {
+      for (const e of readdirSync(ordner, { withFileTypes: true })) {
+        const pfad = join(ordner, e.name);
+        if (e.isDirectory()) {
+          if (!pfad.includes('vermieter')) durch(pfad);
+        } else if (/\.(svelte|css|svg)$/.test(e.name)) aus.push([pfad, readFileSync(pfad, 'utf8')]);
+      }
+    };
+    durch('src');
+    return aus;
+  };
+
+  it('AK9: Akzent nur an Zurück, am gewählten Reiter und am Zähler über der Grenze; Gegenproben', () => {
+    expect(akzentFalsch(appDateien())).toEqual([]);
+    // Gegenproben: eine Fläche in --accent-soft, eine Linie in --accent, Akzent-Schrift an einer Überschrift.
+    expect(
+      akzentFalsch([['probe.svelte', '.kopf {\n  background: var(--accent-soft);\n}']]),
+    ).toHaveLength(1);
+    expect(akzentFalsch([['probe.svg', '<path stroke="var(--accent)"/>']])).toHaveLength(1);
+    expect(akzentFalsch([['probe.svelte', 'h2 {\n  color: var(--accent-text);\n}']])).toEqual([
+      'probe.svelte: h2',
+    ]);
+  });
+
+  it('AK4: Warnzeichen und Fehler stehen in Bernstein; Gegenprobe', () => {
+    const falsch = (dateien: [string, string][]) => {
+      const aus: string[] = [];
+      for (const [pfad, text] of dateien)
+        for (const m of text.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
+          const kopf = m[1]!.trim().split('\n').pop()!.trim();
+          if (!/\.warnzeichen\b|\.fehler\b|\.fehler-bau\b|\.unlesbar\b/.test(kopf)) continue;
+          const farben = [...m[2]!.matchAll(/var\(--([a-z-]+)\)/g)].map((x) => x[1]!);
+          if (farben.some((f) => f.startsWith('accent'))) aus.push(`${pfad}: ${kopf}`);
+        }
+      return aus;
+    };
+    const dateien = appDateien();
+    expect(falsch(dateien)).toEqual([]);
+    // Jedes Warnzeichen hat Bernstein als Grund.
+    const zeichen = dateien.filter(([, t]) => /\.warnzeichen\s*\{/.test(t));
+    expect(zeichen.length).toBeGreaterThan(4);
+    for (const [pfad, t] of zeichen)
+      expect(/\.warnzeichen\s*\{[^}]*background:\s*var\(--fehler\)/.test(t), pfad).toBe(true);
+    // Gegenprobe: ein Warnzeichen im Akzent wird rot.
+    expect(
+      falsch([['probe.svelte', '.warnzeichen {\n  background: var(--accent-text);\n}']]),
+    ).toHaveLength(1);
+  });
+
   it('Keiner der alten Werte steht mehr im Quelltext, auch keine Koralle (PC3)', () => {
     // Koralle (#ff8466) war Akzent dunkel, Personenfarbe aus B13 und das alte App-Symbol. Seit D002 nirgends mehr.
+    // Seit DP63b auch nicht mehr Lederbraun (#661f14, #3f130b) und die Akzente aus B28a. Das stillgelegte
+    // scripts/app-symbole.mjs (B11) bleibt außen vor.
     // Nicht durchsucht: Archiv und Pakete des Designs unter design/ (die README des Logo-Kits nennt die Farbe
     // nur unter „Überholt“) und diese Datei.
-    const alt = /#(?:e2603f|a8401f|ffb39d|ffe5db|4a2a20|a85c50|ff8466)(?![0-9a-f])/i;
+    const alt =
+      /#(?:e2603f|a8401f|ffb39d|ffe5db|4a2a20|a85c50|ff8466|661f14|3f130b|d9402b|b8331c|f2552e|f2e8e6|33170f)(?![0-9a-f])/i;
     const treffer: string[] = [];
     const durch = (pfad: string) => {
       if (statSync(pfad).isDirectory()) {
@@ -216,7 +354,7 @@ describe('Farbe nach B28a, Weg B', () => {
         return;
       }
       if (!/\.(svelte|css|ts|mjs|html|json|svg|xml|webmanifest)$/.test(pfad)) return;
-      if (pfad.endsWith('farben.test.ts')) return;
+      if (pfad.endsWith('farben.test.ts') || pfad.endsWith('app-symbole.mjs')) return;
       if (alt.test(readFileSync(pfad, 'utf8'))) treffer.push(pfad);
     };
     for (const pfad of [
@@ -234,20 +372,86 @@ describe('Farbe nach B28a, Weg B', () => {
     expect(treffer).toEqual([]);
   });
 
-  it('App-Zeichen ist der Deckel des Icons, die Klammer Papier (D002, PC3)', () => {
-    // Die Farben des Icons (Deckel, Grund, Seiten) prüft kein Maß gegen die Personenfarben: Das Icon steht nie
-    // neben Personenzeichen, und die Kachel in der App zeigt nur die Klammer (D002 F1, Planung: ja).
-    for (const thema of ['light', 'dark'] as const) {
-      expect(token(thema, 'app-zeichen')).toBe('#661f14');
-      expect(token(thema, 'app-zeichen-haus')).toBe('#fbf8f2');
-    }
-    // PC85 (W34): Das Favicon ist nicht mehr das App-Symbol, sondern F1 aus DP63a, Tinte ohne Deckelfarbe.
-    expect(readFileSync('public/icons/favicon.svg', 'utf8')).not.toMatch(/#661f14/i);
+  it('AK1, AK2: App-Symbol A1b nach DP111 (Farben von A1, DP63b) in iOS, Web und Android; Favicon bleibt F1 (W34)', () => {
+    for (const thema of ['light', 'dark'] as const)
+      expect(token(thema, 'app-zeichen')).toBe('#b3261e');
+    type Fuellung = { appearance?: string; value: { solid: string } };
+    const icon = JSON.parse(readFileSync('ios/App/App/AppIcon.icon/icon.json', 'utf8')) as {
+      'fill-specializations': Fuellung[];
+      groups: {
+        name: string;
+        shadow: { kind: string };
+        layers: {
+          'image-name': string;
+          'fill-specializations': Fuellung[];
+          'opacity-specializations'?: { appearance?: string; value: number }[];
+        }[];
+      }[];
+    };
+    const hex = (solid: string) =>
+      '#' +
+      solid
+        .split(':')[1]!
+        .split(',')
+        .slice(0, 3)
+        .map((x) =>
+          Math.round(Number(x) * 255)
+            .toString(16)
+            .padStart(2, '0'),
+        )
+        .join('');
+    // DP111, TEST.md: Farben je Darstellung (Standard, Dunkel), Deckkraft der Seiten wie 2.0, Schatten des Deckels
+    // „Chromatic“ (in icon.json „layer-color“).
+    const je = (fs: Fuellung[]) =>
+      fs.map((f) => `${f.appearance ?? 'standard'} ${hex(f.value.solid)}`);
+    expect(je(icon['fill-specializations'])).toEqual(['standard #8a1d17', 'dark #4d110c']);
+    const ebene = Object.fromEntries(
+      icon.groups
+        .flatMap((g) => g.layers)
+        .map((l) => [l['image-name'], je(l['fill-specializations']).join(', ')]),
+    );
+    const hell = 'standard #fdf8f1, dark #f3ede4';
+    expect(ebene).toEqual({
+      '1-klammer.svg': hell,
+      '2-deckel.svg': 'standard #b3261e, dark #8a1d17',
+      '3-seite-1.svg': hell,
+      '3-seite-2.svg': hell,
+      '3-seite-3.svg': hell,
+    });
+    const deckkraft = icon.groups
+      .flatMap((g) => g.layers)
+      .filter((l) => l['opacity-specializations'])
+      .map((l) => l['opacity-specializations']!.map((o) => o.value));
+    expect(deckkraft).toEqual([
+      [0.9, 0.42],
+      [0.81, 0.36],
+      [0.72, 0.3],
+    ]);
+    expect(icon.groups.find((g) => g.name === 'Deckel')!.shadow.kind).toBe('layer-color');
+    // Die Ebenen selbst unverändert aus DP111
+    for (const d of ['1-klammer', '2-deckel', '3-seite-1', '3-seite-2', '3-seite-3'])
+      expect(readFileSync(`ios/App/App/AppIcon.icon/Assets/${d}.svg`, 'utf8'), d).toBe(
+        readFileSync(`design/dp111/icon-composer/${d}.svg`, 'utf8'),
+      );
+    // Die Dateien des Designs, unverändert: App Store 1024 (quadratisch, AK2), Web-App und Home-Bildschirm.
+    const gleich = (a: string, b: string) =>
+      expect(readFileSync(a).equals(readFileSync(b)), a).toBe(true);
+    const A1B = 'design/dp111/app-symbol';
+    gleich(
+      'ios/App/App/Assets.xcassets/AppIcon.appiconset/hefta-hell.png',
+      `${A1B}/app-symbol-A1b-1024.png`,
+    );
+    gleich('public/icons/apple-touch-icon.png', `${A1B}/apple-touch-icon-A1b-180.png`);
+    gleich('public/icons/icon-192.png', `${A1B}/icon-A1b-192.png`);
+    gleich('public/icons/icon-512.png', `${A1B}/icon-A1b-512.png`);
+    gleich('public/icons/icon-maskable-512.png', `${A1B}/icon-maskable-A1b-512.png`);
+    expect(
+      readFileSync('android/app/src/main/res/values/ic_launcher_background.xml', 'utf8'),
+    ).toMatch(/#8a1d17/i);
+    // PC85 (W34): Das Favicon ist nicht das App-Symbol, sondern F1 aus DP63a.
+    expect(readFileSync('public/icons/favicon.svg', 'utf8')).not.toMatch(/#b3261e/i);
     expect(readFileSync('public/icons/favicon.svg', 'utf8')).toBe(
       readFileSync('design/logo/favicon-dp63a-f1/favicon.svg', 'utf8'),
     );
-    expect(
-      readFileSync('android/app/src/main/res/values/ic_launcher_background.xml', 'utf8'),
-    ).toMatch(/#3f130b/i);
   });
 });

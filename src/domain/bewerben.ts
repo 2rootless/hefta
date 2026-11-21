@@ -1,8 +1,10 @@
 // Bewerben in einer Minute (Zeile 8, Konzept Hefta 2 Abschnitt 4, B12a, B16, B23 `s=bewerben`): Weg,
 // Anrede, Anschreiben und was das Inserat wissen will. Hefta verschickt nichts selbst; es legt bereit,
 // was hinausgeht, und merkt sich den Weg. Reine Rechnung; die Oberfläche steht in BewerbenSeite.svelte.
+import pools from '../../data/satzpools.de.json';
 import { erkennen } from './nachricht';
 import type { HeftAngaben } from './modell';
+import { streuung } from './streuung';
 
 export type BewerbungsWeg = 'portal' | 'mail' | 'website';
 
@@ -64,6 +66,19 @@ export function inDerStrasse(strasse: string): string {
   return '';
 }
 
+/**
+ * „für den Lindenring 3“, „für die Beispielstraße 1“ (DP50, Zusage): der Artikel nach dem Geschlecht des
+ * Straßennamens, wie bei `inDerStrasse`. Ist es unbekannt, steht „für die Wohnung Lange Reihe 5“.
+ */
+export function fuerDieStrasse(strasse: string): string {
+  const s = strasse.trim();
+  if (!s) return '';
+  const wo = inDerStrasse(s);
+  if (wo.startsWith('in der ')) return `für die ${s}`;
+  if (wo.startsWith('im ')) return `für den ${s}`;
+  return `für die Wohnung ${s}`;
+}
+
 const MONATE = [
   'Januar',
   'Februar',
@@ -104,39 +119,107 @@ export interface AnschreibenAuftrag {
   weg: BewerbungsWeg;
   /** PC126 K5: Die Mappe hat eine eigene Auswahl, etwa nach „Diesmal weglassen“. */
   eigeneAuswahl?: boolean;
+  /** W37: Kennung des Hefts, daraus die Fassung je Baustein. Ohne Kennung die Fassung von Release 2.0. */
+  heftId?: string;
+  /** W37: „Andere Fassung“ zählt alle Bausteine eins weiter. */
+  versatz?: number;
+  /** W37 (W10): Der Einstieg „Ihr Inserat gesehen“ steht nur, wenn das Heft ein Inserat hat. */
+  inserat?: boolean;
+  /** Feste Nummern je Baustein statt der gestreuten; so prüfen die Tests jede Verbindung. */
+  nummern?: Partial<Record<Baustein, number>>;
 }
 
-/** Das Anschreiben nach B23 (`s=bewerben`), ohne Gruß und Unterschrift. */
-export function anschreibenText(a: AnschreibenAuftrag): { anrede: string; text: string } {
-  const wo = a.strasse.trim() ? inDerStrasse(a.strasse) : '';
-  const wohnung = wo
-    ? `um die Wohnung ${wo}`
-    : a.strasse.trim()
-      ? `um die Wohnung ${a.strasse.trim()}`
-      : 'um die Wohnung';
+export type Baustein = 'anrede' | 'einstieg' | 'einzug' | 'schluss' | 'gruss';
+
+/** Das Anschreiben aus Bausteinen (W37): Rahmen wechselt je Heft, der Kern bleibt wörtlich. */
+export interface AnschreibenTeile {
+  anrede: string;
+  /** Einstieg, Einzug (nur mit Datum) und der Satz zur Mappe (Kern). */
+  text: string;
+  /** Schluss vor dem Gruß; leer: keiner, wie in Release 2.0. */
+  schluss: string;
+  gruss: string;
+}
+
+type WirIch = { wir: string; ich: string };
+const BAUSTEINE = pools.anschreiben.bausteine;
+const KERN = pools.anschreiben.kern;
+
+/** Nummer eines Bausteins: aus der Kennung des Hefts gestreut, „Andere Fassung“ zählt eins weiter. */
+function bausteinNr(a: AnschreibenAuftrag, baustein: Baustein, n: number): number {
+  const fest = a.nummern?.[baustein];
+  if (fest !== undefined) return fest % n;
+  if (!a.heftId) return (a.versatz ?? 0) % n;
+  return (streuung(`${a.heftId}|${baustein}`) + (a.versatz ?? 0)) % n;
+}
+
+/** „Frau Hansen“ → Art und Name; ohne erkennbare Anrede null (dann „Damen und Herren“ oder „Guten Tag,“). */
+function anbieterName(anbieter: string | null | undefined): { frau: boolean; name: string } | null {
+  const name = (anbieter ?? '').trim().replace(/\s+/g, ' ');
+  const m =
+    /^(Frau|Herr|Herrn)\s+((?:Dr\.\s+)?[A-ZÄÖÜ][\p{L}'-]+(?:\s+[A-ZÄÖÜ][\p{L}'-]+)?)$/u.exec(name);
+  return m ? { frau: m[1] === 'Frau', name: m[2]! } : null;
+}
+
+/** Das Anschreiben nach B23 (`s=bewerben`), mit Bausteinen nach W37 (DP68, Endfassung PC94). */
+export function anschreibenText(a: AnschreibenAuftrag): AnschreibenTeile {
+  // Steht in der ersten Zeile nur Postleitzahl und Ort, nennt der Brief keinen Ort (DP68, Teil C).
+  const s = /^\d{5}\s/.test(a.strasse.trim()) ? '' : a.strasse.trim();
+  const wo = s ? inDerStrasse(s) : '';
+  const ort = wo || s;
+  const um = ort ? `um die Wohnung ${ort}` : 'um die Wohnung';
+  const die = ort ? `die Wohnung ${ort}` : 'Ihre Wohnung';
+  const form = (b: WirIch) => (a.wir ? b.wir : b.ich);
+
+  // Anrede: zwei Formen je Fall; „Sehr geehrte …“ oder „Guten Tag …“ bestimmt die passenden Grüße.
+  const person = anbieterName(a.anbieter);
+  const anreden = person ? BAUSTEINE.anrede.mit_namen : BAUSTEINE.anrede.ohne_namen;
+  const anredeNr = bausteinNr(a, 'anrede', anreden.length);
+  const anredeText = person
+    ? anreden[anredeNr]!.split(' / ')[person.frau ? 0 : 1]!.replace('{name}', person.name)
+    : anreden[anredeNr]!;
+  const gruesse =
+    pools.anschreiben.gruss_zur_anrede[
+      anredeText.startsWith('Sehr geehrte') ? 'Sehr geehrte …' : 'Guten Tag …'
+    ];
+
+  const einstiege = BAUSTEINE.einstieg.filter((e) => a.inserat || !('nur_wenn' in e));
   const saetze = [
-    a.wir ? `wir möchten uns ${wohnung} bewerben.` : `ich möchte mich ${wohnung} bewerben.`,
+    form(einstiege[bausteinNr(a, 'einstieg', einstiege.length)]!)
+      .replace('{um}', um)
+      .replace('{die}', die),
   ];
   if (a.einzug.trim()) {
     const wann = einzugText(a.einzug, a.heute);
-    saetze.push(a.wir ? `Wir können zum ${wann} einziehen.` : `Ich kann zum ${wann} einziehen.`);
+    saetze.push(
+      form(BAUSTEINE.einzug[bausteinNr(a, 'einzug', BAUSTEINE.einzug.length)]!).replace(
+        '{datum}',
+        wann,
+      ),
+    );
   }
+  // Kern, wörtlich (A1): Nur per Mail liegt die Mappe bei.
+  const kern = form(a.weg === 'mail' ? KERN.mappe.mail : KERN.mappe.portal_und_website);
   // PC126 K5 (DP83 a, W10): Mit „Eigener Auswahl“ liegen nicht die üblichen Unterlagen bei; dann sagt der Satz es nicht.
-  const mappe = a.eigeneAuswahl
-    ? a.wir
-      ? 'Unsere Mappe'
-      : 'Meine Mappe'
-    : a.wir
-      ? 'Unsere Mappe mit den üblichen Unterlagen'
-      : 'Meine Mappe mit den üblichen Unterlagen';
-  saetze.push(
-    a.weg === 'mail'
-      ? `${mappe} liegt bei.`
-      : a.wir
-        ? `${mappe} schicken wir Ihnen gern, sobald Sie uns eine Mailadresse nennen.`
-        : `${mappe} schicke ich Ihnen gern, sobald Sie mir eine Mailadresse nennen.`,
-  );
-  return { anrede: anrede(a.anbieter), text: saetze.join(' ') };
+  saetze.push(a.eigeneAuswahl ? kern.replace(' mit den üblichen Unterlagen', '') : kern);
+  return {
+    anrede: anredeText,
+    text: saetze.join(' '),
+    schluss: form(BAUSTEINE.schluss[bausteinNr(a, 'schluss', BAUSTEINE.schluss.length)]!),
+    gruss: gruesse[bausteinNr(a, 'gruss', gruesse.length)]!,
+  };
+}
+
+/**
+ * Wie die Wohnung im Betreff heißt (DP68 Teil C, PD101 U2, W10): die Straße, wie sie im Heft steht; ohne Straße
+ * „in“ und der Ort; ohne beides leer. Steht in der ersten Zeile nur Postleitzahl und Ort, ist das der Ort.
+ */
+export function betreffWohnung(strasse: string, ort: string): string {
+  const s = strasse.trim();
+  const plzOrt = /^\d{5}\s+(.+)$/.exec(s);
+  if (s && !plzOrt) return s;
+  const o = (plzOrt?.[1] ?? ort).trim();
+  return o ? `in ${o}` : '';
 }
 
 export interface NachrichtAuftrag {
@@ -150,6 +233,8 @@ export interface NachrichtAuftrag {
   /** Für den Gruß, etwa „Max Mustermann“; leer: nur „Freundliche Grüße“. */
   namen: string[];
   heute: Date;
+  /** W37 (PD101 U2): Ort für den Betreff, wenn das Heft keine Straße kennt. */
+  ort?: string;
 }
 
 function wohnungUndDatum(a: NachrichtAuftrag): { wohnung: string; am: string } {
@@ -188,9 +273,9 @@ export function nachfassText(a: NachrichtAuftrag): { betreff: string; text: stri
   const satz = a.wir
     ? `${am ? `${am}haben wir` : 'wir haben'} uns um ${wohnung} beworben. Ist sie noch zu haben? Wir würden sie uns gern ansehen.`
     : `${am ? `${am}habe ich` : 'ich habe'} mich um ${wohnung} beworben. Ist sie noch zu haben? Ich würde sie mir gern ansehen.`;
-  const s = a.strasse.trim();
+  const imBetreff = betreffWohnung(a.strasse, a.ort ?? '');
   return {
-    betreff: s ? `Nachfrage zur Wohnung ${s}` : 'Nachfrage zur Wohnung',
+    betreff: imBetreff ? `Nachfrage zur Wohnung ${imBetreff}` : 'Nachfrage zur Wohnung',
     text: `${anrede(a.anbieter)}\n\n${satz}\n\n${gruss(a.namen)}`,
   };
 }
@@ -249,7 +334,10 @@ export function angabeZeile(a: { label: string; wert: string }): string {
   return `${a.label}: ${wert}${/[.!?…]$/.test(wert) ? '' : '.'}`;
 }
 
-/** Der ganze Text für Mail und Portal: Anrede, Anschreiben, die Angaben, Gruß und Kontakt. */
+/**
+ * Der ganze Text für Mail und Portal: Anrede, Anschreiben, die Angaben, Schluss, Gruß und Kontakt; zwischen den
+ * Teilen eine Leerzeile (DP68, Teil C). Ohne Schluss fällt sein Absatz ganz weg.
+ */
 export function bewerbungsText(o: {
   anrede: string;
   text: string;
@@ -257,10 +345,15 @@ export function bewerbungsText(o: {
   name: string;
   telefon: string;
   mail: string;
+  /** W37: Schluss vor dem Gruß; leer oder fehlend: keiner. */
+  schluss?: string;
+  /** W37: Gruß; fehlt er, der von Release 2.0. */
+  gruss?: string;
 }): string {
   const z = [o.anrede, '', o.text];
   if (o.angaben.length) z.push('', ...o.angaben.map(angabeZeile));
-  z.push('', 'Mit freundlichen Grüßen', o.name.trim());
+  if (o.schluss?.trim()) z.push('', o.schluss.trim());
+  z.push('', o.gruss ?? 'Mit freundlichen Grüßen', o.name.trim());
   const kontakt = [o.telefon.trim(), o.mail.trim()].filter(Boolean).join(' · ');
   if (kontakt) z.push(kontakt);
   return z.join('\n').trim();

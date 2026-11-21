@@ -12,17 +12,27 @@ import {
   type ExportEinstellungen,
   bitteSatzAus,
 } from '../domain/export';
-import { aktuelleVersionen } from '../domain/fristen';
+import { aktuelleVersionen, tagAus } from '../domain/fristen';
 import {
   eintragenText,
   listenText,
   ohneTrennstellen,
+  basisId,
   rollenText,
-  situationText,
+  deckTaetigkeit,
   type PersonStand,
 } from '../domain/regelkatalog';
 import { nameImPdf, nameText } from '../domain/namen';
-import { mitziehendeTexte, monatsSpanne, vomText } from '../domain/mappeWoerter';
+import {
+  bonitaetZeile,
+  FUER_DEN_HAUSHALT,
+  gueltigBisText,
+  mitziehendeTexte,
+  monatsSpanne,
+  neuImJobText,
+  vomText,
+} from '../domain/mappeWoerter';
+import { haushaltFuerHeft } from '../domain/haushaltUnterlagen';
 import {
   einziehend,
   nachZusageSatz,
@@ -73,18 +83,13 @@ function farbe(n: number): string {
 }
 
 function mappenPerson(s: PersonStand): MappenPerson {
-  const taetigkeit =
-    s.person.beruf.trim() ||
-    (s.person.lebenssituation === 'studierend_azubi' && s.person.ausbildungArt
-      ? situationText(s.person.lebenssituation, s.person.ausbildungArt)
-      : '');
   return {
     name: nameText(nameImPdf(s.person)),
     // Fassung 1 der Lesehilfe: Vor- und Nachname wie auf dem Deckblatt, von Hefta nie selbst geteilt.
     vorname: nameImPdf(s.person).vorname,
     nachname: nameImPdf(s.person).nachname,
     rolle: rollenText(s.rolle, s.bezeichnung),
-    beruf: taetigkeit,
+    beruf: deckTaetigkeit(s.person),
     farbe: farbe(s.farbe),
     buerge: s.rolle === 'buerge',
     rolleId: s.rolle,
@@ -170,10 +175,24 @@ export async function mappeErstellen(
         person: block.person.person.rufname || block.person.person.vorname,
         unterlage: titel,
       };
+      // DP45 G4: „noch keiner möglich“ als Zeile ohne Seiten, wörtlich.
+      if (u.keinerMoeglich) {
+        teile.push({
+          abschnitt: bonitaetZeile(
+            u.keinerMoeglich,
+            block.person.person.rufname || block.person.person.vorname,
+            block.person.bezeichnung,
+          ),
+          typ: basisId(u.typ),
+          quellen: [],
+          nurZeile: true,
+        });
+        continue;
+      }
       if (u.typ.inAppErstellt) {
         teile.push({
           abschnitt: titel,
-          typ: u.typ.id,
+          typ: basisId(u.typ),
           quellen: [],
           auskunft: {
             name: nameText(nameImPdf(block.person.person)),
@@ -220,12 +239,17 @@ export async function mappeErstellen(
             kopf: monate.length ? `${einzeln} ${monatsSpanne(monate, true)}` : einzeln,
           });
         }
+        // DP45 G3: „Gehaltsnachweise, Oktober, neu im Job seit 1. Oktober 2026“.
+        const neu = u.neuSeit ? neuImJobText(u.neuSeit) : '';
+        const spanne = alle.length ? monatsSpanne(alle, false) : '';
+        // L4 (PC60): Den Arbeitgeber nennt das Verzeichnis nur, wenn es zwei gibt.
+        const arbeitgeber = u.lage?.mitArbeitgeber ? u.lage.arbeitgeber : '';
         if (quellen.length)
           teile.push({
             abschnitt: titel,
             meldung,
-            detail: alle.length ? monatsSpanne(alle, false) : undefined,
-            typ: u.typ.id,
+            detail: [arbeitgeber, spanne, neu].filter(Boolean).join(', ') || undefined,
+            typ: basisId(u.typ),
             monate: [...alle].sort(),
             quellen,
           });
@@ -238,11 +262,17 @@ export async function mappeErstellen(
         const name =
           (u.typ.jeVariante && u.typ.varianten?.find((x) => x.id === v.variante)?.text) || titel;
         const vom = v.ausstellungsdatum ? vomText(v.ausstellungsdatum) : '';
+        // G3 ohne Abrechnung: Dann sagt der Arbeitsvertrag, seit wann.
+        const seit = block.person.person.neuImJob?.seit;
+        const neu =
+          u.typ.teilVon && seit && !block.teile.some((x) => x.stand.typ.id === u.typ.teilVon)
+            ? neuImJobText(seit)
+            : '';
         teile.push({
           abschnitt: name,
           meldung,
-          detail: vom || undefined,
-          typ: u.typ.id,
+          detail: (neu ? [vom, neu].filter(Boolean).join(', ') : vom) || undefined,
+          typ: basisId(u.typ),
           vom: v.ausstellungsdatum ?? undefined,
           pruefweg:
             u.typ.fristen?.pruefcodeTage && hatPruefcode(u.typ, v) ? 'pruefcode' : undefined,
@@ -259,6 +289,68 @@ export async function mappeErstellen(
     }
     mappenBloecke.push({ stand: block.person, person: mappenPerson(block.person), teile });
   }
+
+  // DP45 G1 (W28): Was das Heft vom Haushalt auswählt, steht vor den Personen. Der Schein liegt einmal
+  // beim Haushalt; abgelaufen geht er nur mit, wenn es im Heft angeschaltet ist (K3).
+  const ersterStand = mappenBloecke[0]?.stand ?? staende[0];
+  const haushaltTeile: MappenTeil[] = [];
+  for (const h of haushaltFuerHeft(
+    ansicht.haushaltDokumente,
+    ansicht.versionen,
+    bewerbung,
+    tagAus(heute),
+  )) {
+    if (h.typ === 'mitgliedschaft') {
+      // G2: „Mitgliedschaft, Wohnungsgenossenschaft Muster eG, Nr. 004711“; ohne Nachweis nur die Zeile.
+      const m = h.mitgliedschaft;
+      const titel = 'Mitgliedschaft';
+      const detail = [m.name, m.nummer ? `Nr. ${m.nummer}` : ''].filter(Boolean).join(', ');
+      const meldung: UnlesbareDatei = {
+        name: `${titel}, ${m.name}`,
+        href: `#/haushalt-unterlage/genossenschaft/${m.dokument.id}`,
+      };
+      const v = m.nachweis;
+      const daten = v ? await lesen(v.aufbereitet ?? v.original, meldung) : null;
+      haushaltTeile.push({
+        abschnitt: titel,
+        meldung,
+        detail,
+        typ: h.typ,
+        kopf: `${titel}, ${m.name}`,
+        ...(v && daten
+          ? { quellen: [{ daten, seiten: platzhalter ? undefined : v.seiten }] }
+          : { quellen: [], nurZeile: true }),
+      });
+      continue;
+    }
+    const titel = 'Wohnberechtigungsschein';
+    const meldung: UnlesbareDatei = {
+      name: titel,
+      href: '#/haushalt-unterlage/wbs',
+    };
+    const daten = await lesen(h.version.aufbereitet ?? h.version.original, meldung);
+    if (!daten) continue;
+    const bis = h.version.wbs?.gueltigBis;
+    haushaltTeile.push({
+      abschnitt: titel,
+      meldung,
+      detail: bis ? gueltigBisText(bis, h.abgelaufen) : undefined,
+      typ: h.typ,
+      kopf: titel,
+      quellen: [{ daten, seiten: platzhalter ? undefined : h.version.seiten }],
+    });
+  }
+  if (haushaltTeile.length && ersterStand)
+    mappenBloecke.unshift({
+      stand: ersterStand,
+      person: {
+        name: FUER_DEN_HAUSHALT,
+        rolle: '',
+        farbe: farbe(ersterStand.farbe),
+        haushalt: true,
+      },
+      teile: haushaltTeile,
+    });
 
   const kinder = ansicht.haushalt.kinder;
   const weitere = ansicht.haushalt.weitereErwachsene;
@@ -282,10 +374,14 @@ export async function mappeErstellen(
         const { vorname, nachname } = nameImPdf(b.stand.person);
         const datei = einzelDateiname(++nummer, teil.abschnitt, vorname, nachname);
         const erg = await bewerbungBauen({
-          titel: [teil.abschnitt, b.person.name, kurz ? `Bewerbung ${kurz}` : '']
+          titel: [
+            teil.abschnitt,
+            b.person.haushalt ? '' : b.person.name,
+            kurz ? `Bewerbung ${kurz}` : '',
+          ]
             .filter(Boolean)
             .join(' – '),
-          autor: b.person.name,
+          autor: b.person.haushalt ? name : b.person.name,
           fussName: name,
           kurz,
           adresse: [],

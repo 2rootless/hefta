@@ -1,0 +1,781 @@
+{
+  "stand": "2026-11-17",
+  "hinweis": "Satzpools für W37 (E190, E193): Endfassung der Planung aus PC94 (design/dp68/PC94-anlage_DP68-pools-endfassung.json), hier ohne Teil A. Stimmungssätze wechseln einmal am Tag, am selben Tag steht überall derselbe Satz. Das Anschreiben wählt seine Bausteine nach der Kennung des Hefts; der Kern bleibt wörtlich. Die erste Fassung ist jeweils die von Release 2.0.",
+  "quelle": "DP68, Fassung 2 (nach PD101)",
+  "planung": {
+    "stand": "2026-11-17",
+    "entscheidung": "E193",
+    "grundlage": "DP68 Fassung 2 (mit Betreff im Kern und Punkt an Angabe-Zeilen)",
+    "aenderungen": [
+      "P1: „…, die läuft“ und „Unterwegs: …“ gestrichen",
+      "P3: „Alles vollzählig. Die Mappe kann gehen.“ gestrichen",
+      "P10a: „Fein gemacht.“ gestrichen",
+      "Anschreiben: Schluss „Danke fürs Lesen.“ und Gruß „Herzliche Grüße“ gestrichen; Gruß passt zur Anrede (gruss_zur_anrede)",
+      "Einstieg „… Ihr Inserat gesehen …“ nur, wenn das Heft ein Inserat hat"
+    ],
+    "status": "Endfassung, von der Planung abgenommen"
+  },
+  "stellen": [
+    {
+      "nr": "P1",
+      "schluessel": "hefte.imSpiel",
+      "ort": "Wohnungen, unter der Begrüßung",
+      "fest_davor": null,
+      "fest_danach": null,
+      "fassungen": [
+        {
+          "zero": "Keine Wohnung im Spiel.",
+          "one": "Eine Wohnung im Spiel.",
+          "other": "{Wort} Wohnungen im Spiel."
+        },
+        {
+          "zero": "Keine Wohnung in Arbeit.",
+          "one": "Eine Wohnung in Arbeit.",
+          "other": "{Wort} Wohnungen in Arbeit."
+        },
+        {
+          "zero": "Keine Wohnung im Blick.",
+          "one": "Eine Wohnung im Blick.",
+          "other": "{Wort} Wohnungen im Blick."
+        },
+        {
+          "zero": "Keine Wohnung im Rennen.",
+          "one": "Eine Wohnung im Rennen.",
+          "other": "{Wort} Wohnungen im Rennen."
+        },
+        {
+          "zero": "Keine Wohnung, kein Heft.",
+          "one": "Eine Wohnung, ein Heft.",
+          "other": "{Wort} Wohnungen, {wort} Hefte.",
+          "wortspiel": true
+        },
+        {
+          "zero": {
+            "ihr": "Ihr verfolgt keine Wohnung.",
+            "du": "Du verfolgst keine Wohnung."
+          },
+          "one": {
+            "ihr": "Ihr verfolgt eine Wohnung.",
+            "du": "Du verfolgst eine Wohnung."
+          },
+          "other": {
+            "ihr": "Ihr verfolgt {wort} Wohnungen.",
+            "du": "Du verfolgst {wort} Wohnungen."
+          }
+        },
+        {
+          "zero": "Keine Wohnung am Laufen.",
+          "one": "Eine Wohnung am Laufen.",
+          "other": "{Wort} Wohnungen am Laufen."
+        },
+        {
+          "zero": "Im Spiel: keine Wohnung.",
+          "one": "Im Spiel: eine Wohnung.",
+          "other": "Im Spiel: {wort} Wohnungen."
+        },
+        {
+          "zero": "Mit dabei: keine Wohnung.",
+          "one": "Mit dabei: eine Wohnung.",
+          "other": "Mit dabei: {wort} Wohnungen."
+        },
+        {
+          "zero": "Aktuell: keine Wohnung.",
+          "one": "Aktuell: eine Wohnung.",
+          "other": "Aktuell: {wort} Wohnungen."
+        }
+      ]
+    },
+    {
+      "nr": "P2",
+      "schluessel": "uebersicht.offen",
+      "ort": "Mappe, Übersicht, Kasten oben",
+      "fest_davor": null,
+      "fest_danach": null,
+      "fassungen": [
+        {
+          "one": {
+            "ihr": "Noch ein Ding, dann seid ihr startklar.",
+            "du": "Noch ein Ding, dann bist du startklar."
+          },
+          "other": {
+            "ihr": "Noch {zahl} Dinge, dann seid ihr startklar.",
+            "du": "Noch {zahl} Dinge, dann bist du startklar."
+          }
+        },
+        {
+          "one": "Noch ein Ding fehlt bis zur fertigen Mappe.",
+          "other": "Noch {zahl} Dinge fehlen bis zur fertigen Mappe."
+        },
+        {
+          "one": {
+            "ihr": "Ein Ding fehlt noch, dann seid ihr startklar.",
+            "du": "Ein Ding fehlt noch, dann bist du startklar."
+          },
+          "other": {
+            "ihr": "{Zahl} Dinge fehlen noch, dann seid ihr startklar.",
+            "du": "{Zahl} Dinge fehlen noch, dann bist du startklar."
+          }
+        },
+        {
+          "one": {
+            "ihr": "Noch ein Ding, dann ist eure Mappe komplett.",
+            "du": "Noch ein Ding, dann ist deine Mappe komplett."
+          },
+          "other": {
+            "ihr": "Noch {zahl} Dinge, dann ist eure Mappe komplett.",
+            "du": "Noch {zahl} Dinge, dann ist deine Mappe komplett."
+          }
+        },
+        {
+          "one": "Noch ein Ding, dann ist die Mappe beisammen.",
+          "other": "Noch {zahl} Dinge, dann ist die Mappe beisammen."
+        },
+        {
+          "one": {
+            "ihr": "Es fehlt ein Ding, dann seid ihr startklar.",
+            "du": "Es fehlt ein Ding, dann bist du startklar."
+          },
+          "other": {
+            "ihr": "Es fehlen {zahl} Dinge, dann seid ihr startklar.",
+            "du": "Es fehlen {zahl} Dinge, dann bist du startklar."
+          }
+        },
+        {
+          "one": {
+            "ihr": "Noch ein Ding, und eure Mappe ist bereit.",
+            "du": "Noch ein Ding, und deine Mappe ist bereit."
+          },
+          "other": {
+            "ihr": "Noch {zahl} Dinge, und eure Mappe ist bereit.",
+            "du": "Noch {zahl} Dinge, und deine Mappe ist bereit."
+          }
+        },
+        {
+          "one": {
+            "ihr": "Ein Ding noch, dann ist eure Mappe bereit.",
+            "du": "Ein Ding noch, dann ist deine Mappe bereit."
+          },
+          "other": {
+            "ihr": "{Zahl} Dinge noch, dann ist eure Mappe bereit.",
+            "du": "{Zahl} Dinge noch, dann ist deine Mappe bereit."
+          }
+        },
+        {
+          "one": {
+            "ihr": "Noch ein Ding, dann habt ihr alles beisammen.",
+            "du": "Noch ein Ding, dann hast du alles beisammen."
+          },
+          "other": {
+            "ihr": "Noch {zahl} Dinge, dann habt ihr alles beisammen.",
+            "du": "Noch {zahl} Dinge, dann hast du alles beisammen."
+          }
+        },
+        {
+          "one": {
+            "ihr": "Noch ein Ding. Danach seid ihr startklar.",
+            "du": "Noch ein Ding. Danach bist du startklar."
+          },
+          "other": {
+            "ihr": "Noch {zahl} Dinge. Danach seid ihr startklar.",
+            "du": "Noch {zahl} Dinge. Danach bist du startklar."
+          }
+        },
+        {
+          "one": "Noch ein Ding, dann ist alles in der Mappe.",
+          "other": "Noch {zahl} Dinge, dann ist alles in der Mappe."
+        },
+        {
+          "one": {
+            "ihr": "Noch ein Ding offen, dann seid ihr startklar.",
+            "du": "Noch ein Ding offen, dann bist du startklar."
+          },
+          "other": {
+            "ihr": "Noch {zahl} Dinge offen, dann seid ihr startklar.",
+            "du": "Noch {zahl} Dinge offen, dann bist du startklar."
+          }
+        }
+      ]
+    },
+    {
+      "nr": "P3",
+      "schluessel": "uebersicht.fertigTitel + uebersicht.fertigIhr/Du",
+      "ort": "Mappe, Übersicht, Kasten oben",
+      "fest_davor": null,
+      "fest_danach": null,
+      "fassungen": [
+        {
+          "titel": "Alles beisammen.",
+          "satz": {
+            "ihr": "Eure Mappe ist bereit.",
+            "du": "Deine Mappe ist bereit."
+          }
+        },
+        {
+          "titel": "Alles zusammen.",
+          "satz": {
+            "ihr": "Eure Mappe ist fertig.",
+            "du": "Deine Mappe ist fertig."
+          }
+        },
+        {
+          "titel": "Alles komplett.",
+          "satz": "Die Mappe ist bereit."
+        },
+        {
+          "titel": "Alles am Platz.",
+          "satz": {
+            "ihr": "Eure Mappe kann raus.",
+            "du": "Deine Mappe kann raus."
+          }
+        },
+        {
+          "titel": "Alles erledigt.",
+          "satz": {
+            "ihr": "Eure Mappe ist so weit.",
+            "du": "Deine Mappe ist so weit."
+          }
+        },
+        {
+          "titel": "Nichts fehlt mehr.",
+          "satz": {
+            "ihr": "Eure Mappe ist komplett.",
+            "du": "Deine Mappe ist komplett."
+          }
+        },
+        {
+          "titel": "Fertig gesammelt.",
+          "satz": "Die Mappe ist fertig."
+        }
+      ]
+    },
+    {
+      "nr": "P4",
+      "schluessel": "mappeTab.startklarIhr/Du",
+      "ort": "Reiter „Mappe“, unter dem Titel",
+      "fest_davor": null,
+      "fest_danach": null,
+      "fassungen": [
+        {
+          "satz": {
+            "ihr": "Alles da. Ihr seid startklar.",
+            "du": "Alles da. Du bist startklar."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Alles da. Ihr könnt loslegen.",
+            "du": "Alles da. Du kannst loslegen."
+          }
+        },
+        {
+          "satz": "Alles da. Die Mappe kann raus."
+        },
+        {
+          "satz": {
+            "ihr": "Alles drin. Ihr seid startklar.",
+            "du": "Alles drin. Du bist startklar."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Nichts fehlt. Ihr seid startklar.",
+            "du": "Nichts fehlt. Du bist startklar."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Komplett. Ihr seid startklar.",
+            "du": "Komplett. Du bist startklar."
+          }
+        },
+        {
+          "satz": "Alles da. Die Mappe ist bereit."
+        },
+        {
+          "satz": {
+            "ihr": "Alles beisammen. Ihr seid bereit.",
+            "du": "Alles beisammen. Du bist bereit."
+          }
+        }
+      ]
+    },
+    {
+      "nr": "P5",
+      "schluessel": "wohnungen.kastenIhr/Du",
+      "ort": "Wohnungen, Kasten ohne Hefte",
+      "fest_davor": null,
+      "fest_danach": null,
+      "fassungen": [
+        {
+          "satz": {
+            "ihr": "Hier stehen bald eure Wohnungen, jede in einem eigenen Heft.",
+            "du": "Hier stehen bald deine Wohnungen, jede in einem eigenen Heft."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Hier landen eure Wohnungen, jede in einem eigenen Heft.",
+            "du": "Hier landen deine Wohnungen, jede in einem eigenen Heft."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Jede Wohnung, die ihr findet, bekommt hier ein eigenes Heft.",
+            "du": "Jede Wohnung, die du findest, bekommt hier ein eigenes Heft."
+          }
+        },
+        {
+          "satz": "Noch leer. Bald liegt hier für jede Wohnung ein eigenes Heft."
+        },
+        {
+          "satz": {
+            "ihr": "Hier entsteht bald für jede eurer Wohnungen ein eigenes Heft.",
+            "du": "Hier entsteht bald für jede deiner Wohnungen ein eigenes Heft."
+          }
+        },
+        {
+          "satz": "Für jede Wohnung ein Heft. Die ersten liegen bald hier."
+        },
+        {
+          "satz": {
+            "ihr": "Ein Regal für eure Hefte, noch leer. Jede Wohnung bekommt eines.",
+            "du": "Ein Regal für deine Hefte, noch leer. Jede Wohnung bekommt eines."
+          },
+          "wortspiel": true
+        },
+        {
+          "satz": {
+            "ihr": "Hier sammeln sich bald eure Wohnungen, jede in ihrem Heft.",
+            "du": "Hier sammeln sich bald deine Wohnungen, jede in ihrem Heft."
+          }
+        }
+      ]
+    },
+    {
+      "nr": "P6",
+      "schluessel": "stand.beworben.satzHeute",
+      "ort": "Heft, unter „Heute beworben“",
+      "fest_davor": null,
+      "fest_danach": null,
+      "fassungen": [
+        {
+          "satz": {
+            "ihr": "Jetzt ist der Vermieter dran. Ihr müsst nichts tun.",
+            "du": "Jetzt ist der Vermieter dran. Du musst nichts tun."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Der Ball liegt beim Vermieter. Ihr müsst nichts tun.",
+            "du": "Der Ball liegt beim Vermieter. Du musst nichts tun."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Jetzt ist der Vermieter dran. Ihr könnt abwarten.",
+            "du": "Jetzt ist der Vermieter dran. Du kannst abwarten."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Jetzt ist der Vermieter am Zug. Ihr müsst nichts tun.",
+            "du": "Jetzt ist der Vermieter am Zug. Du musst nichts tun."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Der Vermieter ist dran. Für euch gibt es nichts zu tun.",
+            "du": "Der Vermieter ist dran. Für dich gibt es nichts zu tun."
+          }
+        },
+        {
+          "satz": "Beworben ist beworben. Jetzt ist der Vermieter dran.",
+          "wortspiel": true
+        },
+        {
+          "satz": {
+            "ihr": "Ihr habt euch beworben. Jetzt ist der Vermieter dran.",
+            "du": "Du hast dich beworben. Jetzt ist der Vermieter dran."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Nichts zu tun für euch. Der Vermieter ist am Zug.",
+            "du": "Nichts zu tun für dich. Der Vermieter ist am Zug."
+          }
+        }
+      ]
+    },
+    {
+      "nr": "P7",
+      "schluessel": "stand.keine.satz (letzter Satz)",
+      "ort": "Heft, „Keine Antwort“",
+      "fest_davor": "Beworben am 17. November. Seit drei Wochen meldet sich niemand.",
+      "fest_danach": null,
+      "fassungen": [
+        {
+          "satz": "Eine kurze Nachfrage hilft oft."
+        },
+        {
+          "satz": "Oft hilft eine kurze Nachfrage."
+        },
+        {
+          "satz": "Kurz nachzufragen kann helfen."
+        },
+        {
+          "satz": "Eine höfliche Nachfrage hilft oft."
+        },
+        {
+          "satz": "Eine kurze Nachfrage kann helfen."
+        },
+        {
+          "satz": "Oft bringt eine Nachfrage etwas."
+        },
+        {
+          "satz": "Ein kurzes Nachhaken hilft oft."
+        },
+        {
+          "satz": "Eine Nachfrage bringt oft Klarheit."
+        }
+      ]
+    },
+    {
+      "nr": "P8",
+      "schluessel": "stand.nachgefragt.satz (zweiter Satz)",
+      "ort": "Heft, nach der Nachfrage",
+      "fest_davor": "Beworben am 17. November.",
+      "fest_danach": null,
+      "fassungen": [
+        {
+          "satz": "Jetzt ist wieder der Vermieter dran."
+        },
+        {
+          "satz": "Der Vermieter ist wieder am Zug."
+        },
+        {
+          "satz": "Nun ist wieder der Vermieter dran."
+        },
+        {
+          "satz": "Der Ball liegt wieder beim Vermieter."
+        },
+        {
+          "satz": {
+            "ihr": "Jetzt wartet ihr wieder auf Antwort.",
+            "du": "Jetzt wartest du wieder auf Antwort."
+          }
+        },
+        {
+          "satz": "Wieder ist der Vermieter am Zug."
+        },
+        {
+          "satz": "Das nächste Wort hat der Vermieter."
+        },
+        {
+          "satz": "Jetzt liegt es wieder beim Vermieter."
+        }
+      ]
+    },
+    {
+      "nr": "P9",
+      "schluessel": "stand.zusage (erster Satz, DP109)",
+      "ort": "Heft, Zusage",
+      "fest_davor": null,
+      "fest_danach": "{Tag} kam die Zusage {für die Wohnung …}. Leise darunter: Das Heft bleibt hier, bis der Vertrag unterschrieben ist.",
+      "fassungen": [
+        {
+          "satz": "Glückwunsch, {namen}."
+        },
+        {
+          "satz": "Herzlichen Glückwunsch, {namen}."
+        },
+        {
+          "satz": "Gute Nachricht, {namen}."
+        },
+        {
+          "satz": "Gratulation, {namen}."
+        },
+        {
+          "satz": "Das hat geklappt, {namen}."
+        }
+      ]
+    },
+    {
+      "nr": "P10a",
+      "schluessel": "rutsch.endeTitel",
+      "ort": "Runde „Unterlagen“, Ende",
+      "fest_davor": null,
+      "fest_danach": null,
+      "fassungen": [
+        {
+          "satz": "Gut gemacht."
+        },
+        {
+          "satz": "Gut gelaufen."
+        },
+        {
+          "satz": "Schön gemacht."
+        },
+        {
+          "satz": "Gut erledigt."
+        },
+        {
+          "satz": "Runde fertig."
+        },
+        {
+          "satz": "Gut gesammelt."
+        },
+        {
+          "satz": "Gut sortiert."
+        }
+      ]
+    },
+    {
+      "nr": "P10b",
+      "schluessel": "rutsch.endeTitelSpaeter",
+      "ort": "Runde „Unterlagen“, Ende nach „Pause“",
+      "fest_davor": null,
+      "fest_danach": null,
+      "fassungen": [
+        {
+          "satz": "Für heute fertig."
+        },
+        {
+          "satz": "Für heute genug."
+        },
+        {
+          "satz": "Fürs Erste fertig."
+        },
+        {
+          "satz": "Genug für heute."
+        },
+        {
+          "satz": "Für heute reicht’s."
+        },
+        {
+          "satz": "Pause bis später."
+        },
+        {
+          "satz": "Erst mal fertig."
+        },
+        {
+          "satz": "Erst einmal genug."
+        }
+      ]
+    },
+    {
+      "nr": "P11",
+      "schluessel": "stand.gemerkt.satz (nach „Seit {datum} · “)",
+      "ort": "Heft, „Gemerkt“",
+      "fest_davor": "Seit 17. Nov. ·",
+      "fest_danach": null,
+      "fassungen": [
+        {
+          "satz": {
+            "ihr": "Die Wohnung liegt hier, bis ihr euch bewerbt.",
+            "du": "Die Wohnung liegt hier, bis du dich bewirbst."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Das Heft wartet hier, bis ihr euch bewerbt.",
+            "du": "Das Heft wartet hier, bis du dich bewirbst."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Die Wohnung bleibt hier, bis ihr euch bewerbt.",
+            "du": "Die Wohnung bleibt hier, bis du dich bewirbst."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Gemerkt. Bewerben könnt ihr, wann ihr wollt.",
+            "du": "Gemerkt. Bewerben kannst du, wann du willst."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Die Wohnung liegt bereit, bis ihr euch bewerbt.",
+            "du": "Die Wohnung liegt bereit, bis du dich bewirbst."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Das Heft bleibt offen, bis ihr euch bewerbt.",
+            "du": "Das Heft bleibt offen, bis du dich bewirbst."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Notiert. Wann ihr euch bewerbt, entscheidet ihr.",
+            "du": "Notiert. Wann du dich bewirbst, entscheidest du."
+          }
+        },
+        {
+          "satz": {
+            "ihr": "Die Wohnung ist vorgemerkt, bis ihr euch bewerbt.",
+            "du": "Die Wohnung ist vorgemerkt, bis du dich bewirbst."
+          }
+        }
+      ]
+    }
+  ],
+  "anschreiben": {
+    "aufbau": [
+      "anrede",
+      "einstieg + einzug (nur mit Datum) + kern.mappe",
+      "kern.angaben",
+      "schluss (kann leer sein)",
+      "gruss + kern.kontakt"
+    ],
+    "trenner": "Leerzeile zwischen den Teilen",
+    "ort_regel": "wie heute (bewerbenSenden, Funktion d): Straße, Allee, Gasse → „in der …“, Weg, Ring, Damm … → „im …“, sonst ohne Ort",
+    "platzhalter": {
+      "{um}": "um die Wohnung {ort} | um die Wohnung",
+      "{fuer}": "für die Wohnung {ort} | für Ihre Wohnung",
+      "{die}": "die Wohnung {ort} | Ihre Wohnung",
+      "{datum}": "frühester Einzug, wie heute formatiert"
+    },
+    "kern": {
+      "mappe": {
+        "mail": {
+          "wir": "Unsere Mappe mit den üblichen Unterlagen liegt bei.",
+          "ich": "Meine Mappe mit den üblichen Unterlagen liegt bei."
+        },
+        "portal_und_website": {
+          "wir": "Unsere Mappe mit den üblichen Unterlagen schicken wir Ihnen gern, sobald Sie uns eine Mailadresse nennen.",
+          "ich": "Meine Mappe mit den üblichen Unterlagen schicke ich Ihnen gern, sobald Sie mir eine Mailadresse nennen."
+        }
+      },
+      "angaben": "Zeile je Angabe „Name: Wert.“; jede Zeile endet mit Punkt, außer der Wert endet schon mit Punkt (PD101, Abschnitt 3)",
+      "betreff": {
+        "bewerbung": "Bewerbung um die Wohnung {wohnung}",
+        "nachfrage": "Nachfrage zur Wohnung {wohnung}",
+        "wohnung": "Straße wie im Inserat | „in “ + Ort wie im Inserat | leer, dann ohne Leerzeichen am Ende (PD101 U2, W10)"
+      },
+      "kontakt": "Name, darunter Telefon · Mail, wie heute"
+    },
+    "bausteine": {
+      "anrede": {
+        "mit_namen": [
+          "Sehr geehrte Frau {name}, / Sehr geehrter Herr {name},",
+          "Guten Tag, Frau {name}, / Guten Tag, Herr {name},"
+        ],
+        "ohne_namen": [
+          "Sehr geehrte Damen und Herren,",
+          "Guten Tag,"
+        ]
+      },
+      "einstieg": [
+        {
+          "wir": "wir möchten uns {um} bewerben.",
+          "ich": "ich möchte mich {um} bewerben."
+        },
+        {
+          "wir": "wir haben Ihr Inserat gesehen und möchten uns bewerben.",
+          "ich": "ich habe Ihr Inserat gesehen und möchte mich bewerben.",
+          "nur_wenn": "Heft hat ein Inserat (W10)"
+        },
+        {
+          "wir": "hiermit bewerben wir uns {um}.",
+          "ich": "hiermit bewerbe ich mich {um}."
+        },
+        {
+          "wir": "wir interessieren uns für {die} und bewerben uns.",
+          "ich": "ich interessiere mich für {die} und bewerbe mich."
+        },
+        {
+          "wir": "wir möchten {die} mieten und bewerben uns hiermit.",
+          "ich": "ich möchte {die} mieten und bewerbe mich hiermit."
+        },
+        {
+          "wir": "wir bewerben uns {um}.",
+          "ich": "ich bewerbe mich {um}."
+        },
+        {
+          "wir": "wir möchten uns für {die} bewerben.",
+          "ich": "ich möchte mich für {die} bewerben."
+        },
+        {
+          "wir": "mit dieser Nachricht bewerben wir uns {um}.",
+          "ich": "mit dieser Nachricht bewerbe ich mich {um}."
+        }
+      ],
+      "einzug": [
+        {
+          "wir": "Wir können zum {datum} einziehen.",
+          "ich": "Ich kann zum {datum} einziehen."
+        },
+        {
+          "wir": "Einziehen können wir ab dem {datum}.",
+          "ich": "Einziehen kann ich ab dem {datum}."
+        },
+        {
+          "wir": "Ab dem {datum} können wir einziehen.",
+          "ich": "Ab dem {datum} kann ich einziehen."
+        },
+        {
+          "wir": "Unser frühester Einzug wäre der {datum}.",
+          "ich": "Mein frühester Einzug wäre der {datum}."
+        },
+        {
+          "wir": "Zum {datum} können wir einziehen.",
+          "ich": "Zum {datum} kann ich einziehen."
+        },
+        {
+          "wir": "Wir ziehen frühestens zum {datum} ein.",
+          "ich": "Ich ziehe frühestens zum {datum} ein."
+        }
+      ],
+      "schluss": [
+        {
+          "wir": "",
+          "ich": ""
+        },
+        {
+          "wir": "Über eine Besichtigung freuen wir uns.",
+          "ich": "Über eine Besichtigung freue ich mich."
+        },
+        {
+          "wir": "Bei Rückfragen sind wir erreichbar.",
+          "ich": "Bei Rückfragen bin ich erreichbar."
+        },
+        {
+          "wir": "Wir freuen uns auf Ihre Antwort.",
+          "ich": "Ich freue mich auf Ihre Antwort."
+        },
+        {
+          "wir": "Bei Fragen melden Sie sich bitte.",
+          "ich": "Bei Fragen melden Sie sich bitte."
+        },
+        {
+          "wir": "Vielen Dank für Ihre Zeit.",
+          "ich": "Vielen Dank für Ihre Zeit."
+        },
+        {
+          "wir": "Wir hoffen, von Ihnen zu hören.",
+          "ich": "Ich hoffe, von Ihnen zu hören."
+        }
+      ],
+      "gruss": [
+        "Mit freundlichen Grüßen",
+        "Freundliche Grüße",
+        "Viele Grüße",
+        "Beste Grüße",
+        "Mit besten Grüßen"
+      ]
+    },
+    "gruss_zur_anrede": {
+      "Sehr geehrte …": [
+        "Mit freundlichen Grüßen",
+        "Freundliche Grüße",
+        "Mit besten Grüßen"
+      ],
+      "Guten Tag …": [
+        "Freundliche Grüße",
+        "Viele Grüße",
+        "Beste Grüße"
+      ]
+    }
+  }
+}

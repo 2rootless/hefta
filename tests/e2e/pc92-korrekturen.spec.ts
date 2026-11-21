@@ -13,6 +13,8 @@ test('K1: „Über Hefta“ zeigt „Rückmeldung geben“ ohne Testschalter (Hi
     await page.evaluate(() => (globalThis as { __heftaEmpfangTest?: boolean }).__heftaEmpfangTest),
   ).toBe(undefined);
   await page.evaluate(() => (location.hash = '#/einstellungen'));
+  // DP50 Punkt 10: Die Einstellungen sind ein Register; „Über Hefta“ steht unter „App“.
+  await page.getByRole('tab', { name: 'App', exact: true }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Über Hefta' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Rückmeldung geben/ })).toBeVisible();
   await expect(page.getByText('Freiwillig, vier kurze Fragen')).toBeVisible();
@@ -35,6 +37,8 @@ test('K6: „Schreib an hallo@hefta.de.“ statt „Schreib uns“ (E166, PC86 A
   await page.goto('/');
   await page.locator('h1').first().waitFor();
   await page.evaluate(() => (location.hash = '#/einstellungen'));
+  // DP50 Punkt 10: Die Einstellungen sind ein Register; „Über Hefta“ steht unter „App“.
+  await page.getByRole('tab', { name: 'App', exact: true }).click();
   const zeile = page.locator('.listenzeile.rueck .tx');
   await expect(zeile).toHaveText(/^Mehr zu sagen\? Schreibt? an hallo@\u200b?hefta\.de\.$/);
   await expect(zeile.getByRole('link', { name: /hallo@/ })).toHaveCount(1);

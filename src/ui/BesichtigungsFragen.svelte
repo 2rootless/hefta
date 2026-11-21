@@ -41,6 +41,7 @@
         neu: daten.einstellungen?.ausgeblendeteFragen ?? [],
         heftAngelegt: heft.createdAt,
       },
+      aus: daten.einstellungen?.fragenAus ?? [],
       antworten: gespeichert.antworten,
     }),
   );

@@ -28,7 +28,7 @@ export interface AussehenVorschau {
   deck: string;
   /** Wessen Kopfzeile es ist. */
   rufname: string;
-  /** Ohne Unterlagen im Haushalt: Mustermann, als Beispiel benannt. */
+  /** Ohne Unterlagen im Haushalt: Haushalt A der Namensliste (W40), als Beispiel benannt. */
   beispiel: boolean;
 }
 
@@ -92,25 +92,25 @@ async function musterBlatt(): Promise<Uint8Array> {
   return pdf.save();
 }
 
-/** Ohne Unterlagen im Haushalt: dieselben Seiten mit Mustermann-Daten. */
+/** Ohne Unterlagen im Haushalt: dieselben Seiten mit Haushalt A der Namensliste (W40, W7). */
 async function beispielAuftrag(aussehen: MappenAussehen): Promise<BewerbungAuftrag> {
   const daten = await musterBlatt();
   const teile = (paare: [string, string?][]) =>
     paare.map(([abschnitt, detail]) => ({ abschnitt, detail, quellen: [{ daten }] }));
   return {
     titel: 'Beispiel',
-    fussName: 'Max und Lea Mustermann',
-    kurz: 'Beispielstraße 1',
-    adresse: ['Beispielstraße 1, 3. OG links', '12345 Musterstadt'],
+    fussName: 'Jarne Ostendorp und Selin Akgül',
+    kurz: 'Kranichstieg 3',
+    adresse: ['Kranichstieg 3, Erdgeschoss', '20259 Hamburg'],
     satz: '',
     mitziehende: [],
     kontakt: [],
     bloecke: [
       {
         person: {
-          name: 'Max Mustermann',
+          name: 'Jarne Ostendorp',
           rolle: 'Hauptmieter',
-          beruf: 'Elektroniker',
+          beruf: 'Mechatroniker',
           farbe: PERSONENFARBEN[0]!,
         },
         teile: teile([
@@ -121,9 +121,9 @@ async function beispielAuftrag(aussehen: MappenAussehen): Promise<BewerbungAuftr
       },
       {
         person: {
-          name: 'Lea Mustermann',
+          name: 'Selin Akgül',
           rolle: 'Mitmieterin',
-          beruf: 'Lehrerin',
+          beruf: 'Pflegefachfrau',
           farbe: PERSONENFARBEN[1]!,
         },
         teile: teile([['Selbstauskunft'], ['Gehaltsnachweise', 'Juli bis September']]),

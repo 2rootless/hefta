@@ -13,6 +13,17 @@
     ausbildungArt?: AusbildungArt | null;
     /** DP74 C3: hat keinen Nachnamen (nur unter „… ändern“). */
     ohneNachname?: boolean;
+    /** DP47 G5: weitere Lebenslagen, in Reihenfolge. */
+    weitereLagen?: {
+      id: string;
+      situation: Lebenssituation;
+      ausbildungArt?: AusbildungArt | null;
+    }[];
+    /**
+     * L8: Wurde die erste Lebenslage entfernt, rückt die zweite nach oben. Hier steht ihre Kennung, damit
+     * ihre Angaben (Beruf, Arbeitgeber, Netto) beim Speichern mitkommen.
+     */
+    ersteAus?: string | null;
   }
 </script>
 
@@ -31,6 +42,9 @@
   } from '../domain/regelkatalog';
   import { t } from '../i18n';
   import Notiz from './Notiz.svelte';
+  import Sheet from './Sheet.svelte';
+  import Symbol from './Symbol.svelte';
+  import { genitiv } from './texte';
 
   let {
     werte = $bindable(),
@@ -71,6 +85,71 @@
   );
   const lateinNoetig = $derived(!imPdfSchreibbar(`${werte.vorname} ${werte.nachname}`));
 
+  // ---------- DP47 G5: mehrere Lebenslagen ----------
+  const wertVon = (situation: Lebenssituation, art?: AusbildungArt | null) =>
+    art ? `${situation}:${art}` : situation;
+  const weitere = $derived(werte.weitereLagen ?? []);
+  const ersteText = $derived(situationText(werte.lebenssituation, werte.ausbildungArt));
+  let dazuOffen = $state(false);
+  let wahl = $state<string | null>(null);
+  /** Was dazukommen kann: jede Lage einmal, „Angestellt“ auch ein zweites Mal (zwei Arbeitgeber). */
+  const dazuOptionen = $derived(
+    optionen
+      .filter(
+        (o) =>
+          o.situation === 'angestellt' ||
+          ![
+            wertVon(werte.lebenssituation, werte.ausbildungArt),
+            ...weitere.map((l) => wertVon(l.situation, l.ausbildungArt)),
+          ].includes(o.wert),
+      )
+      .map((o) => {
+        const schonAngestellt =
+          o.situation === 'angestellt' &&
+          (werte.lebenssituation === 'angestellt' ||
+            weitere.some((l) => l.situation === 'angestellt'));
+        return {
+          ...o,
+          unter: schonAngestellt
+            ? t('lagen.nochArbeitgeber')
+            : t(`lagen.nachweis.${o.art ?? o.situation}` as Parameters<typeof t>[0]),
+        };
+      }),
+  );
+
+  function dazunehmen() {
+    const o = optionen.find((x) => x.wert === wahl);
+    if (!o) return;
+    werte.weitereLagen = [
+      ...weitere,
+      { id: crypto.randomUUID(), situation: o.situation, ausbildungArt: o.art },
+    ];
+    wahl = null;
+    dazuOffen = false;
+  }
+
+  function lageAendern(i: number, wert: string) {
+    const o = optionen.find((x) => x.wert === wert);
+    if (!o) return;
+    werte.weitereLagen = weitere.map((l, j) =>
+      j === i ? { ...l, situation: o.situation, ausbildungArt: o.art } : l,
+    );
+  }
+
+  /** „Entfernen“: eine weitere Lage fällt weg; bei der ersten rückt die zweite nach (L8). */
+  function entfernen(i: number | 'erste') {
+    if (i === 'erste') {
+      const [zweite, ...rest] = weitere;
+      if (!zweite) return;
+      werte.lebenssituation = zweite.situation;
+      werte.ausbildungArt = zweite.ausbildungArt ?? null;
+      werte.ersteAus = zweite.id;
+      werte.weitereLagen = rest;
+      return;
+    }
+    werte.weitereLagen = weitere.filter((_, j) => j !== i);
+  }
+
   function lateinAendern(teil: 'vorname' | 'nachname', text: string) {
     werte.nameMappe = {
       vorname: werte.nameMappe?.vorname ?? '',
@@ -104,6 +183,9 @@
 
 <div class="formular">
   {#if teil !== 'haushalt'}
+    <!-- DP49 Punkt 8 (W30): Satz je Angabe, für den Namen oben im Block (wie die Sätze unter der Teil-Überschrift).
+         Darunter bleiben Nachname, „kein Nachname“ und Rufname so dicht wie in DP74 (NN9). -->
+    <p class="hinweis w30 oben" data-w30="gruppe">{t('angabeSatz.name')}</p>
     <label class="eingabe">
       {t('personSeite.vorname')}
       <input
@@ -229,37 +311,77 @@
         {/each}
       </div>
     </fieldset>
+    <p class="hinweis w30" data-w30="feld">{t('angabeSatz.rolle')}</p>
   {/if}
 
   {#if teil !== 'haushalt'}
     <label class="eingabe" for="{id}-einkommen">
       {du ? t('personSeite.einkommenDu') : t('personSeite.einkommen')}
     </label>
-    <div class="auswahl">
-      <select
-        id="{id}-einkommen"
-        value={werte.ausbildungArt
-          ? `${werte.lebenssituation}:${werte.ausbildungArt}`
-          : werte.lebenssituation}
-        onchange={(e) => {
-          const o = optionen.find((x) => x.wert === e.currentTarget.value);
-          if (!o) return;
-          werte.lebenssituation = o.situation;
-          werte.ausbildungArt = o.art;
-        }}
-        aria-describedby={wechsel ? undefined : `${id}-hinweis`}
-      >
-        <!-- Ältere Daten: noch nicht gesagt, ob Studium oder Ausbildung. -->
-        {#if werte.lebenssituation === 'studierend_azubi' && !werte.ausbildungArt}
-          <option value="studierend_azubi">{situationText('studierend_azubi')}</option>
-        {/if}
-        {#each optionen as o (o.wert)}
-          <option value={o.wert}>{o.text}</option>
-        {/each}
-      </select>
+    <div class="lage-zeile">
+      <div class="auswahl">
+        <select
+          id="{id}-einkommen"
+          value={werte.ausbildungArt
+            ? `${werte.lebenssituation}:${werte.ausbildungArt}`
+            : werte.lebenssituation}
+          onchange={(e) => {
+            const o = optionen.find((x) => x.wert === e.currentTarget.value);
+            if (!o) return;
+            werte.lebenssituation = o.situation;
+            werte.ausbildungArt = o.art;
+          }}
+          aria-describedby={wechsel ? undefined : `${id}-hinweis`}
+        >
+          <!-- Ältere Daten: noch nicht gesagt, ob Studium oder Ausbildung. -->
+          {#if werte.lebenssituation === 'studierend_azubi' && !werte.ausbildungArt}
+            <option value="studierend_azubi">{situationText('studierend_azubi')}</option>
+          {/if}
+          {#each optionen as o (o.wert)}
+            <option value={o.wert}>{o.text}</option>
+          {/each}
+        </select>
+      </div>
+      {#if weitere.length}
+        <button
+          type="button"
+          class="entfernen"
+          aria-label={t('lagen.entfernenName', { lage: ersteText })}
+          onclick={() => entfernen('erste')}>{t('lagen.entfernen')}</button
+        >
+      {/if}
     </div>
+    {#each weitere as lage, i (lage.id)}
+      <label class="eingabe dazu-label" for="{id}-lage-{i}">{t('lagen.dazuLabel')}</label>
+      <div class="lage-zeile">
+        <div class="auswahl">
+          <select
+            id="{id}-lage-{i}"
+            value={wertVon(lage.situation, lage.ausbildungArt)}
+            onchange={(e) => lageAendern(i, e.currentTarget.value)}
+          >
+            {#each optionen as o (o.wert)}
+              <option value={o.wert}>{o.text}</option>
+            {/each}
+          </select>
+        </div>
+        <button
+          type="button"
+          class="entfernen"
+          aria-label={t('lagen.entfernenName', {
+            lage: situationText(lage.situation, lage.ausbildungArt),
+          })}
+          onclick={() => entfernen(i)}>{t('lagen.entfernen')}</button
+        >
+      </div>
+    {/each}
+    <button type="button" class="dazu-knopf" onclick={() => (dazuOffen = true)}>
+      <Symbol name="plus" groesse={16} />
+      {weitere.length ? t('lagen.nochEine') : t('lagen.dazu')}
+    </button>
     {#if wechsel}
-      <Notiz stark>
+      <!-- DP63c F2: hebt nur hervor, was sich ändert; keine Warnung. -->
+      <Notiz>
         <p>
           <b>{t('personSeite.wechselStatt', { statt: wechsel.statt })}</b>
           {t('personSeite.wechselBraucht', { name: rufname, braucht: wechsel.braucht })}
@@ -267,8 +389,32 @@
         </p>
       </Notiz>
     {:else}
-      <p class="hinweis" id="{id}-hinweis">{t('personSeite.einkommenHinweis')}</p>
+      <!-- DP47 G5 mit DP49 Punkt 8 (W30): mit weiteren Lagen deren Satz, sonst der Satz je Angabe. -->
+      <p class="hinweis" id="{id}-hinweis">
+        {weitere.length ? t('lagen.hinweisMehr') : t('angabeSatz.lebenslage')}
+      </p>
     {/if}
+    <Sheet bind:offen={dazuOffen} titel={t('lagen.titel')}>
+      <p class="frage">{t('lagen.frage', { name: rufname, lage: ersteText })}</p>
+      <div class="wahl-liste" role="radiogroup" aria-label={t('lagen.titel')}>
+        {#each dazuOptionen as o (o.wert)}
+          <button
+            type="button"
+            class="wahl-zeile"
+            role="radio"
+            aria-checked={wahl === o.wert}
+            onclick={() => (wahl = o.wert)}
+          >
+            <span class="kreis" aria-hidden="true"></span>
+            <span class="wahl-text"><b>{o.text}</b><small>{o.unter}</small></span>
+          </button>
+        {/each}
+      </div>
+      <p class="hinweis">{t('lagen.satz', { name: genitiv(rufname) })}</p>
+      <button type="button" class="knopf-dazu" disabled={!wahl} onclick={dazunehmen}
+        >{t('lagen.knopf')}</button
+      >
+    </Sheet>
   {/if}
 </div>
 
@@ -284,11 +430,12 @@
     border-radius: 14px;
   }
 
+  /* PC79 (C33), DP47b K2 (M1): Satz und „Ändern“ halten Abstand wie Nachbarn, mindestens 8 px. */
   .rufname {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
+    gap: 4px 12px;
     margin: -4px 0 0;
     font-size: calc(14 * var(--px));
     color: var(--ink-muted);
@@ -311,10 +458,11 @@
     font-weight: 700;
   }
 
+  /* PC79 (C33): Chips mit 8 px Abstand, nicht 6. */
   .segmente {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
   }
 
   .segmente .chip {
@@ -342,9 +490,11 @@
   }
 
   /* DP33 A4: Fokus 2 px Tinte innen. */
+  /* PC73 (W33): der Ring der Knöpfe (3 px mit Abstand); der Rand innen gehört allein der Nachfrage. */
   select:focus-visible {
-    outline: 0;
-    box-shadow: inset 0 0 0 2px var(--ink);
+    outline: 3px solid var(--ink);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--surface);
   }
 
   .auswahl::after {
@@ -429,6 +579,135 @@
   }
   .eingabe input {
     transition: color var(--bw-blende);
+  }
+
+  .hinweis.oben {
+    margin: 0;
+  }
+
+  /* DP47 G5: Feld mit „Entfernen“. In schmaler Breite rutscht „Entfernen“ in eine eigene Zeile, rechts
+     (DP47b K2). */
+  .lage-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0 8px;
+    margin-top: -8px;
+  }
+
+  .lage-zeile .auswahl {
+    flex: 1 1 200px;
+    margin-top: 0;
+  }
+
+  .entfernen,
+  .dazu-knopf {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--tap-target);
+    padding: 0 4px;
+    border: 0;
+    background: none;
+    font-size: calc(15 * var(--px));
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .entfernen {
+    color: var(--ink-muted);
+  }
+
+  .dazu-knopf {
+    justify-self: start;
+    margin-top: -4px;
+    color: var(--ink);
+  }
+
+  .dazu-label {
+    margin-top: 4px;
+  }
+
+  .frage {
+    margin: 0 0 12px;
+    color: var(--ink-muted);
+    font-size: calc(15 * var(--px));
+    line-height: calc(21 * var(--px));
+  }
+
+  .wahl-liste {
+    display: grid;
+    border-radius: 16px;
+    background: var(--surface);
+  }
+
+  .wahl-zeile {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-height: 56px;
+    padding: 12px 16px;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .wahl-zeile + .wahl-zeile {
+    border-top: 1px solid var(--line);
+  }
+
+  .kreis {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border-radius: 10px;
+    box-shadow: inset 0 0 0 2px var(--ink-muted);
+  }
+
+  .wahl-zeile[aria-checked='true'] .kreis {
+    box-shadow: inset 0 0 0 6px var(--ink);
+  }
+
+  .wahl-text {
+    display: grid;
+    gap: 2px;
+  }
+
+  .wahl-text b {
+    font-weight: 600;
+  }
+
+  .wahl-text small {
+    color: var(--ink-muted);
+    font-size: calc(14 * var(--px));
+    line-height: calc(20 * var(--px));
+  }
+
+  .knopf-dazu {
+    width: 100%;
+    min-height: 56px;
+    margin-top: 16px;
+    border: 0;
+    border-radius: 28px;
+    background: var(--action);
+    color: var(--on-action);
+    font-size: calc(17 * var(--px));
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .knopf-dazu:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  /* W30-Regel: Satz zu einer einzelnen Wahl 8 px darunter (Abstand im Formular 12 px). */
+  .hinweis[data-w30='feld'] {
+    margin-top: -4px;
   }
 
   .hinweis {

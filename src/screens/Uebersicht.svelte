@@ -5,6 +5,7 @@
   // Gegrüßt wird im Tab „Wohnungen“. Ohne Haushalt beginnt alles dort.
   import { onMount, untrack } from 'svelte';
   import { daten, gehe } from '../app/daten.svelte';
+  import { backupWort } from '../ui/backupWort';
   import { speicherPruefen } from '../app/hinweise.svelte';
   import { mitziehendeTexte, werIstDabeiSatz } from '../domain/mappeWoerter';
   import { pruefhinweise } from '../domain/pruefhinweise';
@@ -17,6 +18,7 @@
   import { fertig as rutschFertig } from '../domain/rutsch';
   import { neueUnterlagen, tageSeit } from '../domain/zeit';
   import { t, zahlwort } from '../i18n';
+  import { stimmung } from '../i18n/stimmung';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
   import BackupZeile from '../ui/BackupZeile.svelte';
   import { bewegungReduziert } from '../ui/bewegung';
@@ -37,6 +39,7 @@
   } from '../ui/mappeBlick';
   import MitziehendeZeile from '../ui/MitziehendeZeile.svelte';
   import PersonBlatt from '../ui/PersonBlatt.svelte';
+  import HaushaltUnterlagen from '../ui/HaushaltUnterlagen.svelte';
   import { pruefAnzeige } from '../ui/pruefTexte';
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
   import Symbol from '../ui/Symbol.svelte';
@@ -149,17 +152,13 @@
     werIstDabeiSatz(vertrag.length, mitziehendeTexte(kinder, weitere), buergen.length),
   );
 
-  const lead = $derived.by(() => {
-    const werte = { anzahl: offen, zahl: zahlwort(offen) };
-    return allein ? t('uebersicht.offenDu', werte) : t('uebersicht.offenIhr', werte);
-  });
+  // W37, P2 und P4: wechseln einmal am Tag; die Anrede folgt dem Haushalt wie bisher.
+  const lead = $derived(stimmung('P2', { anzahl: offen, an: allein ? 'du' : 'ihr' }));
   // Nachricht 10.11. l und m: Ein offener Prüfhinweis ändert „startklar“, hält aber nicht auf.
   const fertigSatz = $derived(
     pruefZahl
       ? t(allein ? 'mappeTab.pruefenDu' : 'mappeTab.pruefenIhr', { anzahl: pruefZahl })
-      : allein
-        ? t('mappeTab.startklarDu')
-        : t('mappeTab.startklarIhr'),
+      : stimmung('P4', { teil: 'satz', an: allein ? 'du' : 'ihr' }),
   );
   const offenZahlwort = $derived(zahlwort(offen));
 
@@ -404,13 +403,18 @@
       {/each}
     {/if}
 
+    <!-- DP45 G1 (W28): Unterlagen, die zum ganzen Haushalt gehören. -->
+    <HaushaltUnterlagen />
+
     {#if backupAlt}
       <div class="backup alt">
         <p>
-          <b>{t('uebersicht.backupAlt', { anzahl: backupAlt.tage })}</b><br />{t(
-            'uebersicht.backupNeu',
-            { anzahl: backupAlt.neu },
-          )}
+          <b
+            >{backupWort(
+              t('uebersicht.backupAlt', { anzahl: backupAlt.tage }),
+              daten.einstellungen,
+            )}</b
+          ><br />{t('uebersicht.backupNeu', { anzahl: backupAlt.neu })}
         </p>
         <a class="sichern" href="#/einstellungen/backup">{t('uebersicht.sichern')}</a>
       </div>
@@ -430,10 +434,15 @@
       nebenGeist={bw.startklar && geister ? t('mappeTab.trotzdemTeilen') : undefined}
     />
   {:else if pausiert && rutsch}
+    <!-- DP114 (E335) legt fest: „Weitermachen · {n} offen“, vorgelesen „Weitermachen, {n} offen“ mit der Zahl in Worten.
+         Bei 0 offen gilt der Zustand „fertig“ oben, nie „Weitermachen“.
+         PC178: Die Zahl am Knopf ist dieselbe wie im Satz oben. Vorher stand hier die Stelle im Rutsch („12 von 19“);
+         Übersprungenes und später Dazugekommenes blieb dabei offen, und die Zahlen widersprachen sich. -->
     <Aktionsleiste
       text={t('uebersicht.weitermachen')}
-      zusatz={t('uebersicht.vonZusatz', { schritt: rutsch.index + 1, gesamt: rutsch.liste.length })}
+      zusatz={t('uebersicht.offenZusatz', { anzahl: offen })}
       zahlNeu={bw.zahl}
+      ansage={t('uebersicht.weitermachenAnsage', { offen: offenZahlwort })}
       href="#/rutsch"
       neben={{ text: t('mappeTab.trotzdemTeilen'), onclick: () => gehe('/mappe') }}
     />
@@ -511,10 +520,11 @@
   }
 
   .aufgaben {
+    container-type: inline-size;
     margin: 18px 0 8px;
-    padding: 14px;
+    padding: 16px;
     border-radius: 16px;
-    background: var(--accent-soft);
+    background: var(--weich-karte);
   }
 
   .aufgaben h2 {
@@ -559,13 +569,15 @@
     margin-bottom: 0;
   }
 
+  /* DP104 (C33, W22): Karte im Kasten eine Stufe unter dessen 16 px, Abstände 8 px; so passt auch bei 320 px mit
+     130 % der längste Name neben den Pfeil. */
   .aufgabe {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     width: 100%;
     min-height: 64px;
-    padding: 10px 14px;
+    padding: 12px;
     border: 0;
     border-radius: 14px;
     background: var(--surface);
@@ -573,6 +585,29 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
+  }
+
+  /* DP104, C33b: Der Pfeil schrumpft nie; sonst wird er bei 320 px mit 130 % halb so groß. */
+  .aufgabe > :global(svg) {
+    flex: none;
+  }
+
+  /* DP107 (C33): Im schmalen Kasten (bis 260 px innen, etwa 320 px mit 130 %) passt sonst das längste Stück eines
+     Namens („Ausbildungs-“) nicht neben den Pfeil. Dort 8 px seitlich, 4 px vom Zeichen zum Text, 8 px zum Pfeil;
+     breiter bleibt alles nach DP104. */
+  @container (max-width: 260px) {
+    .aufgabe {
+      padding: 12px 8px;
+      gap: 0;
+    }
+
+    .aufgabe .sym {
+      margin-right: 4px;
+    }
+
+    .aufgabe > :global(svg) {
+      margin-left: 8px;
+    }
   }
 
   .aufgabe .tx,
@@ -709,7 +744,7 @@
 
   @keyframes fertig-grund {
     from {
-      background-color: var(--accent-soft);
+      background-color: var(--weich-karte);
     }
   }
 

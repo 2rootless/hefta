@@ -154,8 +154,15 @@ export function bloecke(staende: PersonStand[], e: ExportEinstellungen): Block[]
   return reihenfolge.map((s) => ({
     person: s,
     teile: [...s.unterlagen]
-      .filter((u) => gewaehlt(u, s.person.id, e) && vorhanden(u))
+      .filter((u) => gewaehlt(u, s.person.id, e))
       .sort((a, b) => rang(a, s.rolle) - rang(b, s.rolle))
+      // DP45 G3: Der Zusatz (Arbeitsvertrag bei „Neu im Job“) folgt seiner Unterlage, auch wenn es von ihr
+      // noch keine Abrechnung gibt.
+      .flatMap((u) => [
+        // DP45 G4: „noch keiner möglich“ steht als Zeile ohne Seiten in der Mappe.
+        ...(vorhanden(u) || u.keinerMoeglich ? [u] : []),
+        ...(u.zusatz && vorhanden(u.zusatz) ? [u.zusatz] : []),
+      ])
       .map((u) => ({ personId: s.person.id, rolle: s.rolle, stand: u })),
   }));
 }

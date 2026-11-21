@@ -9,12 +9,13 @@
   import { aktuelleVersionen, monatAus } from '../domain/fristen';
   import type { DateiVersion } from '../domain/modell';
   import {
+    type Dokumenttyp,
     eintragenText,
     listenText,
     ohneTrennstellen,
     personStand,
     rollenText,
-    type Dokumenttyp,
+    standFinden,
     type UnterlagenStand,
   } from '../domain/regelkatalog';
   import {
@@ -62,9 +63,8 @@
   );
   const stand = $derived(staende.find((s) => s.person.id === personId) ?? null);
   const u = $derived(
-    stand?.unterlagen.find((x) => x.typ.id === typId) ??
-      stand?.nichtMehrNoetig.find((x) => x.typ.id === typId) ??
-      null,
+    // Auch ein Zusatz wie der Arbeitsvertrag bei „Neu im Job“ (DP45 G3).
+    standFinden(stand, typId),
   );
   const v = $derived(u?.versionen.find((x) => x.id === versionId) ?? null);
   const alle = $derived(daten.ansicht?.versionen ?? []);

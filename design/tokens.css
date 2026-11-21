@@ -27,18 +27,21 @@
   --action: #26221e;
   --on-action: #faf6ef;
   --focus: #26221e;
-  --accent: #d9402b;
-  --accent-soft: #f2e8e6;
-  --accent-text: #b8331c;
-  --knapp: #f8e8c4;
-  --knapp-text: #7a5200;
+  --accent-text: #a3271e;
+  --fehler: #a85a00;
+  --fehler-soft: #fdf5e8;
+  /* DP112 (E334): Oliv statt Ocker, weiter weg vom Bernstein der Fehler (ΔE00 21,2 statt 12,1). */
+  --knapp: #f4ebcc;
+  --knapp-text: #6f640c;
   --passt: #e3eedb;
   --passt-text: #355e25;
   --ink-quiet: #71675d;
   --line-strong: #d9ccb8;
   --schleier: rgb(38 34 30 / 0.18);
-  --app-zeichen: #661f14;
-  --app-zeichen-haus: #fbf8f2;
+  --app-zeichen: #b3261e;
+  --app-zeichen-haus: #fdf8f1;
+  /* DP112 H2: Grund des App-Symbols A1b (DP111) für Zeichnungen, in denen das System die App zeigt. */
+  --app-zeichen-grund: #8a1d17;
   --termin: #2b5a86;
   --termin-soft: #e3ebf4;
   --termin-line: #a9bfd8;
@@ -86,18 +89,20 @@
   --action: #f3ede4;
   --on-action: #1b1814;
   --focus: #f3ede4;
-  --accent: #f2552e;
-  --accent-soft: #33170f;
-  --accent-text: #f2552e;
-  --knapp: #43361a;
-  --knapp-text: #f2d38c;
+  --accent-text: #f26b5b;
+  --fehler: #f5a524;
+  --fehler-soft: #3a2a10;
+  --knapp: #3b381f;
+  --knapp-text: #c7bf48;
   --passt: #2c3a25;
   --passt-text: #c6e2b2;
   --ink-quiet: #9a8f81;
   --line-strong: #4a4238;
   --schleier: rgb(27 24 20 / 0.55);
-  --app-zeichen: #661f14;
-  --app-zeichen-haus: #fbf8f2;
+  --app-zeichen: #b3261e;
+  --app-zeichen-haus: #fdf8f1;
+  /* DP112 H2: Grund des App-Symbols A1b (DP111) für Zeichnungen, in denen das System die App zeigt. */
+  --app-zeichen-grund: #8a1d17;
   --termin: #a9c8ee;
   --termin-soft: #1d2a38;
   --termin-line: #3f5a78;
@@ -161,6 +166,11 @@
   --bw-verwandeln: 700ms;
   /* Wie lange eine kurze Meldung („Kopiert“) steht; keine Bewegung, bleibt darum auch bei „reduzieren“. */
   --bw-verweilen: 2000ms;
+  /* DP49b (W33): die Nachfrage. Rand und Fläche blenden in 300 ms über, der Satz 100 ms später; der Knopf
+     blendet in 150 ms. Reines Überblenden, bleibt darum auch bei „Bewegung reduzieren“ (NF12). */
+  --bw-nachfrage: 300ms;
+  --bw-nachfrage-versatz: 100ms;
+  --bw-knopf-blende: 150ms;
   --bw-ziel: cubic-bezier(0.2, 0.7, 0.2, 1);
   /* = cubic-bezier(0, 0, 0.58, 1), wie im Handbuch. */
   --bw-weich: ease-out;

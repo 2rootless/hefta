@@ -3,11 +3,28 @@
 import { erinnerungenPlanen, erinnerungsNummer, type Erinnerung } from '../domain/erinnerungen';
 import { heftTitel } from '../domain/heftKarte';
 import type { Heft } from '../domain/modell';
-import { t } from '../i18n';
+import { t, tagText } from '../i18n';
+import { haushaltSchein } from '../domain/haushaltUnterlagen';
 import { uhrzeit } from '../ui/terminWorte';
 import type { HaushaltAnsicht } from '../storage/speicher';
 import type { Einstellungen } from '../domain/modell';
 import { istApp } from './plattform';
+import type { ZuAltUnterlage } from '../domain/erinnerungen';
+import { personStand } from '../domain/regelkatalog';
+import { erinnertQuelleSetzen } from '../ui/texte';
+import { zuAltWortlaut } from '../ui/zuAltWortlaut';
+import { daten } from './daten.svelte';
+import { erinnertWirklich } from '../ui/erinnertWort';
+
+/** W48: Sagt Hefta hier „erinnert“? Nur in der App, mit Schalter an und erlaubten Mitteilungen. */
+export function erinnert(): boolean {
+  return erinnertWirklich({
+    app: istApp(),
+    einstellungen: daten.einstellungen,
+    erlaubt: mitteilungen.erlaubt,
+  });
+}
+erinnertQuelleSetzen(erinnert);
 
 /** Ob das System Mitteilungen erlaubt; null, solange Hefta nicht gefragt hat. */
 export const mitteilungen = $state<{ erlaubt: boolean | null }>({ erlaubt: null });
@@ -60,10 +77,22 @@ function wortlaut(
         text: t('erinnerung.gehaltText', { name: p?.rufname || p?.vorname || '', monat }),
       };
     }
+    case 'wbs':
+      return {
+        titel: t('erinnerung.wbsTitel'),
+        text: t('erinnerung.wbsText', { datum: e.gueltigBis ? tagText(e.gueltigBis) : '' }),
+      };
+    case 'zuAlt': {
+      const p = ansicht?.mitglieder.find((m) => m.person.id === e.personId)?.person;
+      return zuAltWortlaut(
+        p?.rufname || p?.vorname || '',
+        (e.unterlagen ?? []).map((u) => ({ ...u, name: typNamen.get(u.typId) ?? u.typId })),
+      );
+    }
   }
 }
 
-/** Wer einen Gehaltsnachweis in Hefta hat: für „Neuer Monat beim Gehaltsnachweis“. */
+/** Wer einen Gehaltsnachweis in Hefta hat: für „Neue Monate und Ablauf von Unterlagen“ (PC62). */
 function gehaltsPersonen(ansicht: HaushaltAnsicht | null) {
   if (!ansicht) return [];
   const aktive = ansicht.mitglieder.filter((m) => !m.zugehoerigkeit.herausgenommenAm);
@@ -72,6 +101,37 @@ function gehaltsPersonen(ansicht: HaushaltAnsicht | null) {
       ansicht.dokumente.some((d) => d.personId === m.person.id && d.typ === 'gehaltsnachweis'),
     )
     .map((m) => ({ personId: m.person.id, meist: m.person.abrechnungMeist }));
+}
+
+const WEICH = String.fromCharCode(0xad);
+/** W48: Namen der Unterlagen für die Mitteilung, beim Sammeln gefüllt. */
+// eslint-disable-next-line svelte/prefer-svelte-reactivity -- nur ein Zwischenspeicher für den Wortlaut, nichts zeigt ihn an
+const typNamen = new Map<string, string>();
+
+/**
+ * W48: Unterlagen mit Datum, die zu alt werden können, für alle im Haushalt. Serien (Gehalt) haben ihre eigene
+ * Erinnerung. Gezählt wird jede Unterlage mit Datum und einer Grenze, ab der sie zu alt ist.
+ */
+function zuAltUnterlagen(ansicht: HaushaltAnsicht | null, heute: Date): ZuAltUnterlage[] {
+  if (!ansicht) return [];
+  const liste: ZuAltUnterlage[] = [];
+  for (const m of ansicht.mitglieder) {
+    if (m.zugehoerigkeit.herausgenommenAm) continue;
+    const s = personStand(m.person, m.zugehoerigkeit, ansicht.dokumente, ansicht.versionen, heute);
+    for (const u of s.pfad) {
+      const f = u.typ.fristen;
+      if (u.typ.serie || !u.neuestesDatum || f?.warnungTage === undefined) continue;
+      // Kurz wie in der App („Mietzahlungen“), ohne weiche Trennstriche: Die Mitteilung trennt das Gerät.
+      typNamen.set(u.typ.id, (u.typ.textKurz ?? u.typ.text).replaceAll(WEICH, ''));
+      liste.push({
+        personId: m.person.id,
+        typId: u.typ.id,
+        datum: u.neuestesDatum,
+        warnungTage: f.warnungTage,
+      });
+    }
+  }
+  return liste;
 }
 
 let letzterPlan = '';
@@ -87,8 +147,14 @@ export async function erinnerungenAbgleichen(d: {
     gehalt: gehaltsPersonen(d.ansicht),
     besichtigungenAn: d.einstellungen?.erinnerungBesichtigungen !== false,
     gehaltAn: d.einstellungen?.erinnerungGehalt !== false,
+    zuAltAn: d.einstellungen?.erinnerungZuAlt !== false,
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- nur ein Zeitpunkt für die Rechnung
+    zuAlt: zuAltUnterlagen(d.ansicht, new Date()),
     // eslint-disable-next-line svelte/prefer-svelte-reactivity -- nur ein Zeitpunkt für die Rechnung
     jetzt: new Date(),
+    wbsGueltigBis:
+      haushaltSchein(d.ansicht?.haushaltDokumente, d.ansicht?.versionen ?? [], 'wbs')?.version.wbs
+        ?.gueltigBis ?? null,
   }).map((e) => ({
     nummer: erinnerungsNummer(e.schluessel),
     am: e.am.getTime(),

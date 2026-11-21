@@ -2,7 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { appHinweisNochmal, erstePerson, haushaltMitMax, personHinzufuegen } from './einrichtung';
 
 // E96 (Planung 12ze): „Haushalt löschen“ unten auf „Euer Haushalt“, Hefte bleiben; danach einmal die
-// Frage nach den Heften mit Link zu „Alles löschen“. Dazu der Nachname als eigener Punkt im Kasten.
+// Frage nach den Heften, seit DP50 Punkt 1 als Karte mit „Hefte auch löschen“, „Behalten“ und
+// „Rückgängig“. Dazu der Nachname als eigener Punkt im Kasten.
 
 async function einHeft(page: Page) {
   await page.evaluate(
@@ -58,20 +59,78 @@ test('„Haushalt löschen“: erst nach dem Blatt, Hefte bleiben, Hinweis führ
   await blatt.getByRole('button', { name: 'Haushalt löschen' }).click();
 
   await expect(page).toHaveURL(/mappe-start$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Eure Mappe' })).toBeVisible();
-  await expect(page.getByRole('status')).toContainText(
-    'Haushalt gelöscht. Möchtest du auch die Hefte löschen?',
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Hier entsteht eure Mappe.' }),
+  ).toBeVisible();
+  // DP50 Punkt 1: die Frage nach den Heften als Karte; allein „Dein Heft“.
+  const karte = page.getByRole('region', { name: 'Haushalt gelöscht.' });
+  await expect(karte).toContainText(
+    'Dein Heft ist noch da, mit seinen Notizen und Fotos. Soll es auch weg?',
   );
-  // Der Link löscht nicht selbst, er führt zur Seite mit eigener Bestätigung.
-  await page.getByRole('link', { name: 'Alles löschen' }).click();
-  await expect(page).toHaveURL(/einstellungen\/loeschen$/);
-
-  // Das Heft ist noch da, jetzt ohne Haushalt.
+  // „Heft auch löschen“ in Tinte, nicht Rot (W5).
+  const knopf = karte.getByRole('button', { name: 'Heft auch löschen' });
+  const rot = await page.evaluate(() => {
+    const p = document.createElement('p');
+    p.style.color = 'var(--accent-text)';
+    document.body.append(p);
+    const c = getComputedStyle(p).color;
+    p.remove();
+    return c;
+  });
+  expect(await knopf.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(rot);
+  await knopf.click();
+  // „Rückgängig“ an der Stelle der Karte; es holt das Heft zurück.
+  await expect(page.getByRole('status')).toContainText('Ein Heft gelöscht');
+  await page.getByRole('button', { name: 'Rückgängig' }).click();
+  await expect(page.getByRole('status')).toHaveCount(0);
   await page.goto('/#/wohnungen');
   await expect(page.getByText('Lindenring 3').first()).toBeVisible();
 });
 
-test('Nachname offen (DP74 C3): eigener Punkt im Kasten, führt zum Ändern und zurück zur Mappe', async ({
+async function haushaltWeg(page: Page) {
+  await haushaltMitMax(page);
+  await einHeft(page);
+  await page.goto('/#/haushalt');
+  await page.getByRole('button', { name: 'Haushalt löschen' }).click();
+  await page
+    .getByRole('dialog', { name: 'Haushalt löschen?' })
+    .getByRole('button', { name: 'Haushalt löschen' })
+    .click();
+  await expect(page.getByRole('region', { name: 'Haushalt gelöscht.' })).toBeVisible();
+}
+
+test('„Behalten“ schließt die Karte, das Heft bleibt', async ({ page }) => {
+  await haushaltWeg(page);
+  await page.getByRole('button', { name: 'Behalten' }).click();
+  await expect(page.getByRole('region', { name: 'Haushalt gelöscht.' })).toHaveCount(0);
+  await page.goto('/#/wohnungen');
+  await expect(page.getByText('Lindenring 3').first()).toBeVisible();
+});
+
+test('„Heft auch löschen“, dann den Reiter verlassen: endgültig weg', async ({ page }) => {
+  await haushaltWeg(page);
+  await page.getByRole('button', { name: 'Heft auch löschen' }).click();
+  await expect(page.getByRole('status')).toContainText(/gelöscht/);
+  await page.goto('/#/wohnungen');
+  await expect(page.getByText('Lindenring 3')).toHaveCount(0);
+  // Gegenprobe: In der Datenbank steht kein Heft mehr.
+  const zahl = await page.evaluate(
+    () =>
+      new Promise<number>((fertig) => {
+        const r = indexedDB.open('hefta');
+        r.onsuccess = () => {
+          const q = r.result.transaction('hefte').objectStore('hefte').count();
+          q.onsuccess = () => {
+            r.result.close();
+            fertig(q.result);
+          };
+        };
+      }),
+  );
+  expect(zahl).toBe(0);
+});
+
+test('Nachname fehlt: eigener Punkt im Kasten, führt zum Ändern und zurück zur Mappe', async ({
   page,
 }) => {
   await erstePerson(page, { vorname: 'Max', nachname: '', bezeichnung: 'Hauptmieter' });

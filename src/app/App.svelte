@@ -12,6 +12,7 @@
   import HinweisKasten from '../ui/HinweisKasten.svelte';
   import Stoerung from '../ui/Stoerung.svelte';
   import { verwaisteDateienLoeschen } from '../storage/speicher';
+  import { geloescht } from '../ui/heftGeloescht.svelte';
   import { daten, db, neuLaden, verbindungPruefen } from './daten.svelte';
   import { pdfFenster } from './pdfFenster.svelte';
   import { fehlerBeobachten, hinweise } from './hinweise.svelte';
@@ -33,6 +34,9 @@
     personLoeschen: () => import('../screens/PersonLoeschen.svelte'),
     personSeite: () => import('../screens/PersonSeite.svelte'),
     unterlage: () => import('../screens/Unterlage.svelte'),
+    wbs: () => import('../screens/WbsSeite.svelte'),
+    geno: () => import('../screens/GenossenschaftSeite.svelte'),
+    vermieterWahl: () => import('../screens/VermieterWahl.svelte'),
     version: () => import('../screens/VersionSeite.svelte'),
     rutsch: () => import('../screens/Rutsch.svelte'),
     homescreen: () => import('../screens/Homescreen.svelte'),
@@ -54,6 +58,7 @@
     auskunft: () => import('../screens/SelbstauskunftSeite.svelte'),
     uebertragen: () => import('../screens/Uebertragen.svelte'),
     eingang: () => import('../screens/Eingang.svelte'),
+    buergschaft: () => import('../screens/BuergschaftSeite.svelte'),
   };
   const pdfAnsicht = () => import('../ui/PdfFenster.svelte');
 
@@ -64,6 +69,8 @@
     '/einstellungen/einspielen': () => import('../screens/BackupEinspielen.svelte'),
     '/einstellungen/rechtliches': () => import('../screens/Rechtliches.svelte'),
     '/einstellungen/loeschen': () => import('../screens/AllesLoeschen.svelte'),
+    // DP50 Punkt 10: Unterseite „Fragen für die Besichtigung“.
+    '/einstellungen/fragen': () => import('../screens/FragenEinstellungen.svelte'),
   } as const;
   const einstellungsSeite = $derived(
     einstellungen[route.pfad as keyof typeof einstellungen] as
@@ -129,6 +136,13 @@
     return w === 'keine' ? '' : w === 'einblenden' ? 'einblenden' : `wechsel-${w}`;
   });
   const heftId = $derived(route.pfad.match(/^\/heft\/([\w-]+)$/)?.[1]);
+  // E112: Bürgschaftserklärung, aus dem Heft mit Person und Heft, sonst leer.
+  const buergschaft = $derived(route.pfad.match(/^\/buergschaft(?:\/([\w-]+)\/([\w-]+))?$/));
+  // DP45 G2: Mitgliedschaft ablegen und „Wer vermietet?“ im Heft.
+  const genoId = $derived(
+    route.pfad.match(/^\/haushalt-unterlage\/genossenschaft\/([\w-]+)$/)?.[1],
+  );
+  const vermieterHeft = $derived(route.pfad.match(/^\/heft\/([\w-]+)\/vermieter$/)?.[1]);
   const merkmalId = $derived(route.pfad.match(/^\/heft\/([\w-]+)\/merkmal$/)?.[1]);
   // Zeile 9: Termin, Stand selbst setzen, Ergebnis.
   const heftUnter = $derived(
@@ -173,9 +187,9 @@
     return () => wurzel.removeProperty('--leiste-hoehe');
   });
 
-  // Dateien ohne Version gehen erst, wenn „Rückgängig“ vorbei ist.
+  // Dateien ohne Version gehen erst, wenn „Rückgängig“ vorbei ist, auch das nach „Heft löschen“ (W31).
   $effect(() => {
-    if (rueck.eintrag || !daten.geladen) return;
+    if (rueck.eintrag || geloescht.heft || geloescht.mehrere.length || !daten.geladen) return;
     void db()
       .then(verwaisteDateienLoeschen)
       .catch(() => {});
@@ -204,7 +218,11 @@
       ersterBildschirm = false;
       return;
     }
-    let versuche = 0;
+    // PC153: Die Seite kommt oft erst aus einer eigenen Datei. Früher suchte Hefta 60 Bilder lang (etwa 1 s) nach
+    // dem Titel; dauerte das Laden länger (langsames Gerät, Test unter Last), bekam der Titel nie den Fokus. Jetzt
+    // höchstens 5 s, und ein neuer Seitenwechsel beendet die Suche.
+    const bis = performance.now() + 5000;
+    let bild = 0;
     const suchen = () => {
       const aktiv = document.activeElement;
       const feldHatFokus = aktiv && aktiv !== document.body && aktiv.closest('main');
@@ -218,9 +236,10 @@
         document.title = `${titel.textContent?.replaceAll('\u00ad', '').trim()} · ${APP_NAME}`;
         titel.tabIndex = -1;
         titel.focus({ preventScroll: true });
-      } else if (++versuche < 60) requestAnimationFrame(suchen);
+      } else if (performance.now() < bis) bild = requestAnimationFrame(suchen);
     };
-    requestAnimationFrame(suchen);
+    bild = requestAnimationFrame(suchen);
+    return () => cancelAnimationFrame(bild);
   });
 </script>
 
@@ -306,6 +325,12 @@
       {#await seiten.heftMail() then m}
         <m.default id={heftUnter[1]!} art={heftUnter[2]} />
       {/await}
+    {:else if buergschaft}
+      {#key route.pfad}
+        {#await seiten.buergschaft() then m}
+          <m.default personId={buergschaft[1] ?? null} heftId={buergschaft[2] ?? null} />
+        {/await}
+      {/key}
     {:else if merkmalId}
       {#await seiten.merkmal() then m}
         <m.default id={merkmalId} />
@@ -387,6 +412,20 @@
           <m.default personId={version[1]!} typId={version[2]!} versionId={version[3]!} />
         {/await}
       {/key}
+    {:else if genoId}
+      {#key genoId}
+        {#await seiten.geno() then m}
+          <m.default id={genoId} />
+        {/await}
+      {/key}
+    {:else if vermieterHeft}
+      {#await seiten.vermieterWahl() then m}
+        <m.default id={vermieterHeft} />
+      {/await}
+    {:else if route.pfad === '/haushalt-unterlage/wbs'}
+      {#await seiten.wbs() then m}
+        <m.default />
+      {/await}
     {:else if route.pfad === '/mappe'}
       {#await seiten.mappe() then m}
         <m.default />

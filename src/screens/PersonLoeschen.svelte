@@ -5,6 +5,7 @@
   import { daten, db, gehe, neuLaden } from '../app/daten.svelte';
   import { abschliessen } from '../app/router.svelte';
   import { tageSeit } from '../domain/zeit';
+  import { backupWort } from '../ui/backupWort';
   import { t } from '../i18n';
   import { personGanzLoeschen } from '../storage/speicher';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
@@ -43,9 +44,12 @@
     const tage = tageSeit(zuletzt);
     const wann =
       tage === 0 ? t('personLoeschen.heute') : t('personLoeschen.vorTagen', { anzahl: tage });
-    return !unterlagen.neueste || unterlagen.neueste <= zuletzt
-      ? t('personLoeschen.backupDrin', { wann, name })
-      : t('personLoeschen.backupAlt', { wann, name });
+    return backupWort(
+      !unterlagen.neueste || unterlagen.neueste <= zuletzt
+        ? t('personLoeschen.backupDrin', { wann, name })
+        : t('personLoeschen.backupAlt', { wann, name }),
+      daten.einstellungen,
+    );
   });
 
   let loescht = $state(false);
@@ -116,7 +120,7 @@
     display: flex;
     gap: 10px;
     margin: var(--space-5) 0 0;
-    padding: 14px;
+    padding: 16px;
     border-radius: 16px;
     background: var(--surface);
     font-size: calc(14 * var(--px));

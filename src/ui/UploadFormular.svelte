@@ -59,6 +59,7 @@
     onfertig,
     onleer,
     abbrechen,
+    heftId = null,
   }: {
     person: Person;
     typ: Dokumenttyp;
@@ -74,6 +75,8 @@
     onleer?: (fehler: string) => void;
     /** Ausweg ohne Speichern („Abbrechen“). */
     abbrechen?: { text: string; onclick: () => void };
+    /** DP49 Punkt 5: Für dieses Heft gilt der Scan (Bürgschaftserklärung aus E112). */
+    heftId?: string | null;
   } = $props();
 
   // Während des Speicherns nicht abbrechen: Sonst ginge das Blatt zu, bevor klar ist, ob es geklappt hat.
@@ -112,6 +115,9 @@
   const weggelassen = new SvelteSet<string>();
   let monat = $state<string | null>(null);
   let andererMonat = $state(false);
+  // PC79 (CP41): In der Form je Datei steht „Anderer Monat …“ am Ende der Auswahl; dann ein Monatsfeld.
+  const ANDERER = 'anderer';
+  let andererJe = $state<boolean[]>([]);
   // Serien (Gehalt): mehrere Monate in einer Datei möglich (Entwurf RS2), je Monat eine Version.
   const serie = $derived(!!typ.serie && typ.datum === 'abrechnungsmonat');
   const monate = new SvelteSet<string>();
@@ -122,7 +128,10 @@
   // Mehrere Dateien einer Serie (z. B. drei Gehaltsnachweise auf einmal): je Datei ein Monat,
   // vorgeschlagen aus dem Dateinamen, sonst vom erwarteten Monat rückwärts.
   let dateiMonate = $state<string[]>([]);
-  const jeDatei = $derived(serie && dateien.length > 1);
+  // CP41 (DP50): Auch eine einzelne Datei mit einer Seite steht in dieser Form: Kopf mit „1 Seite“,
+  // „Seite 1“ mit dem Fund, Vorschau mit Lupe, der Monat als Auswahl.
+  const eineSeite = $derived(serie && dateien.length === 1 && dateien[0]?.dokument?.numPages === 1);
+  const jeDatei = $derived(serie && (dateien.length > 1 || eineSeite));
   const monatsListe = $derived(
     Array.from({ length: 12 }, (_, n) => monatPlus(serienAuswahl[3]!, -n)),
   );
@@ -158,6 +167,17 @@
         });
     });
   });
+  // DP49 Punkt 7: „Zwei Dateien, drei Seiten. Welcher Monat ist welche Seite?“
+  const jeDateiTitel = $derived(
+    eineSeite
+      ? t('hochladen.eineSeite')
+      : t('hochladen.jeDatei', {
+          dateien: t('hochladen.dateienWort', { anzahl: dateien.length }),
+          seiten: t('hochladen.seitenWort', {
+            anzahl: dateien.reduce((n, d) => n + (d.dokument?.numPages ?? 1), 0),
+          }),
+        }),
+  );
   const monateJeDatei = $derived(
     dateien.map((_, i) => {
       const werte = dateiSeiten[i];
@@ -412,6 +432,7 @@
             dokument: d.dokument!,
             nummer: s + 1,
             schluessel: `${i}:${s}`,
+            drin: !weggelassen.has(`${i}:${s}`),
           }))
         : [],
     ),
@@ -503,6 +524,8 @@
           monate.clear();
           monate.add(m);
           monatErkannt = m;
+          // CP41: Die eine Seite zeigt ihren Monat in der Form je Datei.
+          if (!monatAusDateiname(d.name, heute)) dateiMonate[stelle] = m;
         } else {
           monat = m;
           andererMonat = !auswahl.monate.includes(m);
@@ -547,6 +570,7 @@
     bleibend.forEach((k) => weggelassen.add(k));
     dateien.splice(i, 1);
     dateiMonate.splice(i, 1);
+    andererJe.splice(i, 1);
     dateiSeiten.splice(i, 1);
     dateiFunde.splice(i, 1);
     dateiHashes.splice(i, 1);
@@ -784,6 +808,7 @@
       }
       await unterlageSpeichern(verbindung, {
         dateiname: dateien[0]?.name ?? null,
+        heftId,
         personId: zielPerson ?? person.id,
         typ: typ.id,
         serie: typ.serie?.anzahl ?? null,
@@ -842,6 +867,7 @@
     }
     dateien = [];
     dateiMonate = [];
+    andererJe = [];
     dateiSeiten = [];
     dateiFunde = [];
     dateiHashes = [];
@@ -1107,15 +1133,22 @@
       </label>
     {/if}
 
-    {#if jeDatei}
+    {#if serie && !dateien.length}
+      <!-- CP41: Die erste Datei lädt noch. Erst danach steht fest, welche Form gilt; sonst springt sie. -->
+    {:else if jeDatei}
       <fieldset class="feld">
-        <legend>{t('hochladen.jeDatei')}</legend>
+        <legend>{jeDateiTitel}</legend>
         <ul class="zuordnung">
           {#each dateien as d, i (i)}
             <li>
               {#if dateiSeiten[i]}
-                <span class="dateiname"><MitUmbruch text={d.name} nach="_" /></span>
-                <p class="hinweis">{t('hochladen.seitenEinerDatei')}</p>
+                <!-- DP49 Punkt 7: je Datei oben Name und Seitenzahl, darunter jede Seite in derselben Form. -->
+                <div class="w16-kopf">
+                  <span class="dateiname"><MitUmbruch text={d.name} nach="_" /></span>
+                  {#if d.dokument}<small
+                      >{t('unterlage.seitenZahl', { anzahl: d.dokument.numPages })}</small
+                    >{/if}
+                </div>
               {:else}
                 <!-- W16 (DP39, 1.5): Name und Seiten in einer Zeile, der Kopf der ersten Seite lesbar, Lupe
                      zum Vergrößern; darunter die Monatswahl. Nur Dateinamen reichen nicht. -->
@@ -1124,6 +1157,17 @@
                   {#if d.dokument}<small
                       >{t('unterlage.seitenZahl', { anzahl: d.dokument.numPages })}</small
                     >{/if}
+                </div>
+                <!-- DP49 Punkt 7: Auch eine Datei mit einer Seite hat die Form je Seite: „Seite 1“ mit dem Fund,
+                     Vorschau mit Lupe, der Monat als gefüllte Fläche mit Pfeil (ohne Rahmen und Doppelpfeil). -->
+                {@const fund = d.stuecke ? monatFinden(d.stuecke, heute) : null}
+                <div class="w16-seite">
+                  <b>{t('aufteilen.seite', { nummer: 1 })}</b>
+                  <small
+                    >{fund
+                      ? t('aufteilen.fund', { monat: monatName(fund, heute) })
+                      : t('aufteilen.keinFund')}</small
+                  >
                 </div>
                 {#if d.kopf || d.miniaturen[0]}
                   <button
@@ -1143,16 +1187,46 @@
                 {/if}
                 <label class="w16-monat">
                   <span class="visually-hidden">{d.name}</span>
-                  <select bind:value={dateiMonate[i]} aria-label={d.name} aria-invalid={doppelt}>
+                  <span class="w16-pfeil" aria-hidden="true"
+                    ><Symbol name="weiter" groesse={16} /></span
+                  >
+                  <select
+                    value={andererJe[i] ? ANDERER : dateiMonate[i]}
+                    onchange={(e) => {
+                      const wert = e.currentTarget.value;
+                      if (wert === ANDERER) andererJe[i] = true;
+                      else {
+                        andererJe[i] = false;
+                        dateiMonate[i] = wert;
+                      }
+                    }}
+                    aria-label={d.name}
+                    aria-invalid={doppelt}
+                  >
                     {#each [...new Set([dateiMonate[i]!, ...monatsListe])]
                       .sort()
                       .reverse() as m (m)}
                       <option value={m}>{monatName(m, heute)}</option>
                     {/each}
+                    <option value={ANDERER}>{t('hochladen.andererMonatAuswahl')}</option>
                   </select>
                 </label>
+                {#if andererJe[i]}
+                  <label class="eingabe">
+                    <span class="visually-hidden">{t('hochladen.monat')} {d.name}</span>
+                    <input
+                      type="month"
+                      value={dateiMonate[i]}
+                      max={monatsListe[0]}
+                      onchange={(e) => {
+                        if (e.currentTarget.value) dateiMonate[i] = e.currentTarget.value;
+                      }}
+                    />
+                  </label>
+                {/if}
               {/if}
-              {#if !beschaeftigt}
+              <!-- PC79 (RS3b): Bei einer Datei kein „Entfernen“; unten bleibt „Andere Datei wählen“ (dateiZeile). -->
+              {#if !beschaeftigt && dateien.length > 1}
                 <button type="button" class="textlink entfernen" onclick={() => dateiEntfernen(i)}
                   >{t('hochladen.entfernen')}<span class="visually-hidden"> {d.name}</span></button
                 >
@@ -1435,7 +1509,7 @@
 
   .gesperrt-text {
     margin: 0;
-    padding: 14px 16px;
+    padding: 16px;
     border-radius: 18px;
     background: var(--surface);
     font-size: calc(16 * var(--px));
@@ -1646,13 +1720,16 @@
   /* W16 (DP39, 1.5) */
   .w16-kopf {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: baseline;
-    gap: 12px;
+    gap: 0 12px;
   }
 
+  /* Lange Dateinamen brechen um, auch bei 320 px mit 130 % (Prüfkatalog C9). */
   .w16-kopf .dateiname {
     font-weight: 650;
+    overflow-wrap: anywhere;
   }
 
   .w16-kopf small {
@@ -1689,10 +1766,62 @@
     color: #fff;
   }
 
+  /* DP49 Punkt 7: dieselbe Form wie je Seite (SeitenMonate): „Seite 1“ und Fund über der Vorschau,
+     der Monat als gefüllte Fläche mit Pfeil nach unten. */
+  .w16-seite {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0 12px;
+    margin-top: 10px;
+  }
+
+  .w16-seite b {
+    font-size: calc(15 * var(--px));
+    font-weight: 650;
+  }
+
+  .w16-seite small {
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
+  }
+
+  .w16-monat {
+    position: relative;
+    display: block;
+    margin-top: 8px;
+  }
+
   .w16-monat select {
     width: 100%;
-    min-height: 44px;
-    margin-top: 8px;
+    min-height: 48px;
+    padding: 0 38px 0 14px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--track);
+    color: var(--ink);
+    font-size: calc(16 * var(--px));
+    font-weight: 600;
+    white-space: nowrap;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .w16-monat select:focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--surface);
+  }
+
+  .w16-pfeil {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    display: grid;
+    color: var(--ink);
+    pointer-events: none;
+    transform: translateY(-50%) rotate(90deg);
   }
 
   /* Je Datei ihre Seiten unter dem Namen (RS3b), kleiner als im Raster. */
@@ -1732,19 +1861,6 @@
     overflow-wrap: break-word;
     font-size: calc(15 * var(--px));
     line-height: calc(20 * var(--px));
-  }
-
-  .zuordnung select {
-    flex-shrink: 0;
-    min-height: var(--tap-target);
-    padding: 0 10px;
-    border: 1.5px solid var(--control-border);
-    border-radius: 12px;
-    background: var(--ground);
-    color: var(--ink);
-    font: inherit;
-    font-size: calc(16 * var(--px));
-    font-weight: 700;
   }
 
   .datum {

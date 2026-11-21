@@ -1,0 +1,125 @@
+import { expect, test } from '@playwright/test';
+import { writeFileSync } from 'node:fs';
+import { pdfMit, szenarioLaden } from './szenario-laden';
+
+// PC80 (E163), PC177 (DP110, W40): das Musterbackup für die Vorschau und die Store-Bilder, ohne Passwort. Läuft nur
+// mit VORSCHAU_MUSTER=1 (werkzeug/vorschau-2-1.sh). Haushalt A der Namensliste (Jarne, Selin, Hiltrud bürgt, ein
+// Kind) und die drei Hefte aus DP110, Abschnitt 3; die Straßen sind gegen OSM geprüft (data/musterstrassen.json).
+
+// PC187: Die Tage zählen ab dem Bau des Backups, damit der Termin auf 02 noch kommt, wenn der Auftraggeber die
+// Store-Bilder am iPhone aufnimmt (fest am 17.11. lag er schon zurück).
+const HEUTE = new Date();
+const tag = (d: number, h = 12) =>
+  new Date(HEUTE.getFullYear(), HEUTE.getMonth(), HEUTE.getDate() + d, h, 0).toISOString();
+const leer = {
+  beworben: null,
+  gefragtAm: null,
+  termin: null,
+  ergebnis: null,
+  loeschbitteAm: null,
+  nachgefasstAm: null,
+  abgelegtAm: null,
+};
+
+function heft(
+  id: string,
+  merkmal: string,
+  adresse: string,
+  stadtteil: string,
+  angaben: Record<string, unknown>,
+  ereignisse: Record<string, unknown>,
+) {
+  return {
+    id,
+    createdAt: tag(-10),
+    updatedAt: tag(-10),
+    haushaltId: null,
+    adresse,
+    link: null,
+    quelle: '',
+    inseratText: null,
+    kennung: `k-${id}`,
+    ereignisse: { ...leer, ...ereignisse },
+    notiz: '',
+    angaben: { merkmal, stadtteil, ...angaben },
+  };
+}
+
+const HEFTE = [
+  // 02: Besichtigung mit Termin, Vermieterin Dörte Kaminski (Hausverwaltung)
+  heft(
+    'muster-1',
+    'Altbau mit Garten',
+    'Kranichstieg 3, Erdgeschoss\n20259 Hamburg',
+    'Eimsbüttel',
+    { warm: 1240, zimmer: 3, flaeche: 74, anbieter: 'Frau Kaminski' },
+    {
+      beworben: { am: tag(-6), weg: 'mail', sicher: true },
+      termin: { am: tag(4, 17), ort: 'Kranichstieg 3, Erdgeschoss', treffpunkt: '' },
+    },
+  ),
+  heft(
+    'muster-2',
+    'Dachgeschoss mit Balkon',
+    'Lotsenwisch 8, 2. Obergeschoss\n22081 Hamburg',
+    'Barmbek-Süd',
+    { warm: 1310, zimmer: 3, flaeche: 78 },
+    { beworben: { am: tag(-3), weg: 'mail', sicher: true } },
+  ),
+  heft(
+    'muster-3',
+    'Neubau am Park',
+    'Rotdornbogen 21, 1. Obergeschoss\n21107 Hamburg',
+    'Wilhelmsburg',
+    { warm: 1180, zimmer: 2, flaeche: 61 },
+    {},
+  ),
+];
+
+test('Musterbackup für die Vorschau', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium' || !process.env.VORSCHAU_MUSTER, 'nur für die Vorschau');
+  await szenarioLaden(page, 'A-namensliste', '/');
+  await page.evaluate(
+    (hefte) =>
+      new Promise<void>((fertig) => {
+        const r = indexedDB.open('hefta');
+        r.onsuccess = () => {
+          const tx = r.result.transaction('hefte', 'readwrite');
+          for (const h of hefte) tx.objectStore('hefte').put(h);
+          tx.oncomplete = () => {
+            r.result.close();
+            fertig();
+          };
+        };
+      }),
+    HEFTE,
+  );
+  await page.reload();
+  await page.evaluate(() => (window.location.hash = '#/einstellungen/backup'));
+  await page.getByRole('radio', { name: /^Ohne Passwort/ }).click();
+  const laden = page.waitForEvent('download');
+  await page.getByRole('button', { name: /^Backup (sichern|erstellen)/ }).click();
+  const datei = await laden;
+  await datei.saveAs('test-results/hefta-muster.hefta');
+  // W50 (DP106): Im Browser weiß Hefta nur, dass der Download begonnen hat.
+  await expect(page.getByText(/^Download gestartet:/)).toBeVisible();
+});
+
+// PC187: drei erfundene Abrechnungen für Selin (Store-Bild 09, Monate zuordnen). Firma aus Haushalt A, deutlich
+// gekennzeichnet; liegen in der Vorschau unter /muster/.
+test('Abrechnungen für die Vorschau', async ({ browserName }) => {
+  test.skip(browserName !== 'chromium' || !process.env.VORSCHAU_MUSTER, 'nur für die Vorschau');
+  for (const monat of ['August', 'September', 'Oktober'])
+    writeFileSync(
+      `test-results/gehalt-selin-${monat.toLowerCase()}.pdf`,
+      await pdfMit(
+        [
+          `Pflegezentrum Seilerkoppel
+Verdienstabrechnung ${monat} 2026
+Selin Akgül
+Erfunden – kein echtes Dokument`,
+        ],
+        14,
+      ),
+    );
+});

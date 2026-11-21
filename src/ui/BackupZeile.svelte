@@ -3,12 +3,16 @@
   import { daten } from '../app/daten.svelte';
   import { tageSeit } from '../domain/zeit';
   import { t } from '../i18n';
+  import { backupWort } from './backupWort';
 
   const text = $derived.by(() => {
     const zuletzt = daten.einstellungen?.letztesBackup;
     if (!zuletzt) return t('backupZeile.nie');
     const tage = tageSeit(zuletzt);
-    return tage === 0 ? t('backupZeile.heute') : t('backupZeile.tage', { anzahl: tage });
+    return backupWort(
+      tage === 0 ? t('backupZeile.heute') : t('backupZeile.tage', { anzahl: tage }),
+      daten.einstellungen,
+    );
   });
 </script>
 

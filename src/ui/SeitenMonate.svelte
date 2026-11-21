@@ -10,7 +10,6 @@
   import KopfVorschau from './KopfVorschau.svelte';
   import Symbol from './Symbol.svelte';
   import { textMessen } from './textMessen';
-  import { monatJahr } from './versionInfo';
 
   let {
     zeilen,
@@ -75,7 +74,7 @@
         <b>{t('aufteilen.seite', { nummer: z.seite + 1 })}</b>
         <small
           >{z.fund
-            ? t('aufteilen.fund', { monat: monatJahr(z.fund) })
+            ? t('aufteilen.fund', { monat: monatName(z.fund) })
             : t('aufteilen.keinFund')}</small
         >
       </div>
@@ -197,9 +196,11 @@
   }
 
   /* DP33 A4: Fokus 2 px Tinte innen. */
+  /* PC73 (W33): der Ring der Knöpfe (3 px mit Abstand); der Rand innen gehört allein der Nachfrage. */
   select:focus-visible {
-    outline: 0;
-    box-shadow: inset 0 0 0 2px var(--ink);
+    outline: 3px solid var(--ink);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--surface);
   }
 
   .ohne select {

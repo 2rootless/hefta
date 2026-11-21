@@ -87,7 +87,9 @@ describe('Frist der Bonität', () => {
     expect(f.bis).toBe('2026-12-19');
     expect(f.kurz).toBe('prüfbar bis 19.\u00a0Dez.');
     expect(f.lang).toBe('Online prüfbar bis 19.\u00a0Dezember 2026.');
-    expect(f.hinweis).toBe('Endet die Frist, wird der Nachweis dadurch nicht ungültig.');
+    expect(f.hinweis).toBe(
+      'Nach Ablauf der Frist lässt sich der Nachweis nur nicht mehr online prüfen.',
+    );
     expect(f.quelle).toMatch(/^Quelle: Muster des SCHUFA-BonitätsChecks, Stand Januar 2024/);
     expect(f.vorbei).toBe(false);
   });

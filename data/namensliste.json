@@ -1,0 +1,167 @@
+{
+  "quelle": "Projekt-Doc namensliste.md der Planung, Stand 20.11.2026 (W40, W7). Alles erfunden; neue Namen nur über die Liste.",
+  "personen": [
+    {
+      "haushalt": "A",
+      "name": "Jarne Ostendorp",
+      "rolle": "Hauptmieter",
+      "beruf": "Mechatroniker",
+      "telefon": "0171 3920011",
+      "mail": "jarne.ostendorp@example.com"
+    },
+    {
+      "haushalt": "A",
+      "name": "Selin Akgül",
+      "rolle": "Mitmieterin",
+      "beruf": "Pflegefachfrau",
+      "telefon": "0171 3920012",
+      "mail": "selin.akguel@example.com"
+    },
+    {
+      "haushalt": "A",
+      "name": "Hiltrud Ostendorp",
+      "rolle": "Bürgin (Jarnes Mutter)",
+      "beruf": "Verwaltungsangestellte",
+      "telefon": "0171 3920013",
+      "mail": "hiltrud.ostendorp@example.com"
+    },
+    {
+      "haushalt": "A",
+      "name": "Frieda Ostendorp",
+      "rolle": "Kind, zieht mit ein",
+      "beruf": null,
+      "telefon": null,
+      "mail": null
+    },
+    {
+      "haushalt": "B",
+      "name": "Mai Linh Tran",
+      "rolle": "Hauptmieterin",
+      "beruf": "Softwaretesterin",
+      "telefon": "0171 3920021",
+      "mail": "mailinh.tran@example.com"
+    },
+    {
+      "haushalt": "B",
+      "name": "Konstantin Wawrzyniak",
+      "rolle": "Mitmieter",
+      "beruf": "Tischler",
+      "telefon": "0171 3920022",
+      "mail": "konstantin.wawrzyniak@example.com"
+    },
+    {
+      "haushalt": "B",
+      "name": "Oskar Wawrzyniak",
+      "rolle": "Kind",
+      "beruf": null,
+      "telefon": null,
+      "mail": null
+    },
+    {
+      "haushalt": "B",
+      "name": "Ylva Tran",
+      "rolle": "Kind",
+      "beruf": null,
+      "telefon": null,
+      "mail": null
+    },
+    {
+      "haushalt": "C",
+      "name": "Ronja Feddersen",
+      "rolle": "allein im Vertrag",
+      "beruf": "Studentin (Lehramt)",
+      "telefon": "0171 3920031",
+      "mail": "ronja.feddersen@example.com"
+    },
+    {
+      "haushalt": "C",
+      "name": "Detlef Feddersen",
+      "rolle": "Bürge (Ronjas Vater)",
+      "beruf": "Schiffsmechaniker",
+      "telefon": "0171 3920032",
+      "mail": "detlef.feddersen@example.com"
+    },
+    {
+      "haushalt": "D",
+      "name": "Ilias Benali",
+      "rolle": "Hauptmieter",
+      "beruf": "Koch",
+      "telefon": "0171 3920041",
+      "mail": "ilias.benali@example.com"
+    },
+    {
+      "haushalt": "D",
+      "name": "Matthis Sörensen",
+      "rolle": "Mitmieter",
+      "beruf": "Rettungssanitäter",
+      "telefon": "0171 3920042",
+      "mail": "matthis.soerensen@example.com"
+    },
+    {
+      "haushalt": "E",
+      "name": "Wiebke Brodersen",
+      "rolle": "Hauptmieterin",
+      "beruf": "Rente",
+      "telefon": "0171 3920051",
+      "mail": "wiebke.brodersen@example.com"
+    },
+    {
+      "haushalt": "E",
+      "name": "Hauke Brodersen",
+      "rolle": "Mitmieter",
+      "beruf": "Rente",
+      "telefon": "0171 3920052",
+      "mail": "hauke.brodersen@example.com"
+    },
+    {
+      "haushalt": "F",
+      "name": "Johanna Meyer-Ellerbrock",
+      "rolle": "Doppelname mit Bindestrich",
+      "beruf": "Steuerfachangestellte",
+      "telefon": "0171 3920061",
+      "mail": "johanna.meyerellerbrock@example.com"
+    },
+    {
+      "haushalt": "F",
+      "name": "Luca D’Alessandro",
+      "rolle": "Apostroph im Namen",
+      "beruf": "Grafiker",
+      "telefon": "0171 3920062",
+      "mail": "luca.dalessandro@example.com"
+    },
+    {
+      "haushalt": "F",
+      "name": "Olena Hrytsenko",
+      "rolle": "Name auch in kyrillischer Schrift: Олена Гриценко",
+      "beruf": "Zahnmedizinische Fachangestellte",
+      "telefon": "0171 3920063",
+      "mail": "olena.hrytsenko@example.com"
+    },
+    {
+      "haushalt": "F",
+      "name": "Ansgar Ün",
+      "rolle": "sehr kurzer Nachname mit Umlaut",
+      "beruf": "Busfahrer",
+      "telefon": "0171 3920064",
+      "mail": "ansgar.uen@example.com"
+    }
+  ],
+  "vermieterseite": [
+    {
+      "name": "Dörte Kaminski",
+      "rolle": "Hausverwaltung, Ansprechpartnerin"
+    },
+    {
+      "name": "Bent Lührs",
+      "rolle": "privater Vermieter"
+    },
+    {
+      "name": "Swantje Ohlendorf",
+      "rolle": "Maklerin"
+    },
+    {
+      "name": "Rüdiger Paschke",
+      "rolle": "Hausmeister bei der Besichtigung"
+    }
+  ]
+}

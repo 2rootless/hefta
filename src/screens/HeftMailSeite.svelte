@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { zurueckZumHeft } from '../domain/heftKarte';
+  import { heftOrt, zurueckZumHeft } from '../domain/heftKarte';
   // Löschbitte und „Kurz nachfragen“ (B18 `s=loeschbitte`, `s=nachfassen`; Zeile 9): eine kurze Mail mit
   // Betreff und Text, die man vor dem Öffnen ändern kann. Hefta verschickt nichts selbst; es merkt sich,
   // dass die Mail geöffnet wurde. Ob der Vermieter gelöscht hat, kann Hefta nicht wissen.
@@ -36,6 +36,8 @@
       beworbenAm: heft.ereignisse.beworben?.am ?? null,
       namen: vertrag.map((m) => `${m.person.vorname} ${m.person.nachname}`.trim()),
       heute: new Date(),
+      // W37 (PD101 U2): ohne Straße der Ort im Betreff der Nachfrage.
+      ort: heftOrt(heft),
     };
     return art === 'loeschbitte' ? loeschbitteText(auftrag) : nachfassText(auftrag);
   });

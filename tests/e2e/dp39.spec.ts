@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { stimmungMuster } from './stimmung-muster';
 import {
   abgelegtPruefen,
   haarliniePruefen,
@@ -147,22 +148,24 @@ test('A9, A12, wunsch-W18, wunsch-W19: erster Reiter aktiv, Karte oben links ohn
   await expect(page.locator('.haarlinie .ring')).toHaveCount(1);
 });
 
-test('A10, wunsch-W18: mittlerer Reiter aktiv, Karte rund, Reiter schließt an', async ({
+test('A10, wunsch-W18: mittlerer Reiter aktiv, Karte oben links gerade (DP49), Reiter schließt an', async ({
   page,
 }) => {
   await rutschStarten(page, '03-mehrere-offen');
   await page.locator('.reiter').nth(1).click();
   await expect(page.locator('.reiter').nth(1)).toHaveClass(/\ban\b/);
+  // DP49 Punkt 2: Die Karte ist oben links immer gerade, dort beginnt das Register.
   const ecke = await page
     .locator('.register-rahmen .karte')
     .evaluate((e) => getComputedStyle(e).borderTopLeftRadius);
-  expect(ecke).not.toBe('0px');
+  expect(ecke).toBe('0px');
   expect(await page.evaluate(registerPruefen)).toEqual([]);
 });
 
 test('A11, wunsch-W19: übersprungen: Pfeil am Symbol, Zähler zählt es nicht', async ({ page }) => {
   await rutschStarten(page, '03-mehrere-offen');
-  const zaehler = page.locator('.reiter.an small');
+  // DP49 Punkt 2: Der Fortschritt steht im Blatt, nicht mehr auf dem Reiter.
+  const zaehler = page.locator('.register-rahmen .im-blatt');
   const vorher = await zaehler.textContent();
   const name = await reiterName(page).textContent();
   await page
@@ -173,7 +176,7 @@ test('A11, wunsch-W19: übersprungen: Pfeil am Symbol, Zähler zählt es nicht',
   if ((await reiterName(page).textContent()) === name)
     await expect(page.locator('.haarlinie .z-uebersprungen .pfeil')).toHaveCount(1);
   await page.locator('.reiter', { hasText: name! }).click();
-  await expect(page.locator('.reiter.an small')).toHaveText(vorher!);
+  await expect(page.locator('.register-rahmen .im-blatt')).toHaveText(vorher!);
 });
 
 test('A13, wunsch-W16: mehrere Monate: Kopf jeder Datei lesbar, Lupe, Wahl bleibt nach „Fertig“', async ({
@@ -226,25 +229,31 @@ test('A15: Ende mit Übersprungenem: Reihen je Person, Legende', async ({ page }
     await weiter.click({ force: true });
     await page.waitForTimeout(400);
   }
-  // DP39, 4: alles übersprungen heißt „Für heute fertig.“
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Für heute fertig.');
+  // DP39, 4: alles übersprungen heißt „Für heute fertig.“ (W37: oder eine andere Fassung von P10b)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    stimmungMuster('P10b', { teil: 'satz' }),
+  );
   await expect(page.locator('.karte-weiss.personen li')).toHaveCount(1);
   await expect(page.getByText(/übersprungen, bleibt auf der Übersicht offen/)).toBeVisible();
 });
 
-test('A17, wunsch-W18: 320 px mit 130 %: Reiter in zwei Reihen in der Reihenfolge des Haushalts (DP70 U1), nichts gekürzt', async ({
+test('A17, wunsch-W18: 320 px mit 130 %: eine Reihe, die rollt (DP49), nichts gekürzt', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 246, height: 437 });
   await rutschStarten(page, '10-lange-namen');
   expect(await page.evaluate(registerPruefen)).toEqual([]);
+  // DP49 Punkt 2: statt zweier Reihen eine, die seitlich rollt; der vordere Reiter steht ganz da.
   const lagen = await page
     .locator('.reiter')
-    .evaluateAll((r) => r.map((e) => Math.round(e.getBoundingClientRect().top)));
-  expect(new Set(lagen).size).toBeGreaterThan(1);
-  // DP70 U1 (2.0.1): Der erste Reiter steht oben, wie er vorgelesen wird; der aktive rückt nicht mehr nach unten.
-  expect(lagen[0]).toBe(Math.min(...lagen));
-  expect([...lagen].sort((a, b) => a - b)).toEqual(lagen);
+    .evaluateAll((r) => r.map((e) => (e as HTMLElement).offsetTop));
+  expect(new Set(lagen).size).toBe(1);
+  const ganz = await page.locator('.reiter.an').evaluate((e) => {
+    const r = e.getBoundingClientRect();
+    const n = e.parentElement!.getBoundingClientRect();
+    return r.left >= n.left - 1 && r.right <= n.right + 1;
+  });
+  expect(ganz).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
 });
 
@@ -288,7 +297,8 @@ test('A21: Person ändern: Vorschau „In der Mappe“ in der Druckfarbe der gew
   const vorher = await vorschau
     .locator('.zeichen')
     .evaluate((e) => getComputedStyle(e).backgroundColor);
-  await page.locator('.farben button, [role="radio"]').nth(5).click();
+  // Nur in der Farbwahl: Seit W42 stehen vier Rollen davor, ebenfalls als „radio“.
+  await page.locator('.farben [role="radio"]').nth(3).click();
   await expect
     .poll(() => vorschau.locator('.zeichen').evaluate((e) => getComputedStyle(e).backgroundColor))
     .not.toBe(vorher);

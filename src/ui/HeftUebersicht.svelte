@@ -7,11 +7,13 @@
   import { rueckgaengigAnbieten } from '../app/rueckgaengig.svelte';
   import { route } from '../app/router.svelte';
   import { gruppieren, ohneLoeschbitte } from '../domain/heftStand';
-  import { heftAendern } from '../storage/speicher';
+  import { heftAendern, heftZurueckholen } from '../storage/speicher';
+  import { geloescht } from './heftGeloescht.svelte';
   import { eckdaten, heftOrt, heftTitel, terminKurz } from '../domain/heftKarte';
   import type { Heft } from '../domain/modell';
   import { HEUTE_LAGE, tageBis, zeile, type Marke, type ZeitWort } from '../domain/tageslinie';
   import { t, type TextSchluessel } from '../i18n';
+  import { stimmung } from '../i18n/stimmung';
   import Symbol from './Symbol.svelte';
   import TerminKarte from './TerminKarte.svelte';
   import { terminNaehe } from '../domain/terminNaehe';
@@ -121,24 +123,56 @@
     });
   });
 
-  const g = $derived(gruppieren(hefte, jetzt));
-  const imSpiel = $derived(g.stehtAn.length + g.wartet.length + g.gemerkt.length);
+  // Heft löschen (DP49 Punkt 12, H1): Das eben gelöschte Heft bleibt an seiner Stelle, als Zeile
+  // „… gelöscht“ mit „Rückgängig“. Es zählt nirgends mit und wird nie zur großen Terminkarte.
+  const mitWeg = $derived.by(() => {
+    const w = geloescht.heft;
+    if (!w) return hefte;
+    const ohne = hefte.filter((h) => h.id !== w.id);
+    ohne.splice(Math.min(geloescht.stelle, ohne.length), 0, w);
+    return ohne;
+  });
+  const istWeg = (h: Heft) => h.id === geloescht.heft?.id;
+  const zahl = (liste: Heft[]) => liste.filter((h) => !istWeg(h)).length;
+  const g = $derived(gruppieren(mitWeg, jetzt));
+  const imSpiel = $derived(zahl(g.stehtAn) + zahl(g.wartet) + zahl(g.gemerkt));
 
   // Die große Karte: die nächste Besichtigung, die noch kommt. Vergangene ohne Ergebnis bleiben Zeilen.
-  const naechste = $derived(g.stehtAn.find((h) => tageBis(h.ereignisse.termin!.am, jetzt) >= 0));
+  const naechste = $derived(
+    g.stehtAn.find((h) => !istWeg(h) && tageBis(h.ereignisse.termin!.am, jetzt) >= 0),
+  );
   const stehtAnZeilen = $derived(g.stehtAn.filter((h) => h !== naechste));
 
-  let offen = $state<'keine' | 'abgelegt' | null>(null);
+  // Lag das gelöschte Heft in einer zugeklappten Gruppe, ist sie offen, damit „Rückgängig“ zu sehen ist.
+  let offen = $state<'keine' | 'abgelegt' | null>(
+    untrack(() => {
+      const w = geloescht.heft;
+      if (!w) return null;
+      const wo = gruppieren([w], jetzt);
+      return wo.keineAntwort.length ? 'keine' : wo.abgelegt.length ? 'abgelegt' : null;
+    }),
+  );
+
+  async function zurueckholen() {
+    const w = geloescht.heft;
+    if (!w) return;
+    // Aus dem Zustand der Oberfläche: IndexedDB speichert nur einfache Objekte.
+    await heftZurueckholen(await db(), $state.snapshot(w) as Heft);
+    geloescht.heft = null;
+    await stillLaden();
+  }
 
   // „Alle ablegen“ bei „Keine Antwort“ (Planung 09a): erst ab drei Heften, davor die Zahl ohne
   // Löschbitte als Auskunft, kein Hindernis. Danach „Rückgängig“ bis zur nächsten Handlung.
   const ALLE_AB = 3;
-  const loeschbitteFehlt = $derived(ohneLoeschbitte(g.keineAntwort));
+  const loeschbitteFehlt = $derived(ohneLoeschbitte(g.keineAntwort.filter((h) => !istWeg(h))));
   async function alleAblegen() {
-    const vorher = g.keineAntwort.map((h) => ({
-      id: h.id,
-      ereignisse: $state.snapshot(h.ereignisse),
-    }));
+    const vorher = g.keineAntwort
+      .filter((h) => !istWeg(h))
+      .map((h) => ({
+        id: h.id,
+        ereignisse: $state.snapshot(h.ereignisse),
+      }));
     const am = new Date().toISOString();
     const verbindung = await db();
     for (const v of vorher)
@@ -291,6 +325,21 @@
   </a>
 {/snippet}
 
+{#snippet eintrag(h: Heft)}
+  {#if istWeg(h)}{@render wegZeile(h)}{:else}{@render zeileVon(h)}{/if}
+{/snippet}
+
+{#snippet wegZeile(h: Heft)}
+  <!-- DP49 Punkt 12 (H1): an der Stelle des Hefts, ohne Zeitdruck, bis man die Liste verlässt. -->
+  <div class="weg" role="status">
+    <span class="weg-tx">{t('heft.loeschen.geloescht', { wohnung: heftTitel(h).text })}</span>
+    <button type="button" class="weg-zurueck" onclick={zurueckholen}
+      >{t('allgemein.rueckgaengig')}</button
+    >
+  </div>
+  <p class="weg-satz">{t('heft.loeschen.bleibt')}</p>
+{/snippet}
+
 {#snippet gruppe(art: 'termin' | 'wartet' | 'gemerkt', titel: string, anzahl: number)}
   <h2 class="gr">
     <span class="gz {art}" aria-hidden="true"><i></i></span>
@@ -300,33 +349,34 @@
 {/snippet}
 
 <p class="sub">
-  {imSpiel ? t('hefte.imSpiel', { anzahl: imSpiel }) : t('hefte.keineImSpiel')}
+  <!-- W37, P1: wechselt einmal am Tag. -->
+  {stimmung('P1', { anzahl: imSpiel })}
 </p>
 
 <div class="hefte" bind:this={liste}>
   {#if g.stehtAn.length}
-    {@render gruppe('termin', t('hefte.stehtAn'), g.stehtAn.length)}
+    {@render gruppe('termin', t('hefte.stehtAn'), zahl(g.stehtAn))}
     {#if naechste}
       <TerminKarte heft={naechste} {jetzt} href={`#/heft/${naechste.id}`} />
     {/if}
     {#if stehtAnZeilen.length}
       <div class="bl st">
-        {#each stehtAnZeilen as h (h.id)}{@render zeileVon(h)}{/each}
+        {#each stehtAnZeilen as h (h.id)}{@render eintrag(h)}{/each}
       </div>
     {/if}
   {/if}
 
   {#if g.wartet.length}
-    {@render gruppe('wartet', t('hefte.wartet'), g.wartet.length)}
+    {@render gruppe('wartet', t('hefte.wartet'), zahl(g.wartet))}
     <div class="bl wa">
-      {#each g.wartet as h (h.id)}{@render zeileVon(h)}{/each}
+      {#each g.wartet as h (h.id)}{@render eintrag(h)}{/each}
     </div>
   {/if}
 
   {#if g.gemerkt.length}
-    {@render gruppe('gemerkt', t('hefte.gemerkt'), g.gemerkt.length)}
+    {@render gruppe('gemerkt', t('hefte.gemerkt'), zahl(g.gemerkt))}
     <div class="bl gm">
-      {#each g.gemerkt as h (h.id)}{@render zeileVon(h)}{/each}
+      {#each g.gemerkt as h (h.id)}{@render eintrag(h)}{/each}
     </div>
   {/if}
 
@@ -337,20 +387,20 @@
       aria-expanded={offen === 'keine'}
       onclick={() => (offen = offen === 'keine' ? null : 'keine')}
     >
-      <span>{t('hefte.keineAntwort')}</span><span class="an">{g.keineAntwort.length}</span>
+      <span>{t('hefte.keineAntwort')}</span><span class="an">{zahl(g.keineAntwort)}</span>
       <Symbol name={offen === 'keine' ? 'auf' : 'ab'} groesse={20} />
     </button>
     {#if offen === 'keine'}
       <div class="bl ke">
-        {#each g.keineAntwort as h (h.id)}{@render zeileVon(h)}{/each}
+        {#each g.keineAntwort as h (h.id)}{@render eintrag(h)}{/each}
       </div>
-      {#if g.keineAntwort.length >= ALLE_AB}
+      {#if zahl(g.keineAntwort) >= ALLE_AB}
         <div class="alle">
           {#if loeschbitteFehlt}
             <p>{t('hefte.ohneLoeschbitte', { anzahl: loeschbitteFehlt })}</p>
           {/if}
           <button type="button" class="alle-ab" onclick={alleAblegen}
-            >{t('hefte.alleAblegen', { anzahl: g.keineAntwort.length })}</button
+            >{t('hefte.alleAblegen', { anzahl: zahl(g.keineAntwort) })}</button
           >
         </div>
       {/if}
@@ -364,7 +414,7 @@
       aria-expanded={offen === 'abgelegt'}
       onclick={() => (offen = offen === 'abgelegt' ? null : 'abgelegt')}
     >
-      <span>{t('hefte.abgelegt')}</span><span class="an">{g.abgelegt.length}</span>
+      <span>{t('hefte.abgelegt')}</span><span class="an">{zahl(g.abgelegt)}</span>
       <Symbol name={offen === 'abgelegt' ? 'auf' : 'ab'} groesse={20} />
     </button>
     {#if offen === 'abgelegt'}
@@ -372,11 +422,14 @@
       <ul class="ab-karte">
         {#each g.abgelegt as h (h.id)}
           <li>
-            <a class="az" href={`#/heft/${h.id}`}>
-              <span class="az-tag">{abgelegtTag(h)}</span>
-              <span class="az-tx"><b>{heftTitel(h).text}</b><small>{ergebnisWort(h)}</small></span>
-              <span class="az-pfeil"><Symbol name="weiter" groesse={16} /></span>
-            </a>
+            {#if istWeg(h)}{@render wegZeile(h)}{:else}
+              <a class="az" href={`#/heft/${h.id}`}>
+                <span class="az-tag">{abgelegtTag(h)}</span>
+                <span class="az-tx"><b>{heftTitel(h).text}</b><small>{ergebnisWort(h)}</small></span
+                >
+                <span class="az-pfeil"><Symbol name="weiter" groesse={16} /></span>
+              </a>
+            {/if}
           </li>
         {/each}
       </ul>
@@ -385,6 +438,32 @@
 </div>
 
 <style>
+  /* DP49 Punkt 12: die Zeile des gelöschten Hefts, leiser Grund, „Rückgängig“ in Tinte. */
+  .weg {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 56px;
+    padding: 0 var(--space-2, 16px);
+    border-radius: 14px;
+    background: var(--ground);
+    color: var(--ink-muted);
+  }
+  .weg-zurueck {
+    min-height: 44px;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .weg-satz {
+    margin: 6px var(--space-2, 16px) 0;
+    color: var(--ink-muted);
+    font-size: calc(12 * var(--px));
+  }
   .alle {
     margin: 4px 0 12px;
     padding: 0 var(--space-1);
@@ -522,7 +601,7 @@
     width: 56px;
     height: 56px;
     border-radius: 14px;
-    background: var(--accent-soft);
+    background: var(--foto-grund);
   }
 
   /* Sehr schmal (320 px mit großer Schrift): Der Titel braucht den Platz, der Daumen fällt weg. */
@@ -707,7 +786,7 @@
   }
 
   .tl :global(.l-lt.tun) {
-    border-top-color: var(--accent);
+    border-top-color: var(--ink);
   }
 
   .tl :global(.l-pt) {
@@ -736,7 +815,7 @@
     height: 7px;
     margin-left: -3.5px;
     border-radius: 1px;
-    background: var(--accent);
+    background: var(--ink);
     transform: rotate(45deg);
   }
 

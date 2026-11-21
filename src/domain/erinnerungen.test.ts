@@ -119,3 +119,30 @@ describe('Erinnerungen planen', () => {
     expect(erinnerungsNummer('bald:a:1')).not.toBe(erinnerungsNummer('bald:a:2'));
   });
 });
+
+describe('Wohnberechtigungsschein (DP45 G1, PC56)', () => {
+  it('erinnert einmal, 30 Tage vor „Gültig bis“, morgens', () => {
+    const liste = erinnerungenPlanen({ ...alle, hefte: [], wbsGueltigBis: '2027-03-31' });
+    const wbs = liste.filter((e) => e.art === 'wbs');
+    expect(wbs).toHaveLength(1);
+    expect(wbs[0]!.am.toString()).toBe(new Date(2027, 2, 1, 10).toString());
+    expect(wbs[0]!.ziel).toBe('/haushalt-unterlage/wbs');
+  });
+
+  it('nichts, wenn der Tag schon vorbei ist oder kein Datum eingetragen', () => {
+    const vorbei = erinnerungenPlanen({ ...alle, hefte: [], wbsGueltigBis: '2026-11-20' });
+    expect(vorbei.filter((e) => e.art === 'wbs')).toEqual([]);
+    const ohne = erinnerungenPlanen({ ...alle, hefte: [], wbsGueltigBis: null });
+    expect(ohne.filter((e) => e.art === 'wbs')).toEqual([]);
+  });
+
+  it('PC62: der Schalter „Neue Monate und Ablauf von Unterlagen“ regelt auch den Schein', () => {
+    const aus = erinnerungenPlanen({
+      ...alle,
+      gehaltAn: false,
+      hefte: [],
+      wbsGueltigBis: '2027-03-31',
+    });
+    expect(aus.filter((e) => e.art === 'wbs')).toEqual([]);
+  });
+});

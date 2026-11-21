@@ -50,3 +50,54 @@ describe('Rufname ohne Titel (E257)', () => {
     expect(rufnameFolgt('Dr. Maximiliane', 'Prof. Lea', 'Maxi')).toBe('Maxi');
   });
 });
+
+// PC148: „Dr“, „Prof“, „Dipl-Ing“ ohne Punkt gelten auch als Titel, nur als ganzes Wort und nur, wenn noch
+// ein Wort folgt. Jeder Fall hat seine Gegenprobe: eine falsche Regel, unter der genau dieser Fall rot wird.
+const nurMitPunkt = (v: string) => {
+  const w = v.trim().split(/\s+/);
+  const ab = w.findIndex((x) => !x.endsWith('.'));
+  return (ab < 0 ? v.trim() : w.slice(ab).join(' ')).split(/[\s-]/)[0];
+};
+// Falsch: schneidet „Dr“ oder „Prof“ vorn ab, auch mitten im Namen („Drago“ wird „ago“).
+const nachAnfang = (v: string) =>
+  v
+    .trim()
+    .replace(/^((dr|prof)\.?\s*)+/i, '')
+    .split(/[\s-]/)[0];
+const TITEL_OHNE_PUNKT: [
+  vorname: string,
+  rufname: string,
+  falscheRegel: (v: string) => string | undefined,
+][] = [
+  ['Dr Maximiliane', 'Maximiliane', nurMitPunkt],
+  ['Dr. Maximiliane', 'Maximiliane', (v) => v.trim().split(/[\s-]/)[0]],
+  ['Prof Dr Maximiliane', 'Maximiliane', nurMitPunkt],
+  ['Drago', 'Drago', nachAnfang],
+  ['Dipl-Ing Max', 'Max', nurMitPunkt],
+  ['dr Lea', 'Lea', nurMitPunkt],
+  ['Professor Lea', 'Professor', nachAnfang],
+];
+
+describe('Titel ohne Punkt (PC148)', () => {
+  it.each(TITEL_OHNE_PUNKT)(
+    '„%s“ ergibt „%s“, die Gegenprobe wird rot',
+    (vorname, rufname, falsch) => {
+      expect(rufnameAus(vorname)).toBe(rufname);
+      expect(falsch(vorname)).not.toBe(rufname);
+    },
+  );
+
+  it('nur ein Titel: die alte Regel bleibt', () => {
+    expect(rufnameAus('Dr')).toBe('Dr');
+    expect(rufnameAus('Prof Dr')).toBe('Prof');
+  });
+
+  it('ein in 2.0.1 gebildeter Rufname „Dr“ wird beim Lesen neu gebildet, ein eigener bleibt', () => {
+    expect(rufnameGelesen({ vorname: 'Dr Maximiliane', rufname: 'Dr' }).rufname).toBe(
+      'Maximiliane',
+    );
+    expect(rufnameGelesen({ vorname: 'Drago', rufname: 'Drago' }).rufname).toBe('Drago');
+    expect(rufnameGelesen({ vorname: 'Dr Maximiliane', rufname: 'Maxi' }).rufname).toBe('Maxi');
+    expect(rufnameFolgt('Dr Maximiliane', 'Prof Lea', 'Dr')).toBe('Lea');
+  });
+});

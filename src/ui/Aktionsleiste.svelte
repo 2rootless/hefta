@@ -20,6 +20,9 @@
     nebenGeist,
     statt,
     leise = false,
+    unterzeile,
+    grundOben = false,
+    fokusHalten = false,
   }: {
     text: string;
     zusatz?: string;
@@ -46,6 +49,15 @@
     statt?: import('svelte').Snippet;
     /** DP39: Ist alles da, wird der Knopf leise (weiche Fläche, Tinte), etwa „Unterlage hinzufügen“. */
     leise?: boolean;
+    /** K9 (DP96): zweite Zeile im Knopf, etwa der nächste Teil unter „Weiter“. */
+    unterzeile?: string;
+    /** K9 (DP96, Fall 5): Der Satz `grund` steht über dem Knopf statt darunter. */
+    grundOben?: boolean;
+    /**
+     * K9: Der Fokus bleibt beim Tippen im Feld, wie beim früheren Knopf im Teil. Ginge die Tastatur erst zu, rückte
+     * die Seite (ein Feld zeigt beim Verlassen eine Zeile mehr), und das iPhone verwürfe den Tipp.
+     */
+    fokusHalten?: boolean;
   } = $props();
   const grundId = $props.id();
 
@@ -142,17 +154,20 @@
     <span class="beschriftung" aria-hidden="true" use:einzeilig>{text}</span>{#if zusatz}<small
         class:neu={zahlNeu}
         aria-hidden="true">{zusatz}</small
-      >{/if}
+      >{/if}{#if unterzeile}<small class="unter" aria-hidden="true">{unterzeile}</small>{/if}
   {:else}
     <span class="beschriftung" use:einzeilig>{text}</span>{#if zusatz}<small class:neu={zahlNeu}
         >{zusatz}</small
-      >{/if}
+      >{/if}{#if unterzeile}<small class="unter">{unterzeile}</small>{/if}
   {/if}
 {/snippet}
 
 <div class="leiste" class:beim-tippen-weg={tippt && knapp} bind:this={leiste}>
   <div class="innen">
     {#if rueck.eintrag}<RueckgaengigZeile />{/if}
+    {#if grund && grundOben}<p id={grundId} class="oben" class:visually-hidden={tippt}>
+        {grund}
+      </p>{/if}
     {#if statt}
       {@render statt()}
     {:else if href && !grund}
@@ -177,6 +192,9 @@
         class:deaktiviert={!!grund}
         aria-disabled={grund ? 'true' : undefined}
         aria-describedby={grund ? grundId : undefined}
+        onmousedown={(e) => {
+          if (fokusHalten) e.preventDefault();
+        }}
         onclick={() => {
           if (!grund) onclick?.();
           else beiGrund?.();
@@ -185,7 +203,7 @@
         {@render inhalt()}
       </button>
     {/if}
-    {#if grund}<p id={grundId} class:visually-hidden={tippt}>{grund}</p>{/if}
+    {#if grund && !grundOben}<p id={grundId} class:visually-hidden={tippt}>{grund}</p>{/if}
     {#if neben}
       <button type="button" class="textlink neben" onclick={neben.onclick}>{neben.text}</button>
     {:else if nebenGeist}
@@ -303,6 +321,25 @@
     font-weight: 600;
     opacity: 0.75;
     white-space: nowrap;
+  }
+
+  /* DP47b K2: In schmaler Breite (320 px mit 130 %) steht der Zähler in einer zweiten Zeile, der Knopf
+     wird höher; so läuft die Schrift nie bis an den Rand. */
+  @media (max-width: 300px) {
+    .haupt small {
+      flex-basis: 100%;
+    }
+  }
+
+  /* K9 (DP96): Der nächste Teil steht als ganze zweite Zeile unter „Weiter“, nie abgeschnitten. */
+  .haupt small.unter {
+    flex-basis: 100%;
+    min-width: 0;
+    line-height: calc(19 * var(--px));
+  }
+
+  p.oben {
+    margin: 0 0 6px;
   }
 
   /* Eigens über `button:not(.neben)`: Sonst bliebe der Knopf trotz Hinweis voll dunkel (C17). */

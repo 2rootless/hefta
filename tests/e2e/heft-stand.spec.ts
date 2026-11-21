@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { stimmungsTexte } from './stimmung-muster';
 import { haushaltMitMax } from './einrichtung';
 import { ganzesBild } from './hefte-hilfen';
 
@@ -198,8 +199,17 @@ test('Besichtigung vorbei: Ergebnis direkt im Heft (Zeile 9)', async ({ page }) 
   await expect(page.getByText('Wie ist es ausgegangen?')).toBeVisible();
   await expect(page.getByRole('button', { name: 'In den Kalender' })).toHaveCount(0);
   await page.getByRole('button', { name: /^Zusage/ }).click();
+  // DP109: Titel „Zusage“; Anfang aus P9 mit „Max“, dann fest: heute eingetragen, mit der Wohnung.
   await expect(page.getByRole('region', { name: /^Stand: Ergebnis\. Zusage$/ })).toBeVisible();
-  await expect(page.getByText(/^Glückwunsch!/)).toBeVisible();
+  const satz = (await page.locator('p.satz').first().innerText()).trim();
+  expect(
+    stimmungsTexte('P9', { teil: 'satz' }).map(
+      (p) => `${p.replace('{namen}', 'Max')} Heute kam die Zusage für die Wohnung Musterweg 7.`,
+    ),
+  ).toContain(satz);
+  await expect(
+    page.getByText('Das Heft bleibt hier, bis der Vertrag unterschrieben ist.'),
+  ).toBeVisible();
 });
 
 test('Termin entfernen ohne Kalender: kein Satz zum Kalender (Planung 12t)', async ({ page }) => {

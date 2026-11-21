@@ -205,7 +205,7 @@ test('PC23 A3: Ohne Empfang keine Rückmeldung im Heft, kein Fehler', async ({ p
   await page.goto('/#/heft/besucht');
   await page.reload();
   await page.getByRole('button', { name: 'Zusage', exact: true }).click();
-  await expect(page.getByRole('heading', { level: 2, name: /Zusage/ })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Zusage' })).toBeVisible();
   await expect(page.getByText(/Hefta bei der Bewerbung geholfen/)).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Nein danke' })).toHaveCount(0);
 });

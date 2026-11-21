@@ -1,0 +1,170 @@
+[
+ {
+  "nr": "SY1a",
+  "fassung": "20",
+  "was": "Lücke bei 58 px gerechnet ≥ 1 px",
+  "gut": true,
+  "info": "1.70 px"
+ },
+ {
+  "nr": "SY1a",
+  "fassung": "A1",
+  "was": "Lücke bei 58 px gerechnet ≥ 1 px",
+  "gut": false,
+  "info": "0.83 px"
+ },
+ {
+  "nr": "SY1a",
+  "fassung": "A1b",
+  "was": "Lücke bei 58 px gerechnet ≥ 1 px",
+  "gut": true,
+  "info": "1.93 px"
+ },
+ {
+  "nr": "SY1b",
+  "fassung": "20",
+  "was": "Lücke im Bild offen: flach 58 px ≥ 0,75; Glas 58 px in jeder Darstellung ≥ 0,5 und nicht unter 2.0",
+  "gut": true,
+  "info": "flach 0.82, Glas schlechtester 0.52"
+ },
+ {
+  "nr": "SY1b",
+  "fassung": "A1",
+  "was": "Lücke im Bild offen: flach 58 px ≥ 0,75; Glas 58 px in jeder Darstellung ≥ 0,5 und nicht unter 2.0",
+  "gut": false,
+  "info": "flach 0.71, Glas schlechtester 0.33 · normal/hell 0.68; dunkel/hell 0.68; klar-hell/hell 0.79"
+ },
+ {
+  "nr": "SY1b",
+  "fassung": "A1b",
+  "was": "Lücke im Bild offen: flach 58 px ≥ 0,75; Glas 58 px in jeder Darstellung ≥ 0,5 und nicht unter 2.0",
+  "gut": true,
+  "info": "flach 0.83, Glas schlechtester 0.53"
+ },
+ {
+  "nr": "SY2",
+  "fassung": "20",
+  "was": "Strich wie im Logo: 3,2",
+  "gut": false,
+  "info": "3.4"
+ },
+ {
+  "nr": "SY2",
+  "fassung": "A1",
+  "was": "Strich wie im Logo: 3,2",
+  "gut": false,
+  "info": "4.2"
+ },
+ {
+  "nr": "SY2",
+  "fassung": "A1b",
+  "was": "Strich wie im Logo: 3,2",
+  "gut": true,
+  "info": "3.2"
+ },
+ {
+  "nr": "SY4",
+  "fassung": "20",
+  "was": "Haus wie 2.0: Maß 20, Mitte 396/512",
+  "gut": true,
+  "info": "Maß 20, Mitte 396/512"
+ },
+ {
+  "nr": "SY4",
+  "fassung": "A1",
+  "was": "Haus wie 2.0: Maß 20, Mitte 396/512",
+  "gut": false,
+  "info": "Maß 21, Mitte 390/512"
+ },
+ {
+  "nr": "SY4",
+  "fassung": "A1b",
+  "was": "Haus wie 2.0: Maß 20, Mitte 396/512",
+  "gut": true,
+  "info": "Maß 20, Mitte 396/512"
+ },
+ {
+  "nr": "SY5",
+  "fassung": "A1",
+  "was": "drei Seiten, Deckel reicht bis an die Seiten (kein Streifen)",
+  "gut": false,
+  "info": "Deckel bis 760, 2 Seiten"
+ },
+ {
+  "nr": "SY5",
+  "fassung": "A1b",
+  "was": "drei Seiten, Deckel reicht bis an die Seiten (kein Streifen)",
+  "gut": true,
+  "info": "Deckel bis 772, 3 Seiten"
+ },
+ {
+  "nr": "SY3",
+  "fassung": "A1",
+  "was": "Glas: kein dunkler Balken an der Deckelkante, mindestens so hell wie 2.0 (alle Darstellungen)",
+  "gut": false,
+  "info": "normal/hell 0.024 < 0.045; dunkel/hell 0.008 < 0.029; klar-hell/hell 0.448 < 0.518"
+ },
+ {
+  "nr": "SY3",
+  "fassung": "A1b",
+  "was": "Glas: kein dunkler Balken an der Deckelkante, mindestens so hell wie 2.0 (alle Darstellungen)",
+  "gut": true,
+  "info": "überall ≥ 2.0"
+ },
+ {
+  "nr": "SY6",
+  "fassung": "20",
+  "was": "Klammer auf Deckel ≥ 4,5 : 1, Standard und Dunkel",
+  "gut": true,
+  "info": "11.19 / 11.77"
+ },
+ {
+  "nr": "SY6",
+  "fassung": "A1",
+  "was": "Klammer auf Deckel ≥ 4,5 : 1, Standard und Dunkel",
+  "gut": true,
+  "info": "6.19 / 7.95"
+ },
+ {
+  "nr": "SY6",
+  "fassung": "A1b",
+  "was": "Klammer auf Deckel ≥ 4,5 : 1, Standard und Dunkel",
+  "gut": true,
+  "info": "6.19 / 7.95"
+ },
+ {
+  "nr": "SY7",
+  "fassung": "A1b",
+  "was": "Klar: keine Seite ragt in den Deckel (x ≥ 772, aus der Geometrie)",
+  "gut": true,
+  "info": "kleinstes x 772.0"
+ },
+ {
+  "nr": "SY8",
+  "fassung": "A1b",
+  "was": "Deckel #b3261e wie A1",
+  "gut": true,
+  "info": "#b3261e"
+ },
+ {
+  "nr": "SY9",
+  "fassung": "A1b",
+  "was": "App Store: 1024 × 1024, ohne Transparenz",
+  "gut": true,
+  "info": "(1024, 1024) RGB"
+ },
+ {
+  "nr": "SY10",
+  "fassung": "A1",
+  "was": "Flächen wie 2.0 (± 1,5 Prozentpunkte)",
+  "gut": false,
+  "info": "Deckel 57.9 % (-5.6) · Klammer 16.1 % (+4.3) · Seiten 13.2 % (+1.3) · Rest 12.8 % (-0.0)"
+ },
+ {
+  "nr": "SY10",
+  "fassung": "A1b",
+  "was": "Flächen wie 2.0 (± 1,5 Prozentpunkte)",
+  "gut": true,
+  "info": "Deckel 64.2 % (+0.7) · Klammer 11.0 % (-0.7) · Seiten 11.9 % (+0.0) · Rest 12.9 % (+0.0)"
+ }
+]

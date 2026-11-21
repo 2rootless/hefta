@@ -71,9 +71,10 @@ test('wunsch-W34 (FV3): Die Favicons aller vier Websites sind nicht das App-Symb
 }) => {
   await page.setContent('<p>Probe</p>');
   for (const f of FAVICONS) expect(await istAppSymbol(page, f), f).toBe(false);
-  // Gegenprobe (tabs.py): das App-Symbol selbst und das frühere Favicon (das App-Symbol im Tab) werden rot.
+  // Gegenprobe (tabs.py): das App-Symbol selbst und das App-Symbol als Favicon gezeichnet (seit 2.1 A1 nach
+  // DP63b, rund wie im Tab) werden rot. Das frühere Favicon zeigte das alte, braune Symbol und gleicht A1 nicht mehr.
   expect(await istAppSymbol(page, APP_SYMBOL)).toBe(true);
-  expect(await istAppSymbol(page, 'design/logo/favicon.svg')).toBe(true);
+  expect(await istAppSymbol(page, 'design/dp63b/app-symbol/app-symbol-A1-rund.svg')).toBe(true);
 });
 
 test('FV1: Das Zeichen ist bei 16 und 32 px auf hellem und dunklem Tab zu sehen', async ({

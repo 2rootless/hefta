@@ -128,7 +128,7 @@ test('Zurück oben links tut dasselbe wie die Wischgeste', async ({ page }) => {
   await laden(page, '01-standard', '/');
   await page.getByRole('link', { name: /^Haushalt bearbeiten: / }).click();
   await expect(page.getByRole('heading', { name: 'Euer Haushalt' })).toBeVisible();
-  await page.getByRole('link', { name: /Ändern.*Lea/ }).click();
+  await page.getByRole('link', { name: 'Rolle von Lea ändern' }).click();
   await expect(page.getByLabel('Vorname')).toHaveValue('Lea');
   await page.getByRole('link', { name: 'Abbrechen' }).click();
   await expect(page.getByRole('heading', { name: 'Euer Haushalt' })).toBeVisible();
@@ -216,63 +216,98 @@ test('Backup: Die Vorschau zählt weitere Erwachsene mit (E25: als Zählung unte
   await expect(page.getByText(/\d Personen/)).toHaveCount(0);
 });
 
-test('Selbstauskunft: Hinweis zum Format, Knopf zum nächsten Teil, von wem der Haushaltsteil ist', async ({
+test('Selbstauskunft: Nachfrage zum Format nach „Weiter“, Knopf „Stimmt“, nichts rückt (DP49, DP50)', async ({
   page,
 }) => {
   await laden(page, '02-neustart', '/selbstauskunft/p-02-neustart-0');
   await page.getByRole('button', { name: /^Kontakt/ }).click();
-  const email = page.getByLabel('E-Mail');
+  const email = page.getByRole('textbox', { name: /^E-Mail/ });
+  const telefon = page.getByRole('textbox', { name: /^Telefon/ });
+  // DP49b: Aktiv ist die Nachfrage in .nachfrage.an; die Zeile hält sonst ihren Platz mit unsichtbarem Text.
+  const nachfrage = page.locator('.nachfrage.an');
+  // DP50: „E-Mail“ und die Teile darunter stehen in allen Zuständen gleich. Die Nachfrage zur Mail steht unter
+  // dem Mail-Feld; gemessen wird darum auch der Teil darunter.
+  const darunter = page.getByRole('button', { name: /^Einkommen/ });
+  const lage = async () => [(await email.boundingBox())!.y, (await darunter.boundingBox())!.y];
   await email.fill('max-at-beispiel');
-  await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toHaveCount(0);
-  await page.getByRole('textbox', { name: 'Telefon' }).click();
-  await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toBeVisible();
-  // DP70 QA25: Ein Hinweis ist höflich (role=status), kein Alarm; Gegenprobe: nicht als alert.
-  await expect(
-    page.getByRole('status').filter({ hasText: /Mailadresse sieht ungewöhnlich aus/ }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('alert').filter({ hasText: /Mailadresse sieht ungewöhnlich aus/ }),
-  ).toHaveCount(0);
+  await telefon.click();
+  // DP49: erst nach „Weiter“, nicht schon beim Verlassen des Felds.
+  await expect(nachfrage).toHaveCount(0);
+  const vor = await lage();
+  await page.getByRole('button', { name: /^Weiter( zu |: )/ }).click();
+  await expect(nachfrage).toContainText('Sieht ungewöhnlich aus. Stimmt sie?');
+  await expect(email).toHaveClass(/pruefzustand/);
+  await expect(page.getByRole('button', { name: 'Stimmt', exact: true })).toBeVisible();
+  await expect(email).toBeVisible();
+  // W8: „E-Mail“ steht vor, während und nach der Nachfrage an derselben Stelle.
+  expect(await lage()).toEqual(vor);
+  // Ändert man das Feld, steht wieder „Weiter“ da, und die Nachfrage geht.
   await email.fill('max@example.com');
-  // DP77 (TL26): Die Nachfrage gibt es nur noch für gültige Sonderrufnummern; Buchstaben sind ein Fehler im Feld.
-  await page.getByRole('textbox', { name: 'Telefon' }).fill('abc');
+  await expect(nachfrage).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Weiter( zu |: )/ })).toBeVisible();
+  expect(await lage()).toEqual(vor);
+  // DP77 (TL26): Buchstaben sind ein Fehler im Feld, keine Nachfrage; „Weiter“ führt ins Feld (PC126 K1).
+  await telefon.fill('abc');
   await email.click();
   await expect(
     page.getByText('In der Nummer stehen Buchstaben. Möglich sind nur Ziffern.'),
   ).toBeVisible();
-  await expect(page.getByText(/Die Telefonnummer sieht ungewöhnlich aus/)).toHaveCount(0);
-  await page.getByRole('textbox', { name: 'Telefon' }).fill(SONDER);
-  await email.click();
-  await expect(page.getByText(/Die Telefonnummer sieht ungewöhnlich aus/)).toBeVisible();
-  // Nur ein Hinweis: Es wird trotzdem gespeichert, und der Knopf führt weiter.
-  await page.getByRole('textbox', { name: 'Telefon' }).fill('0171 3920007');
-  await email.click();
-  await expect(page.getByText(/Die Telefonnummer sieht ungewöhnlich aus/)).toHaveCount(0);
-  await page.getByRole('button', { name: /^Weiter: / }).click();
-  await expect(page.getByLabel('E-Mail')).toHaveCount(0);
+  await page.getByRole('button', { name: /^Weiter( zu |: )/ }).click();
+  await expect(nachfrage).toHaveCount(0);
+  await expect(telefon).toBeFocused();
+  // Eine gültige Sonderrufnummer ist kein Fehler; nach ihr fragt Hefta nach (W33).
+  await telefon.fill(SONDER);
+  await page.getByRole('button', { name: /^Weiter( zu |: )/ }).click();
+  await expect(nachfrage).toHaveCount(1);
+  await telefon.fill('0171 3920007');
+  await expect(nachfrage).toHaveCount(0);
+  await page.getByRole('button', { name: /^Weiter( zu |: )/ }).click();
+  await expect(email).toHaveCount(0);
 
-  // Rückmeldung 12.11.: Wer im E-Mail-Feld direkt „Weiter“ tippt, sieht den Hinweis trotzdem. Der erste
-  // Tipp zeigt ihn, der zweite geht weiter; im zugeklappten Teil bleibt ein kurzer Hinweis.
+  // „Stimmt“ bestätigt und geht weiter; im zugeklappten Teil bleibt ein kurzer Hinweis.
   await page.getByRole('button', { name: /^Kontakt/ }).click();
-  await page.getByLabel('E-Mail').fill('max-at-beispiel');
-  await page.getByRole('button', { name: /^Weiter: / }).click();
-  await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toBeVisible();
-  await expect(page.getByLabel('E-Mail')).toBeVisible();
-  await page.getByRole('button', { name: /^Weiter: / }).click();
-  await expect(page.getByLabel('E-Mail')).toHaveCount(0);
+  await email.fill('max-at-beispiel');
+  await page.getByRole('button', { name: /^Weiter( zu |: )/ }).click();
+  await expect(nachfrage).toHaveCount(1);
+  await page.getByRole('button', { name: 'Stimmt', exact: true }).click();
+  await expect(email).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Kontakt/ })).toContainText('E-Mail bitte prüfen');
   // Mit der Eingabetaste im letzten Feld genauso.
   await page.getByRole('button', { name: /^Kontakt/ }).click();
-  await page.getByLabel('E-Mail').fill('max@beispiel');
-  await page.getByLabel('E-Mail').press('Enter');
-  await expect(page.getByText(/Die Mailadresse sieht ungewöhnlich aus/)).toBeVisible();
+  await email.fill('max@beispiel');
+  await email.press('Enter');
+  await expect(nachfrage).toHaveCount(1);
   // Beide zweifelhaft: ein Satz für beide (Planung 12r).
-  await page.getByRole('textbox', { name: 'Telefon' }).fill(SONDER);
-  await page.getByRole('button', { name: /^Weiter: / }).click();
-  await page.getByRole('button', { name: /^Weiter: / }).click();
+  await telefon.fill(SONDER);
+  await page.getByRole('button', { name: /^Weiter( zu |: )/ }).click();
+  await expect(nachfrage).toHaveCount(2);
+  await page.getByRole('button', { name: 'Stimmt', exact: true }).click();
   await expect(page.getByRole('button', { name: /^Kontakt/ })).toContainText(
     'E-Mail und Telefonnummer bitte prüfen',
   );
+});
+
+test('Gegenprobe: Ohne frei gehaltene Zeile rückt „E-Mail“, wenn die Nachfrage kommt', async ({
+  page,
+}) => {
+  await laden(page, '02-neustart', '/selbstauskunft/p-02-neustart-0');
+  await page.getByRole('button', { name: /^Kontakt/ }).click();
+  // Absichtlich falsche Fassung: Die Zeile hat keinen Platz, solange keine Nachfrage dasteht.
+  // Über CSSOM, weil die Inhaltsrichtlinie eingefügte Style-Blöcke sperrt.
+  await page.evaluate(() => {
+    const blatt = [...document.styleSheets].find((s) => s.href?.startsWith(location.origin))!;
+    blatt.insertRule(
+      '.nachfrage:not(.an) .sichtbar { display: none !important }',
+      blatt.cssRules.length,
+    );
+  });
+  const email = page.getByRole('textbox', { name: /^E-Mail/ });
+  await email.fill('max-at-beispiel');
+  const darunter = page.getByRole('button', { name: /^Einkommen/ });
+  const vor = (await darunter.boundingBox())!.y;
+  await page.getByRole('button', { name: /^Weiter( zu |: )/ }).click();
+  await expect(page.locator('.nachfrage.an')).toHaveCount(1);
+  expect((await darunter.boundingBox())!.y).toBeGreaterThan(vor);
 });
 
 test('Mehrere Dateien: Eine Datei mit zwei Monaten wird je Seite geprüft und getrennt gespeichert', async ({
@@ -537,7 +572,7 @@ test('Dieselbe Datei: Hinweis schon beim Auswählen, nicht erst nach dem Speiche
   await page.getByRole('button', { name: 'Hinzufügen', exact: true }).click();
   await page.locator('[data-feld="pdf"]').setInputFiles(datei);
   const blatt = page.getByRole('dialog');
-  await expect(blatt.getByText(/^oktober\.pdf/)).toBeVisible({ timeout: 30_000 });
+  await expect(blatt.getByText('oktober.pdf, 1 Seite')).toBeVisible({ timeout: 30_000 });
   await expect(blatt.getByText(/^Diese Datei ist schon da/)).toHaveCount(0);
   await blatt.getByRole('button', { name: /^Speichern/ }).click();
   await expect(blatt).toBeHidden();
@@ -613,6 +648,7 @@ test('Backup vom ersten Start aus: danach die Übersicht, mit Bestätigung', asy
   await page.goto('/');
   // Hefta 2: Ohne Haushalt spielt man das Backup über die Einstellungen ein (B15).
   await page.getByRole('link', { name: 'Einstellungen' }).click();
+  await page.getByRole('tab', { name: 'App', exact: true }).click();
   await page.getByRole('link', { name: /^Backup einspielen/ }).click();
   await page.getByRole('heading', { name: 'Hefta gibt es als App.' }).waitFor();
   await page.getByRole('button', { name: 'Weiter im Browser', exact: true }).click();

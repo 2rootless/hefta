@@ -17,19 +17,26 @@
     listenText,
     ohneTrennstellen,
     personStand,
+    lagenVon,
+    personZeilen,
     rollenText,
-    situationText,
     type UnterlagenStand,
   } from '../domain/regelkatalog';
-  import { t } from '../i18n';
+  import { t, tagZusammen } from '../i18n';
   import { mietFrageOffen } from '../domain/mietFrage';
+  import { einzugText } from '../domain/bewerben';
+  import { erklaerungFuer, erklaerungTag } from '../domain/buergschaft';
+  import { heftTitel } from '../domain/heftKarte';
+  import { lage } from '../domain/heftLage';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
   import Haarlinie, { type HaarStueck } from '../ui/Haarlinie.svelte';
   import { passend } from '../ui/passend';
   import { tonStil } from '../ui/personTon';
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
   import Symbol from '../ui/Symbol.svelte';
-  import { ohneDatum, standText } from '../ui/texte';
+  import { keinerText, lagenText, mitLage, ohneDatum, standText, tagKurz } from '../ui/texte';
+  import { anrede } from '../i18n/anrede.svelte';
+  import { monatName } from '../i18n';
   import Zurueck from '../ui/Zurueck.svelte';
 
   let { id }: { id: string } = $props();
@@ -49,11 +56,61 @@
   );
   const buerge = $derived(stand?.rolle === 'buerge');
   // Auf dem Weg: übliche und vorhandene freiwillige Unterlagen. Der Rest unter „Kann helfen“ und „Meist unnötig“.
-  const weitere = $derived(stand ? stand.unterlagen.filter((u) => !stand.pfad.includes(u)) : []);
+  const weitere = $derived(
+    stand ? stand.unterlagen.filter((u) => !stand.pfad.includes(u) && !u.typ.jeWohnung) : [],
+  );
+  // DP49 Punkt 5: Was je Wohnung gilt (Bürgschaftserklärung), steht in einem eigenen Abschnitt, freiwillig.
+  const jeWohnung = $derived(stand ? stand.unterlagen.filter((u) => u.typ.jeWohnung) : []);
+  /** „Lindenring 3: vom 20. Oktober. Lindenring 8: noch keine.“ Abgelegte Hefte bleiben weg. */
+  function wohnungenText(u: UnterlagenStand): string {
+    const ansicht = daten.ansicht;
+    if (!ansicht) return standText(u);
+    const heute = new Date();
+    const teile = daten.hefte
+      .filter((h) => !lage(h.ereignisse, heute, true).abgelegt)
+      .map((h) => {
+        const e = erklaerungFuer(id, ansicht.dokumente, ansicht.versionen, h.id);
+        const wohnung = heftTitel(h).text;
+        return e.eigene
+          ? t('personenseite.erklaerungVom', {
+              wohnung,
+              datum: tagZusammen(einzugText(erklaerungTag(e.eigene), heute)),
+            })
+          : t('personenseite.erklaerungKeine', { wohnung });
+      });
+    const ohne = u.versionen.filter((v) => !v.heftId).at(-1);
+    if (ohne)
+      teile.push(
+        t('personenseite.erklaerungOhneWohnung', {
+          datum: tagZusammen(einzugText(erklaerungTag(ohne), heute)),
+        }),
+      );
+    return teile.length ? teile.join(' ') : standText(u);
+  }
   const offen = $derived(
     stand?.unterlagen.filter((u) => u.status === 'fehlt' || u.status === 'bald').length ?? 0,
   );
   const da = $derived(stand?.pfad.filter((u) => u.status === 'da').length ?? 0);
+
+  // DP47b K1: „Leistungen vom Amt“ und „Angestellt“, Schalter aus: Hinweis unter der Liste.
+  const amtOhneGehalt = $derived(
+    !!stand &&
+      !stand.person.einkommenTrotzdem &&
+      lagenVon(stand.person).some((l) => l.situation === 'leistungsbezug') &&
+      lagenVon(stand.person).some((l) => l.situation === 'angestellt'),
+  );
+
+  const UND = new Intl.ListFormat('de-DE', { type: 'conjunction' });
+  /** DP45 G3: „Neu im Job: Oktober und Arbeitsvertrag“, sobald alles da ist. */
+  function neuImJobZeile(u: UnterlagenStand): string | null {
+    // Nur bei „Neu im Job“: Sonst hängt der Vertrag nur freiwillig an (G4) und die Zeile bleibt wie immer.
+    if (u.neuSeit === undefined || !u.zusatz || u.status !== 'da') return null;
+    const teile = [
+      ...u.monate.map((m) => monatName(m)),
+      ...(u.zusatz.versionen.length ? [t('neuImJob.zeileVertrag')] : []),
+    ];
+    return t('neuImJob.zeile', { teile: UND.format(teile) });
+  }
   const stuecke = $derived<HaarStueck[]>(
     (stand?.pfad ?? []).map((u) => ({
       text: ohneTrennstellen(listenText(u.typ)),
@@ -67,7 +124,11 @@
           rollenText(stand.rolle, stand.bezeichnung),
           ...(buerge ? [t('personenseite.ziehtNicht')] : []),
           stand.person.lebenssituation
-            ? situationText(stand.person.lebenssituation, stand.person.ausbildungArt)
+            ? (lagenText(stand.person) ?? '') +
+              // DP45 G3: „Angestellt, seit 1. Oktober“.
+              (stand.person.neuImJob?.seit
+                ? `, ${t('neuImJob.kopf', { datum: tagKurz(stand.person.neuImJob.seit) })}`
+                : '')
             : null,
         ]
           .filter(Boolean)
@@ -128,7 +189,13 @@
         <span class="zeichen"><Symbol name={u.typ.symbol} groesse={20} /></span>
         <span class="tx">
           <b>{listenText(u.typ)}</b>
-          <small class:offen={offenZeile(u) && !bitte(u)}>{bitte(u) ?? standText(u)}</small>
+          <small class:offen={offenZeile(u) && !bitte(u)}
+            >{bitte(u) ??
+              (u.keinerMoeglich
+                ? keinerText(u.keinerMoeglich, stand!.bezeichnung, anrede.wert === 'du')
+                : null) ??
+              mitLage(u, neuImJobZeile(u) ?? standText(u))}</small
+          >
           {#if ohneDatum(u)}<span class="datum-eintragen">{t('person.datumEintragen')}</span>{/if}
         </span>
         <span class="pfeil"><Symbol name="weiter" groesse={16} /></span>
@@ -189,7 +256,7 @@
     </div>
 
     <ul class="karte liste">
-      {#each stand.pfad as u (u.typ.id)}
+      {#each personZeilen(stand) as u (u.typ.id)}
         {@render zeile(u)}
       {/each}
       {#if mietFrageOffen(stand.person, stand.rolle, daten.hefte)}
@@ -206,6 +273,31 @@
         </li>
       {/if}
     </ul>
+    {#if amtOhneGehalt}
+      <!-- DP47b K1: Amt und Schalter aus: Die Gehaltsnachweise fehlen mit Absicht. -->
+      <p class="amt-hinweis">{t('einkommenQuellen.personHinweis')}</p>
+    {/if}
+
+    {#if jeWohnung.length}
+      <h2 class="je-wohnung">{t('personenseite.jeWohnung')}</h2>
+      <ul class="karte liste je-wohnung-liste">
+        {#each jeWohnung as u (u.typ.id)}
+          <li>
+            <a class="zeile" href={ziel(u)}>
+              <span class="zeichen"><Symbol name={u.typ.symbol} groesse={20} /></span>
+              <span class="tx">
+                <b>{listenText(u.typ)}</b>
+                <small>{wohnungenText(u)}</small>
+              </span>
+              <span class="pfeil"><Symbol name="weiter" groesse={16} /></span>
+            </a>
+          </li>
+        {/each}
+      </ul>
+      {#if jeWohnung[0]?.typ.hilfe}<p class="hinweis je-wohnung-satz">
+          {jeWohnung[0].typ.hilfe}
+        </p>{/if}
+    {/if}
 
     {#if weitere.length || stand.nichtMehrNoetig.length}
       <ul class="karte liste">
@@ -442,6 +534,21 @@
     color: var(--ink-muted);
   }
 
+  .je-wohnung {
+    margin: 20px 20px 0;
+    font-size: calc(15 * var(--px));
+    line-height: calc(20 * var(--px));
+    font-weight: 650;
+  }
+
+  .je-wohnung-liste {
+    margin-top: 8px;
+  }
+
+  .je-wohnung-satz {
+    margin: 8px 20px 0;
+  }
+
   .hinweis {
     margin: 0 20px 12px;
     font-size: calc(13 * var(--px));
@@ -455,5 +562,11 @@
     font-size: calc(13 * var(--px));
     line-height: calc(18 * var(--px));
     font-weight: 600;
+  }
+  .amt-hinweis {
+    margin: 8px var(--space-5) 0;
+    color: var(--ink-muted);
+    font-size: calc(14 * var(--px));
+    line-height: calc(20 * var(--px));
   }
 </style>

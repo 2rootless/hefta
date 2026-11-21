@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import strassen from '../data/musterstrassen.json' with { type: 'json' };
 import { bf2, bf2b, bf2Paarung } from '../tests/w7-bf2b';
 
 // wunsch-W7 (Wunschliste, PC45): nur Musterdaten. In Mustern, Tests und Testdaten stehen nur Rufnummern aus
@@ -34,7 +35,7 @@ const ERLAUBT_MAIL =
  * das erste auf „-er“ oder „-e“ endet („Eppendorfer Weg“, „Alte Straße“), nicht „Wohnung Weg 2“.
  */
 const ADRESSE =
-  /(?<![\wäöüß-])((?:[A-ZÄÖÜ][\wäöüß-]*(?:straße|strasse|str\.|weg|allee|ring|platz|gasse|damm|chaussee|stieg|kamp|ufer|deich|markt))|(?:[A-ZÄÖÜ][\wäöüß-]*(?:er|e) (?:Weg|Straße|Allee|Ring|Platz)))[ \u00a0]+(\d{1,5})(?![\d:]|[.,]\d)/g;
+  /(?<![\wäöüß-])((?:[A-ZÄÖÜ][\wäöüß-]*(?:straße|strasse|str\.|weg|allee|ring|platz|gasse|damm|chaussee|stieg|kamp|ufer|deich|markt|wisch|koppel|bogen|reihe|schlag|höfe))|(?:[A-ZÄÖÜ][\wäöüß-]*(?:er|e) (?:Weg|Straße|Allee|Ring|Platz)))[ \u00a0]+(\d{1,5})(?![\d:]|[.,]\d)/g;
 /** Geprüft von der Planung (PC53): Lindenring 3 und 8 in 20259 Hamburg, Musterweg 7 und Beispielstraße 1 in Musterstadt. */
 export const MUSTERADRESSEN = [
   'Lindenring 3',
@@ -44,6 +45,14 @@ export const MUSTERADRESSEN = [
   // Am Musterplatz 1, 12345 Musterstadt (PC56)
   'Musterplatz 1',
 ];
+/**
+ * W40 (PC176, 2.1): In sichtbaren Mustern (App, Beispiel-Mappe, Website, Store) stehen Straßen aus der Namensliste,
+ * jede gegen OpenStreetMap geprüft (data/musterstrassen.json, frei). In Tests gelten weiter nur MUSTERADRESSEN.
+ * Eine Straße, die es laut OSM gibt (vorhanden), ist nie erlaubt.
+ */
+export const NAMENSLISTE_STRASSEN: readonly string[] = strassen.frei.map((x) => x.strasse);
+const VORHANDEN: readonly string[] = strassen.vorhanden.map((x) => x.strasse);
+
 /** Die Anschrift des Anbieters im Impressum ist echt und gehört nicht zu den Mustern. */
 const ANBIETER = ['Friedensallee 378'];
 
@@ -62,8 +71,11 @@ function mitPlzOhneOrt(text: string, ende: number): boolean {
   return !!plz && /^00\d{3}$/.test(plz);
 }
 
-/** Fundstellen, die nicht nach Musterdaten aussehen. */
-export function verstoesse(text: string): string[] {
+/**
+ * Fundstellen, die nicht nach Musterdaten aussehen. `sichtbar`: Die Datei liefert sichtbare Muster (nicht Tests);
+ * dort sind auch die Straßen der Namensliste erlaubt.
+ */
+export function verstoesse(text: string, sichtbar = false): string[] {
   const aus: string[] = [];
   for (const m of text.matchAll(RUFNUMMER)) {
     const n = m[0].replace(/\s+/g, ' ');
@@ -85,7 +97,19 @@ export function verstoesse(text: string): string[] {
     const grenzfall =
       m[2]!.length >= 4 && MUSTERADRESSEN.some((a) => a.startsWith(adresse.split(' ')[0]!));
     const erfunden = mitPlzOhneOrt(text, (m.index ?? 0) + m[0].length);
-    if (!MUSTERADRESSEN.includes(adresse) && !ANBIETER.includes(adresse) && !grenzfall && !erfunden)
+    const strasse = adresse.replace(/ \d+$/, '');
+    if (VORHANDEN.includes(strasse)) {
+      aus.push(adresse);
+      continue;
+    }
+    const ausListe = sichtbar && NAMENSLISTE_STRASSEN.includes(strasse);
+    if (
+      !MUSTERADRESSEN.includes(adresse) &&
+      !ANBIETER.includes(adresse) &&
+      !grenzfall &&
+      !erfunden &&
+      !ausListe
+    )
       aus.push(adresse);
   }
   return aus;
@@ -115,9 +139,25 @@ describe('wunsch-W7: nur Musterdaten', () => {
       } catch {
         continue;
       }
-      for (const v of verstoesse(text)) funde.push(`${d}: ${v}`);
+      // Das Musterbackup für Vorschau und Store-Bilder ist ein sichtbares Muster, auch wenn es in tests/ entsteht.
+      const sichtbar =
+        d === 'tests/e2e/vorschau-muster.spec.ts' ||
+        (!d.startsWith('tests/') && !/\.test\.ts$/.test(d));
+      for (const v of verstoesse(text, sichtbar)) funde.push(`${d}: ${v}`);
     }
     expect(funde).toEqual([]);
+  });
+
+  it('W40 (PC176): Straßen der Namensliste nur in sichtbaren Mustern; eine Straße, die es laut OSM gibt, wird rot', () => {
+    expect(NAMENSLISTE_STRASSEN).toHaveLength(16);
+    const sichtbar =
+      'Kranichstieg 3, Erdgeschoss\n20259 Hamburg; Lotsenwisch 8; Holunderkoppel 12; Fährhausbogen 1';
+    expect(verstoesse(sichtbar, true)).toEqual([]);
+    // In Tests gelten weiter nur die geprüften Musteradressen.
+    expect(verstoesse('Kranichstieg 3', false)).toEqual(['Kranichstieg 3']);
+    // Gegenproben: eine Straße, die es laut OSM in Hamburg gibt, und eine Straße außerhalb der Liste.
+    expect(verstoesse('Lindenallee 3, 20259 Hamburg', true)).toEqual(['Lindenallee 3']);
+    expect(verstoesse('Elbchaussee 12', true)).toEqual(['Elbchaussee 12']);
   });
 
   it('Gegenprobe: eine echte Rufnummer und eine echte Mail schlagen an', () => {

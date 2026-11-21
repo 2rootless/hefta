@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts } from '@cantoo/pdf-lib';
+import { stimmungMuster } from './stimmung-muster';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -7,7 +8,7 @@ import { backupErstellen } from '../../src/storage/backup';
 import { SCHEMA_VERSION } from '../../src/storage/db';
 import { wuenscheSetzen } from './hefte-hilfen';
 import { animationenFertig } from './hilfen';
-import { pruefen } from './pruef-c';
+import { nachbarnPruefen, pruefen } from './pruef-c';
 import { HEUTE, SZENARIEN, datensaetze } from './szenarien';
 import { alsInhalt } from './dateien';
 
@@ -715,7 +716,7 @@ const BILDER: Bild[] = [
       await los(page);
       const ende = page.getByRole('heading', {
         level: 1,
-        name: /Gut gemacht\.|Für heute fertig\./,
+        name: stimmungMuster(['P10a', 'P10b'], { teil: 'satz' }),
       });
       const zaehler = page.locator('.fortschritt');
       while (!(await ende.isVisible())) {
@@ -741,7 +742,7 @@ const BILDER: Bild[] = [
     tastatur: true,
     vorher: async (page) => {
       await page.getByRole('button', { name: /^Kontakt/ }).click();
-      await page.getByLabel('Telefon').focus();
+      await page.getByRole('textbox', { name: /^Telefon/ }).focus();
     },
   },
   {
@@ -750,7 +751,7 @@ const BILDER: Bild[] = [
     szenario: '02-neustart',
     pfad: '/selbstauskunft/p-02-neustart-0',
     vorher: async (page) => {
-      await page.getByRole('button', { name: /^Fragen, die Vermieter/ }).click();
+      await page.getByRole('button', { name: /^Drei Fragen aus dem Musterbogen/ }).click();
     },
   },
   {
@@ -1059,13 +1060,41 @@ const BILDER: Bild[] = [
     pfad: '/person/p-10-lange-namen-0',
   },
   { id: 'S1-einstellungen', gruppe: 'B', szenario: '01-standard', pfad: '/einstellungen' },
+  // DP50 Punkt 10: die Reiter „Mappe“ und „App“ und die Unterseite „Fragen für die Besichtigung“.
+  {
+    id: 'S1c-einstellungen-mappe',
+    gruppe: 'B',
+    szenario: '01-standard',
+    pfad: '/einstellungen',
+    vorher: (page) => page.getByRole('tab', { name: 'Mappe', exact: true }).click(),
+  },
+  {
+    id: 'S1d-einstellungen-app',
+    gruppe: 'B',
+    szenario: '01-standard',
+    pfad: '/einstellungen',
+    vorher: (page) => page.getByRole('tab', { name: 'App', exact: true }).click(),
+  },
+  {
+    id: 'S1e-fragen',
+    gruppe: 'B',
+    szenario: '01-standard',
+    pfad: '/einstellungen/fragen',
+    vorher: (page) => page.getByRole('button', { name: 'Acht weitere' }).click(),
+  },
   {
     id: 'S1b-rechtliches',
     gruppe: 'B',
     szenario: '01-standard',
     pfad: '/einstellungen/rechtliches',
   },
-  { id: 'S2-backup-alt', gruppe: 'B', szenario: '17-backup-alt', pfad: '/einstellungen' },
+  {
+    id: 'S2-backup-alt',
+    gruppe: 'B',
+    szenario: '17-backup-alt',
+    pfad: '/einstellungen',
+    vorher: (page) => page.getByRole('tab', { name: 'App', exact: true }).click(),
+  },
   {
     id: 'S3-backup',
     gruppe: 'B',
@@ -1098,6 +1127,7 @@ const BILDER: Bild[] = [
     szenario: '01-standard',
     pfad: '/einstellungen',
     vorher: async (page) => {
+      await page.getByRole('tab', { name: 'App', exact: true }).click();
       await page.locator('input[type=file]').setInputFiles(alsInhalt(backupOffen));
       await page.getByText(/^Erstellt am/).waitFor();
     },
@@ -1108,6 +1138,7 @@ const BILDER: Bild[] = [
     szenario: '01-standard',
     pfad: '/einstellungen',
     vorher: async (page) => {
+      await page.getByRole('tab', { name: 'App', exact: true }).click();
       await page.locator('input[type=file]').setInputFiles(alsInhalt(backupPasswort));
       await page.getByLabel('Passwort des Backups').fill('sommer in hamburg');
       await page.getByLabel('Passwort des Backups').press('Enter');
@@ -1529,7 +1560,7 @@ const BILDER: Bild[] = [
     pfad: '/rutsch/p-02-neustart-0',
     vorher: async (page) => {
       await los(page);
-      await page.getByRole('button', { name: /^Fragen, die Vermieter/ }).click();
+      await page.getByRole('button', { name: /^Drei Fragen aus dem Musterbogen/ }).click();
       for (const [frage, wert] of [
         ['Insolvenz', 'Nein'],
         ['Räumungstitel', 'Ja'],
@@ -1869,7 +1900,7 @@ const BILDER: Bild[] = [
       await page.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(pdfPfad));
       await page.getByText('abrechnung_oktober.pdf, 2 Seiten').waitFor();
       await page.getByRole('button', { name: 'Speichern und weiter' }).click();
-      await page.getByRole('heading', { name: 'Gut gemacht.' }).waitFor();
+      await page.getByRole('heading', { name: stimmungMuster('P10a', { teil: 'satz' }) }).waitFor();
     },
   },
   {
@@ -1887,7 +1918,7 @@ const BILDER: Bild[] = [
       await page.locator('.fortschritt', { hasText: /^3 von/ }).waitFor();
       await page
         .getByRole('navigation', { name: 'Zwischen den Schritten wechseln' })
-        .getByRole('button', { name: /^Max / })
+        .getByRole('button', { name: /^Max( Fertig)?$/ })
         .click();
       await linie.getByRole('button').nth(1).click();
       await page.getByText(/^Ist schon da/).waitFor();
@@ -1931,7 +1962,7 @@ const BILDER: Bild[] = [
       ]);
       // Erst wenn alle drei gelesen sind: Sonst zeigt das Bild „Einen Moment …“ und zu wenige Seiten.
       await page.getByText('6 Seiten aus 3 Dateien').waitFor();
-      await page.getByText('Welcher Monat ist welche Datei?').waitFor();
+      await page.getByText(/Welcher Monat ist welche Seite\?/).waitFor();
     },
   },
   {
@@ -2244,182 +2275,209 @@ test.describe('Prüfkatalog Stil C', () => {
     expect(kaputt.c26).toContain('Knopf / Hinweis');
   });
 
-  for (const ansicht of ANSICHTEN) {
-    test(`alle Bildschirme in Ansicht ${ansicht.id}`, async ({ page }) => {
-      test.skip(!!SEITEN_BILDER && ansicht.id !== '390', 'SEITEN_BILDER: nur Ansicht 390');
-      test.setTimeout(SEITEN_BILDER ? 1_200_000 : 600_000);
-      const seitenBilder: { id: string; weg: string; png: Buffer }[] = [];
-      await page.clock.setFixedTime(HEUTE);
-      await page.addInitScript(geraetNachstellen);
-      await page.setViewportSize({ width: ansicht.breite, height: ansicht.hoehe });
-      await page.emulateMedia({ colorScheme: ansicht.dunkel ? 'dark' : 'light' });
+  // PC79 (Aufräumen 3): je Ansicht drei Teile nach Gruppen, etwa gleich groß, damit sie parallel laufen. Für
+  // SEITEN_BILDER bleibt es ein Lauf: Er schreibt eine Liste über alle Seiten.
+  const TEILE: { name: string; gruppen: string[] }[] = SEITEN_BILDER
+    ? [{ name: 'alle', gruppen: [] }]
+    : [
+        { name: 'E R S U G', gruppen: ['E', 'R', 'S', 'U', 'G'] },
+        { name: 'P X', gruppen: ['P', 'X'] },
+        { name: 'B Z D N H', gruppen: ['B', 'Z', 'D', 'N', 'H'] },
+      ];
+  for (const ansicht of ANSICHTEN)
+    for (const teil of TEILE) {
+      test(`alle Bildschirme in Ansicht ${ansicht.id} · ${teil.name}`, async ({ page }) => {
+        test.skip(!!SEITEN_BILDER && ansicht.id !== '390', 'SEITEN_BILDER: nur Ansicht 390');
+        test.setTimeout(SEITEN_BILDER ? 1_200_000 : 600_000);
+        const seitenBilder: { id: string; weg: string; png: Buffer }[] = [];
+        await page.clock.setFixedTime(HEUTE);
+        await page.addInitScript(geraetNachstellen);
+        await page.setViewportSize({ width: ansicht.breite, height: ansicht.hoehe });
+        await page.emulateMedia({ colorScheme: ansicht.dunkel ? 'dark' : 'light' });
 
-      const bilder: { id: string; gruppe: string; png: string }[] = [];
-      const befunde: Record<string, object> = {};
-      // C27: Kein Bildschirm wirft Fehler in die Konsole, auch keinen stillen.
-      const konsole: string[] = [];
-      page.on('console', (m) => {
-        if (m.type() === 'error') konsole.push(m.text());
-      });
-      page.on('pageerror', (e) => konsole.push(e.message));
-      const scrollen: Record<string, number> = {};
-      // Für schnelle Läufe: KATALOG_NUR=D9,R1-lange. Überschreibt die Bögen, danach einmal voll laufen lassen.
-      const nur = process.env.KATALOG_NUR?.split(',') ?? ansicht.nur;
-      for (const bild of BILDER) {
-        if (nur && !nur.some((n) => bild.id.includes(n))) continue;
-        if (bild.nurBild && !SEITEN_BILDER) continue;
-        konsole.length = 0;
-        await laden(page, bild);
-        if (ansicht.schrift) {
-          await page.evaluate(
-            (f) => document.documentElement.style.setProperty('--px', `${f}px`),
-            ansicht.schrift,
-          );
-          await page.evaluate(
-            () => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok))),
-          );
-          await page.waitForTimeout(100);
-        }
-        if (ansicht.zoom) {
-          // CSSOM ist mit der CSP erlaubt (keine Inline-Styles im HTML).
-          await page.evaluate(
-            (z) => document.documentElement.style.setProperty('zoom', String(z)),
-            ansicht.zoom,
-          );
-          // Größenbeobachter (Schrift anpassen, Band) laufen nach dem nächsten Bild: zwei Bilder abwarten.
-          await page.evaluate(
-            () => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok))),
-          );
-          await page.waitForTimeout(100);
-        }
-        const r = await page.evaluate(pruefen);
-        const fehler: Record<string, unknown> = Object.fromEntries(
-          Object.entries(r).filter(
-            ([k, v]) => k !== 'hoehe' && (Array.isArray(v) ? v.length : !!v),
-          ),
-        );
-        const ueber = Math.round(r.hoehe * (ansicht.zoom ?? 1)) - ansicht.hoehe;
-        if (ueber > 0) scrollen[bild.id] = ueber;
-        // Bilder nur auf Wunsch (Auftraggeber 13.11.): KATALOG_BILDER=1 vor einem Bericht an Design und
-        // vor Schritt 11. Geprüft wird jede Ansicht trotzdem.
-        if (BILDER_AN) {
-          // Ganzseitenbild: die feste Leiste ans Seitenende setzen (so sieht man es nach dem Scrollen).
-          await page.evaluate((SEITEN_BILDER_AN) => {
-            document.body.style.position = 'relative';
-            document
-              .querySelectorAll<HTMLElement>('.leiste')
-              .forEach((e) => (e.style.position = 'absolute'));
-            // PC31: auch die Reiter und die feste Fläche über ihnen (MappeStart), sonst stehen sie mitten
-            // im Ganzseitenbild.
-            if (SEITEN_BILDER_AN)
-              document.querySelectorAll<HTMLElement>('nav.tabs, .cta').forEach((e) => {
-                const lage = getComputedStyle(e).position;
-                // PC34 (DP33, Fehler 3): Eine klebende Knopfzeile steht im Ganzseitenbild an ihrem Platz
-                // im Fluss, wie am Ende der Seite; sonst klebte sie, wo das Fenster endete.
-                if (lage === 'fixed' || lage === 'sticky') {
-                  e.style.position = lage === 'fixed' ? 'absolute' : 'static';
-                  e.dataset.warFest = '1';
-                }
-              });
-          }, !!SEITEN_BILDER);
-          // Ein Vollbild-Dialog deckt nur den Bildschirm; ein Ganzseiten-Bild zeigte die Seite darunter.
-          const vollbild = await page.evaluate(() => !!document.querySelector('dialog[open]'));
-          // „Welches Datum?“ scrollt als Ganzes: im Bogen die ganze Seite zeigen, nicht nur den Anfang.
-          const ganzeHoehe = await page.evaluate(() => {
-            // Ein Blatt nimmt höchstens 92 % des Bildschirms: so hoch, dass es ganz zu sehen ist.
-            const blatt = document.querySelector('dialog[open]:not(.ansicht)');
-            if (blatt) return blatt.scrollHeight / 0.92 + 8;
-            const inhalt = document.querySelector('dialog.ansicht .inhalt');
-            if (!inhalt) return 0;
-            // Der Ausschnitt hängt an vh: festhalten, sonst wächst er mit dem größeren Bild.
-            inhalt.querySelectorAll<HTMLElement>('.flaeche').forEach((f) => {
-              f.style.height = getComputedStyle(f).height;
-            });
-            return inhalt.getBoundingClientRect().top + inhalt.scrollHeight;
-          });
-          if (ganzeHoehe)
-            await page.setViewportSize({
-              width: ansicht.breite,
-              height: Math.ceil(Math.max(ganzeHoehe * (ansicht.zoom ?? 1), ansicht.hoehe)),
-            });
-          const png = await page.screenshot({ fullPage: !vollbild });
-          if (ganzeHoehe)
-            await page.setViewportSize({ width: ansicht.breite, height: ansicht.hoehe });
-          await page.evaluate(() => {
-            document.body.style.position = '';
-            document.querySelectorAll<HTMLElement>('.leiste, [data-war-fest]').forEach((e) => {
-              e.style.position = '';
-              delete e.dataset.warFest;
-            });
-          });
-          bilder.push({ id: bild.id, gruppe: bild.gruppe, png: png.toString('base64') });
-          if (SEITEN_BILDER)
-            seitenBilder.push({
-              id: bild.id,
-              weg: await page.evaluate(() => location.hash.replace(/^#/, '') || '/'),
-              png,
-            });
-        }
-        if (bild.tastatur) {
-          const c12 = await tastaturPruefen(page, ansicht);
-          if (c12) fehler.c12 = c12;
-        }
-        // G2 wirft den Fehler absichtlich, um den Hinweis zu zeigen.
-        const echte = konsole.filter((z) => !z.includes('Prüfkatalog'));
-        if (echte.length) fehler.c27 = echte.map((z) => z.slice(0, 160));
-        if (Object.keys(fehler).length) befunde[bild.id] = fehler;
-      }
-
-      // PC31: jede Seite als eigene Datei, benannt nach ihrem Weg; mehrere Zustände eines Wegs mit Kennung.
-      if (SEITEN_BILDER) {
-        mkdirSync(SEITEN_BILDER, { recursive: true });
-        const name = (weg: string) =>
-          weg === '/' ? 'reiter-mappe' : weg.replace(/^\//, '').replace(/[^\w-]+/g, '_');
-        const zahl = new Map<string, number>();
-        for (const b of seitenBilder) zahl.set(name(b.weg), (zahl.get(name(b.weg)) ?? 0) + 1);
-        const liste = seitenBilder.map((b) => {
-          const n = name(b.weg);
-          const datei = `${zahl.get(n)! > 1 ? `${n}__${b.id}` : n}.png`;
-          writeFileSync(`${SEITEN_BILDER}/${datei}`, b.png);
-          return { datei, weg: b.weg, id: b.id };
+        const bilder: { id: string; gruppe: string; png: string }[] = [];
+        const befunde: Record<string, object> = {};
+        const nachbarnFunde: string[] = [];
+        // C27: Kein Bildschirm wirft Fehler in die Konsole, auch keinen stillen.
+        const konsole: string[] = [];
+        page.on('console', (m) => {
+          if (m.type() === 'error') konsole.push(m.text());
         });
-        writeFileSync(`${SEITEN_BILDER}/liste.json`, JSON.stringify(liste, null, 1));
-      }
-
-      // C6: Scrollhöhe notieren
-      test.info().annotations.push({
-        type: 'C6 Scrollen (px über Bildschirm)',
-        description: JSON.stringify(scrollen),
-      });
-
-      // Kontaktbögen für die Sichtprüfung (eigene leere Seite, ohne CSP der App)
-      if (BILDER_AN) {
-        const bogenKontext = await page.context().browser()!.newContext({ deviceScaleFactor: 1.5 });
-        const bogen = await bogenKontext.newPage();
-        for (const gruppe of ['U', 'E', 'R', 'S', 'P', 'X', 'B', 'Z', 'D', 'G', 'N', 'H']) {
-          if (!bilder.some((b) => b.gruppe === gruppe)) continue;
-          await bogen.setViewportSize({ width: 1200, height: 800 });
-          await bogen.setContent(
-            `<body style="margin:0;background:#c9ccd6;display:flex;gap:30px;align-items:flex-start;width:max-content;font:14px sans-serif">` +
-              bilder
-                .filter((b) => b.gruppe === gruppe)
-                .map(
-                  (b) =>
-                    `<figure style="margin:0"><figcaption style="padding:6px 0">${b.id}</figcaption><img style="display:block;width:${ansicht.breite}px${ansicht.grau ? ';filter:grayscale(1)' : ''}" src="data:image/png;base64,${b.png}"></figure>`,
-                )
-                .join('') +
-              '</body>',
+        page.on('pageerror', (e) => konsole.push(e.message));
+        const scrollen: Record<string, number> = {};
+        // Für schnelle Läufe: KATALOG_NUR=D9,R1-lange. Überschreibt die Bögen, danach einmal voll laufen lassen.
+        const nur = process.env.KATALOG_NUR?.split(',') ?? ansicht.nur;
+        for (const bild of BILDER) {
+          if (teil.gruppen.length && !teil.gruppen.includes(bild.gruppe)) continue;
+          if (nur && !nur.some((n) => bild.id.includes(n))) continue;
+          if (bild.nurBild && !SEITEN_BILDER) continue;
+          konsole.length = 0;
+          await laden(page, bild);
+          if (ansicht.schrift) {
+            await page.evaluate(
+              (f) => document.documentElement.style.setProperty('--px', `${f}px`),
+              ansicht.schrift,
+            );
+            await page.evaluate(
+              () => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok))),
+            );
+            await page.waitForTimeout(100);
+          }
+          if (ansicht.zoom) {
+            // CSSOM ist mit der CSP erlaubt (keine Inline-Styles im HTML).
+            await page.evaluate(
+              (z) => document.documentElement.style.setProperty('zoom', String(z)),
+              ansicht.zoom,
+            );
+            // Größenbeobachter (Schrift anpassen, Band) laufen nach dem nächsten Bild: zwei Bilder abwarten.
+            await page.evaluate(
+              () => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok))),
+            );
+            await page.waitForTimeout(100);
+          }
+          const r = await page.evaluate(pruefen);
+          const fehler: Record<string, unknown> = Object.fromEntries(
+            Object.entries(r).filter(
+              ([k, v]) => k !== 'hoehe' && (Array.isArray(v) ? v.length : !!v),
+            ),
           );
-          await bogen.waitForLoadState('load');
-          await bogen.screenshot({
-            path: `docs/screenshots/bogen-${gruppe}-${ansicht.id}.png`,
-            fullPage: true,
-          });
+          // C33 (DP50, PC79): scharf. NACHBARN_ZAEHLEN=1 schreibt die Funde zusätzlich in eine Datei.
+          const nb = await page.evaluate(nachbarnPruefen);
+          if (nb.length) {
+            fehler.c33 = nb;
+            if (process.env.NACHBARN_ZAEHLEN)
+              nachbarnFunde.push(`${ansicht.id} ${bild.id}: ${nb.join(' ; ')}`);
+          }
+          const ueber = Math.round(r.hoehe * (ansicht.zoom ?? 1)) - ansicht.hoehe;
+          if (ueber > 0) scrollen[bild.id] = ueber;
+          // Bilder nur auf Wunsch (Auftraggeber 13.11.): KATALOG_BILDER=1 vor einem Bericht an Design und
+          // vor Schritt 11. Geprüft wird jede Ansicht trotzdem.
+          if (BILDER_AN) {
+            // Ganzseitenbild: die feste Leiste ans Seitenende setzen (so sieht man es nach dem Scrollen).
+            await page.evaluate((SEITEN_BILDER_AN) => {
+              document.body.style.position = 'relative';
+              document
+                .querySelectorAll<HTMLElement>('.leiste')
+                .forEach((e) => (e.style.position = 'absolute'));
+              // PC31: auch die Reiter und die feste Fläche über ihnen (MappeStart), sonst stehen sie mitten
+              // im Ganzseitenbild.
+              if (SEITEN_BILDER_AN)
+                document.querySelectorAll<HTMLElement>('nav.tabs, .cta').forEach((e) => {
+                  const lage = getComputedStyle(e).position;
+                  // PC34 (DP33, Fehler 3): Eine klebende Knopfzeile steht im Ganzseitenbild an ihrem Platz
+                  // im Fluss, wie am Ende der Seite; sonst klebte sie, wo das Fenster endete.
+                  if (lage === 'fixed' || lage === 'sticky') {
+                    e.style.position = lage === 'fixed' ? 'absolute' : 'static';
+                    e.dataset.warFest = '1';
+                  }
+                });
+            }, !!SEITEN_BILDER);
+            // Ein Vollbild-Dialog deckt nur den Bildschirm; ein Ganzseiten-Bild zeigte die Seite darunter.
+            const vollbild = await page.evaluate(() => !!document.querySelector('dialog[open]'));
+            // „Welches Datum?“ scrollt als Ganzes: im Bogen die ganze Seite zeigen, nicht nur den Anfang.
+            const ganzeHoehe = await page.evaluate(() => {
+              // Ein Blatt nimmt höchstens 92 % des Bildschirms: so hoch, dass es ganz zu sehen ist.
+              const blatt = document.querySelector('dialog[open]:not(.ansicht)');
+              if (blatt) return blatt.scrollHeight / 0.92 + 8;
+              const inhalt = document.querySelector('dialog.ansicht .inhalt');
+              if (!inhalt) return 0;
+              // Der Ausschnitt hängt an vh: festhalten, sonst wächst er mit dem größeren Bild.
+              inhalt.querySelectorAll<HTMLElement>('.flaeche').forEach((f) => {
+                f.style.height = getComputedStyle(f).height;
+              });
+              return inhalt.getBoundingClientRect().top + inhalt.scrollHeight;
+            });
+            if (ganzeHoehe)
+              await page.setViewportSize({
+                width: ansicht.breite,
+                height: Math.ceil(Math.max(ganzeHoehe * (ansicht.zoom ?? 1), ansicht.hoehe)),
+              });
+            const png = await page.screenshot({ fullPage: !vollbild });
+            if (ganzeHoehe)
+              await page.setViewportSize({ width: ansicht.breite, height: ansicht.hoehe });
+            await page.evaluate(() => {
+              document.body.style.position = '';
+              document.querySelectorAll<HTMLElement>('.leiste, [data-war-fest]').forEach((e) => {
+                e.style.position = '';
+                delete e.dataset.warFest;
+              });
+            });
+            bilder.push({ id: bild.id, gruppe: bild.gruppe, png: png.toString('base64') });
+            if (SEITEN_BILDER)
+              seitenBilder.push({
+                id: bild.id,
+                weg: await page.evaluate(() => location.hash.replace(/^#/, '') || '/'),
+                png,
+              });
+          }
+          if (bild.tastatur) {
+            const c12 = await tastaturPruefen(page, ansicht);
+            if (c12) fehler.c12 = c12;
+          }
+          // G2 wirft den Fehler absichtlich, um den Hinweis zu zeigen.
+          const echte = konsole.filter((z) => !z.includes('Prüfkatalog'));
+          if (echte.length) fehler.c27 = echte.map((z) => z.slice(0, 160));
+          if (Object.keys(fehler).length) befunde[bild.id] = fehler;
         }
-        await bogenKontext.close();
-      }
 
-      expect(befunde).toEqual({});
-    });
-  }
+        // PC31: jede Seite als eigene Datei, benannt nach ihrem Weg; mehrere Zustände eines Wegs mit Kennung.
+        if (SEITEN_BILDER) {
+          mkdirSync(SEITEN_BILDER, { recursive: true });
+          const name = (weg: string) =>
+            weg === '/' ? 'reiter-mappe' : weg.replace(/^\//, '').replace(/[^\w-]+/g, '_');
+          const zahl = new Map<string, number>();
+          for (const b of seitenBilder) zahl.set(name(b.weg), (zahl.get(name(b.weg)) ?? 0) + 1);
+          const liste = seitenBilder.map((b) => {
+            const n = name(b.weg);
+            const datei = `${zahl.get(n)! > 1 ? `${n}__${b.id}` : n}.png`;
+            writeFileSync(`${SEITEN_BILDER}/${datei}`, b.png);
+            return { datei, weg: b.weg, id: b.id };
+          });
+          writeFileSync(`${SEITEN_BILDER}/liste.json`, JSON.stringify(liste, null, 1));
+        }
+
+        // C6: Scrollhöhe notieren
+        test.info().annotations.push({
+          type: 'C6 Scrollen (px über Bildschirm)',
+          description: JSON.stringify(scrollen),
+        });
+
+        // Kontaktbögen für die Sichtprüfung (eigene leere Seite, ohne CSP der App)
+        if (BILDER_AN) {
+          const bogenKontext = await page
+            .context()
+            .browser()!
+            .newContext({ deviceScaleFactor: 1.5 });
+          const bogen = await bogenKontext.newPage();
+          for (const gruppe of ['U', 'E', 'R', 'S', 'P', 'X', 'B', 'Z', 'D', 'G', 'N', 'H']) {
+            if (!bilder.some((b) => b.gruppe === gruppe)) continue;
+            await bogen.setViewportSize({ width: 1200, height: 800 });
+            await bogen.setContent(
+              `<body style="margin:0;background:#c9ccd6;display:flex;gap:30px;align-items:flex-start;width:max-content;font:14px sans-serif">` +
+                bilder
+                  .filter((b) => b.gruppe === gruppe)
+                  .map(
+                    (b) =>
+                      `<figure style="margin:0"><figcaption style="padding:6px 0">${b.id}</figcaption><img style="display:block;width:${ansicht.breite}px${ansicht.grau ? ';filter:grayscale(1)' : ''}" src="data:image/png;base64,${b.png}"></figure>`,
+                  )
+                  .join('') +
+                '</body>',
+            );
+            await bogen.waitForLoadState('load');
+            await bogen.screenshot({
+              path: `docs/screenshots/bogen-${gruppe}-${ansicht.id}.png`,
+              fullPage: true,
+            });
+          }
+          await bogenKontext.close();
+        }
+
+        if (process.env.NACHBARN_ZAEHLEN && nachbarnFunde.length)
+          writeFileSync(
+            `test-results/nachbarn-${ansicht.id}-${teil.name.replace(/ /g, '')}.txt`,
+            nachbarnFunde.join('\n'),
+          );
+        expect(befunde).toEqual({});
+      });
+    }
 });

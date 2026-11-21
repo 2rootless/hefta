@@ -2,7 +2,8 @@
 // Die Daten entstehen mit den Speicherfunktionen der App selbst, im Browser über den
 // Entwicklungsserver; das Backup mit derselben Funktion wie „Backup sichern“. Danach wird jedes
 // Backup zur Probe in die gebaute App (dist/) eingespielt, wie es ein Mensch tun würde.
-// Alle Personen und Dokumente sind erfunden, jedes PDF trägt oben „MUSTER“.
+// Alle Personen und Dokumente sind erfunden, jedes PDF trägt oben „MUSTER“ (Haushalt A: „Erfunden – kein echtes
+// Dokument“, PC180).
 //
 //   npm run build && node scripts/test-backups.mjs   → design-sync/test-backups/
 
@@ -34,7 +35,10 @@ const tagText = (d) => `${d.slice(8)}.${d.slice(5, 7)}.${d.slice(0, 4)}`;
 
 // ---------- Muster-PDFs ----------
 
-async function pdf(seiten, { grau = false } = {}) {
+// Kennzeichnung oben auf jeder erfundenen Unterlage (W7). Mappe 1 und Tests behalten „MUSTER“; die sichtbaren
+// Beispiele (Haushalt A) tragen seit PC180 (E330, W40) „Erfunden – kein echtes Dokument“.
+const KENNZEICHEN_MUSTER = 'MUSTER - Testdaten für Hefta, nicht echt';
+async function pdf(seiten, { grau = false, kennzeichnung = KENNZEICHEN_MUSTER } = {}) {
   const doc = await PDFDocument.create();
   const f = await doc.embedFont(StandardFonts.Helvetica);
   const fett = await doc.embedFont(StandardFonts.HelveticaBold);
@@ -42,7 +46,7 @@ async function pdf(seiten, { grau = false } = {}) {
     const s = doc.addPage([595.28, 841.89]);
     if (grau)
       s.drawRectangle({ x: 0, y: 0, width: 595.28, height: 841.89, color: rgb(0.87, 0.87, 0.85) });
-    s.drawText('MUSTER - Testdaten für Hefta, nicht echt', {
+    s.drawText(kennzeichnung, {
       x: 60,
       y: 805,
       size: 8,
@@ -70,22 +74,33 @@ const gehaltSeite = (name, firma, monat, netto) => ({
   ],
 });
 const gehalt = (name, firma, monat, netto) => pdf([gehaltSeite(name, firma, monat, netto)]);
-const gehaltSammel = (name, firma, monate, netto) =>
-  pdf(monate.map((m) => gehaltSeite(name, firma, m, netto)));
-const bonitaet = (name, datum) =>
-  pdf([
-    {
-      kopf: 'Auskunftei (Muster)',
-      titel: 'Bonitätsauskunft für Vermieter - Bonitätszertifikat',
-      zeilen: [
-        `Für: ${name}`,
-        `Erstellt am ${tagText(datum)}`,
-        'Prüfcode: MUSTER-4K2-7QX',
-        'Keine Negativmerkmale gespeichert.',
-        'Gültig zur Vorlage beim Vermieter.',
-      ],
-    },
-  ]);
+const MARKE_MUSTER = {
+  kennzeichnung: KENNZEICHEN_MUSTER,
+  pruefcode: 'MUSTER-4K2-7QX',
+  auskunftei: 'Auskunftei (Muster)',
+  ausweis: 'Personalausweis (Muster)',
+  hausverwaltung: 'Hausverwaltung Elbblick (Muster)',
+  buergschaft: 'Bürgschaftserklärung (Muster)',
+  rente: 'Rentenversicherung (Muster)',
+};
+const bonitaetMit = (name, datum, marke, pruefcode = marke.pruefcode) =>
+  pdf(
+    [
+      {
+        kopf: marke.auskunftei,
+        titel: 'Bonitätsauskunft für Vermieter - Bonitätszertifikat',
+        zeilen: [
+          `Für: ${name}`,
+          `Erstellt am ${tagText(datum)}`,
+          `Prüfcode: ${pruefcode}`,
+          'Keine Negativmerkmale gespeichert.',
+          'Gültig zur Vorlage beim Vermieter.',
+        ],
+      },
+    ],
+    { kennzeichnung: marke.kennzeichnung },
+  );
+const bonitaet = (name, datum) => bonitaetMit(name, datum, MARKE_MUSTER);
 const brief = (kopf, titel, zeilen, optionen) => pdf([{ kopf, titel, zeilen }], optionen);
 const datei = (pfad) => readFileSync(join(TESTDATEIEN, pfad)).toString('base64');
 
@@ -119,9 +134,282 @@ const person = (
 });
 const kontakt = (telefon, email) => ({ kontakt: { telefon, email } });
 
+// Mappe 1: der Haushalt der Tests (W1, W6 der Vermieterseite stehen auf ihm). Bleibt, wie er ist (PC178).
+const FAMILIE_1 = {
+  id: '2-familie-buergin-mit-passwort',
+  titel: 'Max und Lea, ein Kind, Bürgin Petra, mit Passwort',
+  haupt: {
+    vor: 'Max',
+    nach: 'Mustermann',
+    tel: '0171 3920001',
+    mail: 'max.mustermann@example.com',
+    beruf: 'Elektroniker',
+    ag: 'Musterwerk GmbH',
+  },
+  mit: {
+    vor: 'Lea',
+    nach: 'Mustermann',
+    tel: '0171 3920006',
+    mail: '',
+    beruf: 'Erzieherin',
+    ag: 'Kita Sonnenschein',
+  },
+  buerge: {
+    vor: 'Petra',
+    nach: 'Mustermann',
+    tel: '0171 3920007',
+    mail: '',
+    beruf: 'Rentnerin',
+    ag: '',
+    lage: 'rente',
+  },
+  vertrag: 'Max und Lea Mustermann',
+  adresse: 'Lindenring 3, Erdgeschoss\n20259 Hamburg',
+  marke: MARKE_MUSTER,
+  satz: 'Wir suchen eine ruhige Wohnung nahe der Kita unserer Tochter.',
+};
+// Haushalt A (W40, PC176 bis PC178): Namen, Berufe, Telefon und Mail aus data/namensliste.json, die Straße
+// aus data/musterstrassen.json (gegen OSM geprüft). Firmen und Absender ohne „(Muster)“, erfunden aus Wörtern der
+// Straßenliste (Namensliste vom 21.11., E330); die Unterlagen tragen „Erfunden – kein echtes Dokument“ (W40, W7).
+const namensliste = JSON.parse(readFileSync('data/namensliste.json', 'utf8')).personen;
+const ausListe = (voll) => {
+  const p = namensliste.find((x) => x.name === voll);
+  if (!p) throw new Error(`${voll} steht nicht in der Namensliste`);
+  const [vor, ...nach] = p.name.split(' ');
+  return { vor, nach: nach.join(' '), tel: p.telefon, mail: p.mail, beruf: p.beruf };
+};
+const HAUSHALT_A = {
+  id: '6-haushalt-a',
+  titel: 'Haushalt A: Jarne und Selin, ein Kind, Hiltrud bürgt, mit Passwort (W40)',
+  haupt: { ...ausListe('Jarne Ostendorp'), ag: 'Tidenwerk Anlagenbau GmbH' },
+  mit: { ...ausListe('Selin Akgül'), ag: 'Pflegezentrum Seilerkoppel' },
+  buerge: {
+    ...ausListe('Hiltrud Ostendorp'),
+    ag: 'Wohnungsbau Kalkbrenner eG',
+    lage: 'angestellt',
+  },
+  vertrag: 'Jarne Ostendorp und Selin Akgül',
+  adresse: 'Kranichstieg 3, Erdgeschoss\n20259 Hamburg',
+  marke: {
+    kennzeichnung: 'Erfunden – kein echtes Dokument',
+    pruefcode: 'ERFUNDEN-4K2-7QX',
+    // DP113 H1 (PC183): jede Auskunft ihr eigener Code, in der Reihenfolge Hauptmieter, Mitmieterin, Bürgin.
+    pruefcodes: ['ERFUNDEN-4K2-7QX', 'ERFUNDEN-4K2-3MW', 'ERFUNDEN-4K2-9TB'],
+    // Vorschlag an die Planung (PC180): aus „Ankerwindenweg“ wie die Firmen der Namensliste; im Registerportal der
+    // Länder am 21.11. ohne Treffer („Teerhof“ gibt es dort viermal, darum nicht).
+    auskunftei: 'Ankerwinde Bonitätsdienst GmbH',
+    ausweis: 'Personalausweis',
+    // Selins bisheriger Vermieter (PC181): eigene Hausverwaltung, Fährhausbogen bleibt bei Frau Kaminski und der neuen
+    // Wohnung. Aus „Möwenschlag“; im Registerportal der Länder am 21.11. ohne Treffer.
+    hausverwaltung: 'Hausverwaltung Möwenschlag GmbH',
+    buergschaft: 'Bürgschaftserklärung',
+    rente: 'Rentenbescheid',
+  },
+  satz: 'Wir suchen eine ruhige Wohnung nahe der Kita unserer Tochter.',
+};
+
+/** Plan 2 als Vorlage: Mappe 1 (Max, Lea, Petra) und Haushalt A (W40, Namensliste der Planung). */
+const vollName = (p) => `${p.vor} ${p.nach}`;
+function familie(n) {
+  // Kennzeichnung und Absender je Haushalt (PC180): Mappe 1 behält „MUSTER“, Haushalt A trägt „Erfunden“.
+  const k = { kennzeichnung: n.marke.kennzeichnung };
+  const gehalt = (name, firma, monat, netto) => pdf([gehaltSeite(name, firma, monat, netto)], k);
+  const gehaltSammel = (name, firma, monate, netto) =>
+    pdf(
+      monate.map((x) => gehaltSeite(name, firma, x, netto)),
+      k,
+    );
+  const bonitaet = (name, datum) =>
+    bonitaetMit(
+      name,
+      datum,
+      n.marke,
+      n.marke.pruefcodes?.[[n.haupt, n.mit, n.buerge].map(vollName).indexOf(name)],
+    );
+  const brief = (kopf, titel, zeilen, optionen = {}) =>
+    pdf([{ kopf, titel, zeilen }], { ...optionen, ...k });
+  return {
+    id: n.id,
+    titel: n.titel,
+    passwort: 'Hefta-Test-2',
+    kinder: 1,
+    weitere: 0,
+    haushalt: {
+      haustiere: 'ja',
+      haustiereText: 'eine Katze',
+      ort: 'Hamburg',
+      mappeAussehen: { art: 'einefarbe', akzent: 'tanne' },
+    },
+    personen: [
+      person(
+        n.haupt.vor,
+        n.haupt.nach,
+        'maennlich',
+        'hauptmieter',
+        'angestellt',
+        {
+          ...kontakt(n.haupt.tel, n.haupt.mail),
+          beruf: n.haupt.beruf,
+          arbeitgeber: n.haupt.ag,
+          nettoeinkommen: 2850,
+          abrechnungMeist: 'ende',
+          selbstauskunft: { ...NEIN, haustiere: 'ja', haustiereText: 'eine Katze' },
+        },
+        [
+          {
+            typ: 'gehaltsnachweis',
+            variante: 'gehaltsabrechnung',
+            name: 'Gehalt_Aug-Okt.pdf',
+            aufteilung: ['2026-08', '2026-09', '2026-10'],
+            daten: gehaltSammel(
+              vollName(n.haupt),
+              n.haupt.ag,
+              ['2026-08', '2026-09', '2026-10'],
+              '2.850,00',
+            ),
+          },
+          {
+            typ: 'bonitaet',
+            datum: '2026-10-28',
+            name: `Bonitaet_${n.haupt.vor}.pdf`,
+            daten: bonitaet(vollName(n.haupt), '2026-10-28'),
+          },
+          {
+            typ: 'ausweiskopie',
+            name: 'Ausweis.pdf',
+            daten: brief(n.marke.ausweis, 'Kopie Vorder- und Rückseite', [
+              `Name: ${vollName(n.haupt)}`,
+              'Nur als Muster',
+            ]),
+          },
+          {
+            typ: 'schufa_datenkopie',
+            name: 'Datenkopie.pdf',
+            daten: brief(n.marke.auskunftei, 'Datenkopie nach Art. 15 DSGVO', [
+              `Für: ${vollName(n.haupt)}`,
+              'Alle gespeicherten Daten',
+            ]),
+          },
+        ],
+      ),
+      person(
+        n.mit.vor,
+        n.mit.nach,
+        'weiblich',
+        'mitmieter',
+        'angestellt',
+        {
+          ...kontakt(n.mit.tel, n.mit.mail),
+          beruf: n.mit.beruf,
+          arbeitgeber: n.mit.ag,
+          nettoeinkommen: 1950,
+          abrechnungMeist: 'ende',
+          selbstauskunft: { ...NEIN, haustiere: 'ja', haustiereText: 'eine Katze' },
+        },
+        [
+          ...['2026-08', '2026-09', '2026-10'].map((m) => ({
+            typ: 'gehaltsnachweis',
+            monat: m,
+            variante: 'gehaltsabrechnung',
+            name: `${n.mit.vor}_Gehalt_${m}.pdf`,
+            daten: gehalt(vollName(n.mit), n.mit.ag, m, '1.950,00'),
+          })),
+          {
+            typ: 'bonitaet',
+            datum: '2026-10-30',
+            name: `Bonitaet_${n.mit.vor}.pdf`,
+            daten: bonitaet(vollName(n.mit), '2026-10-30'),
+          },
+          {
+            typ: 'mietzahlung',
+            datum: '2026-10-15',
+            variante: 'bescheinigung',
+            name: 'Mietschuldenfreiheit.pdf',
+            daten: brief(n.marke.hausverwaltung, 'Mietschuldenfreiheitsbescheinigung', [
+              `Mieterin: ${vollName(n.mit)}`,
+              'Die Miete wurde stets pünktlich und vollständig gezahlt.',
+              'Hamburg, 15.10.2026',
+            ]),
+          },
+          {
+            typ: 'empfehlung_vorvermieter',
+            datum: '2026-10-15',
+            name: 'Empfehlung.pdf',
+            daten: brief(n.marke.hausverwaltung, 'Empfehlung', [
+              `Wir haben Frau ${n.mit.nach} als ruhige und zuverlässige Mieterin kennengelernt.`,
+            ]),
+          },
+        ],
+      ),
+      person(
+        n.buerge.vor,
+        n.buerge.nach,
+        'weiblich',
+        'buerge',
+        n.buerge.lage,
+        {
+          ...kontakt(n.buerge.tel, n.buerge.mail),
+          beruf: n.buerge.beruf,
+          arbeitgeber: n.buerge.ag,
+          nettoeinkommen: 2100,
+          selbstauskunft: NEIN,
+        },
+        [
+          {
+            typ: 'buergschaftserklaerung',
+            datum: '2026-10-20',
+            name: 'Buergschaft_Scan.pdf',
+            daten: brief(
+              n.marke.buergschaft,
+              'Selbstschuldnerische Bürgschaft',
+              [
+                `Ich bürge für die Verpflichtungen aus dem Mietvertrag von ${n.vertrag}.`,
+                'Hamburg, 20.10.2026',
+                vollName(n.buerge),
+              ],
+              { grau: true },
+            ),
+          },
+          n.buerge.lage === 'rente'
+            ? {
+                typ: 'rentenbescheid',
+                datum: '2026-07-01',
+                name: 'Rentenbescheid.pdf',
+                daten: brief(n.marke.rente, 'Rentenanpassung zum 1. Juli 2026', [
+                  'Monatliche Rente 2.100,00 EUR',
+                ]),
+              }
+            : {
+                typ: 'gehaltsnachweis',
+                variante: 'gehaltsabrechnung',
+                name: `${n.buerge.vor}_Gehalt_Aug-Okt.pdf`,
+                aufteilung: ['2026-08', '2026-09', '2026-10'],
+                daten: gehaltSammel(
+                  vollName(n.buerge),
+                  n.buerge.ag,
+                  ['2026-08', '2026-09', '2026-10'],
+                  '2.100,00',
+                ),
+              },
+          {
+            typ: 'bonitaet',
+            datum: '2026-10-21',
+            name: `Bonitaet_${n.buerge.vor}.pdf`,
+            daten: bonitaet(vollName(n.buerge), '2026-10-21'),
+          },
+        ],
+      ),
+    ],
+    bewerbung: {
+      adresse: n.adresse,
+      satz: n.satz,
+      export: { bitte: true },
+    },
+  };
+}
+
 async function plaene() {
   const MAX = 'Max Mustermann';
-  const LEA = 'Lea Mustermann';
   return [
     {
       id: '1-allein-ohne-passwort',
@@ -164,175 +452,7 @@ async function plaene() {
       ],
       bewerbung: { adresse: 'Beispielstraße 1, 3. OG links\n12345 Musterstadt' },
     },
-    {
-      id: '2-familie-buergin-mit-passwort',
-      titel: 'Max und Lea, ein Kind, Bürgin Petra, mit Passwort',
-      passwort: 'Hefta-Test-2',
-      kinder: 1,
-      weitere: 0,
-      haushalt: {
-        haustiere: 'ja',
-        haustiereText: 'eine Katze',
-        ort: 'Hamburg',
-        mappeAussehen: { art: 'einefarbe', akzent: 'tanne' },
-      },
-      personen: [
-        person(
-          'Max',
-          'Mustermann',
-          'maennlich',
-          'hauptmieter',
-          'angestellt',
-          {
-            ...kontakt('0171 3920001', 'max.mustermann@example.com'),
-            beruf: 'Elektroniker',
-            arbeitgeber: 'Musterwerk GmbH',
-            nettoeinkommen: 2850,
-            abrechnungMeist: 'ende',
-            selbstauskunft: { ...NEIN, haustiere: 'ja', haustiereText: 'eine Katze' },
-          },
-          [
-            {
-              typ: 'gehaltsnachweis',
-              variante: 'gehaltsabrechnung',
-              name: 'Gehalt_Aug-Okt.pdf',
-              aufteilung: ['2026-08', '2026-09', '2026-10'],
-              daten: gehaltSammel(
-                MAX,
-                'Musterwerk GmbH',
-                ['2026-08', '2026-09', '2026-10'],
-                '2.850,00',
-              ),
-            },
-            {
-              typ: 'bonitaet',
-              datum: '2026-10-28',
-              name: 'Bonitaet_Max.pdf',
-              daten: bonitaet(MAX, '2026-10-28'),
-            },
-            {
-              typ: 'ausweiskopie',
-              name: 'Ausweis.pdf',
-              daten: brief('Personalausweis (Muster)', 'Kopie Vorder- und Rückseite', [
-                `Name: ${MAX}`,
-                'Nur als Muster',
-              ]),
-            },
-            {
-              typ: 'schufa_datenkopie',
-              name: 'Datenkopie.pdf',
-              daten: brief('Auskunftei (Muster)', 'Datenkopie nach Art. 15 DSGVO', [
-                `Für: ${MAX}`,
-                'Alle gespeicherten Daten',
-              ]),
-            },
-          ],
-        ),
-        person(
-          'Lea',
-          'Mustermann',
-          'weiblich',
-          'mitmieter',
-          'angestellt',
-          {
-            ...kontakt('0171 3920006', ''),
-            beruf: 'Erzieherin',
-            arbeitgeber: 'Kita Sonnenschein',
-            nettoeinkommen: 1950,
-            abrechnungMeist: 'ende',
-            selbstauskunft: { ...NEIN, haustiere: 'ja', haustiereText: 'eine Katze' },
-          },
-          [
-            ...['2026-08', '2026-09', '2026-10'].map((m) => ({
-              typ: 'gehaltsnachweis',
-              monat: m,
-              variante: 'gehaltsabrechnung',
-              name: `Lea_Gehalt_${m}.pdf`,
-              daten: gehalt(LEA, 'Kita Sonnenschein', m, '1.950,00'),
-            })),
-            {
-              typ: 'bonitaet',
-              datum: '2026-10-30',
-              name: 'Bonitaet_Lea.pdf',
-              daten: bonitaet(LEA, '2026-10-30'),
-            },
-            {
-              typ: 'mietzahlung',
-              datum: '2026-10-15',
-              variante: 'bescheinigung',
-              name: 'Mietschuldenfreiheit.pdf',
-              daten: brief(
-                'Hausverwaltung Elbblick (Muster)',
-                'Mietschuldenfreiheitsbescheinigung',
-                [
-                  `Mieterin: ${LEA}`,
-                  'Die Miete wurde stets pünktlich und vollständig gezahlt.',
-                  'Hamburg, 15.10.2026',
-                ],
-              ),
-            },
-            {
-              typ: 'empfehlung_vorvermieter',
-              datum: '2026-10-15',
-              name: 'Empfehlung.pdf',
-              daten: brief('Hausverwaltung Elbblick (Muster)', 'Empfehlung', [
-                'Wir haben Frau Mustermann als ruhige und zuverlässige Mieterin kennengelernt.',
-              ]),
-            },
-          ],
-        ),
-        person(
-          'Petra',
-          'Mustermann',
-          'weiblich',
-          'buerge',
-          'rente',
-          {
-            ...kontakt('0171 3920007', ''),
-            beruf: 'Rentnerin',
-            arbeitgeber: '',
-            nettoeinkommen: 2100,
-            selbstauskunft: NEIN,
-          },
-          [
-            {
-              typ: 'buergschaftserklaerung',
-              datum: '2026-10-20',
-              name: 'Buergschaft_Scan.pdf',
-              daten: brief(
-                'Bürgschaftserklärung (Muster)',
-                'Selbstschuldnerische Bürgschaft',
-                [
-                  'Ich bürge für die Verpflichtungen aus dem Mietvertrag von Max und Lea Mustermann.',
-                  'Hamburg, 20.10.2026',
-                  'Petra Mustermann',
-                ],
-                { grau: true },
-              ),
-            },
-            {
-              typ: 'rentenbescheid',
-              datum: '2026-07-01',
-              name: 'Rentenbescheid.pdf',
-              daten: brief('Rentenversicherung (Muster)', 'Rentenanpassung zum 1. Juli 2026', [
-                'Monatliche Rente 2.100,00 EUR',
-              ]),
-            },
-            {
-              typ: 'bonitaet',
-              datum: '2026-10-21',
-              name: 'Bonitaet_Petra.pdf',
-              daten: bonitaet('Petra Mustermann', '2026-10-21'),
-            },
-          ],
-        ),
-      ],
-      bewerbung: {
-        adresse: 'Lindenring 3, Erdgeschoss\n20259 Hamburg',
-        satz: 'Wir suchen eine ruhige Wohnung nahe der Kita unserer Tochter.',
-        export: { bitte: true },
-      },
-    },
+    familie(FAMILIE_1),
     {
       id: '3-lebenslagen-datensparsam',
       titel: 'Drei Erwachsene in verschiedenen Lebenslagen, Bürge, „Datensparsam“',
@@ -689,6 +809,7 @@ async function plaene() {
         export: { modus: 'alles', kleiner: true },
       },
     },
+    familie(HAUSHALT_A),
   ];
 }
 
@@ -787,7 +908,14 @@ async function einspielen(browser, basis, pfad, plan) {
   const fehler = [];
   page.on('pageerror', (e) => fehler.push(e.message));
   try {
+    // Seit Hefta 2 stehen die Einstellungen in Reitern; „Backup einspielen“ ist im Reiter „App“. Am Rechner ist die
+    // Zeile selbst das Dateifeld; nur am iPhone in Safari führt sie erst zum Hinweis auf die App (E30). PC179: Das
+    // Werkzeug öffnete den Reiter nicht und fand darum kein Dateifeld.
     await page.goto('/#/einstellungen');
+    await page.getByRole('tab', { name: 'App', exact: true }).click();
+    // Erst tippen, wenn die Seite fertig dasteht (Backup-Stand und Speicher gelesen), wie im Test (CP44).
+    await page.getByText('Noch keins').waitFor();
+    await page.getByText(/ belegt$/).waitFor();
     await page.locator('input[type=file]').first().setInputFiles(pfad);
     await page.getByRole('heading', { level: 1, name: 'Backup einspielen' }).waitFor();
     if (plan.passwort) {
@@ -818,7 +946,13 @@ async function einspielen(browser, basis, pfad, plan) {
   } catch (e) {
     await page.screenshot({ path: join(ZIEL, `fehler-${plan.id}.png`) });
     const h1 = await page.locator('h1').allTextContents();
-    return { problem: String(e).split('\n')[0], h1, url: page.url(), fehler };
+    // Mit der Zeile des Locators, auf den gewartet wurde.
+    return {
+      problem: String(e).split('\n').slice(0, 4).join(' '),
+      h1,
+      url: page.url(),
+      fehler,
+    };
   } finally {
     await kontext.close();
   }

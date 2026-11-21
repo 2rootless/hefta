@@ -197,6 +197,55 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
     expect((await textJeSeite(e.bytes))[1]).toContain('Selbstauskunft');
   });
 
+  it('DP45: „Für den Haushalt“ vor den Personen, Zeile ohne Seiten ohne Zahl, nicht in Lesezeichen und Lesehilfe', async () => {
+    const personen = await bloecke();
+    const haushalt: MappenBlock = {
+      person: { name: 'Für den Haushalt', rolle: '', farbe: '#e9a970', haushalt: true },
+      teile: [
+        {
+          abschnitt: 'Wohnberechtigungsschein',
+          detail: 'gültig bis 31. März 2027',
+          typ: 'wbs',
+          quellen: [{ daten: await quelle(['WBS']) }],
+        },
+        {
+          abschnitt: 'Mitgliedschaft',
+          detail: 'Wohnungsgenossenschaft Muster eG, Nr. 004711',
+          typ: 'mitgliedschaft',
+          nurZeile: true,
+          quellen: [],
+        },
+      ],
+    };
+    const e = await bewerbungBauen(
+      await auftrag({ bloecke: [haushalt, ...personen], hinweis: true }),
+    );
+    // Eine Seite mehr: der Schein; die Mitgliedschaft ohne Nachweis hat keine Seite.
+    expect(e.seiten).toBe(1 + 1 + 1 + 3 + 1 + 3 + 1);
+    const [deckblatt, schein] = await textJeSeite(e.bytes);
+    const zeilen = deckblatt!;
+    expect(zeilen).toContain('Wohnberechtigungsschein, gültig bis 31. März 2027');
+    expect(zeilen).toContain('Mitgliedschaft, Wohnungsgenossenschaft Muster eG, Nr. 004711');
+    // Vor den Personen, und die Personen im Kopf bleiben dieselben.
+    expect(zeilen.indexOf('Für den Haushalt')).toBeLessThan(zeilen.indexOf('Selbstauskunft'));
+    expect(zeilen).toContain('Hauptmieter, Elektroniker');
+    expect(schein).toContain('Für den Haushalt');
+    expect(schein).toContain('Wohnberechtigungsschein');
+    const pdf = await PDFDocument.load(e.bytes);
+    const punkte = lesezeichen(pdf);
+    expect(punkte[1]).toEqual([
+      'Für den Haushalt',
+      2,
+      [['Wohnberechtigungsschein, gültig bis 31. März 2027', 2]],
+    ]);
+    expect(JSON.stringify(punkte)).not.toContain('Mitgliedschaft');
+    expect(e.inhalt[0]).toEqual({
+      person: 'Für den Haushalt',
+      seite: 2,
+      teile: [{ abschnitt: 'Wohnberechtigungsschein', seite: 2, bis: 2 }],
+    });
+  });
+
   it('P2, P14: Jede Seite A4 hochkant, auch Querformat (Rückmeldung vom 4.11.: beim Druck)', async () => {
     const pdf = await PDFDocument.load((await bewerbungBauen(await auftrag())).bytes);
     const groessen = pdf

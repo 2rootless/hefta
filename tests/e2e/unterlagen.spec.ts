@@ -1,4 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
+import { stimmungMuster } from './stimmung-muster';
 import { PDFDocument, StandardFonts } from '@cantoo/pdf-lib';
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -52,11 +53,13 @@ async function gehaltHochladen(
   await hochladenOeffnen(page, /^Gehalts.?nachweise/);
   const blatt = page.getByRole('dialog');
   await blatt.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(datei));
-  await expect(blatt.getByRole('radiogroup').first()).toBeVisible();
-  // Gehalt ist eine Serie: Monate als Mehrfachauswahl (RS2). Erst die Vorbelegung abwählen.
+  // Eine Datei mit einer Seite hat die Form je Datei mit Monatsauswahl (PC79, CP41).
+  const auswahl = blatt.locator('.w16-monat select');
+  await expect(auswahl).toBeVisible();
   await monatWaehlen(blatt, monat.chip ?? null);
   if (monat.anders) {
-    await blatt.getByRole('button', { name: 'Anderer Monat' }).click();
+    // „Anderer Monat …“ steht am Ende der Auswahl und öffnet das Monatsfeld (PC79).
+    await auswahl.selectOption({ label: 'Anderer Monat …' });
     await blatt.locator('input[type=month]').fill(monat.anders);
     await blatt.locator('input[type=month]').dispatchEvent('change');
   }
@@ -177,7 +180,7 @@ test('drei Gehaltsabrechnungen ergeben eine Serie, eine vierte schiebt sie weite
   await page.reload();
   await expect(zeile).toContainText('August bis Oktober');
   await page.locator('a.zurueck').click();
-  await expect(page.getByText('Noch zwei Dinge, dann bist du startklar.')).toBeVisible();
+  await expect(page.getByText(stimmungMuster('P2', { anzahl: 2, an: 'du' }))).toBeVisible();
   if (browserName === 'chromium') {
     await animationenFertig(page);
     await page.screenshot({ path: 'docs/screenshots/m3-uebersicht.png', fullPage: true });
@@ -387,11 +390,11 @@ test('Mehrere Gehaltsdateien: „Entfernen“ je Datei, „Andere Datei wählen�
   await expect(entfernen).toHaveCount(2);
   await expect(blatt.getByText('august.pdf')).toHaveCount(0);
 
-  // Bleibt eine Datei, ist „Andere Datei wählen“ wieder eindeutig.
+  // Bleibt eine Datei, ist „Andere Datei wählen“ wieder eindeutig; „Entfernen“ gibt es dann nicht (PC79).
   await blatt.getByRole('button', { name: 'Entfernen sept.pdf' }).click();
   await expect(entfernen).toHaveCount(0);
-  await expect(blatt.getByLabel('Andere Datei wählen')).toBeAttached();
-  await expect(blatt.getByText(/^juli\.pdf/)).toBeVisible();
+  await expect(blatt.getByLabel('Andere Datei wählen')).toHaveCount(1);
+  await expect(blatt.getByText('juli.pdf, 1 Seite')).toBeVisible();
 });
 
 test('Kein Datum gefunden: Die Seite steht da, das Feld darunter (D11c)', async ({
@@ -472,15 +475,14 @@ test('Datum und Monat: im Dokument erkannt oder dort ausgewählt, Datei direkt g
   await expect(blatt).toBeHidden();
   await zurueckZuMax(page);
 
-  // Gehalt: Der Monat steht im Dokument und ersetzt die Vorbelegung.
+  // Gehalt: Der Monat steht im Dokument und ersetzt die Vorbelegung; er ist der gewählte (PC79, CP41).
   await hochladenOeffnen(page, /^Gehalts.?nachweise/);
   const gehalt = page.getByRole('dialog');
   await gehalt
     .locator('[data-feld="pdf"]')
     .setInputFiles(alsInhalt(await pdfDatei(info, 'lohn.pdf', ['Gehaltsabrechnung Oktober 2026'])));
-  await expect(gehalt.getByRole('radio', { name: 'Oktober' })).toBeChecked();
-  await expect(gehalt.getByRole('radio', { name: 'September' })).not.toBeChecked();
-  await expect(gehalt.getByText(/^Aus dem Dokument erkannt: Oktober/)).toBeVisible();
+  await expect(gehalt.locator('.w16-monat select')).toHaveValue('2026-10');
+  await expect(gehalt.locator('.w16-seite')).toContainText('Oktober gefunden');
   expect(await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp)).toEqual([]);
 });
 
@@ -511,7 +513,10 @@ test('drei Gehaltsnachweise auf einmal: je Datei ein Monat, erkannt aus dem Name
   await hochladenOeffnen(page, /^Gehalts.?nachweise/);
   const blatt = page.getByRole('dialog');
   await blatt.locator('[data-feld="pdf"]').setInputFiles(alsInhalt(dateien));
-  await expect(blatt.getByText('Welcher Monat ist welche Datei?')).toBeVisible();
+  // DP49 Punkt 7: Die Überschrift nennt Dateien und Seiten.
+  await expect(
+    blatt.getByText('Drei Dateien, drei Seiten. Welcher Monat ist welche Seite?'),
+  ).toBeVisible();
   await expect(blatt.getByLabel('Gehalt_September_2026.pdf', { exact: true })).toHaveValue(
     '2026-09',
   );

@@ -4,6 +4,7 @@ import {
   anschreibenText,
   bewerbungsText,
   einzugText,
+  fuerDieStrasse,
   inDerStrasse,
   loeschbitteText,
   nachfassText,
@@ -33,6 +34,14 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
     expect(anrede('Herr Dr. Okafor')).toBe('Sehr geehrter Herr Dr. Okafor,');
     expect(anrede('Hausverwaltung Nord GmbH')).toBe('Sehr geehrte Damen und Herren,');
     expect(anrede(null)).toBe('Sehr geehrte Damen und Herren,');
+  });
+
+  it('DP50 Z2: „für den Lindenring 3“, „für die Beispielstraße 1“, im Zweifel „für die Wohnung …“', () => {
+    expect(fuerDieStrasse('Lindenring 3')).toBe('für den Lindenring 3');
+    expect(fuerDieStrasse('Beispielstraße 1')).toBe('für die Beispielstraße 1');
+    expect(fuerDieStrasse('Lange Reihe 5')).toBe('für die Wohnung Lange Reihe 5');
+    expect(fuerDieStrasse('Am Markt 4')).toBe('für die Wohnung Am Markt 4');
+    expect(fuerDieStrasse('')).toBe('');
   });
 
   it('setzt die Präposition nach dem Straßennamen, im Zweifel keine', () => {
@@ -114,6 +123,9 @@ describe('Bewerben in einer Minute (Zeile 8, B23)', () => {
     ).toEqual({
       anrede: 'Sehr geehrte Frau Hansen,',
       text: 'ich möchte mich um die Wohnung im Lindenring 3 bewerben. Ich kann zum 1. Januar 2027 einziehen. Meine Mappe mit den üblichen Unterlagen liegt bei.',
+      // W37: Ohne Kennung des Hefts die Fassung von Release 2.0: kein Schluss, „Mit freundlichen Grüßen“.
+      schluss: '',
+      gruss: 'Mit freundlichen Grüßen',
     });
     const wir = anschreibenText({
       wir: true,

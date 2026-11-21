@@ -55,11 +55,14 @@ test.describe('Feinschliff', () => {
     await expect(page.getByRole('button', { name: 'Satz ändern' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Aussehen' })).toBeVisible();
     await page.getByRole('button', { name: 'Ganze Mappe ansehen' }).click();
-    await expect(page.getByRole('dialog', { name: /^Seite 1 von \d+$/ })).toBeVisible();
+    // DP50 P2: die ganze Mappe im neuen Leser.
+    await expect(page.getByRole('dialog', { name: /^Mappe/ })).toBeVisible();
   });
 
   test('Die Schrift gilt für den Haushalt und bleibt (AM5a)', async ({ page }) => {
     await laden(page, '04-fertig', '/mappe/anpassen');
+    // Erst tippen, wenn die Vorschau dasteht (CP48: sonst traf der Tipp unter Last daneben, wie in CP44).
+    await expect(page.getByText('Vorschau wird erstellt …')).toHaveCount(0, { timeout: 30_000 });
     await expect(page.getByRole('radio', { name: 'Archivo' })).toHaveAttribute(
       'aria-checked',
       'true',
@@ -85,7 +88,7 @@ test.describe('Feinschliff', () => {
     page,
   }) => {
     await laden(page, '04-fertig', '/selbstauskunft/p-04-fertig-0');
-    const teil = page.getByRole('button', { name: /^Fragen, die Vermieter stellen dürfen/ });
+    const teil = page.getByRole('button', { name: /^Drei Fragen aus dem Musterbogen/ });
     await teil.click();
     await expect(page.getByRole('heading', { name: 'Nach der Zusage' })).toBeVisible();
     await expect(page.getByText(/^Die Antwort steht ab jetzt in der Mappe/)).toBeVisible();

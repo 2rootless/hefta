@@ -130,6 +130,7 @@ describe('Backups aus jeder bisherigen Version', () => {
         kinder: 1,
         weitere: 1,
         unterlagen: 2,
+        hefte: 0,
         bewerbungen: 0,
         vertragNamen: ['Max Mustermann', 'Lea Mustermann'],
         buergenNamen: ['Petra Mustermann'],

@@ -31,6 +31,9 @@ export const TYPEN: Readonly<Record<string, string>> = {
   anschreiben: 'Anschreiben',
   empfehlung_vorvermieter: 'Empfehlung des Vorvermieters',
   wbs: 'Wohnberechtigungsschein',
+  // 2.1 (DP45 G2, G3): neue Arten ohne neue Fassung; ältere Leser zeigen sie neutral als „Unterlage“.
+  arbeitsvertrag: 'Arbeitsvertrag',
+  mitgliedschaft: 'Mitgliedschaft',
   ausweiskopie: 'Ausweiskopie',
   schufa_datenkopie: 'SCHUFA-Datenkopie',
 };
@@ -53,6 +56,9 @@ export const VERZEICHNIS: Readonly<Record<string, string>> = {
   anschreiben: 'Anschreiben',
   empfehlung_vorvermieter: 'Empfehlung des Vorvermieters',
   wbs: 'Wohnberechtigungsschein',
+  // 2.1 (DP45 G2, G3): neue Arten ohne neue Fassung; ältere Leser zeigen sie neutral als „Unterlage“.
+  arbeitsvertrag: 'Arbeitsvertrag',
+  mitgliedschaft: 'Mitgliedschaft',
   ausweiskopie: 'Ausweiskopie',
   schufa_datenkopie: 'SCHUFA-Datenkopie',
 };

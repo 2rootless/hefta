@@ -1,6 +1,7 @@
 import { PDFDocument, StandardFonts } from '@cantoo/pdf-lib';
+import { stimmungMuster } from './stimmung-muster';
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { animationenFertig, cspMelden } from './hilfen';
+import { cspMelden, ganzRuhig } from './hilfen';
 import { HEUTE, SZENARIEN, datensaetze } from './szenarien';
 
 // Bewegung im Tab „Mappe“ (B21). Was sich seit dem letzten Blick geändert hat, bewegt sich einmal,
@@ -153,7 +154,7 @@ function regelnEinhalten(liste: Bewegung[]) {
 }
 
 async function endzustand(page: Page) {
-  await expect(page.getByText('Alles da. Ihr seid startklar.')).toBeVisible();
+  await expect(page.getByText(stimmungMuster('P4', { teil: 'satz', an: 'ihr' }))).toBeVisible();
   await expect(page.getByRole('link', { name: 'Mappe teilen' })).toBeVisible();
   // Nach der Bewegung sind die Marken weg, und was ging, ist ganz heraus.
   await expect(page.locator('.moment, .kam, .geist, .neu, .blende')).toHaveCount(0);
@@ -173,8 +174,9 @@ async function bildNachher(browser: Browser, reduziert: boolean): Promise<Buffer
   await laden(page, '01-standard');
   await bonitaetHochladen(page);
   await expect(page.locator('.kam, .geist, .neu, .blende')).toHaveCount(0);
-  await animationenFertig(page);
+  // Erst die Maus weg, dann warten: Das Ende des Hovers ist auch ein Übergang (Wackler in WebKit, PC79).
   await page.mouse.move(0, 0);
+  await ganzRuhig(page);
   const bild = await page.locator('main').screenshot({ animations: 'disabled', caret: 'hide' });
   await kontext.close();
   return bild;
@@ -190,7 +192,7 @@ test.describe('mit Bewegung', () => {
 
   test('„Alles da“ (B21-02): Kasten, Satz, Haken, Knopf; danach Ruhe', async ({ page }) => {
     await laden(page, '04-fertig');
-    await expect(page.getByText('Noch ein Ding, dann seid ihr startklar.')).toBeVisible();
+    await expect(page.getByText(stimmungMuster('P2', { anzahl: 1, an: 'ihr' }))).toBeVisible();
     await aufzeichnen(page, [
       '.aufgaben.fertig.moment',
       '.zeile.da.kam',
@@ -202,7 +204,9 @@ test.describe('mit Bewegung', () => {
     const { gesehen, bewegungen: liste } = await aufgezeichnet(page);
     // Die Zeile im Blatt tönt, der Haken zieht sich; „trotzdem teilen“ geht und ist nicht erreichbar.
     expect(gesehen).toEqual({
-      '.aufgaben.fertig.moment': expect.stringContaining('Alles da. Ihr seid startklar.'),
+      '.aufgaben.fertig.moment': expect.stringMatching(
+        stimmungMuster('P4', { teil: 'satz', an: 'ihr', ganz: false }),
+      ),
       '.zeile.da.kam': expect.stringMatching(/^Bonitäts/),
       '.einblenden-neu': 'Mappe teilen',
       '.leiste .geist': '[inert] Mappe trotzdem teilen',
@@ -235,7 +239,9 @@ test.describe('mit Bewegung', () => {
       'li.geist': expect.stringMatching(/^\[inert\] Bonitäts/),
       '.zeile.da.kam': expect.stringMatching(/^Bonitäts/),
       '.leiste small.neu': '1 offen',
-      '#aufgaben-titel.blende': expect.stringContaining('Noch ein Ding'),
+      '#aufgaben-titel.blende': expect.stringMatching(
+        stimmungMuster('P2', { anzahl: 1, an: 'ihr', ganz: false }),
+      ),
     });
     regelnEinhalten(liste);
     expect(liste.map((b) => b.name)).toEqual(
@@ -246,7 +252,7 @@ test.describe('mit Bewegung', () => {
   test('zurück in den Tab ohne Änderung: nichts bewegt sich', async ({ page }) => {
     await laden(page, '01-standard');
     await page.evaluate(() => (location.hash = '#/einstellungen'));
-    await expect(page.getByRole('heading', { level: 2, name: 'Über Hefta' })).toBeVisible();
+    await expect(page.getByRole('tablist', { name: 'Bereiche der Einstellungen' })).toBeVisible();
     await page.evaluate(() => (location.hash = '#/'));
     await expect(page.getByRole('heading', { level: 1, name: 'Eure Mappe' })).toBeVisible();
     await expect(page.locator('.moment, .kam, .geist, .neu, .blende')).toHaveCount(0);

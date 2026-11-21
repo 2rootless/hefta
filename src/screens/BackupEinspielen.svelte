@@ -36,7 +36,9 @@
       : t('einspielenSeite.mitPasswort', { groesse: groesse(d.size) });
   }
   // Vom ersten Start aus („Ich habe ein Backup“) gibt es noch keinen Haushalt: zurück dorthin.
-  const heim = $derived(daten.ansicht ? '/einstellungen' : '/');
+  // Backup von außen (W39): zurück auf die Übersicht („Mappe“), nicht in die Einstellungen.
+  const vonAussen = einstellungenZustand.vonAussen;
+  const heim = $derived(daten.ansicht && !vonAussen ? '/einstellungen' : '/');
   let verschluesselt = $state(false);
   let passwort = $state('');
   let feld = $state<HTMLInputElement>();
@@ -109,7 +111,7 @@
     if (!vorschau && !(await pruefen())) return;
     // Vom ersten Start aus: danach die Übersicht, nicht die Einstellungen. Hinter ihnen läge noch der
     // alte Startbildschirm, und den zeigt iOS beim Zurückwischen als Standbild.
-    const vomStart = !daten.ansicht;
+    const vomStart = !daten.ansicht || vonAussen;
     laeuft = true;
     try {
       const inhalt = await sicherungEinspielen(
@@ -118,7 +120,10 @@
         verschluesselt ? passwort : undefined,
       );
       // Das eingespielte Backup existiert ja: sein Datum gilt als letztes Backup.
-      await einstellungenAendern(await db(), { letztesBackup: inhalt.erstellt });
+      await einstellungenAendern(await db(), {
+        letztesBackup: inhalt.erstellt,
+        letztesBackupWeg: null,
+      });
       await neuLaden();
       einstellungenZustand.datei = null;
       einstellungenZustand.meldung = t('einstellungen.eingespielt', {
@@ -149,6 +154,7 @@
   // Wer weggeht, nimmt die Datei nicht mit: Beim nächsten Mal wird neu gewählt.
   onDestroy(() => {
     if (!laeuft) einstellungenZustand.datei = null;
+    einstellungenZustand.vonAussen = false;
   });
 
   const grund = $derived(
@@ -174,7 +180,11 @@
     {#if !laeuft}
       <Zurueck
         href="#{heim}"
-        text={daten.ansicht ? t('einstellungen.titel') : t('allgemein.zurueck')}
+        text={vonAussen
+          ? t('tabs.mappe')
+          : daten.ansicht
+            ? t('einstellungen.titel')
+            : t('allgemein.zurueck')}
       />
     {/if}
   </div>
@@ -252,13 +262,14 @@
           <b>{t('einspielenSeite.jetzt')}</b>
           {#if jetzt}<WerIstDabei bestand={jetzt} />{t('zahlen.unterlagen', {
               anzahl: jetzt.unterlagen,
-            })}{/if}
+            })}<span class="hefte">{t('zahlen.hefte', { anzahl: jetzt.hefte })}</span>{/if}
         </div>
         <div>
           <b>{t('einspielenSeite.imBackup')}</b>
           {#if vorschau}<WerIstDabei bestand={vorschau.bestand} />{t('zahlen.unterlagen', {
               anzahl: vorschau.bestand.unterlagen,
-            })}{:else}<span class="leise">{t('einspielenSeite.nachPasswort')}</span>{/if}
+            })}<span class="hefte">{t('zahlen.hefte', { anzahl: vorschau.bestand.hefte })}</span
+            >{:else}<span class="leise">{t('einspielenSeite.nachPasswort')}</span>{/if}
         </div>
       </div>
       {#if !appLeer}
@@ -303,6 +314,11 @@
 
   .leise {
     color: var(--ink-muted);
+  }
+
+  /* W50: die Zahl der Hefte in einer eigenen Zeile unter den Unterlagen (DP103). */
+  .hefte {
+    display: block;
   }
 
   .ersetzt {

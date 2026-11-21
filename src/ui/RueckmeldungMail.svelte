@@ -18,7 +18,7 @@
   .mail {
     display: grid;
     gap: 10px;
-    padding: 14px 16px 16px;
+    padding: 16px;
   }
 
   .zeile {

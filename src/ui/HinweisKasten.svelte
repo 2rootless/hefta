@@ -1,5 +1,6 @@
 <script lang="ts">
   import Symbol from './Symbol.svelte';
+  import Warnzeichen from './Warnzeichen.svelte';
   // Kasten unter der Begrüßung (G2, G3, G5): schiebt den Inhalt nach unten, liegt nie darüber und
   // geht nicht von selbst weg. Immer nur einer: Fehler, Speicher, neue Version. Auf anderen
   // Bildschirmen zeigt die App nur den Fehler; „Neue Version“ stört dort nie (Formular, Rutsch).
@@ -24,7 +25,10 @@
 
 {#if art}
   <div class="kasten" class:stark={art !== 'version'} role="status">
-    <span class="ic" aria-hidden="true"><Symbol name="info" groesse={20} /></span>
+    <!-- DP63c F1: Fehler und voller Speicher mit dem Warnzeichen in Bernstein; die neue Version mit „info“. -->
+    <span class="ic" aria-hidden="true"
+      >{#if art === 'version'}<Symbol name="info" groesse={20} />{:else}<Warnzeichen />{/if}</span
+    >
     <div class="tx">
       {#if art !== 'speicher'}
         <button
@@ -74,10 +78,6 @@
     width: 20px;
     height: 21px;
     color: var(--ink);
-  }
-
-  .stark .ic {
-    color: var(--accent-text);
   }
 
   .tx {

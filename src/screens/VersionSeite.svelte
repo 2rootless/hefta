@@ -6,7 +6,7 @@
   import { einmal } from '../ui/einmal';
   import { aktuelleVersionen } from '../domain/fristen';
   import { pruefhinweise } from '../domain/pruefhinweise';
-  import { listenText, personStand } from '../domain/regelkatalog';
+  import { listenText, personStand, standFinden } from '../domain/regelkatalog';
   import { haushaltStaende } from '../ui/pruefDaten';
   import PruefKasten from '../ui/PruefKasten.svelte';
   import { t } from '../i18n';
@@ -35,9 +35,8 @@
       : null,
   );
   const u = $derived(
-    stand?.unterlagen.find((x) => x.typ.id === typId) ??
-      stand?.nichtMehrNoetig.find((x) => x.typ.id === typId) ??
-      null,
+    // Auch ein Zusatz wie der Arbeitsvertrag bei „Neu im Job“ (DP45 G3).
+    standFinden(stand, typId),
   );
   const v = $derived(u?.versionen.find((x) => x.id === versionId) ?? null);
   const inMappe = $derived(
@@ -181,7 +180,7 @@
   .karte-weiss {
     display: grid;
     gap: 8px;
-    padding: 14px 16px;
+    padding: 16px;
     border-radius: 20px;
     background: var(--surface);
   }

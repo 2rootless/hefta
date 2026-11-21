@@ -38,6 +38,7 @@
 
 <div
   class="haarlinie"
+  class:viele={stuecke.length >= 5}
   role="list"
   aria-label={t('haarlinie.liste')}
   style:--hl-anzahl={stuecke.length}
@@ -59,18 +60,20 @@
           <span class="zeichen"><Symbol name={s.symbol} groesse={20} /></span>
         {/if}
         {#if s.zustand === 'uebersprungen'}
+          <!-- DP49, Punkt 8: ein Halbkreis, der über das Zeichen springt; die Spitze folgt der Richtung
+               am Ende (senkrecht nach unten). -->
           <svg
             class="pfeil"
-            viewBox="0 0 12 12"
-            width="12"
-            height="12"
+            viewBox="0 0 16 16"
+            width="16"
+            height="16"
             fill="none"
             stroke="currentColor"
             stroke-width="1.6"
             stroke-linecap="round"
             stroke-linejoin="round"
             aria-hidden="true"
-            ><path d="M2 8.5C2.6 5 6.5 3.4 9.4 5.6" /><path d="M9.6 2.9v2.9H6.7" /></svg
+            ><path d="M2.5 12.5A5 5 0 0 1 12.5 12.5" /><path d="M10 10 12.5 12.5 15 10" /></svg
           >
         {/if}
       </span>
@@ -109,15 +112,23 @@
   }
   /* Rand um das Symbol 8 px; bei vielen Unterlagen auf schmaler Zeile (320 px, Text 130 %) bis 2 px. */
   .platz {
+    --hl-rand: clamp(2px, calc((100cqi / var(--hl-anzahl, 1) - 20px) / 2), 8px);
     position: relative;
     display: flex;
-    padding: 0 clamp(2px, calc((100cqi / var(--hl-anzahl, 1) - 20px) / 2), 8px);
+    padding: 0 var(--hl-rand);
     background: var(--hl-grund, var(--surface));
   }
   .zeichen {
     position: relative;
     display: flex;
     color: var(--ink);
+  }
+  /* DP47b K2: Ab fünf Punkten in schmaler Breite höchstens 4 px Fläche um das Zeichen, sonst stoßen die
+     Flächen aneinander und die Linie ist nicht mehr zu sehen. */
+  @media (max-width: 300px) {
+    .viele .platz {
+      padding: 0 clamp(2px, calc((100cqi / var(--hl-anzahl, 1) - 20px) / 2), 4px);
+    }
   }
   /* Als Knopf: Tippfläche 44 px um das Symbol (C5); der Rand von -12 px hält die Linie, wie sie ist. */
   .knopf {
@@ -154,10 +165,11 @@
     background: var(--hl-grund, var(--surface));
     box-shadow: inset 0 0 0 1.5px var(--p-linie);
   }
+  /* DP49: rechts über dem Zeichen, 14 px vom linken Rand des Zeichens, 16 px darüber. */
   .pfeil {
     position: absolute;
-    right: -3px;
-    top: -10px;
+    left: calc(var(--hl-rand) + 14px);
+    top: -16px;
     color: var(--ink-quiet);
   }
 </style>

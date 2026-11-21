@@ -40,9 +40,12 @@ describe('i18n', () => {
   });
 
   it('formatiert Größen in KB, MB und GB', () => {
-    expect(groesse(850 * 1024)).toBe('850 KB');
-    expect(groesse(12.4 * 1024 * 1024)).toBe('12,4 MB');
-    expect(groesse(10 * 1024 ** 3)).toBe('10 GB');
+    // PC186: wie „Dateien“ am iPhone, 1 MB = 1 000 000 Byte.
+    expect(groesse(850_000)).toBe('850 KB');
+    expect(groesse(12_400_000)).toBe('12,4 MB');
+    expect(groesse(10_000_000_000)).toBe('10,0 GB');
+    // Gegenprobe: mit 1024 wären 12 400 000 Byte nur 11,8 MB.
+    expect(groesse(12_400_000)).not.toBe('11,8 MB');
   });
 
   it('formatiert Daten wie im Design', () => {
@@ -52,11 +55,10 @@ describe('i18n', () => {
 
 describe('DP33, Fehler 1 und 2', () => {
   it('kein doppelter Punkt, wenn der Wert auf einen Punkt endet', () => {
-    expect(t('stand.nachgefragt.satz' as never, { datum: '12. Okt.' })).toBe(
-      'Beworben am 12. Okt. Jetzt ist wieder der Vermieter dran.',
-    );
-    expect(t('stand.nachgefragt.satz' as never, { datum: '12. Oktober' })).toBe(
-      'Beworben am 12. Oktober. Jetzt ist wieder der Vermieter dran.',
+    // W37: Der feste Teil steht jetzt allein (`satzFest`), der Satz danach kommt aus dem Pool P8.
+    expect(t('stand.nachgefragt.satzFest', { datum: '12. Okt.' })).toBe('Beworben am 12. Okt.');
+    expect(t('stand.nachgefragt.satzFest', { datum: '12. Oktober' })).toBe(
+      'Beworben am 12. Oktober.',
     );
   });
 

@@ -12,23 +12,34 @@ test('Erster Start über „Mappe“: Startseite, Hinweis für Vermieter ohne Sc
   await page.goto('/#/wohnungen');
   await page.getByRole('link', { name: 'Mappe' }).click();
   await expect(page).toHaveURL(/mappe-start$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Eure Mappe' })).toBeVisible();
+  // DP50 Punkt 1 (L1): „Mappe“, „Hier entsteht eure Mappe.“, das Bild, der Knopf, drei Schritte.
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Hier entsteht eure Mappe.' }),
+  ).toBeVisible();
   await expect(
     page.getByText(
-      'Alles, was ein Vermieter von euch verlangen darf, in einer Datei. Hefta baut sie aus eurem Haushalt und euren Unterlagen.',
+      'Alles, was ein Vermieter von euch verlangen darf, in einer Datei. Für jede Person ein Blatt, mit allem, was dazugehört.',
     ),
   ).toBeVisible();
-  // Knopf und Hinweis für Vermieter ohne Scrollen sichtbar (667 px hoch).
+  // Der Knopf ohne Scrollen (667 px hoch); der Satz für Vermieter steht nach DP50 unter den Schritten.
   await expect(page.getByRole('link', { name: 'Haushalt anlegen' })).toBeInViewport();
-  await expect(page.getByText(/^Sie vermieten\? Öffnen Sie die Mappe auf/)).toBeInViewport();
+  await expect(page.getByText(/^Sie vermieten\? Öffnen Sie die Mappe auf/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'vermieter.hefta.de' })).toBeVisible();
-  // Anleitung mit drei Schritten, die Sätze aus Planung 12y.
-  await expect(page.getByRole('heading', { name: 'So entsteht eure Mappe' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'In drei Schritten' })).toBeVisible();
   await expect(page.locator('.anl li')).toHaveCount(3);
   await expect(
     page.getByText('Selbstauskunft ausfüllen, Nachweise dazulegen. Hefta sagt, was fehlt.'),
   ).toBeVisible();
-  await expect(page.getByText('Als eine Datei, die ihr per Mail schickt.')).toBeVisible();
+  // PC69 K1 (E140): Schritt 3 bis zum Vermieter-Link.
+  await expect(
+    page.getByText('Eine Datei für den Vermieter, per Mail oder über einen Messenger.'),
+  ).toBeVisible();
+  // Die Nummern stehen an der ersten Zeile, nicht mittig (wie Ü2).
+  for (const li of await page.locator('.anl li').all()) {
+    const nr = await li.locator('.nr').evaluate((e) => e.getBoundingClientRect().top);
+    const titel = await li.locator('b').evaluate((e) => e.getBoundingClientRect().top);
+    expect(Math.abs(nr - titel)).toBeLessThan(4);
+  }
   // Ohne fertigen Haushalt „ihr“, nirgends „du“.
   await expect(page.locator('main')).not.toContainText(/\b(du|dein|deine|dir)\b/);
   await page.setViewportSize({ width: 390, height: 844 });

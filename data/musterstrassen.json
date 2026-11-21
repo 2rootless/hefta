@@ -1,0 +1,109 @@
+{
+  "quelle": "OpenStreetMap: Auszug hamburg-latest.osm.pbf (Geofabrik, 16.11.2026), Straßennamen aus Wegen mit highway und aus addr:street; Lüneburg über die Suche von OpenStreetMap (Nominatim). Geprüft am 21.11.2026 mit werkzeug/strassen-osm.py. Daten © OpenStreetMap-Mitwirkende, ODbL.",
+  "frei": [
+    {
+      "strasse": "Kranichstieg",
+      "stadtteil": "Eimsbüttel",
+      "plz": "20259",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Lotsenwisch",
+      "stadtteil": "Barmbek-Süd",
+      "plz": "22081",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Rotdornbogen",
+      "stadtteil": "Wilhelmsburg",
+      "plz": "21107",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Netzmacherstraße",
+      "stadtteil": "Hamm",
+      "plz": "20537",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Krabbenstieg",
+      "stadtteil": "Winterhude",
+      "plz": "22303",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Bojenreihe",
+      "stadtteil": "Eilbek",
+      "plz": "22089",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Ankerwindenweg",
+      "stadtteil": "Harburg",
+      "plz": "21073",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Seilerkoppel",
+      "stadtteil": "Hoheluft-West",
+      "plz": "20253",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Kalkbrennerstieg",
+      "stadtteil": "Altona-Nord",
+      "plz": "22769",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Fährhausbogen",
+      "stadtteil": "St. Georg",
+      "plz": "20099",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Tidenweg",
+      "stadtteil": "Barmbek-Süd",
+      "plz": "22081",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Möwenschlag",
+      "stadtteil": "Wilhelmsburg",
+      "plz": "21107",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Teerhofweg",
+      "stadtteil": "Hamm",
+      "plz": "20537",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Reepschlägerkamp",
+      "stadtteil": "Eimsbüttel",
+      "plz": "20259",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Speicherhöfe",
+      "stadtteil": "Winterhude",
+      "plz": "22303",
+      "ort": "Hamburg"
+    },
+    {
+      "strasse": "Holunderkoppel",
+      "stadtteil": "Lüneburg (Stadt)",
+      "plz": "21335",
+      "ort": "Lüneburg"
+    }
+  ],
+  "vorhanden": [
+    {
+      "strasse": "Lindenallee",
+      "ort": "Hamburg",
+      "plz": "20259",
+      "hinweis": "gibt es wirklich (gefunden 16.11.); Gegenprobe zu W7"
+    }
+  ]
+}

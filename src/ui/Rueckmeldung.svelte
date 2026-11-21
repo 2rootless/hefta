@@ -168,7 +168,7 @@
   .rueckmeldung {
     display: grid;
     gap: 18px;
-    padding: 14px 16px 16px;
+    padding: 16px;
   }
 
   .frage {

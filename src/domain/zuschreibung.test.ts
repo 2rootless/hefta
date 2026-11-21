@@ -17,9 +17,11 @@ const AUSNAHMEN = new Set<string>([
   'data/nachforderung.de.json:schwaerzen',
   'src/i18n/de.json:heft.naechstesSatzIhr',
   'src/i18n/de.json:heft.naechstesSatzDu',
-  // B28b: „Ihr müsst nichts tun“ sagt, dass der Vermieter dran ist, nichts über Recht.
-  'src/i18n/de.json:stand.beworben.satzHeute.ihr',
-  'src/i18n/de.json:stand.beworben.satzHeute.du',
+  // B28b: „Ihr müsst nichts tun“ sagt, dass der Vermieter dran ist, nichts über Recht. Seit W37 steht der Satz im
+  // Pool P6 (Stelle 6 der Pools), in drei Fassungen.
+  ...[0, 1, 3].flatMap((f) =>
+    ['ihr', 'du'].map((an) => `data/satzpools.de.json:stellen.5.fassungen.${f}.satz.${an}`),
+  ),
 ]);
 
 function texte(wert: unknown, pfad = ''): [string, string][] {
@@ -37,6 +39,7 @@ describe('Zuschreibung', () => {
     'data/nachforderung.de.json',
     'data/regelkatalog.de.json',
     'data/datenschutz-zusatz.de.json',
+    'data/satzpools.de.json',
   ])('%s: jede Aussage über Recht nennt ihre Quelle', (pfad) => {
     const treffer = texte(datei(pfad))
       .filter(

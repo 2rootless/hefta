@@ -1,0 +1,4 @@
+180
+2.0  Mittellinie 546 Punkte · flach {1024: 1.0, 180: 1.0, 120: 0.97, 87: 0.95, 58: 0.82, 40: 0.76, 29: 0.62} · Glas 58 px schlechtester Wert 0.52
+A1   Mittellinie 611 Punkte · flach {1024: 1.0, 180: 0.99, 120: 0.89, 87: 0.82, 58: 0.71, 40: 0.4, 29: 0.37} · Glas 58 px schlechtester Wert 0.33
+A1b  Mittellinie 539 Punkte · flach {1024: 1.0, 180: 1.0, 120: 1.0, 87: 0.96, 58: 0.83, 40: 0.81, 29: 0.65} · Glas 58 px schlechtester Wert 0.53

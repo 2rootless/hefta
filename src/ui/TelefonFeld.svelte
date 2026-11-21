@@ -26,6 +26,10 @@
     /** Weitere Länder, die im Haushalt schon gewählt sind („Oft gewählt“). */
     gewaehlte = [],
     feld = {},
+    /** W33 (DP49b): Hefta fragt nach, ob eine Sonderrufnummer stimmt; das Feld zeigt den Tintenrand. */
+    pruefen = false,
+    /** Kennung des Satzes der Nachfrage unter dem Feld, damit Vorleser ihn mit dem Feld vorlesen. */
+    nachfrageId,
     onfocus,
     onblur,
   }: {
@@ -35,6 +39,8 @@
     gewaehlte?: string[];
     /** Weitere Eigenschaften des Felds, etwa `data-feld` und die Taste „Weiter“. */
     feld?: HTMLInputAttributes;
+    pruefen?: boolean;
+    nachfrageId?: string;
     onfocus?: () => void;
     onblur?: () => void;
   } = $props();
@@ -121,7 +127,8 @@
     autocomplete="tel"
     inputmode="tel"
     aria-invalid={fehler ? 'true' : undefined}
-    aria-describedby="{id}-satz"
+    class:pruefzustand={pruefen}
+    aria-describedby={pruefen && nachfrageId ? `${id}-satz ${nachfrageId}` : `${id}-satz`}
     onfocus={() => onfocus?.()}
     onblur={verlassen}
     oninput={eingetippt}
@@ -237,9 +244,21 @@
     font-size: calc(17 * var(--px));
   }
 
+  /* W33 (DP49b): Der Rand in Tinte heißt nur „Hefta fragt nach“, nie Fokus; wie die übrigen Felder. */
+  input[type='tel'] {
+    transition:
+      background-color var(--bw-nachfrage) ease-in-out,
+      box-shadow var(--bw-nachfrage) ease-in-out;
+  }
+
   input[type='tel']:focus-visible {
     outline: 0;
-    box-shadow: inset 0 0 0 2px var(--ink);
+    box-shadow: none;
+  }
+
+  input[type='tel'].pruefzustand {
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1.5px var(--ink);
   }
 
   .satz:empty,
@@ -273,7 +292,7 @@
     height: 16px;
     margin-top: 1px;
     border-radius: 8px;
-    background: var(--accent);
+    background: var(--fehler);
     color: var(--surface);
     font-size: calc(11 * var(--px));
     font-weight: 800;

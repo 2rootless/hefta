@@ -99,7 +99,8 @@ const EINSTIEGE: Einstieg[] = [
       // Nach der Zusage fragt Hefta zuerst, ob es geholfen hat; danach steht die offene Frage da.
       const nein = page.getByRole('button', { name: 'Nein danke' });
       if (await nein.isVisible().catch(() => false)) await nein.click();
-      await page.getByText('Frage zu Mietrückständen').click();
+      // DP50 (Z2): Im Heft heißt der Eintrag „Mietrückstände beantworten“.
+      await page.getByRole('link', { name: /^Mietrückstände beantworten/ }).click();
     },
     da: (page) => expect(page).toHaveURL(/#\/heft\/zusage$/),
   },

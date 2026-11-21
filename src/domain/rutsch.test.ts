@@ -27,6 +27,7 @@ function stand(id: string, rolle: Rolle, lage: Person['lebenssituation'] = 'ange
 }
 
 describe('Rutsch', () => {
+  // DP49 Punkt 5: Die Bürgschaftserklärung ist kein Schritt im Rutsch mehr (Prüfkatalog B2).
   it('Person für Person: Hauptmieter, Mitmieter, dann Bürgen; je Person in Katalog-Reihenfolge', () => {
     // Bürgin bewusst zuerst übergeben: Reihenfolge kommt aus der Rolle
     const liste = rutschListe(
@@ -40,7 +41,6 @@ describe('Rutsch', () => {
       'lea:selbstauskunft',
       'lea:gehaltsnachweis',
       'lea:bonitaet',
-      'petra:buergschaftserklaerung',
       'petra:selbstauskunft',
       'petra:rentenbescheid',
       'petra:bonitaet',

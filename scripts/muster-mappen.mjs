@@ -2,7 +2,7 @@
 // (`mappeErstellen`, mit Lesehilfe), aus dem Haushalt von Test-Backup 2. Dazu eine fremde PDF ohne
 // Lesehilfe, wie sie Bewerber ohne Hefta schicken. Alles erfunden, jede Seite trägt „MUSTER“.
 //
-//   npm run build && npm run test:backups   (einmal, für Test-Backup 2)
+//   npm run build && npm run test:backups   (einmal, für Test-Backup 2 und 6)
 //   node scripts/muster-mappen.mjs          → design-sync/muster-mappen/
 
 import { PDFDocument, StandardFonts, rgb } from '@cantoo/pdf-lib';
@@ -18,6 +18,10 @@ const PASSWORT = 'Hefta-Test-2';
 // Fest statt zufällig: So tragen alle Muster-Mappen bei jedem Lauf dieselbe Kennung der Bewerbung, die
 // der ersten Lieferung vom 6.11.2026. Es sind Fassungen derselben Bewerbung (Z9).
 const KENNUNG = 'd2e0f734-0b59-41ea-95f4-c9715acbe034';
+// W40 (PC178): Die Beispiel-Mappe der Website zeigt Haushalt A aus Test-Backup 6, mit eigener fester Kennung.
+// Mappe 1 bleibt für die Tests der Vermieterseite (W1, W6).
+const BACKUP_A = 'design-sync/test-backups/Hefta-Test-6-haushalt-a.hefta';
+const KENNUNG_A = '7b3c9e52-4a1d-4f68-9b0e-2d5a8c61f3e7';
 
 // Auswahl je Vorname; im Browser wird daraus die ID der Person.
 const FAELLE = [
@@ -51,12 +55,20 @@ const FAELLE = [
     e: { bitte: true },
   },
 ];
+const FAELLE_A = [
+  {
+    datei: 'A-1-Haushalt-A.pdf',
+    titel:
+      'Haushalt A: Jarne und Selin, ein Kind, Hiltrud bürgt. „Marktüblich“, Schritt „Ich will die Wohnung“ (Beispiel-Mappe der Website)',
+    e: {},
+  },
+];
 
 // ---------- Im Browser: Backup einspielen, Mappen bauen, Scans zeichnen ----------
 
-async function mappenBauen(page) {
+async function mappenBauen(page, { backup, faelle, kennung, telefonNeu }) {
   return page.evaluate(
-    async ({ b64, passwort, faelle, kennung }) => {
+    async ({ b64, passwort, faelle, kennung, telefonNeu }) => {
       const { datenbankOeffnen } = await import('/src/storage/db.ts');
       const sp = await import('/src/storage/speicher.ts');
       const { sicherungEinspielen } = await import('/src/storage/sicherung.ts');
@@ -78,7 +90,8 @@ async function mappenBauen(page) {
           await sp.farbeSetzen(db, m.zugehoerigkeit.id, VERGABE[i]);
         // PC9: Die Muster-Mappen sind öffentlich. Telefonnummern nur aus dem Block, den die
         // Bundesnetzagentur für Medienproduktionen freihält („Drama Numbers“: 0171 3920000 bis 0171 3920099).
-        if (m.person.kontakt?.telefon?.trim())
+        // Haushalt A trägt schon Nummern aus diesem Block (Namensliste), die bleiben.
+        if (telefonNeu && m.person.kontakt?.telefon?.trim())
           await sp.personAendern(db, m.person.id, {
             // E222: mit Land und passender internationaler Nummer, sonst fehlte sie in der Mappe.
             kontakt: {
@@ -122,10 +135,11 @@ async function mappenBauen(page) {
       return aus;
     },
     {
-      b64: readFileSync(BACKUP).toString('base64'),
+      b64: readFileSync(backup).toString('base64'),
       passwort: PASSWORT,
-      faelle: FAELLE,
-      kennung: KENNUNG,
+      faelle,
+      kennung,
+      telefonNeu,
     },
   );
 }
@@ -356,8 +370,21 @@ try {
   await page.evaluate(() => import('/src/ui/mappeErstellen.ts')).catch(() => {});
   await page.waitForTimeout(1500);
   await page.goto('http://localhost:4198/robots.txt');
-  const mappen = await mappenBauen(page);
-  for (const [i, fall] of FAELLE.entries()) {
+  const mappen = [
+    ...(await mappenBauen(page, {
+      backup: BACKUP,
+      faelle: FAELLE,
+      kennung: KENNUNG,
+      telefonNeu: true,
+    })),
+    ...(await mappenBauen(page, {
+      backup: BACKUP_A,
+      faelle: FAELLE_A,
+      kennung: KENNUNG_A,
+      telefonNeu: false,
+    })),
+  ];
+  for (const [i, fall] of [...FAELLE, ...FAELLE_A].entries()) {
     const bytes = Buffer.from(mappen[i].b64, 'base64');
     writeFileSync(join(ZIEL, fall.datei), bytes);
     const n = await nachsehen(bytes);

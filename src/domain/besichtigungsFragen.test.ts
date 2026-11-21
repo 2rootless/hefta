@@ -161,3 +161,29 @@ describe('Ausblenden: nur hier oder auch in neuen Heften (Planung 12x)', () => {
     expect(l.fragen).toHaveLength(9);
   });
 });
+
+describe('In den Einstellungen ausgeschaltet (DP50 Punkt 10, E5)', () => {
+  const basis = { angaben: undefined, urteile: [], mitTieren: false, eigene: [] };
+  it('fehlt in jedem Heft, auch in schon angelegten, und steht nicht unter „ausgeblendet“', () => {
+    const l = besichtigungsFragen({
+      ...basis,
+      ausgeblendet: { hier: [], neu: [], heftAngelegt: '2020-01-01' },
+      aus: ['haus', 'internet'],
+    });
+    expect(l.fragen.map((f) => f.id)).not.toContain('haus');
+    expect(l.fragen.map((f) => f.id)).not.toContain('internet');
+    expect(l.versteckt.map((v) => v.thema)).toEqual([]);
+    // Gegenprobe: ohne „aus“ sind beide da.
+    const ohne = besichtigungsFragen(basis);
+    expect(ohne.fragen.map((f) => f.id)).toEqual(expect.arrayContaining(['haus', 'internet']));
+  });
+  it('eine schon notierte Antwort bleibt mit ihrer Frage stehen', () => {
+    const l = besichtigungsFragen({
+      ...basis,
+      aus: ['haus', 'internet'],
+      antworten: { haus: { ab: false, antwort: 'Keller ja' } },
+    });
+    expect(l.fragen.map((f) => f.id)).toContain('haus');
+    expect(l.fragen.map((f) => f.id)).not.toContain('internet');
+  });
+});

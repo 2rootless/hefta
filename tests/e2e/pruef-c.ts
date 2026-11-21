@@ -75,8 +75,12 @@ export function pruefen() {
       }
       // C21: Titel und Sätze werden nicht neben anderem in eine schmale Spalte gequetscht
       // (drei und mehr Zeilen auf weniger als 45 % der Breite ihres Kastens).
-      // DP36: Die Liste „In keinem Schritt vorgesehen“ ist mit Absicht eine Tabelle, Begriff links, Grund rechts.
-      if (/\S\s+\S/.test(text) && !el.closest('.band-svg, .seiten, .leiste, .haus, dl.kein dt')) {
+      // Ausgenommen: DP50 Punkt 13 stellt zwei Papiere mit ihrem Satz bewusst nebeneinander (`.papiere`).
+      // Ebenso DP50-5 („Fragen, 320 px“): Eine Frage steht mehrzeilig neben ihrem Schalter (`.schlicht`).
+      if (
+        /\S\s+\S/.test(text) &&
+        !el.closest('.band-svg, .seiten, .leiste, .haus, .papiere, .schlicht, dl.kein dt')
+      ) {
         const r = document.createRange();
         r.selectNodeContents(n);
         const rects = rechtecke(r);
@@ -143,6 +147,8 @@ export function pruefen() {
     let kasten = t.el.closest(AUSWAHL);
     while (kasten && !gemalt(kasten)) kasten = kasten.parentElement?.closest(AUSWAHL) ?? null;
     if (!kasten || t.el.closest('.eintragen')) continue;
+    // Wie oben bei C3: Ein offener Dialog liegt in der obersten Ebene, nicht im Kasten, in dem er steht.
+    if (t.el.closest('dialog') !== kasten.closest('dialog')) continue;
     const k = kasten.getBoundingClientRect();
     const stil = getComputedStyle(kasten);
     const oben = k.top + (parseFloat(stil.borderTopWidth) || 0) + 6;
@@ -153,7 +159,16 @@ export function pruefen() {
   // Ein Knopf zeigt seinen ganzen Text („Ganz“ war in D9b zu „Gar“ abgeschnitten, gelernt 2.11.).
   document.querySelectorAll<HTMLElement>('button, a.knopf').forEach((b) => {
     // Ohne Text gibt es nichts abzuschneiden; die Pfeile sind nur durch ihre Tippfläche breiter (D9b).
-    if (sichtbar(b) && b.textContent?.trim() && b.scrollWidth > b.clientWidth + 1)
+    if (!sichtbar(b) || !b.textContent?.trim() || b.scrollWidth <= b.clientWidth + 1) return;
+    // Gemessen wird der Inhalt, nicht der Schmuck: Die Rundung am Fuß des vorderen Reiters (DP49 Punkt 2)
+    // ragt als ::after mit Absicht 12 px hinaus und zählt in die Scrollbreite, abgeschnitten ist nichts.
+    const inhalt = document.createRange();
+    inhalt.selectNodeContents(b);
+    // Mit CSS-`zoom` (Ansichten „text130“) sind die Rechtecke vergrößert, `clientWidth` nicht.
+    const box = b.getBoundingClientRect();
+    const z = b.offsetWidth ? box.width / b.offsetWidth : 1;
+    const rechts = box.left + (b.clientLeft + b.clientWidth) * z;
+    if (inhalt.getBoundingClientRect().right > rechts + 1)
       out.c3.push(`Knopf zu schmal: ${(b.textContent ?? '').trim().slice(0, 24)}`);
   });
   // C22, wie CHECK_JS in design/werkzeug/pruef_c.py: Nichts liegt ganz außerhalb eines Kastens, der
@@ -286,7 +301,8 @@ export function pruefen() {
   // C19: keine Null als Menge im Satz („0 hast du übersprungen“) und keine leeren Gruppen.
   const seitenText = `${(main as HTMLElement).innerText} ${(leiste as HTMLElement | null)?.innerText ?? ''}`;
   // „0 von 7“ ist ein Zähler (B21, Fragen für die Besichtigung), kein Satz mit einer Null.
-  const nullImSatz = seitenText.match(/(^|[\s(])0 (?!von\b)[a-zäöüA-ZÄÖÜ]\S*/);
+  // „0 Hefte“ legt DP103 (W50) für das Backup ausdrücklich fest: Bei 0 Heften steht nie „1“ und kein leerer Platz.
+  const nullImSatz = seitenText.match(/(^|[\s(])0 (?!von\b|Hefte\b)[a-zäöüA-ZÄÖÜ]\S*/);
   if (nullImSatz) out.c19.push(nullImSatz[0].trim());
   document.querySelectorAll('main ul, main ol').forEach((l) => {
     if (!l.children.length && !l.textContent?.trim()) out.c19.push(`leere Liste ${l.className}`);
@@ -295,7 +311,11 @@ export function pruefen() {
     // C13: feste Leiste mit deckendem Hintergrund
     const stil = getComputedStyle(leiste);
     const durchsichtig = /rgba\(0, 0, 0, 0\)|transparent/.test(stil.backgroundColor);
-    if (stil.backgroundImage === 'none' && durchsichtig) out.c13 = 'Leiste ohne Hintergrund';
+    // Nur eine feste Leiste liegt über Text. Bei niedrigem Fenster läuft sie mit dem Inhalt (DP70 K1-2) und braucht
+    // keinen Hintergrund.
+    const fest = stil.position === 'fixed' || stil.position === 'sticky';
+    if (fest && stil.backgroundImage === 'none' && durchsichtig)
+      out.c13 = 'Leiste ohne Hintergrund';
     // C14: ganz unten gescrollt überdeckt der deckende Teil der Leiste keinen Text. Liegt ein
     // Vollbild-Dialog darüber (Seitenansicht), ist die Seite samt Leiste ohnehin verdeckt.
     const verdeckt = !!document.querySelector('dialog:modal') && !leiste.closest('dialog:modal');
@@ -361,7 +381,11 @@ export function pruefen() {
     const hoehe = knopf.getBoundingClientRect().height / zoom;
     const zusatz = knopf.querySelector('small');
     const text = [...knopf.childNodes].find(sichtbarerText) ?? null;
-    if (hoehe > 62 && schrift < 1.5)
+    // Steht der Zusatz als ganze Zeile darunter (erlaubt, s. o.; K9: „Weiter“ mit dem nächsten Teil), zählt seine Zeile
+    // zur erlaubten Höhe dazu. Ein Text, der selbst umbricht, bleibt unten rot („zweizeilig“).
+    const unten = knopf.querySelector<HTMLElement>('small.unter');
+    const erlaubt = 62 + (unten ? unten.getBoundingClientRect().height / zoom : 0);
+    if (hoehe > erlaubt && schrift < 1.5)
       out.c18.push(`${knopf.textContent?.trim().slice(0, 30)} ${Math.round(hoehe)} px`);
     // Zusatz als zweite Spalte: Er steht neben dem Text, ragt aber über dessen Zeile hinaus.
     if (zusatz && text) {
@@ -385,11 +409,9 @@ export function pruefen() {
   });
   // C18 seit 3.11. auch für Nebenknöpfe: Sie bleiben einzeilig.
   // Ausnahme: Antworten der Rückmeldung dürfen zweizeilig sein (B19 Fassung 4, Abschnitt 2: lange Antworten
-  // brechen um, darum stark gerundet statt ganz rund). Ebenso „Nach der Zusage beantworten“ (PC65, `.lang`).
+  // brechen um, darum stark gerundet statt ganz rund). Der Chip „Nach der Zusage“ bricht seit DP51 (C2) nicht mehr um.
   document
-    .querySelectorAll(
-      'main .chip:not(.rueckmeldung .chip):not(.lang), dialog[open] .chip, main .knopf',
-    )
+    .querySelectorAll('main .chip:not(.rueckmeldung .chip), dialog[open] .chip, main .knopf')
     .forEach((b) => {
       // Zeilen mit eigenem Aufbau (Name und Stand, Frage und Antwort) sind keine Knöpfe im Sinn von C18.
       if (schrift >= 1.5 || !sichtbar(b) || b.querySelector(':scope > :not(svg)')) return;
@@ -543,4 +565,129 @@ export function pruefen() {
       out.c28.push((e.textContent ?? '').trim().slice(0, 40));
   }
   return out;
+}
+
+/**
+ * C33 (PD61 K2, DP50 Liste für Code 10): Nachbarn in einer Zeile brauchen mindestens 8 px Abstand, gemessen
+ * an Schrift und Flächen, nicht an Kästen; neben Bild oder Zeichen (svg, img) 4 px. Seit DP50 zählt auch
+ * Überlappung. Läuft als ganze Funktion im Browser, wie `shot.js` im Werkzeug des Designs.
+ */
+export function nachbarnPruefen(): string[] {
+  type R = { l: number; t: number; r: number; b: number };
+  const eng: string[] = [];
+  const rg = document.createRange();
+  const versteckt = (cs: CSSStyleDeclaration) =>
+    cs.visibility === 'hidden' || cs.display === 'none' || cs.opacity === '0';
+  const ink = (el: Element): R | null => {
+    let r: R | null = null;
+    // Gemessen wird, was man sieht: Ein Vorfahr mit `overflow` ungleich `visible` (bis `el`) schneidet ab.
+    // Sonst zählte ein beschnittenes Seitenbild mit voller Höhe (PC79, im Hochlade-Blatt gefunden).
+    const add = (q: DOMRect, von: Element | null) => {
+      let k: R = { l: q.left, t: q.top, r: q.right, b: q.bottom };
+      for (let p = von; p && p !== el.parentElement; p = p.parentElement) {
+        const ps = getComputedStyle(p);
+        if (ps.overflowX === 'visible' && ps.overflowY === 'visible') continue;
+        const pr = p.getBoundingClientRect();
+        k = {
+          l: Math.max(k.l, pr.left),
+          t: Math.max(k.t, pr.top),
+          r: Math.min(k.r, pr.right),
+          b: Math.min(k.b, pr.bottom),
+        };
+      }
+      if (k.r - k.l <= 0.5 || k.b - k.t <= 0.5) return;
+      r = r
+        ? {
+            l: Math.min(r.l, k.l),
+            t: Math.min(r.t, k.t),
+            r: Math.max(r.r, k.r),
+            b: Math.max(r.b, k.b),
+          }
+        : k;
+    };
+    const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let x: Node | null;
+    while ((x = tw.nextNode())) {
+      if (!x.textContent?.trim()) continue;
+      const cs = getComputedStyle(x.parentElement!);
+      if (versteckt(cs) || cs.color === 'rgba(0, 0, 0, 0)') continue;
+      if (x.parentElement!.closest('.visually-hidden')) continue;
+      rg.selectNodeContents(x);
+      for (const q of rg.getClientRects()) add(q, x.parentElement);
+    }
+    for (const d of [el, ...el.querySelectorAll('*')]) {
+      const cs = getComputedStyle(d);
+      if (versteckt(cs) || d.closest('.visually-hidden')) continue;
+      const bg = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent';
+      if (
+        d.tagName === 'IMG' ||
+        d.tagName.toLowerCase() === 'svg' ||
+        bg ||
+        (cs.boxShadow && cs.boxShadow !== 'none')
+      )
+        add(d.getBoundingClientRect(), d === el ? null : d.parentElement);
+    }
+    return r;
+  };
+  const name = (c: Element | { className: string; innerText: string }) =>
+    `${'tagName' in c ? (typeof c.className === 'string' && c.className ? c.className.split(' ')[0] : c.tagName) : c.className}:${(('innerText' in c ? c.innerText : '') || '').trim().slice(0, 24).replace(/\n/g, ' ')}`;
+  for (const e of document.querySelectorAll('main, main *, .leiste, .leiste *')) {
+    const s = getComputedStyle(e);
+    if (!/flex|grid/.test(s.display) || versteckt(s) || e.closest('svg, .visually-hidden'))
+      continue;
+    const kinder = [...e.children]
+      .flatMap((c) => (getComputedStyle(c).display === 'contents' ? [...c.children] : [c]))
+      .filter((c) => {
+        const cs = getComputedStyle(c);
+        // Klebende Leisten (`sticky`, etwa „Ja, einlesen“ in H9) liegen beim Rollen über dem Inhalt wie die
+        // feste Aktionsleiste; sie sind keine Nachbarn in einer Zeile (PC79).
+        return !versteckt(cs) && !['absolute', 'fixed', 'sticky'].includes(cs.position);
+      })
+      .map((c) => ({ c: c as Element | { className: string; innerText: string }, i: ink(c) }))
+      .filter((x): x is { c: Element; i: R } => !!x.i);
+    for (const x of e.childNodes) {
+      if (x.nodeType !== 3 || !x.textContent?.trim()) continue;
+      rg.selectNodeContents(x);
+      const q = rg.getBoundingClientRect();
+      if (q.width > 0.5)
+        kinder.push({
+          c: { className: 'Text', innerText: x.textContent } as unknown as Element,
+          i: { l: q.left, t: q.top, r: q.right, b: q.bottom },
+        });
+    }
+    for (const A of kinder)
+      for (const B of kinder) {
+        if (A === B) continue;
+        const a = A.i;
+        const b = B.i;
+        const ueber = Math.min(a.b, b.b) - Math.max(a.t, b.t);
+        if (ueber < 0.5 * Math.min(a.b - a.t, b.b - b.t)) continue;
+        if (b.l < a.l) continue;
+        const abstand = b.l - a.r;
+        const klassen = (c: Element | { className: string }) =>
+          'tagName' in c && typeof c.className === 'string' ? c.className.split(' ') : [];
+        const beide = (k: string) => klassen(A.c).includes(k) && klassen(B.c).includes(k);
+        // PC79: Ausnahmen nur, wo ein Design-Paket es ausdrücklich zeigt. Überlappende Personenkreise
+        // (design/stil-c.md, Entwurf B8: `.hk` −5 px, `.fc` −7 px); Reiter mit 4 px Fuge (DP49 Punkt 2,
+        // DP50 Punkt 10 `reg_einst`).
+        if (beide('kreis') || beide('fc')) continue;
+        // Die Haarlinie ist eine Linie über die ganze Breite, in gleich breite Stücke geteilt (DP39 1.2).
+        if (beide('stueck')) continue;
+        if ((beide('reiter') || beide('einst-reiter')) && abstand >= 3.5) continue;
+        // Der Trennpunkt „·“ und der Pfeil „›“ sind Zeichen: 4 px wie neben Bild oder Symbol (PC79; Punkte
+        // bleiben, W3).
+        const punkt = [A.c, B.c].some((c) =>
+          ['\u00b7', '\u203a'].includes(((c as { innerText?: string }).innerText ?? '').trim()),
+        );
+        // Ein Zeichen ist auch ein Element ohne eigenen Text: das Personenzeichen (Fläche) oder ein
+        // eingepackter Pfeil (PC79).
+        const zeichen = (c: Element | { className: string }) =>
+          'tagName' in c &&
+          (/^(svg|IMG)$/i.test(c.tagName) || !((c as HTMLElement).innerText ?? '').trim());
+        const bild = punkt || [A.c, B.c].some(zeichen);
+        if (abstand < (bild ? 4 : 8))
+          eng.push(`${name(A.c)} | ${name(B.c)} = ${abstand.toFixed(1)}`);
+      }
+  }
+  return [...new Set(eng)];
 }

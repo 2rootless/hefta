@@ -1,4 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
+import { stimmungMuster } from './stimmung-muster';
 import { PDFDocument, StandardFonts } from '@cantoo/pdf-lib';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
@@ -69,12 +70,14 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await expect(page.getByText(/^Noch 4 Teile\.$/)).toBeVisible();
   await expect(page.getByText(/Noch 5 Teile/)).toHaveCount(0);
   // Akkordeon (A1): Teil 1 ist offen, die anderen tippt man an.
-  await page.getByLabel('E-Mail').fill('max@example.org');
-  // PC65 (W32): „Wird fast immer gefragt“ statt „Pflicht“.
-  await page.getByRole('button', { name: /^Einkommen Wird fast immer gefragt/ }).click();
+  await page.getByRole('textbox', { name: /^E-Mail/ }).fill('max@example.org');
+  // W32: kein „Pflicht“; Unterzeile nach DP49.
+  await page.getByRole('button', { name: /^Einkommen Gehört zu fast jeder Bewerbung/ }).click();
   await page.getByRole('textbox', { name: 'Netto im Monat' }).fill('2800');
   await page.getByRole('radio', { name: 'Mindestens' }).click();
-  await page.getByRole('button', { name: /^Fragen, die Vermieter stellen dürfen Zweimal/ }).click();
+  await page
+    .getByRole('button', { name: /^Drei Fragen aus dem Musterbogen Insolvenz, Räumung/ })
+    .click();
   for (const frage of ['Insolvenzverfahren', 'Räumungstitel']) {
     await page
       .getByRole('radiogroup', { name: new RegExp(frage) })
@@ -131,17 +134,15 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
     .setInputFiles(alsInhalt(await pdfDatei(info, 'erste.pdf')));
   await expect(page.getByText('erste.pdf, 1 Seite')).toBeVisible();
   if (bilder) await page.screenshot({ path: 'docs/screenshots/stilc-rutsch-gewaehlt.png' });
-  // Gehaltsnachweise: September ist vorbelegt (6. November, Abrechnung meist spät).
-  await expect(page.getByRole('radio', { name: 'September' })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  );
+  // Gehaltsnachweise: September ist vorbelegt (6. November, Abrechnung meist spät). Eine Datei mit einer
+  // Seite hat die Form je Datei, der Monat steht in der Auswahl (PC79, CP41).
+  const monat = page.locator('.w16-monat select');
+  await expect(monat).toHaveValue('2026-09');
   await page.getByRole('button', { name: 'Speichern und weiter' }).click();
 
-  // Serie (RS1): Monatsmarken, der nächste Monat als Kachel, „Weiter zur nächsten Unterlage“.
-  await expect(
-    page.getByText('September ist drin. Noch zwei Monate, der neueste zuerst.'),
-  ).toBeVisible();
+  // Serie (RS1): Monatsmarken, der nächste Monat als Kachel, „Weiter zur nächsten Unterlage“. K10 (DP96, Wortlaut F):
+  // Der Satz nennt jeden fehlenden Monat.
+  await expect(page.getByText('September ist drin. Juli und August fehlen noch.')).toBeVisible();
   await expect(page.getByText('Juli und August bleiben auf der Übersicht offen.')).toBeVisible();
   if (bilder) {
     await barrierefrei(page, 'Rutsch Serie');
@@ -151,12 +152,10 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await page
     .locator('[data-feld="pdf"]')
     .setInputFiles(alsInhalt(await pdfDatei(info, 'juli-august.pdf')));
-  await page.getByRole('radio', { name: 'Juli' }).click();
-  await expect(page.getByRole('radio', { name: 'Juli' })).toHaveAttribute('aria-checked', 'true');
-  await expect(page.getByRole('radio', { name: 'August' })).toHaveAttribute(
-    'aria-checked',
-    'false',
-  );
+  await expect(monat).toBeVisible();
+  await monat.selectOption({ label: 'Juli' });
+  await expect(monat).toHaveValue('2026-07');
+  await expect(monat.locator('option:checked')).toHaveCount(1);
   if (bilder) {
     await barrierefrei(page, 'Rutsch mehrere Monate');
     await page.screenshot({ path: 'docs/screenshots/rs2-mehrere-monate.png', fullPage: true });
@@ -181,7 +180,8 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   // Weitermachen setzt bei Leas Selbstauskunft fort: Haustiere und Ort hat der Haushalt schon (A2).
   await page.getByRole('link', { name: /^Weitermachen/ }).click();
   await expect(page.getByText(/^4 von \d+$/)).toBeVisible();
-  await expect(page.getByText('Für Lea', { exact: true })).toBeVisible();
+  // DP49 Punkt 2: „x von y“ steht im Blatt neben dem Namen.
+  await expect(page.getByText(/^Für Lea( \d+ von \d+)?$/)).toBeVisible();
   await expect(
     page.getByText('Was für den ganzen Haushalt gilt, hat Max schon eingetragen.'),
   ).toBeVisible();
@@ -193,7 +193,10 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await page.getByRole('button', { name: 'Ausfüllen' }).click();
   await expect(page.getByText(/^Noch 3 Teile\.$/)).toBeVisible();
   // Alles Restliche überspringen bis zum Ende.
-  const ende = page.getByRole('heading', { level: 1, name: 'Gut gemacht.' });
+  const ende = page.getByRole('heading', {
+    level: 1,
+    name: stimmungMuster('P10a', { teil: 'satz' }),
+  });
   // Der Gesamtstand oben rechts; „k von N“ steht seit DP39 auch in den Reihen am Ende.
   const zaehler = page.locator('.fortschritt');
   while (!(await ende.isVisible())) {
@@ -262,7 +265,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await page.getByLabel(/Einkommen\?$/).selectOption({ label: 'Selbstständig oder freiberuflich' });
   await page.getByRole('button', { name: 'Speichern', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Max', exact: true })).toBeVisible();
-  await expect(page.getByRole('listitem').filter({ hasText: 'Einkommens' })).toBeVisible();
+  await expect(page.getByRole('listitem').filter({ hasText: /Ein.?kommens/ })).toBeVisible();
   await expect(page.getByRole('listitem').filter({ hasText: 'Gehalts' })).toHaveCount(0);
 
   // Haushalt bearbeiten über die Kopfzeile: Petra herausnehmen.
@@ -274,16 +277,18 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
     await page.screenshot({ path: 'docs/screenshots/stilc-haushalt.png', fullPage: true });
   }
   // Petras Seite in zwei Abschnitten (K3b); herausnehmen ist umkehrbar und braucht keine Rückfrage.
-  await page.getByRole('link', { name: 'Ändern Petra' }).click();
+  await page.getByRole('link', { name: 'Rolle von Petra ändern' }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'In eurem Haushalt' })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: 'Über Petra' })).toBeVisible();
   if (bilder) {
     await barrierefrei(page, 'Person ändern');
     await page.screenshot({ path: 'docs/screenshots/k-person-aendern.png', fullPage: true });
   }
-  await page.getByRole('button', { name: 'Aus diesem Haushalt nehmen' }).click();
+  // W42 (DP93): „Nicht mehr dabei“, dann „Speichern“.
+  await page.getByRole('radio', { name: 'Nicht mehr dabei' }).click();
+  await page.getByRole('button', { name: 'Speichern', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Euer Haushalt' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Ändern Petra' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Rolle von Petra ändern' })).toHaveCount(0);
   await expect(page.getByRole('heading', { level: 2, name: 'Herausgenommen' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Zurückholen Petra' })).toBeVisible();
   if (bilder) {
@@ -306,8 +311,10 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await expect(page.getByRole('heading', { level: 2, name: 'Herausgenommen' })).toHaveCount(0);
 
   // Namensabgleich (K1b): Lea herausnehmen, dann als „neue“ Lea Mustermann eintippen.
-  await page.getByRole('link', { name: 'Ändern Lea' }).click();
-  await page.getByRole('button', { name: 'Aus diesem Haushalt nehmen' }).click();
+  await page.getByRole('link', { name: 'Rolle von Lea ändern' }).click();
+  // W42 (DP93): „Nicht mehr dabei“, dann „Speichern“.
+  await page.getByRole('radio', { name: 'Nicht mehr dabei' }).click();
+  await page.getByRole('button', { name: 'Speichern', exact: true }).click();
   await page.getByRole('link', { name: /Weitere Person im Vertrag|Mitmieter hinzufügen/ }).click();
   await page.getByRole('button', { name: /Neue Person anlegen/ }).click();
   await page.getByLabel('Vorname').fill('lea');
@@ -319,7 +326,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await expect(page.getByRole('heading', { level: 1, name: 'Euer Haushalt' })).toBeVisible();
 
   // Ganz löschen als eigener Schritt (K4b), aus „Petra ändern“.
-  await page.getByRole('link', { name: 'Ändern Petra' }).click();
+  await page.getByRole('link', { name: 'Rolle von Petra ändern' }).click();
   await page.getByRole('link', { name: 'Petra ganz löschen' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Petra ganz löschen?' })).toBeVisible();
   await expect(page.getByRole('listitem').first()).toHaveText('Petra Mustermann');
@@ -329,7 +336,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   }
   await page.getByRole('button', { name: 'Petra löschen' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Euer Haushalt' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Ändern Petra' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Rolle von Petra ändern' })).toHaveCount(0);
   await expect(page.getByRole('heading', { level: 2, name: 'Herausgenommen' })).toHaveCount(0);
   await page.getByRole('link', { name: 'Fertig', exact: true }).click();
   await expect(page.locator('.blatt')).toHaveCount(2);
@@ -374,8 +381,14 @@ test('Backup mit Passwort: sichern, alles löschen, einspielen ergibt denselben 
   const pfad = info.outputPath(download.suggestedFilename());
   await download.saveAs(pfad);
   await expect(page.getByRole('heading', { level: 1, name: 'Einstellungen' })).toBeVisible();
-  await expect(page.getByText('Gesichert. Letztes Backup: gerade eben.')).toBeVisible();
-  await expect(page.getByText('Letztes heute')).toBeVisible();
+  // DP106 (W50): Im Browser ohne Teilen weiß Hefta nur, dass der Download begonnen hat.
+  await expect(
+    page.getByText(
+      /^Download gestartet: 0 Hefte und \d+ Unterlagen?\. Schau(t)? dort nach, wo (euer|dein) Browser Downloads ablegt, ob das Backup da ist\.$/,
+    ),
+  ).toBeVisible();
+  await expect(page.getByText(/^Gesichert/)).toHaveCount(0);
+  await expect(page.getByText('Letzter Download heute')).toBeVisible();
   if (browserName === 'chromium') await barrierefrei(page, 'Einstellungen');
 
   // Alles löschen als eigener Bildschirm (S9): Zahlen, Backup ist frisch, also kein Hinweis.

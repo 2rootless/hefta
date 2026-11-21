@@ -94,6 +94,12 @@ export function besichtigungsFragen(o: {
     neu: readonly AusgeblendeteFrage[];
     heftAngelegt: string;
   };
+  /**
+   * DP50 Punkt 10 (E5): in den Einstellungen ausgeschaltet. Fehlt in jedem Heft, auch in schon angelegten;
+   * eine dort schon notierte Antwort bleibt mit ihrer Frage stehen (DP50, offene Frage 1). Nicht unter
+   * „ausgeblendet“ im Heft: Einschalten geht in den Einstellungen.
+   */
+  aus?: readonly Thema[];
   /** Häkchen und Antworten dieses Hefts, für „schon beantwortet“. */
   antworten?: HeftFragen['antworten'];
 }): FragenListe {
@@ -118,12 +124,16 @@ export function besichtigungsFragen(o: {
       .map((a) => a.thema),
   ]);
   const aus = new Set([...hierAus].filter((th) => !beantwortet(th) && !weg.includes(th)));
-  const liste = THEMEN.filter((th) => !weg.includes(th) && !aus.has(th)).map((th): Frage => ({
-    id: th,
-    thema: th,
-    offen: offen.has(th),
-    text: null,
-  }));
+  const ganzAus = new Set((o.aus ?? []).filter((th) => !beantwortet(th)));
+  for (const th of ganzAus) aus.delete(th);
+  const liste = THEMEN.filter((th) => !weg.includes(th) && !aus.has(th) && !ganzAus.has(th)).map(
+    (th): Frage => ({
+      id: th,
+      thema: th,
+      offen: offen.has(th),
+      text: null,
+    }),
+  );
   const oben = liste.filter((f) => f.offen);
   const rest = liste.filter((f) => !f.offen);
   const gesehen = new Set<string>();

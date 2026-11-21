@@ -9,12 +9,18 @@
   import AnleitungTeilen from '../ui/AnleitungTeilen.svelte';
   import { gruss } from '../domain/gruss';
   import { t } from '../i18n';
+  import { stimmung } from '../i18n/stimmung';
   import HeftUebersicht from '../ui/HeftUebersicht.svelte';
   import HinweisKasten from '../ui/HinweisKasten.svelte';
   import { homescreenFragen } from '../ui/homescreen';
   import Logo from '../ui/Logo.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import TabLeiste from '../ui/TabLeiste.svelte';
+  import { geloescht } from '../ui/heftGeloescht.svelte';
+  import { onDestroy } from 'svelte';
+
+  // Heft löschen (DP49 Punkt 12, H1): „Rückgängig“ bleibt, bis man die Liste verlässt.
+  onDestroy(() => (geloescht.heft = null));
 
   const vertrag = $derived(
     (daten.ansicht?.mitglieder ?? []).filter((m) => m.zugehoerigkeit.rolle !== 'buerge'),
@@ -65,7 +71,8 @@
   </header>
 
   <h1 class="gruss">{titel}</h1>
-  {#if hefte.length}
+  <!-- Auch das eben gelöschte Heft hält die Liste, für „Rückgängig“ an seiner Stelle (DP49, H1). -->
+  {#if hefte.length || geloescht.heft}
     {#if !mitHaushalt}
       <button class="weg naechstes" type="button" onclick={haushaltAnlegen}>
         <span class="zeichen" aria-hidden="true"><Symbol name="person" groesse={24} /></span>
@@ -124,7 +131,8 @@
       </button>
     </div>
     <GrafikPlatz name="erster-start" />
-    <p class="kasten">{t(mitHaushalt && !ihr ? 'wohnungen.kastenDu' : 'wohnungen.kastenIhr')}</p>
+    <!-- W37, P5: wechselt einmal am Tag. -->
+    <p class="kasten">{stimmung('P5', { teil: 'satz', an: mitHaushalt && !ihr ? 'du' : 'ihr' })}</p>
     <!-- Ohne Haushalt „ihr“ (E74.4). -->
     {#if istApp()}{@render anleitung(true)}{/if}
     {#if !istApp()}
@@ -290,7 +298,7 @@
     gap: 12px;
     width: 100%;
     min-height: 64px;
-    padding: 14px;
+    padding: 16px;
     border: 1px solid var(--line);
     border-radius: 16px;
     background: var(--surface);
@@ -310,7 +318,7 @@
     width: var(--tap-target);
     height: var(--tap-target);
     border-radius: 12px;
-    background: var(--accent-soft);
+    background: var(--weich-karte);
     color: var(--ink);
   }
 

@@ -216,6 +216,8 @@ export interface Bestand {
   /** Ziehen mit ein, stehen aber nicht im Vertrag. */
   weitere: number;
   unterlagen: number;
+  /** W50: alle Hefte, abgelegte eingeschlossen (DP103, Wahl A des Auftraggebers). */
+  hefte: number;
   bewerbungen: number;
   /** E25: Namen nach dem Mietvertrag, in der Reihenfolge des Haushalts. */
   vertragNamen: string[];
@@ -263,6 +265,7 @@ export function bestandZaehlen(daten: Record<string, unknown[]>): Bestand {
     weitere: haushalte.reduce((s, h) => s + (h.weitereErwachsene ?? 0), 0),
     unterlagen: ((daten.dokumente ?? []) as { id: string }[]).filter((d) => mitVersion.has(d.id))
       .length,
+    hefte: (daten.hefte ?? []).length,
     bewerbungen: (daten.bewerbungen ?? []).length,
   };
 }

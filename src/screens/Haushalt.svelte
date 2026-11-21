@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { lagenText } from '../ui/texte';
   // Einrichtung Schritt 2 „Wer gehört noch dazu?“ (design/einrichtung-rutsch-navigation.md): Das Band
   // baut sich mit dem Haushalt auf. Rangfolge über Größe und Ort: Mitmieter groß oben, Zähler klein in
   // der Mitte, Bürge abgesetzt unten. Später „Euer Haushalt“: dieselben Inhalte als ruhige Liste ohne
@@ -8,11 +9,10 @@
   import { abschliessen, ersetzen, neuAnfangen, zurueckGehen } from '../app/router.svelte';
   import { einmal } from '../ui/einmal';
   import type { Mitglied } from '../storage/speicher';
-  import { rollenText, situationText } from '../domain/regelkatalog';
+  import { rollenText } from '../domain/regelkatalog';
   import { t, tagZusammen } from '../i18n';
   import {
     haushaltAendern,
-    haushaltLoeschen,
     haushaltZaehlen,
     mitgliedZurueckholen,
     zugehoerigkeitAendern,
@@ -22,12 +22,11 @@
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
   import { homescreenNochmal } from '../ui/homescreen';
-  import Sheet from '../ui/Sheet.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import { tonStil } from '../ui/personTon';
   import Zurueck from '../ui/Zurueck.svelte';
   import { herkunftsReiter } from '../ui/herkunft.svelte';
-  import { nachLoeschen } from '../app/haushaltGeloescht.svelte';
+  import HaushaltLoeschenBlatt from '../ui/HaushaltLoeschenBlatt.svelte';
 
   let { einrichtung = false }: { einrichtung?: boolean } = $props();
   const herkunft = $derived(herkunftsReiter());
@@ -84,21 +83,9 @@
     await neuLaden();
   }
 
-  // „Haushalt löschen“ (E96): nur nach dem Blatt. Hefte bleiben und gelten wieder als ohne Haushalt.
+  // „Haushalt löschen“ (E96): nur nach dem Blatt (HaushaltLoeschenBlatt, auch in den Einstellungen).
   let loeschenOffen = $state(false);
   let geloescht = false;
-  async function haushaltWeg() {
-    const hh = daten.ansicht?.haushalt;
-    if (!hh) return;
-    const allein = vertrag.length === 1;
-    geloescht = true;
-    await haushaltLoeschen(await db(), hh.id);
-    loeschenOffen = false;
-    await neuLaden();
-    nachLoeschen.du = allein;
-    nachLoeschen.offen = daten.hefte.length > 0;
-    abschliessen('/mappe-start');
-  }
 
   $effect(() => {
     // Ohne Haushalt gibt es hier nichts zu bearbeiten: zurück zum Anfang der Einrichtung.
@@ -121,18 +108,15 @@
         <span class="rolle">{rollenText(m.zugehoerigkeit.rolle, m.zugehoerigkeit.bezeichnung)}</span
         ></b
       >
-      <small
-        >{m.person.lebenssituation
-          ? situationText(m.person.lebenssituation, m.person.ausbildungArt)
-          : ''}</small
-      >
+      <small>{m.person.lebenssituation ? lagenText(m.person) : ''}</small>
     </span>
-    <!-- DP35 R2: kein Wort am Rand; die ganze Zeile öffnet die Person, mit Pfeil. -->
-    <a class="aendern" href="#/person-aendern/{m.person.id}{suffix}"
-      ><span class="visually-hidden">{t('allgemein.aendern')} {m.person.vorname}</span><Symbol
-        name="weiter"
-        groesse={16}
-      /></a
+    <!-- W42 (DP93, Fall 6): „Rolle“ an jeder Person; die ganze Zeile öffnet die Personenseite zur Wahl, nach
+         „Speichern“ geht es zurück in den Haushalt (W39). -->
+    <a
+      class="aendern"
+      href="#/person-aendern/{m.person.id}{suffix}"
+      aria-label={t('einrichtung.haushalt.rolleAendern', { name: m.person.vorname })}
+      >{t('personSeite.rolle')}</a
     >
   </li>
 {/snippet}
@@ -282,6 +266,7 @@
             {@const zahl = unterlagenVon(m.person.id)}
             {@const frage =
               !!m.zugehoerigkeit.herausgenommenAm &&
+              !m.zugehoerigkeit.ziehtMitEin &&
               !m.zugehoerigkeit.behalten &&
               dreiMonateHer(m.zugehoerigkeit.herausgenommenAm)}
             <li>
@@ -290,7 +275,9 @@
                 <b
                   >{m.person.vorname}
                   <span class="rolle"
-                    >{rollenText(m.zugehoerigkeit.rolle, m.zugehoerigkeit.bezeichnung)}</span
+                    >{m.zugehoerigkeit.ziehtMitEin
+                      ? t('personSeite.rolleWahl.mitein')
+                      : rollenText(m.zugehoerigkeit.rolle, m.zugehoerigkeit.bezeichnung)}</span
                   ></b
                 >
                 <small
@@ -353,19 +340,11 @@
     {/if}
   {/if}
 </main>
-<Sheet bind:offen={loeschenOffen} titel={t('einrichtung.haushalt.haushaltLoeschenFrage')}>
-  <p class="blatt-satz">
-    {vertrag.length === 1
-      ? t('einrichtung.haushalt.haushaltLoeschenSatzDu')
-      : t('einrichtung.haushalt.haushaltLoeschenSatz')}
-  </p>
-  <button class="blatt-weg" type="button" onclick={haushaltWeg}
-    >{t('einrichtung.haushalt.haushaltLoeschen')}</button
-  >
-  <button class="blatt-abbrechen" type="button" onclick={() => (loeschenOffen = false)}
-    >{t('einrichtung.haushalt.abbrechen')}</button
-  >
-</Sheet>
+<HaushaltLoeschenBlatt
+  bind:offen={loeschenOffen}
+  allein={vertrag.length === 1}
+  vorher={() => (geloescht = true)}
+/>
 {#if einrichtung}
   <Aktionsleiste
     text={t('einrichtung.haushalt.anlegen')}
@@ -449,8 +428,10 @@
     display: inline-flex;
     align-items: center;
     min-height: var(--tap-target);
-    color: var(--ink-quiet);
-    text-decoration: none;
+    color: var(--ink);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
   .aendern::after {
@@ -656,38 +637,6 @@
     color: var(--ink-muted);
     font: inherit;
     font-size: calc(15 * var(--px));
-    font-weight: 700;
-  }
-
-  .blatt-satz {
-    margin: 0 0 20px;
-    color: var(--ink-muted);
-  }
-
-  .blatt-weg {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    min-height: 54px;
-    padding: 0 20px;
-    border: 0;
-    border-radius: var(--radius-full);
-    background: var(--action);
-    color: var(--on-action);
-    font: inherit;
-    font-weight: 700;
-  }
-
-  .blatt-abbrechen {
-    display: block;
-    width: 100%;
-    min-height: var(--tap-target);
-    margin-top: 8px;
-    border: 0;
-    background: none;
-    color: var(--ink);
-    font: inherit;
     font-weight: 700;
   }
 

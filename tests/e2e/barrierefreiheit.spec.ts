@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 import { PDFDocument } from '@cantoo/pdf-lib';
 import { cspMelden } from './hilfen';
+import { stimmungMuster } from './stimmung-muster';
 import { HEUTE, SZENARIEN, datensaetze } from './szenarien';
 
 // Lesereihenfolge der Übersicht (design/unterlage-warum-haushalt.md, Abschnitt 4, lesefolge-U01.png).
@@ -67,14 +68,18 @@ test('Tab „Mappe“: Überschriften, Personen als Links, Zeilen mit Stand, Rei
   await expect(page.getByRole('link', { name: /^Haushalt bearbeiten: / })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Einstellungen' })).toBeVisible();
 
-  // Überschriften: „Eure Mappe“, die Aufgaben, dann je Person ein Reiter, Bürgen nach der Trennzeile.
+  // Überschriften: „Eure Mappe“, die Aufgaben, dann je Person ein Reiter, Bürgen nach der Trennzeile,
+  // dann „Für den ganzen Haushalt“ (DP45 G1).
   const kopf = await ueberschriften(page);
-  expect(kopf).toHaveLength(5);
+  expect(kopf).toHaveLength(6);
   expect(kopf[0]).toBe('H1 Eure Mappe');
-  expect(kopf[1]).toMatch(/^H2 Noch [a-zäöüß]+ Dinge?, dann seid ihr startklar\.$/);
+  // W37: Der Satz kommt aus Pool P2 (zwei offen, ihr).
+  expect(kopf[1]!.slice(0, 3)).toBe('H2 ');
+  expect(kopf[1]!.slice(3)).toMatch(stimmungMuster('P2', { anzahl: 2, an: 'ihr' }));
   expect(kopf[2]).toBe('H2 Max Hauptmieter');
   expect(kopf[3]).toBe('H2 Lea Mitmieterin');
   expect(kopf[4]).toBe('H2 Petra Bürgin');
+  expect(kopf[5]).toBe('H2 Für den ganzen Haushalt');
 
   // Jede Zeile sagt Unterlage, Stand und Marke in Worten.
   await expect(page.getByRole('link', { name: /^Selbstauskunft .+ da$/ }).first()).toBeVisible();
@@ -100,7 +105,8 @@ test('Tab „Mappe“: Überschriften, Personen als Links, Zeilen mit Stand, Rei
     /link "Einstellungen"/,
     /heading "Eure Mappe"/,
     /link "Haushalt bearbeiten: /,
-    /heading "Noch /,
+    // W37: der Satz aus Pool P2.
+    new RegExp(`heading "${stimmungMuster('P2', { anzahl: 2, an: 'ihr', ganz: false }).source}`),
     /link "Max Hauptmieter"/,
     /link "Lea Mitmieterin"/,
     /Zusätzlich, falls der Vermieter fragt/,
@@ -140,7 +146,9 @@ test('Personenseite und Rutsch: Haarlinie als benannte Liste, Register mit Reite
   await laden(page, '01-standard', '/rutsch');
   await page.getByRole('button', { name: /^Los geht/ }).click();
   const register = page.getByRole('navigation', { name: 'Zwischen den Schritten wechseln' });
-  await expect(register.getByRole('button', { name: /^Petra \d+\/\d+$/ })).toBeVisible();
+  // DP49 Punkt 2: Auf dem Reiter steht nur der Name (mit „Fertig“, wenn alles da ist); „x von y“ im Blatt.
+  await expect(register.getByRole('button', { name: /^Petra( Fertig)?$/ })).toBeVisible();
+  await expect(page.locator('.register-rahmen .im-blatt')).toHaveText(/^\d+ von \d+$/);
   await expect(register.locator('[aria-current="true"]')).toHaveCount(1);
   // Die aktuelle Unterlage heißt „…, jetzt“; jede andere sagt ihren Stand.
   await expect(page.getByRole('button', { name: /, jetzt$/ })).toHaveCount(1);
@@ -163,17 +171,18 @@ test('Fokus: nach einem Seitenwechsel auf dem Titel, sichtbarer Ring, Felder beh
 
   if (browserName === 'chromium') {
     await page.keyboard.press('Tab');
-    // DP33 A4: Felder zeigen den Fokus als 2 px Tinte innen; alles andere den Ring.
+    // DP49b, W33: Ein Textfeld zeigt den Fokus mit dem Cursor, ohne Rand in Tinte (früher DP33 A4: 2 px
+    // Tinte innen); der Rand bedeutet nur „Hefta fragt nach“. Alles andere behält den Ring.
     const ring = await page.evaluate(() => {
       const e = document.activeElement!;
       const stil = getComputedStyle(e);
       return e.matches('.eingabe input')
-        ? stil.boxShadow.includes('inset') && stil.boxShadow.includes(' 0px 0px 0px 2px')
-          ? 'innen 2px'
-          : stil.boxShadow
+        ? stil.boxShadow === 'none' && stil.outlineStyle === 'none'
+          ? 'ohne Rand'
+          : `${stil.boxShadow} ${stil.outlineStyle}`
         : `${stil.outlineWidth} ${stil.outlineOffset}`;
     });
-    expect(['innen 2px', '3px 2px']).toContain(ring);
+    expect(['ohne Rand', '3px 2px']).toContain(ring);
   }
 });
 
@@ -218,4 +227,34 @@ test('Bewegung reduzieren: kurzes Überblenden, kein Schieben', async ({ page })
     };
   });
   expect(werte).toEqual({ einblenden: 120, lang: 0, kurz: 0, blende: 120 });
+});
+
+// PC153 (wackelnder Test oben): Kommt die nächste Seite erst nach mehr als 1 s aus ihrer Datei (langsames Gerät,
+// Test unter Last), bekam ihr Titel früher nie den Fokus: Hefta suchte nur 60 Bilder lang. Hier wird jede
+// Skriptdatei nach dem Start 2,5 s aufgehalten; der Titel muss den Fokus trotzdem bekommen. Mit der alten Suche
+// wird dieser Test rot (einmal so geprüft, CP86).
+test.describe('PC153, ohne Service Worker (sonst sieht der Test die Dateien nicht)', () => {
+  test.use({ serviceWorkers: 'block' });
+  test('PC153: lädt die nächste Seite länger als 1 s, bekommt ihr Titel trotzdem den Fokus', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      (window as unknown as { __heftaOhneVorladen: boolean }).__heftaOhneVorladen = true;
+    });
+    await laden(page, '01-standard');
+    await page.getByRole('link', { name: /^Lea Mitmieterin$/ }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Lea' })).toBeFocused();
+    let aufgehalten = 0;
+    await page.route('**/assets/*.js', async (r) => {
+      aufgehalten++;
+      await new Promise((ok) => setTimeout(ok, 2500));
+      await r.continue();
+    });
+    await page.getByRole('link', { name: 'Ändern', exact: false }).first().click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Lea ändern' })).toBeFocused({
+      timeout: 8000,
+    });
+    // Sonst prüfte der Test nichts: Die Seite kam wirklich erst später.
+    expect(aufgehalten).toBeGreaterThan(0);
+  });
 });

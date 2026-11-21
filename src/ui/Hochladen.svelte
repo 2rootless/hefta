@@ -19,7 +19,15 @@
     person,
     farbe = 1,
     stand,
-  }: { offen: boolean; person: Person; farbe?: number; stand: UnterlagenStand } = $props();
+    heftId = null,
+  }: {
+    offen: boolean;
+    person: Person;
+    farbe?: number;
+    stand: UnterlagenStand;
+    /** DP49 Punkt 5: Für dieses Heft gilt der Scan. */
+    heftId?: string | null;
+  } = $props();
 
   const typ = $derived(stand.typ);
   let gewaehlt = $state<File[] | null>(null);
@@ -89,6 +97,7 @@
       start={gewaehlt}
       vorbelegterMonat={typ.serie && stand.status === 'fehlt' ? stand.naechsterMonat : null}
       knopfText={t('hochladen.speichern')}
+      {heftId}
       onfertig={() => {
         offen = false;
       }}

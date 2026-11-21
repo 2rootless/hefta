@@ -172,7 +172,10 @@ for (const ergebnis of ['Zusage', 'Absage']) {
     });
     await page.getByRole('button', { name: new RegExp(`^${ergebnis}`) }).click();
     await expect(
-      page.getByRole('region', { name: new RegExp(`^Stand: Ergebnis\\. ${ergebnis}`) }),
+      // DP109: Die Zusage heißt im Stand „Zusage“.
+      page.getByRole('region', {
+        name: new RegExp(`^Stand: Ergebnis\\. ${ergebnis}`),
+      }),
     ).toBeVisible();
     await zurueckUndWeiter(page);
   });

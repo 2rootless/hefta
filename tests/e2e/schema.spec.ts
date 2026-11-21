@@ -73,7 +73,8 @@ test('Schema 1 → 2: Die Bewerbung mit Adresse wird ein Heft, nichts geht verlo
         };
       }),
   );
-  expect(stand.version).toBe(2);
+  // Seit 2.1 (W42) läuft die Datenbank danach bis Schema 3 weiter; Schema 3 baut nichts um.
+  expect(stand.version).toBe(3);
   expect(stand.bewerbungen).toBe(1);
   expect(stand.hefte).toHaveLength(1);
   expect(stand.hefte[0]).toMatchObject({

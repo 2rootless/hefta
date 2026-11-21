@@ -4,6 +4,8 @@ import { eingang } from './eingang.svelte';
 import { HeftaNativ } from './heftaNativ';
 import { ablageLeeren, appDateiLesen } from './plattform';
 import { geteiltOeffnen } from '../ui/neuesHeft.svelte';
+import { einstellungenZustand } from '../ui/einstellungen.svelte';
+import { eingangZiel } from './eingangZiel';
 
 // Nur in der App: Zurück-Knopf von Android, PDFs, die andere Apps an Hefta schicken, und Inserate, die eine
 // Portal-App an Hefta teilt (E81: `hefta://teilen?link=…` von der Erweiterung HeftaTeilen).
@@ -45,7 +47,14 @@ export async function appStarten(): Promise<void> {
   await App.addListener('appUrlOpen', ({ url }) => adresseOeffnen(url));
   adresseOeffnen((await App.getLaunchUrl())?.url);
   await HeftaNativ.addListener('eingang', ({ dateien }) => {
-    void Promise.all(dateien.map((d) => appDateiLesen(d.uri, d.name))).then((gelesen) => {
+    void Promise.all(dateien.map((d) => appDateiLesen(d.uri, d.name))).then(async (gelesen) => {
+      // Backup von außen: ein Backup geht zu „Backup einspielen“, sonst wie bisher in den Eingang.
+      if ((await eingangZiel(gelesen)) === 'backup') {
+        einstellungenZustand.datei = gelesen[0] ?? null;
+        einstellungenZustand.vonAussen = true;
+        gehe('/einstellungen/einspielen');
+        return;
+      }
       eingang.dateien = gelesen;
       gehe('/eingang');
     });

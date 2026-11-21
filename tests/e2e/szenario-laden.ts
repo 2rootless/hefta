@@ -1,7 +1,7 @@
 import { PDFDocument, StandardFonts } from '@cantoo/pdf-lib';
 import type { Page } from '@playwright/test';
 import { animationenFertig } from './hilfen';
-import { SZENARIEN, datensaetze } from './szenarien';
+import { SZENARIEN, datensaetze, type Szenario } from './szenarien';
 
 // Ein Szenario aus szenarien.ts in die Datenbank legen und eine Seite öffnen (wie bilder-app.spec.ts).
 
@@ -51,9 +51,10 @@ export async function gehaltsPdfs(monate: string[], name = 'Max Mustermann') {
   return liste;
 }
 
-export async function szenarioLaden(page: Page, szenario: string, pfad: string) {
-  const s = SZENARIEN.find((x) => x.id === szenario);
-  if (!s) throw new Error(`Szenario ${szenario} gibt es nicht`);
+/** Szenario nach Name oder als abgewandeltes Szenario (etwa mit einem pausierten Rutsch, DP114). */
+export async function szenarioLaden(page: Page, szenario: string | Szenario, pfad: string) {
+  const s = typeof szenario === 'string' ? SZENARIEN.find((x) => x.id === szenario) : szenario;
+  if (!s) throw new Error(`Szenario ${String(szenario)} gibt es nicht`);
   await page.route('**/__leer', (r) =>
     r.fulfill({ contentType: 'text/html', body: '<!doctype html><title>leer</title>' }),
   );

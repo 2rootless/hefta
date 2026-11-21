@@ -20,6 +20,7 @@ import {
   type Heft,
   type Id,
   type AusbildungArt,
+  type Lebenslage,
   type Lebenssituation,
   type Person,
   type Rolle,
@@ -96,6 +97,8 @@ export interface PersonEntwurf {
   rolle: Rolle;
   lebenssituation: Lebenssituation | null;
   ausbildungArt?: AusbildungArt | null;
+  /** DP47 G5: weitere Lebenslagen in Reihenfolge. */
+  weitereLagen?: Lebenslage[];
 }
 
 export interface HaushaltEntwurf {
@@ -116,6 +119,7 @@ function personAus(entwurf: PersonEntwurf, zeit: string): Person {
     kontakt: { telefon: '', email: '' },
     lebenssituation: entwurf.lebenssituation,
     ausbildungArt: entwurf.ausbildungArt ?? null,
+    ...(entwurf.weitereLagen?.length ? { weitereLagen: entwurf.weitereLagen } : {}),
     beruf: '',
     arbeitgeber: '',
     nettoeinkommen: null,
@@ -185,6 +189,11 @@ export interface HaushaltAnsicht {
   /** Herausgenommene, neueste zuerst; Unterlagen bleiben gespeichert. */
   herausgenommen: Mitglied[];
   dokumente: Dokument[];
+  /**
+   * Unterlagen des ganzen Haushalts (DP45 G1, G2; W28): Ihr `personId` ist die ID des Haushalts. Sie stehen
+   * in der Mappe einmal und kommen in jedes Heft, in dem sie zählen. Fehlt das Feld, gibt es keine.
+   */
+  haushaltDokumente?: Dokument[];
   versionen: DateiVersion[];
 }
 
@@ -218,9 +227,12 @@ export async function haushaltLaden(
   );
   const hier = new Set(zugehoerigkeiten.map((z) => z.id));
   const dokumente = dokumenteJe.flat().filter((d) => giltImHaushalt(d, hier, jeHaushalt));
+  const haushaltDokumente = await tx.objectStore('dokumente').index('personId').getAll(haushalt.id);
   const versionen = (
     await Promise.all(
-      dokumente.map((d) => tx.objectStore('versionen').index('dokumentId').getAll(d.id)),
+      [...dokumente, ...haushaltDokumente].map((d) =>
+        tx.objectStore('versionen').index('dokumentId').getAll(d.id),
+      ),
     )
   ).flat();
   await tx.done;
@@ -239,7 +251,7 @@ export async function haushaltLaden(
       a.zugehoerigkeit.herausgenommenAm ?? '',
     ),
   );
-  return { haushalt, mitglieder, herausgenommen, dokumente, versionen };
+  return { haushalt, mitglieder, herausgenommen, dokumente, haushaltDokumente, versionen };
 }
 
 export async function personAendern(
@@ -480,15 +492,27 @@ export async function mitgliedZurueckholen(
   zugehoerigkeitId: Id,
   teil: Partial<Pick<Zugehoerigkeit, 'rolle' | 'bezeichnung'>> = {},
 ): Promise<void> {
-  const tx = db.transaction('zugehoerigkeiten', 'readwrite');
-  const zug = await tx.store.get(zugehoerigkeitId);
+  const tx = db.transaction(['zugehoerigkeiten', 'haushalte'], 'readwrite');
+  const ort = tx.objectStore('zugehoerigkeiten');
+  const zug = await ort.get(zugehoerigkeitId);
   if (!zug) return;
-  const ueberall = await tx.store.getAll();
+  const ueberall = await ort.getAll();
   const alle = ueberall.filter((z) => z.haushaltId === zug.haushaltId);
   const belegt = alle.filter((z) => !z.herausgenommenAm && z.id !== zug.id).map((z) => z.farbe);
-  await tx.store.put({
+  // W42 Fall 7: Wer nur mit einzog, zählt jetzt nicht mehr unter „Weitere Erwachsene“.
+  if (zug.ziehtMitEin) {
+    const haushalt = await tx.objectStore('haushalte').get(zug.haushaltId);
+    if (haushalt)
+      await tx.objectStore('haushalte').put({
+        ...haushalt,
+        weitereErwachsene: Math.max(0, haushalt.weitereErwachsene - 1),
+        updatedAt: jetzt(),
+      });
+  }
+  await ort.put({
     ...zug,
     ...teil,
+    ziehtMitEin: false,
     herausgenommenAm: null,
     farbe: belegt.includes(zug.farbe)
       ? farbeImHaushalt(zug.personId, zug.haushaltId, ueberall)
@@ -497,7 +521,50 @@ export async function mitgliedZurueckholen(
     updatedAt: jetzt(),
   });
   // PC102 (E209): Hauptmietet inzwischen jemand anderes, steht sie als Mitmieter im Vertrag.
-  await nachruecken(tx.store, [zug.haushaltId], jetzt());
+  await nachruecken(ort, [zug.haushaltId], jetzt());
+  await tx.done;
+}
+
+/**
+ * W42 (DP93, F2): Macht eine Person zur hauptmietenden. Sie steht vorn im Vertrag; wer bisher hauptmietete, steht
+ * weiter im Vertrag, als Mitmieter. Kommt sie aus der Bürgschaft, steht sie danach im Vertrag; ihre Erklärung bleibt
+ * gespeichert. Zuerst die Nachfolge, dann der Wechsel der bisherigen: So ist der Vertrag nie leer.
+ */
+export async function hauptmieterSetzen(db: HeftaDb, id: Id): Promise<void> {
+  const tx = db.transaction('zugehoerigkeiten', 'readwrite');
+  const ort = tx.objectStore('zugehoerigkeiten');
+  const z = await ort.get(id);
+  if (!z) throw new Error('Zugehörigkeit nicht gefunden');
+  const zeit = jetzt();
+  const alle = await ort.index('haushaltId').getAll(z.haushaltId);
+  for (const x of alle)
+    if (x.id !== id && x.rolle === 'hauptmieter' && !x.herausgenommenAm)
+      await ort.put({ ...x, rolle: 'mitmieter', updatedAt: zeit });
+  const vorn = alle.reduce((min, x) => Math.min(min, x.reihenfolge), z.reihenfolge) - 1;
+  await ort.put({ ...z, rolle: 'hauptmieter', reihenfolge: vorn, updatedAt: zeit });
+  await nachruecken(ort, [z.haushaltId], zeit);
+  await tx.done;
+}
+
+/**
+ * W42 Fall 7 (DP94): „Zieht nur mit ein“. Die Person ist danach nicht mehr in der Mappe, Angaben und Unterlagen bleiben,
+ * und sie zählt unter „Weitere Erwachsene“ des Haushalts mit. War sie hauptmietend, rückt die nächste nach.
+ */
+export async function mitgliedZiehtMitEin(db: HeftaDb, zugehoerigkeitId: Id): Promise<void> {
+  const tx = db.transaction(['zugehoerigkeiten', 'haushalte'], 'readwrite');
+  const ort = tx.objectStore('zugehoerigkeiten');
+  const zug = await ort.get(zugehoerigkeitId);
+  if (!zug) return;
+  const zeit = jetzt();
+  await ort.put({ ...zug, herausgenommenAm: zeit, ziehtMitEin: true, updatedAt: zeit });
+  const haushalt = await tx.objectStore('haushalte').get(zug.haushaltId);
+  if (haushalt)
+    await tx.objectStore('haushalte').put({
+      ...haushalt,
+      weitereErwachsene: haushalt.weitereErwachsene + 1,
+      updatedAt: zeit,
+    });
+  await nachruecken(ort, [zug.haushaltId], zeit);
   await tx.done;
 }
 
@@ -556,6 +623,8 @@ export async function haushaltLoeschen(db: HeftaDb, haushaltId: Id): Promise<voi
     if (anderswo) await db.delete('zugehoerigkeiten', z.id);
     else await personGanzLoeschen(db, z.personId);
   }
+  // Unterlagen des Haushalts (DP45) hängen mit seiner ID an `personId`: gleicher Weg wie bei einer Person.
+  await personGanzLoeschen(db, haushaltId);
   const tx = db.transaction(['haushalte', 'hefte', 'bewerbungen'], 'readwrite');
   for (const h of await tx.objectStore('hefte').getAll())
     if (h.haushaltId === haushaltId) await tx.objectStore('hefte').put({ ...h, haushaltId: null });
@@ -763,6 +832,8 @@ export async function allesLoeschen(db: HeftaDb): Promise<void> {
 // ---------- Unterlagen (M3) ----------
 
 export interface UnterlageEntwurf {
+  /** Nur bei Typen mit `jeWohnung` (DP49 Punkt 5): das Heft, für das diese Fassung gilt. */
+  heftId?: Id | null;
   /** Nur bei Typen mit `jeHaushalt`, wenn die Person in mehreren Haushalten ist (E53, Schritt 2). */
   zugehoerigkeitId?: Id | null;
   /** Name der hochgeladenen Datei, für die Seite der Unterlage. */
@@ -788,6 +859,13 @@ export interface UnterlageEntwurf {
   /** Ausgewählte Seiten (0-basiert), null = alle. */
   seiten: number[] | null;
   gerastert: boolean;
+  /** Angaben vom Wohnberechtigungsschein (DP45 G1). */
+  wbs?: DateiVersion['wbs'];
+  /**
+   * Genau dieses Dokument (DP45 G2): Ein Haushalt kann in mehreren Genossenschaften sein; jede Mitgliedschaft
+   * ist ein eigenes Dokument desselben Typs.
+   */
+  dokumentId?: Id;
 }
 
 function neuesDokument(personId: Id, typ: string, serie: number | null): Dokument {
@@ -832,9 +910,11 @@ async function versionAnlegen(
   const zeit = jetzt();
   const tx = db.transaction(['dokumente', 'versionen'], 'readwrite');
   const zugId = jeHaushalt(e.typ) ? (e.zugehoerigkeitId ?? null) : null;
-  const bisher = (await tx.objectStore('dokumente').index('personId').getAll(e.personId)).find(
-    (d) => d.typ === e.typ && (d.zugehoerigkeitId ?? null) === zugId,
-  );
+  const bisher = e.dokumentId
+    ? await tx.objectStore('dokumente').get(e.dokumentId)
+    : (await tx.objectStore('dokumente').index('personId').getAll(e.personId)).find(
+        (d) => d.typ === e.typ && (d.zugehoerigkeitId ?? null) === zugId,
+      );
   // Neue Unterlage: Erinnerungen dürfen wieder fragen.
   const dokument: Dokument = {
     ...(bisher ?? {
@@ -861,6 +941,8 @@ async function versionAnlegen(
     gerastert: e.gerastert,
     erkannteWerte: e.fakten ?? null,
     vomNutzerBestaetigt: e.bestaetigt?.length ? e.bestaetigt : null,
+    ...(e.heftId && dokumenttyp(e.typ)?.jeWohnung ? { heftId: e.heftId } : {}),
+    ...(e.wbs ? { wbs: e.wbs } : {}),
   };
   const [erste, ...weitere] = e.aufteilung ?? [];
   if (erste) {
@@ -1064,13 +1146,64 @@ export async function versionDatumSetzen(
   await db.put('versionen', { ...version, ausstellungsdatum: tag, updatedAt: jetzt() });
 }
 
+/**
+ * Mitgliedschaft in einer Genossenschaft anlegen oder ändern (DP45 G2): ein Dokument des Haushalts vom Typ
+ * `mitgliedschaft` mit Name und Nummer. Der Nachweis kommt als Version dazu (`unterlageSpeichern` mit
+ * `dokumentId`); ohne Nachweis steht die Mitgliedschaft als Zeile in der Mappe.
+ */
+export async function mitgliedschaftSpeichern(
+  db: HeftaDb,
+  haushaltId: Id,
+  m: { id?: Id; name: string; nummer: string },
+): Promise<Dokument> {
+  const alt = m.id ? await db.get('dokumente', m.id) : undefined;
+  const dokument: Dokument = {
+    ...(alt ?? neuesDokument(haushaltId, 'mitgliedschaft', null)),
+    genossenschaft: { name: m.name, nummer: m.nummer },
+    updatedAt: jetzt(),
+  };
+  await db.put('dokumente', dokument);
+  return dokument;
+}
+
+/** Mitgliedschaft löschen, mit allen Nachweisen; das Ergebnis nimmt `mitgliedschaftZurueck` zurück. */
+export async function mitgliedschaftLoeschen(
+  db: HeftaDb,
+  dokumentId: Id,
+): Promise<{ dokument: Dokument | null; stand: VersionenStand }> {
+  const dokument = (await db.get('dokumente', dokumentId)) ?? null;
+  const versionen = await db.getAllFromIndex('versionen', 'dokumentId', dokumentId);
+  const stand = await versionenAendern(db, { loeschen: versionen.map((v) => v.id) });
+  await db.delete('dokumente', dokumentId);
+  return { dokument, stand };
+}
+
+export async function mitgliedschaftZurueck(
+  db: HeftaDb,
+  weg: { dokument: Dokument | null; stand: VersionenStand },
+): Promise<void> {
+  if (weg.dokument) await db.put('dokumente', weg.dokument);
+  await versionenZurueck(db, weg.stand);
+}
+
+/** Angaben vom Wohnberechtigungsschein ändern (DP45 G1): „Gültig bis“, Personen, Räume. */
+export async function versionWbsSetzen(
+  db: HeftaDb,
+  versionId: Id,
+  wbs: NonNullable<DateiVersion['wbs']>,
+): Promise<void> {
+  const version = await db.get('versionen', versionId);
+  if (!version) throw new Error('Version nicht gefunden');
+  await db.put('versionen', { ...version, wbs, updatedAt: jetzt() });
+}
+
 /** Setzt Felder am Dokument einer Person (z. B. „Noch nicht“); legt es an, falls es fehlt. */
 export async function dokumentAendern(
   db: HeftaDb,
   personId: Id,
   typ: string,
   serie: number | null,
-  teil: Partial<Pick<Dokument, 'stummBis' | 'stummMonat' | 'stummAnzahl' | 'notiz'>>,
+  teil: Partial<Pick<Dokument, 'stummBis' | 'stummMonat' | 'stummAnzahl' | 'notiz' | 'bonitaet'>>,
 ): Promise<void> {
   const bisher = (await db.getAllFromIndex('dokumente', 'personId', personId)).find(
     (d) => d.typ === typ,
@@ -1143,6 +1276,24 @@ export async function heftFotoEntfernen(db: HeftaDb, heftId: Id, fotoId: Id): Pr
   const vorher = heft?.fotos ?? [];
   await heftAendern(db, heftId, { fotos: vorher.filter((f) => f !== fotoId) });
   return vorher;
+}
+
+/**
+ * Heft löschen (DP49 Punkt 12, W31): nimmt das Heft mit Notizen aus der Datenbank und gibt es für
+ * „Rückgängig“ zurück. Seine Fotos bleiben als Dateien, bis `verwaisteDateienLoeschen` läuft; das geschieht
+ * erst, wenn „Rückgängig“ vorbei ist (Liste verlassen). Die Unterlagen der Personen berührt es nicht.
+ */
+export async function heftLoeschen(db: HeftaDb, id: Id): Promise<Heft | null> {
+  const tx = db.transaction('hefte', 'readwrite');
+  const alt = (await tx.store.get(id)) ?? null;
+  if (alt) await tx.store.delete(id);
+  await tx.done;
+  return alt;
+}
+
+/** „Rückgängig“ nach `heftLoeschen`: das Heft so, wie es war. */
+export async function heftZurueckholen(db: HeftaDb, heft: Heft): Promise<void> {
+  await db.put('hefte', heft);
 }
 
 /** Ein neues Heft, „Gemerkt“, mit eigener Kennung für die Lesehilfe (E6). */

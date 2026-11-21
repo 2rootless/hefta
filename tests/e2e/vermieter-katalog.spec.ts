@@ -291,31 +291,36 @@ for (const [gruppe, ansichten, bilder] of [
         if (vs.length) fehler.vs = vs;
         if (konsole.length) fehler.konsole = konsole.map((z) => z.slice(0, 160));
         if (Object.keys(fehler).length) befunde[b.id] = fehler;
-        png.push({
-          id: b.id,
-          bild: (await page.screenshot({ fullPage: true })).toString('base64'),
-        });
+        if (process.env.VS_BOGEN)
+          png.push({
+            id: b.id,
+            bild: (await page.screenshot({ fullPage: true })).toString('base64'),
+          });
       }
-      const kontext = await page.context().browser()!.newContext({ deviceScaleFactor: 1 });
-      const bogen = await kontext.newPage();
-      await bogen.setViewportSize({ width: 1400, height: 800 });
-      const breite = ansicht.breite > 900 ? 620 : ansicht.breite;
-      await bogen.setContent(
-        `<body style="margin:0;background:#c9ccd6;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;padding:24px;font:13px sans-serif">` +
-          png
-            .map(
-              (p) =>
-                `<figure style="margin:0"><figcaption style="padding:6px 0">${p.id}</figcaption><img style="display:block;width:${breite}px" src="data:image/png;base64,${p.bild}"></figure>`,
-            )
-            .join('') +
-          '</body>',
-      );
-      await bogen.waitForLoadState('load');
-      await bogen.screenshot({
-        path: `docs/screenshots/bogen-VS-${ansicht.id}.png`,
-        fullPage: true,
-      });
-      await kontext.close();
+      // Bogen aller Ansichten für Design nur auf Wunsch (VS_BOGEN=1). Er setzt alle Bildschirmfotos als Bilddaten in
+      // eine Seite; in der ganzen Reihe hing danach zweimal der Worker ohne Browser (PC173, CP100).
+      if (process.env.VS_BOGEN) {
+        const kontext = await page.context().browser()!.newContext({ deviceScaleFactor: 1 });
+        const bogen = await kontext.newPage();
+        await bogen.setViewportSize({ width: 1400, height: 800 });
+        const breite = ansicht.breite > 900 ? 620 : ansicht.breite;
+        await bogen.setContent(
+          `<body style="margin:0;background:#c9ccd6;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;padding:24px;font:13px sans-serif">` +
+            png
+              .map(
+                (p) =>
+                  `<figure style="margin:0"><figcaption style="padding:6px 0">${p.id}</figcaption><img style="display:block;width:${breite}px" src="data:image/png;base64,${p.bild}"></figure>`,
+              )
+              .join('') +
+            '</body>',
+        );
+        await bogen.waitForLoadState('load');
+        await bogen.screenshot({
+          path: `docs/screenshots/bogen-VS-${ansicht.id}.png`,
+          fullPage: true,
+        });
+        await kontext.close();
+      }
       expect(befunde).toEqual({});
     });
   }

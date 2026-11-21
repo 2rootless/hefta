@@ -35,6 +35,7 @@ async function einstellungen(page: Page) {
   await page.goto('/');
   await page.locator('h1').first().waitFor();
   await page.evaluate(() => (location.hash = '#/einstellungen'));
+  await page.getByRole('tab', { name: 'App', exact: true }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Über Hefta' })).toBeVisible();
   // DP29: Die Fragen stehen in einem Blatt hinter „Rückmeldung geben“.
   await expect(
@@ -103,6 +104,7 @@ test('vier Fragen; Abbrechen sendet nichts, Abschicken nur Frage und Antwort', a
 
   // Gemerkt nur auf dem Gerät: Nach dem Neuladen steht die Antwort noch da, ohne neuen Aufruf.
   await page.reload();
+  await page.getByRole('tab', { name: 'App', exact: true }).click();
   // DP29: Nach dem Neuladen ist das Blatt zu; die Zeile sagt Danke, die Antwort steht im Blatt.
   await expect(
     page.getByRole('button', { name: /^Rückmeldung geben\s*Danke, beantwortet am/ }),

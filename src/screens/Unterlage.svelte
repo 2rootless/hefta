@@ -3,6 +3,7 @@
   // Seite einer Unterlage (design/unterlage-warum-haushalt.md, UL1 bis UL3, UL5, UL6), Form nach DP39,
   // Abschnitt 3 (Richtung A): Kopf in der Tönung der Person, Hinweis, was in der Mappe ist, als Zeilen mit
   // Pfeil, ältere Versionen, Notiz. Rot nur für Zurück und das Warnzeichen (DP35, W5); Löschen grau unten.
+  import { untrack } from 'svelte';
   import { daten, db, neuLaden } from '../app/daten.svelte';
   import { einstieg, ersetzen, route, zumEinstieg } from '../app/router.svelte';
   import { einstiegText } from '../ui/einstieg';
@@ -19,6 +20,7 @@
     ohneTrennstellen,
     personStand,
     rollenText,
+    standFinden,
     warumInhalt,
     type UnterlagenStand,
   } from '../domain/regelkatalog';
@@ -32,14 +34,17 @@
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
   import Sheet from '../ui/Sheet.svelte';
   import Symbol from '../ui/Symbol.svelte';
-  import { tagKurzAus, unterlageSatz } from '../ui/texte';
+  import { keinerText, tagKurzAus, unterlageSatz } from '../ui/texte';
   import { dateiZeile, monatJahr, monatKuerzel, seitenZahl, versionTitel } from '../ui/versionInfo';
   import VersionSeiten from '../ui/VersionSeiten.svelte';
   import WarumBlatt from '../ui/WarumBlatt.svelte';
   import WischZeile from '../ui/WischZeile.svelte';
 
+  import NeuImJob from '../ui/NeuImJob.svelte';
+  import BonitaetWahl from '../ui/BonitaetWahl.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
   import { fassungUnlesbar } from '../app/unlesbar.svelte';
+  import { erklaerungHeftNehmen } from '../ui/erklaerungHeft.svelte';
 
   let { personId, typId }: { personId: string; typId: string } = $props();
 
@@ -57,9 +62,8 @@
       : null,
   );
   const nichtMehr = $derived(stand?.nichtMehrNoetig.find((u) => u.typ.id === typId) ?? null);
-  const u = $derived<UnterlagenStand | null>(
-    stand?.unterlagen.find((x) => x.typ.id === typId) ?? nichtMehr,
-  );
+  // Auch ein Zusatz wie der Arbeitsvertrag bei „Neu im Job“ (DP45 G3).
+  const u = $derived<UnterlagenStand | null>(standFinden(stand, typId));
   const buerge = $derived(stand?.rolle === 'buerge');
   const name = $derived(stand ? stand.person.rufname || stand.person.vorname : '');
   // W39 (PC130 K8): „Zurück“ und „Fertig“ führen dorthin, wo die Unterlage geöffnet wurde (Mappe, Personenseite …);
@@ -146,7 +150,10 @@
     }
   });
 
-  let hochladenOffen = $state(false);
+  // E112, DP49 Punkt 5: Kommt man von „Unterschriebenes Blatt hinzufügen“, gilt der Scan für dieses Heft und
+  // die Auswahl öffnet sich gleich.
+  const fuerHeft = erklaerungHeftNehmen(untrack(() => personId));
+  let hochladenOffen = $state(!!fuerHeft);
   const hochladen = () => import('../ui/Hochladen.svelte');
 
   async function versionWegRoh(v: DateiVersion) {
@@ -298,7 +305,11 @@
       <p class="satz" class:warnung>
         {#if warnung}<span class="warnzeichen" role="img" aria-label={t('unterlageSeite.warnung')}
             >!</span
-          >{/if}<span>{unterlageSatz(u, !!nichtMehr)}</span>
+          >{/if}<span
+          >{u.keinerMoeglich
+            ? keinerText(u.keinerMoeglich, stand.bezeichnung, anrede.wert === 'du')
+            : unterlageSatz(u, !!nichtMehr)}</span
+        >
       </p>
     </div>
 
@@ -323,6 +334,16 @@
           {/if}
         </p>
       </div>
+    {/if}
+
+    {#if u.typ.id === 'bonitaet' && !nichtMehr}
+      <!-- DP45 G4 (K1): „Wie ist es bei dir?“, „Ich bekomme noch keinen“ mit freiwilligem Grund. -->
+      <BonitaetWahl {stand} {u} />
+    {/if}
+
+    {#if u.typ.id === 'gehaltsnachweis' && !nichtMehr && mitglied}
+      <!-- DP45 G3: Seit wann im Job? „Seit Kurzem“ mit Anfang und Arbeitsvertrag. -->
+      <NeuImJob person={mitglied.person} stand={u} />
     {/if}
 
     {#if u.typ.serie && u.versionen.length}
@@ -481,6 +502,7 @@
         person={stand.person}
         farbe={stand.farbe}
         stand={u}
+        heftId={fuerHeft}
       />
     {/await}
   {/if}
@@ -549,7 +571,7 @@
     height: 16px;
     margin-top: 2px;
     border-radius: 8px;
-    background: var(--accent);
+    background: var(--fehler);
     color: var(--surface);
     font-size: calc(11 * var(--px));
     font-weight: 800;
@@ -607,7 +629,7 @@
   }
 
   .karte.unlesbar {
-    box-shadow: inset 0 0 0 2px var(--accent);
+    box-shadow: inset 0 0 0 2px var(--fehler);
   }
 
   .nicht-oeffnen {
@@ -632,7 +654,7 @@
     height: 16px;
     margin-top: 2px;
     border-radius: 8px;
-    background: var(--accent);
+    background: var(--fehler);
     color: var(--surface);
     font-size: calc(11 * var(--px));
     font-weight: 800;

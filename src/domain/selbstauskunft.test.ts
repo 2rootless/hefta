@@ -385,3 +385,98 @@ describe('E222 (DP77, Abschnitt 5): Kontakt mit einer Nummer, die sich nicht ums
     expect(fehlendeAngaben(p, 'mitmieter')).not.toContain('kontakt');
   });
 });
+
+describe('Einkommen je Quelle im Bogen (DP47 G5, DP47b K1, PC60 K5)', () => {
+  const HH = haushaltsAngaben({ haustiere: 'nein', haustiereText: '', ort: 'Hamburg' });
+  const WER = einziehend(1, { kinder: 0, weitereErwachsene: 0 });
+  const bogen = (p: Person) =>
+    selbstauskunftBloecke(p, 'hauptmieter', WER, HH, 'zusage', { rolleText: 'Hauptmieter' });
+  const einkommen = (p: Person) =>
+    bogen(p)
+      .find((b) => b.id === 'einkommen')!
+      .zeilen.map((z) => `${z.etikett}: ${'wert' in z ? z.wert : ''}`);
+  const alles = (p: Person) => JSON.stringify(bogen(p));
+
+  it('L2, L9: Summe und darunter beide Teile, mit Beruf und Arbeitgeber', () => {
+    const max = person({
+      ...AUSGEFUELLT,
+      beruf: 'Elektroniker',
+      arbeitgeber: 'Musterwerk GmbH',
+      nettoeinkommen: 2850,
+      weitereLagen: [
+        { id: 'l2', situation: 'selbststaendig', beruf: 'Elektroarbeiten', nettoeinkommen: 400 },
+      ],
+    });
+    expect(einkommen(max)).toEqual([
+      'Lebenslage: Angestellt, dazu selbstständig oder freiberuflich',
+      'Einkommen im Monat, netto: 3.250 €',
+      'Angestellt, Elektroniker bei Musterwerk GmbH: 2.850 €',
+      'Selbstständig oder freiberuflich, Elektroarbeiten: 400 €',
+    ]);
+    // Unter „Zur Person“ bleiben Beruf und Arbeitgeber der ersten Lage.
+    expect(alles(max)).toContain('"wert":"Musterwerk GmbH"');
+  });
+
+  it('L14: eine Quelle ohne Betrag: keine Summe, nur die Teile; und es fehlt noch etwas', () => {
+    const max = person({
+      ...AUSGEFUELLT,
+      nettoeinkommen: 2850,
+      weitereLagen: [{ id: 'l2', situation: 'selbststaendig' }],
+    });
+    expect(einkommen(max).some((z) => z.startsWith('Einkommen im Monat'))).toBe(false);
+    expect(fehlendeAngaben(max, 'hauptmieter', HH)).toContain('nettoeinkommen');
+  });
+
+  const amt = (an: boolean) =>
+    person({
+      ...AUSGEFUELLT,
+      lebenssituation: 'leistungsbezug',
+      beruf: '',
+      arbeitgeber: '',
+      nettoeinkommen: null,
+      einkommenTrotzdem: an,
+      weitereLagen: [
+        {
+          id: 'l2',
+          situation: 'angestellt',
+          beruf: 'Aushilfe',
+          arbeitgeber: 'Supermarkt Musterstadt',
+          nettoeinkommen: 520,
+        },
+      ],
+    });
+
+  it('L6, L16 (K5): Amt, Schalter aus: nur „Leistungen vom Amt“, kein Wort zur zweiten Lage', () => {
+    const zeilen = einkommen(amt(false));
+    expect(zeilen[0]).toBe('Lebenslage: Miete zahlt eine öffentliche Stelle');
+    expect(alles(amt(false))).not.toMatch(/angestellt|Aushilfe|Supermarkt|520/i);
+    expect(fehlendeAngaben(amt(false), 'hauptmieter', HH)).not.toContain('nettoeinkommen');
+  });
+
+  it('L16 Gegenprobe: „dazu angestellt“ im Druck wäre ein Fehler', () => {
+    const falsch = einkommen(amt(true))[0]!;
+    expect(falsch).toMatch(/dazu angestellt/);
+    expect(einkommen(amt(false))[0]).not.toMatch(/dazu angestellt/);
+  });
+
+  it('L13: Schalter an: Teile ohne Summe, das Amt ohne Betrag', () => {
+    const zeilen = einkommen(amt(true));
+    expect(zeilen).toEqual([
+      'Lebenslage: Miete zahlt eine öffentliche Stelle, dazu angestellt',
+      'Miete zahlt eine öffentliche Stelle: Die Miete übernimmt das Amt.',
+      'Angestellt, Aushilfe bei Supermarkt Musterstadt: 520 €',
+    ]);
+  });
+
+  it('K5: Amt zuerst nicht, Schalter aus: Beruf und Arbeitgeber der ersten Lage bleiben weg', () => {
+    const umgekehrt = person({
+      ...AUSGEFUELLT,
+      beruf: 'Aushilfe',
+      arbeitgeber: 'Supermarkt Musterstadt',
+      nettoeinkommen: 520,
+      weitereLagen: [{ id: 'l2', situation: 'leistungsbezug' }],
+    });
+    expect(alles(umgekehrt)).not.toMatch(/Aushilfe|Supermarkt|520/);
+    expect(einkommen(umgekehrt)[0]).toBe('Lebenslage: Miete zahlt eine öffentliche Stelle');
+  });
+});

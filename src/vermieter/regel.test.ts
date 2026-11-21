@@ -151,7 +151,7 @@ describe('Vollständigkeit nach Schritten', () => {
     const ohne = vollstaendigkeit(
       mit({ unterlagen: [{ person: 0, typ: 'selbstauskunft', seiten: [2, 2] }] }),
     );
-    expect(ohne.personen[0]!.spaeter.map((f) => f.text.replace('\u00ad', ''))).toContain(
+    expect(ohne.personen[0]!.spaeter.map((f) => f.text.replaceAll('\u00ad', ''))).toContain(
       'Einkommensnachweis',
     );
   });
@@ -293,7 +293,7 @@ describe('Schreibweisen', () => {
     expect(monateText(['2025-12', '2026-01'])).toBe('Dezember 2025 bis Januar 2026');
     expect(seitenText({ von: 2, bis: 2 })).toBe('Seite\u00a02');
     expect(seitenText({ von: 3, bis: 6 })).toBe('Seiten\u00a03\u2060–\u20606');
-    expect(groesseText(2_516_582)).toBe('2,4\u00a0MB');
-    expect(groesseText(240 * 1024)).toBe('240\u00a0KB');
+    expect(groesseText(2_516_582)).toBe('2,5\u00a0MB');
+    expect(groesseText(240_000)).toBe('240\u00a0KB');
   });
 });

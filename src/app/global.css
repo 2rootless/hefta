@@ -245,11 +245,31 @@ textarea {
   font-weight: 400;
 }
 
-/* DP33 A4: Fokus als 2 px Tinte innen, der Radius bleibt. Gilt für die Felder mit weicher Fläche. */
+/* DP49b, W33: Ein Feld, in das man tippt, bekommt keinen Rand in Tinte; der Rand bedeutet nur „Hefta fragt
+   nach“. Den Fokus zeigt der Cursor im Feld (früher DP33 A4: 2 px Tinte innen). */
 .eingabe input:focus-visible,
 .feld-weich:focus-visible {
   outline: 0;
-  box-shadow: inset 0 0 0 2px var(--ink);
+  box-shadow: none;
+}
+
+/* DP49b, W33: Prüfzustand einer Nachfrage, überall derselbe. Hell (Blatt; im Dunkeln die Fläche der Karte),
+   feiner Rand 1,5 px in Tinte, innen, Ecken wie das Element. Blendet in 300 ms über und zurück; der Satz
+   darunter kommt aus dem Baustein Nachfrage.svelte. */
+.eingabe input,
+.eingabe textarea,
+.feld-weich {
+  transition:
+    background-color var(--bw-nachfrage) ease-in-out,
+    box-shadow var(--bw-nachfrage) ease-in-out;
+}
+
+.eingabe input.pruefzustand,
+.eingabe textarea.pruefzustand,
+.feld-weich.pruefzustand,
+.pruefzustand {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
 }
 
 /* Die weiche Fläche: auf dem Grund der Seite die Fläche der Karten (Weiß). In einer weißen Karte der Ton

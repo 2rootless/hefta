@@ -296,6 +296,11 @@ export const SZENARIEN: Szenario[] = [
     personen: [max(alleDa('angestellt', 'hauptmieter')), { ...LEA_DA, unterlagen: {} }],
   },
   {
+    // PC187 (Lücke aus CP110): Im Rutsch fehlt bei Max nur das Netto; alles andere der Selbstauskunft ist da.
+    id: '28-nur-netto',
+    personen: [{ ...max(alleDa('angestellt', 'hauptmieter')), angaben: { nettoeinkommen: null } }],
+  },
+  {
     // Person und Haushalt (K, E3d): Jonas ist herausgenommen und bringt vier Unterlagen mit.
     id: '15-herausgenommen',
     kinder: 1,
@@ -426,6 +431,66 @@ export const SZENARIEN: Szenario[] = [
         ...jonas({ selbstauskunft: 'da', gehaltsnachweis: 'da', bonitaet: 'alt' }),
         nachname: 'Becker',
         raus: '2026-07-20T10:00:00.000Z',
+      },
+    ],
+  },
+  {
+    // W40 (PC176, DP110): Haushalt A aus der Namensliste, für das Musterbackup der Vorschau und die Store-Bilder.
+    // Jarne und Selin im Vertrag, Hiltrud bürgt, Frieda zieht mit ein. Telefon und Mail aus der Namensliste (W7).
+    // Selins Bonitätsnachweis läuft bald ab (Bild 08, Erinnerung).
+    id: 'A-namensliste',
+    kinder: 1,
+    personen: [
+      {
+        vorname: 'Jarne',
+        nachname: 'Ostendorp',
+        bezeichnung: 'maennlich',
+        rolle: 'hauptmieter',
+        lage: 'angestellt',
+        unterlagen: { ...alleDa('angestellt', 'hauptmieter'), mietzahlung: 'da' },
+        angaben: {
+          beruf: 'Mechatroniker',
+          kontakt: {
+            telefon: '0171 3920011',
+            telefonLand: 'DE',
+            telefonE164: '+491713920011',
+            email: 'jarne.ostendorp@example.com',
+          },
+        },
+      },
+      {
+        vorname: 'Selin',
+        nachname: 'Akgül',
+        bezeichnung: 'weiblich',
+        rolle: 'mitmieter',
+        lage: 'angestellt',
+        unterlagen: { selbstauskunft: 'da', gehaltsnachweis: 'da', bonitaet: 'bald' },
+        angaben: {
+          beruf: 'Pflegefachfrau',
+          kontakt: {
+            telefon: '0171 3920012',
+            telefonLand: 'DE',
+            telefonE164: '+491713920012',
+            email: 'selin.akguel@example.com',
+          },
+        },
+      },
+      {
+        vorname: 'Hiltrud',
+        nachname: 'Ostendorp',
+        bezeichnung: 'weiblich',
+        rolle: 'buerge',
+        lage: 'angestellt',
+        unterlagen: alleDa('angestellt', 'buerge'),
+        angaben: {
+          beruf: 'Verwaltungsangestellte',
+          kontakt: {
+            telefon: '0171 3920013',
+            telefonLand: 'DE',
+            telefonE164: '+491713920013',
+            email: 'hiltrud.ostendorp@example.com',
+          },
+        },
       },
     ],
   },

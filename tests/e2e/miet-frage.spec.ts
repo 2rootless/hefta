@@ -11,8 +11,14 @@ const PERSONEN = ['p-04-fertig-0', 'p-04-fertig-1'];
 async function frageOeffnen(page: Page, person: string) {
   await page.evaluate((p) => (location.hash = `#/selbstauskunft/${p}`), person);
   const gruppe = page.getByRole('radiogroup', { name: /Mietrückstände/ });
-  if (!(await gruppe.isVisible().catch(() => false)))
-    await page.getByRole('button', { name: /^Fragen, die Vermieter stellen dürfen/ }).click();
+  const zu = page.getByRole('button', {
+    name: /^Drei Fragen aus dem Musterbogen/,
+    expanded: false,
+  });
+  // Erst warten, bis die Seite steht: Ein zu früher Blick sah den Teil noch nicht und klappte ihn dann
+  // zu statt auf (Wackler in WebKit, PC79).
+  await expect(gruppe.or(zu).first()).toBeVisible();
+  if (await zu.isVisible()) await zu.click();
   await expect(gruppe).toBeVisible();
   return gruppe;
 }
@@ -66,7 +72,8 @@ async function zusageAnlegen(page: Page) {
 async function offenAnAllenStellen(page: Page, erwartet: boolean) {
   const anzahl = erwartet ? 1 : 0;
   await page.evaluate(() => (location.hash = '#/heft/zusage'));
-  await expect(page.getByText('Frage zu Mietrückständen')).toHaveCount(anzahl);
+  // DP50 Z2: Im Heft heißt die Zeile „Mietrückstände beantworten“.
+  await expect(page.getByText('Mietrückstände beantworten')).toHaveCount(anzahl);
   await page.evaluate((p) => (location.hash = `#/person/${p}`), PERSONEN[0]!);
   await expect(page.locator('.miet-offen')).toHaveCount(anzahl);
   await page.evaluate(() => (location.hash = '#/'));
@@ -86,7 +93,7 @@ async function offenAnAllenStellen(page: Page, erwartet: boolean) {
   }
 }
 
-test('Mietrückstände: „Nach der Zusage beantworten“, nach der Zusage überall offen, nach der Antwort weg', async ({
+test('Mietrückstände: „Nach der Zusage“, nach der Zusage überall offen, nach der Antwort weg', async ({
   page,
 }) => {
   await szenarioLaden(page, '04-fertig', `/selbstauskunft/${PERSONEN[0]}`);
@@ -101,7 +108,7 @@ test('Mietrückstände: „Nach der Zusage beantworten“, nach der Zusage über
     }
     // Drei gleichrangige Wahlen, keine vorgewählt.
     const wahlen = gruppe.getByRole('radio');
-    await expect(wahlen).toHaveText(['Ja', 'Nein', 'Nach der Zusage beantworten']);
+    await expect(wahlen).toHaveText(['Ja', 'Nein', 'Nach der Zusage']);
     for (const w of await wahlen.all()) await expect(w).toHaveAttribute('aria-checked', 'false');
     // Hinweis nach der Orientierungshilfe statt einer Anweisung (W32).
     await expect(
@@ -111,10 +118,11 @@ test('Mietrückstände: „Nach der Zusage beantworten“, nach der Zusage über
     ).toBeVisible();
     await expect(page.getByText(/^Gemeint ist: zwei Monate nacheinander/)).toBeVisible();
     await expect(page.getByText(/^Erst beantworten/)).toHaveCount(0);
-    await gruppe.getByRole('radio', { name: 'Nach der Zusage beantworten' }).click();
-    await expect(
-      gruppe.getByRole('radio', { name: 'Nach der Zusage beantworten' }),
-    ).toHaveAttribute('aria-checked', 'true');
+    await gruppe.getByRole('radio', { name: 'Nach der Zusage' }).click();
+    await expect(gruppe.getByRole('radio', { name: 'Nach der Zusage' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
     // Die Seite speichert kurz nach jeder Änderung (400 ms); erst dann zur nächsten Person.
     await page.waitForTimeout(900);
   }
@@ -129,9 +137,10 @@ test('Mietrückstände: „Nach der Zusage beantworten“, nach der Zusage über
   // Nach der Antwort ist die Frage überall weg.
   for (const person of PERSONEN) {
     const gruppe = await frageOeffnen(page, person);
-    await expect(
-      gruppe.getByRole('radio', { name: 'Nach der Zusage beantworten' }),
-    ).toHaveAttribute('aria-checked', 'true');
+    await expect(gruppe.getByRole('radio', { name: 'Nach der Zusage' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
     // Mit der Antwort ist der Teil fertig und schließt sich von selbst.
     await gruppe.getByRole('radio', { name: 'Nein' }).click();
     await page.waitForTimeout(900);

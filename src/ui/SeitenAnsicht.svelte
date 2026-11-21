@@ -414,11 +414,12 @@
     gap: 4px;
   }
 
+  /* PC79 (C33): Chips mit 8 px Abstand. */
   .zoom {
     display: flex;
-    flex: 0 1 152px;
+    flex: 0 1 168px;
     min-width: max-content;
-    gap: 4px;
+    gap: 8px;
   }
 
   /* Solange die Ansicht offen ist, gibt es die Seite darunter nicht: kein Scrollen, keine Leiste. */

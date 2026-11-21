@@ -12,6 +12,7 @@
   import { istAndroidApp, istApp } from '../app/plattform';
   import { eckdaten, heftAdresseKurz, heftTitel, tagKurz } from '../domain/heftKarte';
   import { lage } from '../domain/heftLage';
+  import { gruppieren } from '../domain/heftStand';
   import { homescreenFragen } from '../ui/homescreen';
   import type { HeftEreignisse, SpurEintrag } from '../domain/modell';
   import { namenListe, spurAn, spurEintragen } from '../domain/datenspur';
@@ -21,7 +22,9 @@
   import { wohnungAus } from '../lesen/angaben';
   import { lageAnwenden } from '../domain/lage';
   import { plzTabelle } from '../ui/plz.svelte';
-  import { einstellungenAendern, heftAendern } from '../storage/speicher';
+  import { einstellungenAendern, heftAendern, heftLoeschen } from '../storage/speicher';
+  import { geloescht } from '../ui/heftGeloescht.svelte';
+  import { abschliessen } from '../app/router.svelte';
   import Rueckmeldung from '../ui/Rueckmeldung.svelte';
   import { empfangLive } from '../rueckmeldung/senden';
   import RueckmeldungMail from '../ui/RueckmeldungMail.svelte';
@@ -31,6 +34,8 @@
   import BesichtigungsFragen from '../ui/BesichtigungsFragen.svelte';
   import HeftFotos from '../ui/HeftFotos.svelte';
   import HeftStand from '../ui/HeftStand.svelte';
+  import HeftMappe from '../ui/HeftMappe.svelte';
+  import HeftHaushalt from '../ui/HeftHaushalt.svelte';
   import { foto, fotoLaden, fotoVergessen } from '../ui/heftFoto.svelte';
   import { abschnitt, blende, lauf, ruhig } from '../ui/bewegung';
   import { flugFuer, landen, merken } from '../ui/heftFlug';
@@ -38,6 +43,24 @@
   import Zurueck from '../ui/Zurueck.svelte';
 
   let { id }: { id: string } = $props();
+
+  // ---------- Heft löschen (DP49 Punkt 12, W31) ----------
+  let loeschOffen = $state(false);
+  // „Die Unterlagen von Max, Lea und Petra bleiben.“: alle, deren Unterlagen im Haushalt liegen.
+  const loeschNamen = $derived(
+    namenListe((daten.ansicht?.mitglieder ?? []).map((m) => m.person.rufname)),
+  );
+  async function loeschen() {
+    const stelle = daten.hefte.findIndex((h) => h.id === id);
+    const alt = await heftLoeschen(await db(), id);
+    if (alt) {
+      geloescht.heft = alt;
+      geloescht.stelle = Math.max(0, stelle);
+    }
+    // Zurück zur Liste; das Heft steht nicht mehr im Weg zurück.
+    abschliessen('/wohnungen');
+    void stillLaden();
+  }
 
   const heft = $derived(daten.hefte.find((h) => h.id === id) ?? null);
   const jetzt = new Date();
@@ -283,6 +306,20 @@
       'den Vermieter',
   );
 
+  // DP109: die Rufnamen im Mietvertrag für „Glückwunsch, …“; dazu die anderen Hefte, die noch im Spiel sind.
+  const vertragNamen = $derived(
+    (daten.ansicht?.mitglieder ?? [])
+      .filter((m) => m.zugehoerigkeit.rolle !== 'buerge' && !m.zugehoerigkeit.herausgenommenAm)
+      .map((m) => m.person.rufname || m.person.vorname),
+  );
+  const andereImSpiel = $derived.by(() => {
+    const g = gruppieren(
+      daten.hefte.filter((h) => h.id !== id),
+      jetzt,
+    );
+    return g.stehtAn.length + g.wartet.length + g.gemerkt.length;
+  });
+
   /** Wartet eine Frage bis zur Zusage (Mietrückstände, E49)? Dann führt „Noch offen“ zur Selbstauskunft. */
   const mietrueckZiel = $derived.by(() => {
     // PC65: hing am Schalter in „Eigene Auswahl“ und erschien darum fast nie. Offen ist die Frage, solange
@@ -489,6 +526,8 @@
       {haushaltZiel}
       an={mailAn}
       {mietrueckZiel}
+      namen={vertragNamen}
+      andere={andereImSpiel}
       spur={spurEl}
       {kalender}
       {kalenderMeldung}
@@ -525,6 +564,9 @@
         </div>
       </section>
     {/each}
+
+    <!-- DP45 G1 (W28): Sozialwohnung wählt den Schein des Haushalts für diese Mappe aus. -->
+    {#if daten.ansicht}<HeftHaushalt {heft} />{/if}
 
     <!-- Was hinausging (Datenspur, B21): erst ab „Beworben“; erscheint und geht mit dem Stand. -->
     <section class="block" bind:this={spurEl} hidden={!(l.ort >= 1 && heft.spur?.length)}>
@@ -602,6 +644,8 @@
     </section>
 
     {#if daten.ansicht}
+      <!-- DP49 Punkt 5: die Personen mit ihren Unterlagen; an der Bürgin die Bürgschaftserklärung. -->
+      <HeftMappe {heft} />
       <section class="block">
         <h2>{t(ihr ? 'heft.wuenscheIhr' : 'heft.wuenscheDu')}</h2>
         {#if wunschZeilen.length}
@@ -639,6 +683,32 @@
 
     <!-- B21: Fotos der Besichtigung unter den Notizen, nur auf dem Gerät. -->
     <HeftFotos {heft} />
+
+    <!-- DP49 Punkt 12 (W31): ganz unten, grau; die Bitte klappt in der Seite auf, kein Dialog. -->
+    <section class="loeschen">
+      {#if !loeschOffen}
+        <button class="loeschen-link" type="button" onclick={() => (loeschOffen = true)}
+          >{t('heft.loeschen.knopf')}</button
+        >
+      {:else}
+        <div class="loeschen-karte" role="group" aria-labelledby="loeschen-frage">
+          <h2 id="loeschen-frage">{t('heft.loeschen.frage', { wohnung: titel?.text ?? '' })}</h2>
+          <p>
+            {loeschNamen
+              ? t('heft.loeschen.satz', { namen: loeschNamen })
+              : t('heft.loeschen.satzOhne')}
+          </p>
+          <div class="knopfreihe">
+            <button class="knopf haupt" type="button" onclick={() => void loeschen()}
+              >{t('heft.loeschen.ja')}</button
+            >
+            <button class="knopf" type="button" onclick={() => (loeschOffen = false)}
+              >{t('heft.loeschen.behalten')}</button
+            >
+          </div>
+        </div>
+      {/if}
+    </section>
   {/if}
 </main>
 <TabLeiste aktiv="wohnungen" />
@@ -700,12 +770,12 @@
   }
 
   .platz .pf {
-    fill: var(--accent-soft);
+    fill: var(--foto-grund);
   }
 
   .platz .pr {
     fill: none;
-    stroke: var(--accent);
+    stroke: var(--ink-quiet);
     stroke-width: 2;
     opacity: 0.55;
   }
@@ -863,6 +933,34 @@
   .mf {
     display: block;
     margin-bottom: 10px;
+  }
+
+  /* DP49 Punkt 12: „Heft löschen“ grau (W5: Löschen ist nie rot), die Bitte als Fläche in der Seite. */
+  .loeschen {
+    margin: 22px 0 0;
+  }
+  .loeschen-link {
+    min-height: 44px;
+    padding: 0 var(--space-1, 4px);
+    border: 0;
+    background: none;
+    color: var(--ink-muted);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .loeschen-karte {
+    padding: 16px;
+    border-radius: 22px;
+    background: var(--surface);
+  }
+  .loeschen-karte h2 {
+    margin: 0 0 6px;
+    font-size: calc(16 * var(--px));
+  }
+  .loeschen-karte p {
+    margin: 0 0 14px;
+    color: var(--ink-muted);
   }
 
   .knopfreihe {

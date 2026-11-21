@@ -22,6 +22,8 @@ test('Z1: hallo@hefta.de in den Einstellungen bricht mit <wbr> um, ohne U+200B; 
 }) => {
   await haushaltMitMax(page);
   await page.goto('/#/einstellungen');
+  // DP50 Punkt 10: Die Einstellungen sind ein Register; „Über Hefta“ steht unter „App“.
+  await page.getByRole('tab', { name: 'App', exact: true }).click();
   const adresse = page.locator('a.adresse');
   await expect(adresse).toBeVisible();
   expect(await adresse.evaluate((e) => e.textContent)).toBe('hallo@hefta.de');

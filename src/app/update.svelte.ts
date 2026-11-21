@@ -25,7 +25,12 @@ export async function serviceWorkerAnmelden(): Promise<void> {
   if (!('serviceWorker' in navigator) || import.meta.env.DEV) return;
   hatteVersion = !!navigator.serviceWorker.controller;
 
-  const registrierung = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+  // Sperrt der Browser Service Worker (etwa per Richtlinie), läuft Hefta still weiter, nur ohne Updates im
+  // Hintergrund. Sonst stünde bei jedem Start „Das hat nicht geklappt“ da (CP46).
+  const registrierung: ServiceWorkerRegistration | undefined = await navigator.serviceWorker
+    .register('./sw.js', { scope: './' })
+    .catch(() => undefined);
+  if (!registrierung) return;
   melden(registrierung.waiting);
   if (wartend && ruhigerMoment()) aktualisieren();
 

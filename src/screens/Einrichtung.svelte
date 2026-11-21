@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { lagenAngaben, lagenEingabe } from '../ui/lagen';
   // Einrichtung Schritt 1 „Wer bist du?“ (design/einrichtung-rutsch-navigation.md, Abschnitt 1):
   // sofort mit dem Namen los, darunter Bezeichnung und Einkommen (vorbelegt „Angestellt“).
   // „Weiter“ legt den Haushalt mit der ersten Person an (oder ändert sie) und führt zu Schritt 2.
@@ -42,6 +43,7 @@
         bezeichnung: erste.zugehoerigkeit.bezeichnung,
         lebenssituation: erste.person.lebenssituation ?? 'angestellt',
         ausbildungArt: erste.person.ausbildungArt ?? null,
+        weitereLagen: lagenEingabe(erste.person),
       };
     }
   });
@@ -76,6 +78,8 @@
       bezeichnung: werte.bezeichnung,
       lebenssituation: werte.lebenssituation,
       ausbildungArt: werte.ausbildungArt ?? null,
+      // DP47 G5: weitere Lebenslagen.
+      ...lagenAngaben(werte, erste?.person.weitereLagen),
     };
     if (erste) {
       const { bezeichnung, ...person } = angaben;

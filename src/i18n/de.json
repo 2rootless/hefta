@@ -2,6 +2,21 @@
   "logo": {
     "alt": "{app}"
   },
+  "angabeSatz": {
+    "name": "Wie im Ausweis. Steht schon bei der Besichtigung dabei.",
+    "rolle": "Wer unterschreibt, ist Mieter und haftet für die Miete. Bürgen ziehen nicht ein.",
+    "beruf": "Daran sieht der Vermieter, woher das Einkommen kommt.",
+    "lebenslage": "Woher das Einkommen kommt. Danach richten sich die passenden Nachweise.",
+    "einkommen": "Gehört zu fast jeder Bewerbung. Viele Vermieter rechnen grob: Die Warmmiete sollte nicht mehr als ein Drittel davon sein.",
+    "einziehen": "Wer mit einzieht, auch Kinder. Danach darf der Vermieter fragen.",
+    "haustiere": {
+      "ihr": "Tiere, für die es eine Erlaubnis braucht, etwa Hund oder Katze. Kleintiere wie Fische oder Hamster braucht ihr nicht zu nennen.",
+      "du": "Tiere, für die es eine Erlaubnis braucht, etwa Hund oder Katze. Kleintiere wie Fische oder Hamster brauchst du nicht zu nennen."
+    },
+    "insolvenz": "Eine der drei Fragen aus dem Musterbogen. Ja oder Nein.",
+    "raeumungstitel": "Eine der drei Fragen aus dem Musterbogen. Ja oder Nein.",
+    "mietrueckstaende": "Eine der drei Fragen aus dem Musterbogen. Viele Vermieter fragen erst vor dem Vertrag danach."
+  },
   "allgemein": {
     "versuchtUm": "Zuletzt versucht um {uhrzeit} Uhr.",
     "rueckgaengigFehler": {
@@ -127,8 +142,6 @@
   "mappeTab": {
     "titelIhr": "Eure Mappe",
     "titelDu": "Deine Mappe",
-    "startklarIhr": "Alles da. Ihr seid startklar.",
-    "startklarDu": "Alles da. Du bist startklar.",
     "pruefenIhr": {
       "one": "Alles da. Eine Unterlage solltet ihr noch prüfen.",
       "other": "Alles da. {Wort} Unterlagen solltet ihr noch prüfen."
@@ -156,14 +169,6 @@
     "hallo": "Hallo {name}.",
     "nachnameOffen": "Nachname von {name}",
     "nachnameWozu": "Für Deckblatt und Selbstauskunft. Hat {name} keinen, reicht ein Haken.",
-    "offenIhr": {
-      "one": "Noch ein Ding, dann seid ihr startklar.",
-      "other": "Noch {zahl} Dinge, dann seid ihr startklar."
-    },
-    "offenDu": {
-      "one": "Noch ein Ding, dann bist du startklar.",
-      "other": "Noch {zahl} Dinge, dann bist du startklar."
-    },
     "fertigTitel": "Alles beisammen.",
     "fertigIhr": "Eure Mappe ist bereit.",
     "fertigDu": "Deine Mappe ist bereit.",
@@ -200,7 +205,7 @@
     "unterlagenHinzufuegen": "Unterlagen hinzufügen",
     "offenZusatz": "{anzahl} offen",
     "weitermachen": "Weitermachen",
-    "vonZusatz": "{schritt} von {gesamt}",
+    "weitermachenAnsage": "Weitermachen, {offen} offen",
     "zielErreicht": "Ziel erreicht",
     "backupAlt": "Letztes Backup vor {anzahl} Tagen.",
     "backupNeu": {
@@ -259,6 +264,7 @@
       "anlegen": "Haushalt anlegen",
       "fertig": "Fertig",
       "herausgenommen": "Herausgenommen",
+      "rolleAendern": "Rolle von {name} ändern",
       "seit": "Seit {datum}.",
       "gespeichert": {
         "one": "Eine Unterlage ist noch gespeichert.",
@@ -315,7 +321,8 @@
     "unterlagenHinzufuegen": "Unterlagen hinzufügen",
     "offenZusatz": "{anzahl} offen",
     "bandLabel": "{name}: {da} von {gesamt} aktuell",
-    "standOhneDatum": "Ohne Datum, {app} erinnert nicht",
+    "standOhneDatum": "Ohne Datum erinnert {app} nicht",
+    "standOhneDatumZeigt": "Ohne Datum zeigt {app} nicht, wann sie zu alt wird",
     "nichtMehrNoetig": "Nicht mehr nötig",
     "nichtMehrNoetigHinweis": "Bleibt gespeichert, kommt aber nicht in die Mappe.",
     "datumEintragen": "Datum eintragen",
@@ -374,16 +381,63 @@
     "daten": "Daten",
     "allesLoeschen": "Alles löschen",
     "allesLoeschenHinweis": "Personen, Unterlagen und Einstellungen",
-    "gesichert": "Gesichert. Letztes Backup: gerade eben.",
+    "gesichert": "Gesichert: {hefte} und {unterlagen}. Letztes Backup: gerade eben.",
+    "downloadGestartet": {
+      "ihr": "Download gestartet: {hefte} und {unterlagen}. Schaut dort nach, wo euer Browser Downloads ablegt, ob das Backup da ist.",
+      "du": "Download gestartet: {hefte} und {unterlagen}. Schau dort nach, wo dein Browser Downloads ablegt, ob das Backup da ist."
+    },
     "eingespielt": "Eingespielt, Stand {stand}: {unterlagen}. {personen}",
     "aussehen": "Aussehen",
     "erinnerungen": "Erinnerungen",
     "erinnerungBesichtigungen": "Besichtigungen und Nachfassen",
-    "erinnerungGehalt": "Neuer Monat beim Gehaltsnachweis",
+    "erinnerungGehalt": "Neue Monate und Ablauf von Unterlagen",
     "mitteilungenAus": "Mitteilungen von {app} sind in den Einstellungen des Geräts aus. Dort lassen sie sich einschalten.",
     "aussehenSystem": "System",
     "aussehenHell": "Hell",
-    "aussehenDunkel": "Dunkel"
+    "aussehenDunkel": "Dunkel",
+    "register": "Bereiche der Einstellungen",
+    "reiterHefte": "Hefte",
+    "reiterMappe": "Mappe",
+    "reiterApp": "App",
+    "wasIhrSucht": { "ihr": "Was ihr sucht", "du": "Was du suchst" },
+    "wasIhrSuchtSatz": "Danach zeigt jedes Heft, was passt.",
+    "warmBis": "bis {betrag}",
+    "zimmerAb": "ab {zahl}",
+    "flaecheAb": "ab {zahl} m²",
+    "wegWert": "{ort}, bis {km} km",
+    "offen": "nicht festgelegt",
+    "besichtigung": "Besichtigung",
+    "fragenZahl": "{Zahl} von {app}",
+    "fragenZahlEigene": {
+      "one": "{Zahl} von {app}, eine eigene",
+      "other": "{Zahl} von {app}, {zahl} eigene"
+    },
+    "erinnerungenTitel": "Erinnerungen",
+    "erinnerungHefte": "Vor einer Besichtigung und wenn es Zeit ist, nachzufragen",
+    "haushalt": "Haushalt",
+    "haushaltSatz": "Wer einzieht, wer im Vertrag steht, wer bürgt.",
+    "unterlagen": "Unterlagen",
+    "erinnerungUnterlagen": "Neue Monate und Ablauf von Unterlagen",
+    "erinnerungZuAltTitel": "Unterlagen, bevor sie zu alt werden",
+    "erinnerungZuAltText": "Für Unterlagen mit Datum. Höchstens eine Mitteilung je Person und Tag.",
+    "aussehenUndSprache": "Aussehen und Sprache",
+    "adresseKopieren": "Adresse kopieren",
+    "datenschutz": "Datenschutz",
+    "datenschutzSatz": "Was {app} speichert und wo"
+  },
+  "fragenEinstellungen": {
+    "satz": "Sie stehen in jedem Heft zum Abhaken vor Ort. Was das Inserat schon sagt, lässt {app} dort weg.",
+    "vonApp": "Von {app}",
+    "weitere": "{Zahl} weitere",
+    "weniger": "Weniger zeigen",
+    "eigene": "Eigene",
+    "eigeneFrage": "Eigene Frage",
+    "hinzufuegen": "Hinzufügen",
+    "aendernLabel": "Ändern oder löschen: {frage}",
+    "aendern": "Ändern",
+    "loeschen": "Löschen",
+    "uebernehmen": "Übernehmen",
+    "unten": "Ausgeschaltete Fragen stehen in keinem Heft mehr. Eigene Fragen schlägt {app} bei der nächsten Besichtigung wieder vor."
   },
   "datenschutz": {
     "kurz": {
@@ -557,7 +611,17 @@
       "ihr": "Diese Datei habt ihr zweimal gewählt.",
       "du": "Diese Datei hast du zweimal gewählt."
     },
-    "jeDatei": "Welcher Monat ist welche Datei?",
+    "jeDatei": "{dateien}, {seiten}. Welcher Monat ist welche Seite?",
+    "eineSeite": "Eine Datei, eine Seite. Stimmt der Monat?",
+    "andererMonatAuswahl": "Anderer Monat …",
+    "dateienWort": {
+      "one": "{Wort} Datei",
+      "other": "{Wort} Dateien"
+    },
+    "seitenWort": {
+      "one": "{wort} Seite",
+      "other": "{wort} Seiten"
+    },
     "seitenEinerDatei": "Mehrere Seiten: Jede kann zu einem anderen Monat gehören.",
     "monatDerSeite": "Monat dieser Seite",
     "varianteErkannt": {
@@ -651,8 +715,6 @@
     "wegWohnungWeb": "Kopiert den Text des Inserats und fügt ihn hier ein. Dafür braucht ihr noch keinen Haushalt.",
     "wegHaushalt": "Wer zieht ein?",
     "wegHaushaltText": "Legt euren Haushalt an. Daraus baut {app} eure Bewerbungsmappe.",
-    "kastenIhr": "Hier stehen bald eure Wohnungen, jede in einem eigenen Heft.",
-    "kastenDu": "Hier stehen bald deine Wohnungen, jede in einem eigenen Heft.",
     "anleitung": "Anleitung"
   },
   "navigation": {
@@ -726,6 +788,16 @@
     },
     "datumSatz": {
       "one": {
+        "ihr": "Mit Datum zeigt {app} euch, wann {er} zu alt wird.",
+        "du": "Mit Datum zeigt {app} dir, wann {er} zu alt wird."
+      },
+      "other": {
+        "ihr": "Mit Datum zeigt {app} euch, wann sie zu alt werden.",
+        "du": "Mit Datum zeigt {app} dir, wann sie zu alt werden."
+      }
+    },
+    "datumSatzErinnert": {
+      "one": {
         "ihr": "Mit Datum erinnert {app} euch, bevor {er} zu alt ist.",
         "du": "Mit Datum erinnert {app} dich, bevor {er} zu alt ist."
       },
@@ -758,6 +830,10 @@
       "one": "Ohne Datum kommt {er} trotzdem in die Mappe. {app} erinnert dann nicht.",
       "other": "Ohne Datum kommen sie trotzdem in die Mappe. {app} erinnert dann nicht."
     },
+    "datumEntfernenSatzZeigt": {
+      "one": "Ohne Datum kommt {er} trotzdem in die Mappe. {app} zeigt dann nicht, wann {er} zu alt wird.",
+      "other": "Ohne Datum kommen sie trotzdem in die Mappe. {app} zeigt dann nicht, wann sie zu alt werden."
+    },
     "datumEntfernt": "Datum entfernt.",
     "geloescht": "{titel} gelöscht.",
     "aufteilen": "Seiten aufteilen",
@@ -776,12 +852,9 @@
     "schrittNein": ": noch nicht"
   },
   "personSeite": {
-    "imVertrag": "Im Mietvertrag",
-    "buergschaft": "Bürgschaft",
     "wechselStatt": "Statt {statt}",
     "wechselBraucht": "braucht {name} dann {braucht}.",
     "folgen": {
-      "vertragTitel": "Wenn {name} in den Mietvertrag kommt:",
       "vertragKarte": "{Ihre} Karte steht unter „Im Mietvertrag“, nach {nach}.",
       "vertragErklaerungDa": "Die Bürgschafts­erklärung braucht es nicht mehr. Sie bleibt gespeichert und kommt nicht in die Mappe.",
       "vertragErklaerung": "Die Bürgschafts­erklärung braucht es nicht mehr.",
@@ -789,15 +862,54 @@
         "ihr": "In {ihre} Selbstauskunft kommen die Angaben für euren Haushalt.",
         "du": "In {ihre} Selbstauskunft kommen die Angaben für deinen Haushalt."
       },
-      "buergeTitel": "Wenn {name} bürgt:",
       "buergeKarte": "{Ihre} Karte steht unter „Bürgschaft“.",
       "buergeErklaerung": "Die Bürgschafts­erklärung kommt als „Fehlt noch“ dazu.",
       "buergeAngaben": {
         "ihr": "Die Angaben für euren Haushalt fallen aus {ihrer} Selbstauskunft.",
         "du": "Die Angaben für deinen Haushalt fallen aus {ihrer} Selbstauskunft."
       },
-      "neueErste": "{name} steht dann als {rolle} an erster Stelle.",
-      "allein": "Im Mietvertrag muss mindestens eine Person stehen."
+      "titel": { "ihr": "Wenn ihr speichert", "du": "Wenn du speicherst" },
+      "rausVertrag": "{name} steht nicht mehr im Mietvertrag und nicht mehr in neuen Mappen.",
+      "rausBuerge": "{name} bürgt nicht mehr und steht nicht mehr in neuen Mappen.",
+      "rausUnterlagen": {
+        "ihr": "{Ihre} Unterlagen bleiben gespeichert. Holt ihr {name} zurück, ist alles wieder da.",
+        "du": "{Ihre} Unterlagen bleiben gespeichert. Holst du {name} zurück, ist alles wieder da."
+      },
+      "geschickt": "Geschickte Mappen bleiben, wie sie sind.",
+      "miteinZaehlt": "{name} zählt dann unter „Ziehen mit ein“. {Ihr} Name steht nicht in der Mappe.",
+      "miteinUnterlagen": "{Ihre} Unterlagen bleiben gespeichert, kommen aber nicht in die Mappe.",
+      "vorn": "{name} steht dann vorn im Mietvertrag und wird {rolle}.",
+      "ersatzBuerge": "{name} wird {rolle}. {Ihre} Bürgschafts­erklärung bleibt gespeichert, kommt aber nicht mehr in die Mappe.",
+      "ersatzNeu": "{name} steht dann vorn im Mietvertrag."
+    },
+    "rolleWahl": {
+      "vertrag": "Im Mietvertrag",
+      "mitein": "Zieht nur mit ein",
+      "buerge": "Bürgt",
+      "raus": "Nicht mehr dabei"
+    },
+    "nachfolge": {
+      "frageVorn": "Wer steht dann vorn im Mietvertrag?",
+      "hinweisVorn": "Die erste Person im Vertrag ist Hauptmieter oder Hauptmieterin.",
+      "frageErsatz": "Wer kommt an {seine} Stelle?",
+      "hinweisErsatz": "{name} ist als {einzige} im Mietvertrag. Dort steht immer mindestens eine Person.",
+      "hinweisNeu": {
+        "ihr": "{name} ist als {einzige} im Haushalt. Legt an, wer in den Mietvertrag kommt.",
+        "du": "{name} ist als {einzige} im Haushalt. Leg an, wer in den Mietvertrag kommt."
+      },
+      "buergtBisher": "bürgt bisher, kommt in den Mietvertrag",
+      "neuePerson": "Eine neue Person",
+      "neuePersonHinweis": "Vorname genügt, den Rest später",
+      "vorname": "Vorname",
+      "grundWahl": {
+        "ihr": "Wählt, wer vorn im Mietvertrag steht.",
+        "du": "Wähl, wer vorn im Mietvertrag steht."
+      },
+      "grundErsatz": {
+        "ihr": "Wählt, wer in den Mietvertrag kommt.",
+        "du": "Wähl, wer in den Mietvertrag kommt."
+      },
+      "grundVorname": "Es fehlt noch: Vorname."
     },
     "lateinTitel": "Die Mappe schreibt Namen in lateinischen Buchstaben.",
     "lateinFrage": "Wie steht der Name in deinem Pass?",
@@ -859,6 +971,7 @@
     },
     "schonInMappe": "Schon in {app}",
     "herausgenommenAm": "Herausgenommen am {datum}",
+    "ziehtMitEinSeit": "Zieht nur mit ein, seit {datum}",
     "unterlagenZahl": {
       "one": "eine Unterlage",
       "other": "{anzahl} Unterlagen"
@@ -890,17 +1003,12 @@
     "rolle": "Rolle",
     "rolleSatz": {
       "hauptmieter": "Erste Person im Mietvertrag.",
-      "hauptmieterRaus": {
-        "ihr": "Zum Herausnehmen wählt zuerst „Bürgschaft“. Dann steht „Aus diesem Haushalt nehmen“ darunter.",
-        "du": "Zum Herausnehmen wähl zuerst „Bürgschaft“. Dann steht „Aus diesem Haushalt nehmen“ darunter."
-      },
       "mitmieter": "Steht mit im Mietvertrag.",
       "buerge": {
         "ihr": "Bürgt für euch, zieht nicht ein.",
         "du": "Bürgt für dich, zieht nicht ein."
       }
     },
-    "ausHaushaltNehmen": "Aus diesem Haushalt nehmen",
     "ganzLoeschenLink": "{name} ganz löschen",
     "zurueck": "Zurück",
     "ohneNachname": "{name} hat keinen Nachnamen",
@@ -944,7 +1052,6 @@
       "du": "Erinnert dich in einer Woche wieder."
     },
     "speichernWeiter": "Speichern und weiter",
-    "endeTitel": "Gut gemacht.",
     "endeDrin": {
       "one": "Eine Unterlage ist drin.",
       "other": "{Wort} Unterlagen sind drin."
@@ -962,7 +1069,6 @@
     "endeFuer": "für {name}",
     "zurUebersicht": "Zur Übersicht",
     "nichtsOffen": "Gerade ist nichts offen.",
-    "endeTitelSpaeter": "Für heute fertig.",
     "endeAlleUebersprungen": {
       "one": {
         "ihr": "Ihr habt sie übersprungen. Sie bleibt auf der Übersicht offen, bis ihr sie habt.",
@@ -974,10 +1080,8 @@
       }
     },
     "uebersprungenTitel": "Übersprungen",
-    "serieNoch": {
-      "one": "{monat} ist drin. Noch ein Monat.",
-      "other": "{monat} ist drin. Noch {zahl} Monate, der neueste zuerst."
-    },
+    "serieDrinEins": "{monat} ist drin.",
+    "serieDrinListe": "{monate} sind drin.",
     "serieWaehlen": "{monat} wählen",
     "serieMehrere": {
       "ihr": "Mehrere Monate in einer Datei? Wählt sie einfach, danach könnt ihr alle Monate antippen.",
@@ -1044,7 +1148,7 @@
     "mietrueckstaendeDu": "Gab es bei dir größere Mietrückstände oder eine Kündigung wegen einer Vertragsverletzung?",
     "mietrueckstaende": "Gab es bei {name} größere Mietrückstände oder eine Kündigung wegen einer Vertragsverletzung?",
     "mietGemeint": "Gemeint ist: zwei Monate nacheinander mehr als eine Monatsmiete offen, oder über mehr als zwei Monate zusammen zwei Monatsmieten.",
-    "nachZusage": "Nach der Zusage beantworten",
+    "nachZusage": "Nach der Zusage",
     "zusageHinweisDu": "Nach der Orientierungshilfe der Datenschutzkonferenz darf der Vermieter das erst kurz vor dem Vertrag fragen. Freiwillig kannst du es schon jetzt beantworten.",
     "zusageHinweisIhr": "Nach der Orientierungshilfe der Datenschutzkonferenz darf der Vermieter das erst kurz vor dem Vertrag fragen. Freiwillig könnt ihr es schon jetzt beantworten.",
     "zusageBeantwortet": "Die Antwort steht ab jetzt in der Mappe. Nur eine Mappe für die Zeit vor der Zusage lässt sie weg.",
@@ -1057,29 +1161,37 @@
       "other": "Noch {anzahl} Teile."
     },
     "fehlt": {
-      "kontakt": "Kontakt",
-      "nettoeinkommen": "Einkommen",
+      "kontakt": "{telefon} oder {email}",
+      "telefon": "Telefon",
+      "email": "E-Mail",
+      "nettoeinkommen": "Netto im Monat",
       "haustiere": "Haustiere",
       "ort": "Ort"
+    },
+    "teilKurz": {
+      "kontakt": "Kontakt",
+      "einkommen": "Einkommen",
+      "fragen": "Drei Fragen",
+      "haushalt": "Haushalt"
     },
     "pdfAnsehen": "Als PDF ansehen",
     "pdfLaedt": "PDF wird erstellt …",
     "leadSeite": "Von {name}. Änderungen werden sofort gespeichert.",
-    "rutschLead": "Vier kurze Teile, etwa zwei Minuten. Nur, was Vermieter fragen dürfen.",
+    "rutschLead": "Vier kurze Teile. Gefragt wird nur, was Vermieter nach der Orientierungshilfe fragen dürfen.",
     "rutschLeadBuerge": "Ohne Fragen zu Haustieren und Einzug: {name} zieht nicht ein.",
     "rutschLeadSpaeter": "Was für den ganzen Haushalt gilt, hat {name} schon eingetragen.",
     "teil": {
       "kontakt": "Kontakt",
-      "kontaktOffen": "Eine Angabe genügt",
+      "kontaktOffen": "Eine Angabe reicht, Telefon oder E-Mail",
       "einkommen": "Einkommen",
-      "einkommenOffen": "Wird fast immer gefragt",
-      "fragen": "Fragen, die Vermieter stellen dürfen",
-      "fragenOffen": "Zweimal Ja oder Nein",
+      "einkommenOffen": "Gehört zu fast jeder Bewerbung, netto im Monat",
+      "fragen": "Drei Fragen aus dem Musterbogen",
+      "fragenOffen": "Insolvenz, Räumung, Mietrückstände, je Ja oder Nein",
       "haushalt": {
         "ihr": "Für euren ganzen Haushalt",
         "du": "Für deinen ganzen Haushalt"
       },
-      "haushaltOffen": "Haustiere und Ort, einmal für alle"
+      "haushaltOffen": "Wer einzieht und Haustiere, einmal für alle"
     },
     "offen": {
       "one": "{anzahl} offen",
@@ -1126,10 +1238,12 @@
     "erklaerenBeispiel": "z. B. wann und warum, und dass es erledigt ist",
     "zeichen": "{n} von {max}",
     "weiterZu": "Weiter: {teil}",
+    "weiterKnopf": "Weiter",
+    "weiterAnsage": "Weiter zu {teil}",
     "teilZu": "Fertig",
-    "telefonHinweis": "Die Telefonnummer sieht ungewöhnlich aus. Stimmt sie?",
-    "emailHinweis": "Die Mailadresse sieht ungewöhnlich aus. Stimmt sie?",
-    "kontaktSatz": "Eine Angabe reicht, die zweite ist freiwillig.",
+    "stimmt": "Stimmt",
+    "freiwilligPlatzhalter": "freiwillig",
+    "kontaktSatz": "Darüber meldet sich der Vermieter. Eine Angabe reicht, Telefon oder E-Mail; die zweite ist freiwillig.",
     "vonWem": {
       "ihr": "Von {name} ausgefüllt. Schaut kurz drüber, wenn ihr unsicher seid.",
       "du": "Von {name} ausgefüllt. Schau kurz drüber, wenn du unsicher bist."
@@ -1247,7 +1361,7 @@
     "satzHinweisDu": "Steht auf dem Deckblatt, z. B. wer du bist und ab wann du suchst.",
     "adresseTitel": "Für welche Wohnung?",
     "adresseLabel": "Adresse der Wohnung (freiwillig)",
-    "adresseBeispiel": "Beispielstraße 1, 3. OG links\n12345 Musterstadt",
+    "adresseBeispiel": "Kranichstieg 3, Erdgeschoss\n20259 Hamburg",
     "adresseHinweis": {
       "ihr": "Das liest der Vermieter: Die Adresse steht groß auf dem Deckblatt, unten auf jeder Seite und im Dateinamen. Schreibt sie so wie im Inserat, in der zweiten Zeile Postleitzahl und Ort.",
       "du": "Das liest der Vermieter: Die Adresse steht groß auf dem Deckblatt, unten auf jeder Seite und im Dateinamen. Schreib sie so wie im Inserat, in der zweiten Zeile Postleitzahl und Ort."
@@ -1483,6 +1597,10 @@
       "one": "1 Unterlage",
       "other": "{anzahl} Unterlagen"
     },
+    "hefte": {
+      "one": "1 Heft",
+      "other": "{anzahl} Hefte"
+    },
     "monate": {
       "one": "einen Monat",
       "other": "{zahl} Monate"
@@ -1519,6 +1637,7 @@
       "du": "Das Backup ließ sich nicht erstellen. Versuch es noch einmal."
     },
     "fertigTitel": "Backup ist fertig.",
+    "fertigZahlen": "Backup ist fertig: {hefte} und {unterlagen}.",
     "fertigText": {
       "ihr": "Jetzt noch sichern, zum Beispiel in „Dateien“ oder in eurer Cloud.",
       "du": "Jetzt noch sichern, zum Beispiel in „Dateien“ oder in deiner Cloud."
@@ -1604,9 +1723,9 @@
       "one": "1 Unterlage mit allen Versionen",
       "other": "{anzahl} Unterlagen mit allen Versionen"
     },
-    "bewerbungen": {
-      "one": "1 Bewerbung und ihre Einstellungen",
-      "other": "{anzahl} Bewerbungen und ihre Einstellungen"
+    "hefte": {
+      "one": "1 Heft mit Fotos und Notizen",
+      "other": "{anzahl} Hefte mit Fotos und Notizen"
     },
     "einstellungen": {
       "ihr": "Eure Einstellungen",
@@ -1640,6 +1759,19 @@
     "datumGefunden": {
       "one": "{app} hat ein Datum gefunden. Es ist auf der Seite umrandet.",
       "other": "{app} hat {wort} Daten gefunden. Das gewählte ist auf der Seite umrandet."
+    },
+    "datumGefundenSeiten": "{app} hat {wort} Daten gefunden. Antippen zeigt die Seite, auf der es steht.",
+    "datumGefundenJeSeite": {
+      "ihr": "{app} hat {wort} Daten gefunden. Hier stehen die der Seite, die ihr gerade seht.",
+      "du": "{app} hat {wort} Daten gefunden. Hier stehen die der Seite, die du gerade siehst."
+    },
+    "datumWeitere": {
+      "one": "Auf Seite {seite}: ein weiteres",
+      "other": "Auf Seite {seite}: {wort} weitere"
+    },
+    "datumAussen": {
+      "one": "Seite {liste} geht nicht in die Mappe. Ihre Daten zählen nur, wenn sonst keins passt.",
+      "other": "Seiten {liste} gehen nicht in die Mappe. Ihre Daten zählen nur, wenn sonst keins passt."
     },
     "datumGruppe": "Gefundene Daten",
     "datumMarke": "{datum} wählen",
@@ -1744,8 +1876,8 @@
     "bittePruefen": "Auf den Seiten hat {app} kein Datum gefunden. Verteilt ist der Reihe nach, die erste Seite als ältester Monat. Bitte prüfen.",
     "seite": "Seite {nummer}",
     "monatVon": "Monat von Seite {nummer}",
-    "fund": "„{monat}“ auf der Seite",
-    "keinFund": "Kein Datum gefunden",
+    "fund": "{monat} gefunden",
+    "keinFund": "Kein Monat gefunden",
     "nichtInMappe": "Nicht in die Mappe",
     "ohneSeite": "{monat} bekommt keine Seite",
     "ohneSeiteSatz": "und fehlt danach wieder.",
@@ -1855,11 +1987,6 @@
     "einrichten": "Haushalt anlegen"
   },
   "hefte": {
-    "imSpiel": {
-      "one": "Eine Wohnung im Spiel.",
-      "other": "{Wort} Wohnungen im Spiel."
-    },
-    "keineImSpiel": "Keine Wohnung im Spiel.",
     "stehtAn": "Steht an",
     "wartet": "Warten auf Antwort",
     "gemerkt": "Gemerkt",
@@ -1886,6 +2013,19 @@
   "heft": {
     "zurueck": "Wohnungen",
     "fehlt": "Dieses Heft gibt es nicht mehr.",
+    "loeschen": {
+      "knopf": "Heft löschen",
+      "frage": "{wohnung} löschen?",
+      "satz": "Das Heft verschwindet von diesem Gerät, mit seinen Notizen und Fotos. Die Unterlagen von {namen} bleiben.",
+      "satzOhne": "Das Heft verschwindet von diesem Gerät, mit seinen Notizen und Fotos.",
+      "ja": "Löschen",
+      "behalten": "Behalten",
+      "geloescht": "{wohnung} gelöscht",
+      "bleibt": {
+        "ihr": "„Rückgängig“ bleibt, bis ihr die Liste verlasst.",
+        "du": "„Rückgängig“ bleibt, bis du die Liste verlässt."
+      }
+    },
     "notizen": "Notizen",
     "notizIhr": "Was euch sonst auffällt",
     "notizDu": "Was dir sonst auffällt",
@@ -2262,13 +2402,20 @@
     "geloescht": "Foto gelöscht"
   },
   "erinnerung": {
+    "wbsTitel": "Wohnberechtigungsschein",
+    "wbsText": "Er läuft am {datum} ab.",
     "vorabendTitel": "Morgen Besichtigung",
     "baldTitel": "In einer Stunde: Besichtigung",
     "terminText": "{titel}, um {uhr}.",
     "keineAntwortTitel": "Noch keine Antwort",
     "keineAntwortText": "{titel}: seit drei Wochen. Kurz nachfragen oder ablegen, das geht im Heft.",
     "gehaltTitel": "Neuer Monat",
-    "gehaltText": "Die Gehaltsabrechnung von {name} für {monat} ist meist jetzt da."
+    "gehaltText": "Die Gehaltsabrechnung von {name} für {monat} ist meist jetzt da.",
+    "zuAltTitel": "{unterlage} von {name} wird bald zu alt",
+    "zuAltText": "Ab dem {datum} älter als {grenze}. Vielen Vermietern ist das zu alt.",
+    "zuAltMehrTitel": "{zahl} Unterlagen von {name} werden bald zu alt",
+    "zuAltMehrText": "Ab dem {datum}: {erste}, dann {rest}.",
+    "und": "und"
   },
   "heftMail": {
     "zurueck": "Heft",
@@ -2402,6 +2549,7 @@
       "abschicken": "Abschicken"
     },
     "aendern": "Ändern",
+    "andereFassung": "Andere Fassung",
     "fertig": "Übernehmen",
     "anschreibenLabel": "Anschreiben",
     "einzug": "Einzug",
@@ -2432,6 +2580,8 @@
       "du": "Die Mappe ließ sich nicht zusammenlegen. Versuch es noch einmal."
     },
     "mailOeffnen": "Mail mit Mappe öffnen",
+    "mailGross": "Für manche Postfächer kann das zu groß sein.",
+    "kleinerMachen": "Kleiner machen ›",
     "mappeLadenMailOeffnen": "Mappe laden und Mail öffnen",
     "textKopieren": "Text kopieren",
     "mappeTeilen": "Mappe teilen",
@@ -2451,17 +2601,18 @@
     "ohneHaushalt": "Für die Bewerbung braucht {app} einen Haushalt."
   },
   "mappeStart": {
-    "titel": "Eure Mappe",
-    "satz": "Alles, was ein Vermieter von euch verlangen darf, in einer Datei. {app} baut sie aus eurem Haushalt und euren Unterlagen.",
+    "mappe": "Mappe",
+    "titel": "Hier entsteht eure Mappe.",
+    "satz": "Alles, was ein Vermieter von euch verlangen darf, in einer Datei. Für jede Person ein Blatt, mit allem, was dazugehört.",
     "anlegen": "Haushalt anlegen",
     "vermieter": "Sie vermieten? Öffnen Sie die Mappe auf",
-    "anleitungTitel": "So entsteht eure Mappe",
+    "anleitungTitel": "In drei Schritten",
     "schritt1Titel": "Haushalt anlegen",
     "schritt1": "Wer einzieht, wer im Vertrag steht, wer bürgt.",
     "schritt2Titel": "Unterlagen zusammenstellen",
     "schritt2": "Selbstauskunft ausfüllen, Nachweise dazulegen. {app} sagt, was fehlt.",
     "schritt3Titel": "Mappe teilen",
-    "schritt3": "Als eine Datei, die ihr per Mail schickt.",
+    "schritt3": "Eine Datei für den Vermieter, per Mail oder über einen Messenger.",
     "kickerIhr": "Eure Mappe entsteht",
     "kickerDu": "Deine Mappe entsteht",
     "weiterTitel": "Weiter mit dem Haushalt",
@@ -2471,7 +2622,6 @@
     "fortschritt": "{erledigt} von {gesamt} Schritten erledigt",
     "bildIhr": "So weit ist eure Mappe",
     "bildDu": "So weit ist deine Mappe",
-    "deckblattLeer": "Bild eines Deckblatts",
     "deckblattVorschau": "Vorschau des Deckblatts",
     "imVertrag": "Im Mietvertrag",
     "person": "Person",
@@ -2489,9 +2639,27 @@
     "vonVorn": "Von vorn beginnen",
     "vonVornFrage": "Von vorn beginnen?",
     "vonVornSatz": "Die eingetragenen Personen werden entfernt.",
-    "geloescht": "Haushalt gelöscht. Möchtet ihr auch die Hefte löschen?",
-    "geloeschtDu": "Haushalt gelöscht. Möchtest du auch die Hefte löschen?",
-    "allesLoeschen": "Alles löschen",
+    "geloeschtTitel": "Haushalt gelöscht.",
+    "geloeschtHefte": {
+      "ihr": {
+        "one": "Euer Heft ist noch da, mit seinen Notizen und Fotos. Soll es auch weg?",
+        "other": "Eure {wort} Hefte sind noch da, mit ihren Notizen und Fotos. Sollen sie auch weg?"
+      },
+      "du": {
+        "one": "Dein Heft ist noch da, mit seinen Notizen und Fotos. Soll es auch weg?",
+        "other": "Deine {wort} Hefte sind noch da, mit ihren Notizen und Fotos. Sollen sie auch weg?"
+      }
+    },
+    "hefteAuchLoeschen": {
+      "one": "Heft auch löschen",
+      "other": "Hefte auch löschen"
+    },
+    "behalten": "Behalten",
+    "hefteGeloescht": {
+      "one": "Ein Heft gelöscht",
+      "other": "{Wort} Hefte gelöscht"
+    },
+    "rueckgaengig": "Rückgängig",
     "abbrechen": "Abbrechen",
     "weiterAnlegen": "Weiter anlegen"
   },
@@ -2505,10 +2673,7 @@
     "ansage": "Stand: {ort}. {titel}",
     "gemerkt": {
       "titel": "Gemerkt",
-      "satz": {
-        "ihr": "Seit {datum} · Die Wohnung liegt hier, bis ihr euch bewerbt.",
-        "du": "Seit {datum} · Die Wohnung liegt hier, bis du dich bewirbst."
-      },
+      "satzFest": "Seit {datum} ·",
       "frage": "Wie geht es weiter?",
       "bewerben": "Jetzt bewerben",
       "bewerbenUnter": "Anschreiben und Mappe liegen bereit",
@@ -2535,10 +2700,6 @@
     "beworben": {
       "titelHeute": "Heute beworben",
       "titel": "Beworben am {datum}",
-      "satzHeute": {
-        "ihr": "Jetzt ist der Vermieter dran. Ihr müsst nichts tun.",
-        "du": "Jetzt ist der Vermieter dran. Du musst nichts tun."
-      },
       "satzTage": "Seit {tage} Tagen. Meldet sich drei Wochen lang niemand, steht hier „Keine Antwort“.",
       "frage": "Hat sich jemand gemeldet?",
       "einladung": "Einladung zur Besichtigung",
@@ -2556,7 +2717,7 @@
     },
     "keine": {
       "titel": "Keine Antwort",
-      "satz": "Beworben am {datum}. Seit drei Wochen meldet sich niemand. Eine kurze Nachfrage hilft oft.",
+      "satzFest": "Beworben am {datum}. Seit drei Wochen meldet sich niemand.",
       "frage": "Was jetzt?",
       "nachfragen": "Kurz nachfragen",
       "nachfragenUnter": "Mail an {an}",
@@ -2566,7 +2727,7 @@
     },
     "nachgefragt": {
       "titel": "Nachgefragt am {datum}",
-      "satz": "Beworben am {datum}. Jetzt ist wieder der Vermieter dran."
+      "satzFest": "Beworben am {datum}."
     },
     "termin": {
       "titel": "Besichtigung am {tag}, {uhr} Uhr",
@@ -2581,10 +2742,27 @@
     },
     "zusage": {
       "titel": "Zusage",
-      "satz": "Glückwunsch! Das Heft bleibt hier, bis der Vertrag unterschrieben ist.",
-      "frage": "Noch offen",
+      "ihrZahl": "ihr {wort}",
+      "festHeute": "Heute kam die Zusage{fuer}.",
+      "festGestern": "Gestern kam die Zusage{fuer}.",
+      "festAm": "Am {tag} kam die Zusage{fuer}.",
+      "ohneDatum": "Die Zusage ist eingetragen.",
+      "fuerStrasse": " für die Wohnung {strasse}",
+      "fuerName": " für „{name}“",
+      "bleibt": "Das Heft bleibt hier, bis der Vertrag unterschrieben ist.",
+      "jetztDran": "Jetzt dran",
       "mietrueck": "Frage zu Mietrückständen",
-      "mietrueckUnter": "Jetzt beantworten, in der Selbstauskunft"
+      "mietrueckUnter": "Jetzt beantworten, in der Selbstauskunft",
+      "mietrueckJetzt": "Mietrückstände beantworten",
+      "mietrueckJetztUnter": {
+        "ihr": "Jetzt darf der Vermieter danach fragen. Die Frage steht in eurer Selbstauskunft.",
+        "du": "Jetzt darf der Vermieter danach fragen. Die Frage steht in deiner Selbstauskunft."
+      },
+      "andereAblegen": "Andere Hefte ablegen",
+      "andereImSpiel": {
+        "one": "Eine Wohnung ist noch im Spiel.",
+        "other": "{Wort} Wohnungen sind noch im Spiel."
+      }
     },
     "absage": {
       "titel": "Absage"
@@ -2611,6 +2789,9 @@
       "zurueck": "‹ Doch noch offen"
     }
   },
+  "nachfrage": {
+    "satz": "Sieht ungewöhnlich aus. Stimmt sie?"
+  },
   "haarlinie": {
     "liste": "Stand der Unterlagen",
     "aktuell": "{text}, jetzt",
@@ -2619,6 +2800,10 @@
     "offen": "{text}, noch offen"
   },
   "personenseite": {
+    "jeWohnung": "Je Wohnung, freiwillig",
+    "erklaerungVom": "{wohnung}: vom {datum}.",
+    "erklaerungKeine": "{wohnung}: noch keine.",
+    "erklaerungOhneWohnung": "Ohne bestimmte Wohnung: vom {datum}.",
     "stand": "{da} von {gesamt} da",
     "startklar": "Startklar",
     "fuerMappe": "für die Mappe",
@@ -2666,6 +2851,341 @@
       "lang": "Die Nummer ist zu lang. Steht eine Ziffer doppelt?",
       "land": "Mit {vorwahl} ergibt das keine gültige Nummer. Stimmt das Land?",
       "unbekannt": "Die Ländervorwahl {vorwahl} gibt es nicht."
+    }
+  },
+  "buergschaft": {
+    "titel": "Bürgschafts­erklärung",
+    "abbrechen": "Abbrechen",
+    "satz": "{app} macht daraus ein PDF zum Ausdrucken. {name} unterschreibt es von Hand; per Mail gilt eine Bürgschaft nicht.",
+    "satzOhne": "{app} macht daraus ein PDF zum Ausdrucken. Der Bürge unterschreibt es von Hand; per Mail gilt eine Bürgschaft nicht.",
+    "ausHeft": "aus dem Heft",
+    "werBuergt": "Wer bürgt",
+    "name": "Name",
+    "anschrift": "Anschrift",
+    "platzName": "Vorname Name",
+    "platzAnschrift": "Straße, Ort",
+    "platzFirma": "Name oder Firma",
+    "platzWohnung": "Straße, Geschoss, Ort",
+    "platzDatum": "Datum",
+    "fuerWen": "Für wen",
+    "mieter": "Mieter",
+    "mieterNr": "Mieter {nummer}",
+    "weitere": "Weitere Person",
+    "alleImVertrag": "Alle, die in den Mietvertrag gehen.",
+    "vermieter": "Vermieter",
+    "wohnung": "Wohnung",
+    "wohnungLage": "Anschrift und Lage",
+    "mietvertrag": "Mietvertrag",
+    "schonUnterschrieben": "Schon unterschrieben",
+    "nochNicht": "Noch nicht",
+    "vertragVom": "Mietvertrag vom",
+    "einzugZum": "Einzug zum",
+    "hoechstbetrag": "Höchstbetrag",
+    "pflicht": "Pflicht",
+    "betrag": "Betrag",
+    "euro": "Euro",
+    "bisZu": "Bis zu diesem Betrag steht {name} ein.",
+    "bisZuOhne": "Bis zu diesem Betrag steht der Bürge ein.",
+    "art": "Art der Bürgschaft",
+    "ausfall": "Ausfallbürgschaft",
+    "selbst": "Selbstschuldnerische Bürgschaft",
+    "ausfallSatz": {
+      "ihr": "Der Vermieter kann sich erst an {name} wenden, wenn die Zwangsvollstreckung gegen euch erfolglos war.",
+      "du": "Der Vermieter kann sich erst an {name} wenden, wenn die Zwangsvollstreckung gegen dich erfolglos war."
+    },
+    "ausfallSatzOhne": "Der Vermieter kann sich erst an den Bürgen wenden, wenn die Zwangsvollstreckung gegen die Mieter erfolglos war.",
+    "selbstSatz": {
+      "ihr": "Der Vermieter kann sich sofort an {name} wenden, ohne erst gegen euch vorzugehen.",
+      "du": "Der Vermieter kann sich sofort an {name} wenden, ohne erst gegen dich vorzugehen."
+    },
+    "selbstSatzOhne": "Der Vermieter kann sich sofort an den Bürgen wenden, ohne erst gegen die Mieter vorzugehen.",
+    "erstellen": "PDF erstellen",
+    "offen": "{anzahl} offen",
+    "offenAnsage": "PDF erstellen, {anzahl} offen",
+    "fehlerBetrag": "Ohne Höchstbetrag erstellt {app} kein PDF.",
+    "fehlerArt": "Bitte eine Art wählen.",
+    "fehlerZeichen": "Fehler",
+    "baut": "PDF entsteht",
+    "fehlerBau": "Das PDF ließ sich nicht erstellen. Bitte noch einmal.",
+    "fertigSatz": "Zwei Blätter, beide zum Ausdrucken. Blatt 1 unterschreibt {name} von Hand.",
+    "fertigSatzOhne": "Zwei Blätter, beide zum Ausdrucken. Blatt 1 unterschreibt der Bürge von Hand.",
+    "imPdf": "Im PDF",
+    "blatt1": "Blatt 1: Erklärung",
+    "blatt1Satz": "Für den Vermieter. {name} unterschreibt und gibt es ihm.",
+    "blatt1SatzOhne": "Für den Vermieter. Der Bürge unterschreibt und gibt es ihm.",
+    "blatt2": "Blatt 2: Für {name}",
+    "blatt2Ohne": "Blatt 2: Für die Person, die bürgt",
+    "blatt2Satz": {
+      "weiblich": "Was sie verspricht. Bleibt bei ihr, nicht in der Mappe.",
+      "maennlich": "Was er verspricht. Bleibt bei ihm, nicht in der Mappe.",
+      "neutral": "Was {name} verspricht. Bleibt bei {name}, nicht in der Mappe."
+    },
+    "vorschau": "Vorschau von Blatt {nummer}, antippen zeigt das PDF",
+    "danach": "Danach",
+    "hinzufuegen": "Unterschriebenes Blatt hinzufügen",
+    "hinzufuegenSatz": "Ein Scan von Blatt 1 kommt zu {name} in die Mappe.",
+    "aendern": "Angaben ändern",
+    "teilen": "Drucken oder teilen"
+  },
+  "heftMappe": {
+    "titel": "In der Mappe für diese Wohnung",
+    "keine": "Noch keine Unterlagen",
+    "ohne": "Ohne Bürgschaftserklärung für diese Wohnung. Sie ist freiwillig; viele Vermieter wollen sie erst vor dem Vertrag.",
+    "vorbereiten": "Erklärung vorbereiten",
+    "da": "Bürgschaftserklärung für diese Wohnung, vom {datum}",
+    "ohneWohnung": "Bürgschaftserklärung vom {datum}, für keine bestimmte Wohnung"
+  },
+  "bonitaetErkennen": {
+    "titel": {
+      "ihr": "Woran ihr sie erkennt",
+      "du": "Woran du sie erkennst"
+    },
+    "diese": "Diese",
+    "nichtDiese": "Nicht diese",
+    "auskunft": "Auskunft für Vermieter",
+    "auskunftSatz": "Eine Seite. Nur was für die Miete zählt, mit Code zum Prüfen.",
+    "datenkopie": "Kostenlose Datenkopie",
+    "datenkopieSatz": "Viele Seiten mit allem, was gespeichert ist. Zeigt dem Vermieter zu viel."
+  },
+  "mappeLeser": {
+    "titel": "Mappe für {wohnung}",
+    "mappe": "Mappe",
+    "deckblatt": "Deckblatt",
+    "abschnitt": "{name} · {unterlage}",
+    "zurueck": "Zurück",
+    "verzeichnis": "Verzeichnis der Mappe",
+    "verzeichnisZu": "Verzeichnis schließen",
+    "seite": "Seite {nummer}",
+    "zahl": "{seite} / {seiten}",
+    "vorige": "Vorige Seite",
+    "naechste": "Nächste Seite",
+    "teilen": "Teilen"
+  },
+  "haushaltUnterlagen": {
+    "titel": "Für den ganzen Haushalt",
+    "satz": {
+      "ihr": "Was hier liegt, kommt in jedes Heft, in dem es zählt. Ihr ladet es nur einmal hoch.",
+      "du": "Was hier liegt, kommt in jedes Heft, in dem es zählt. Du lädst es nur einmal hoch."
+    },
+    "wbs": "Wohn­berech­tigungs­schein",
+    "wbsLeer": {
+      "ihr": "Nur für Sozialwohnungen. Habt ihr einen, legt ihn hier einmal ab.",
+      "du": "Nur für Sozialwohnungen. Hast du einen, leg ihn hier einmal ab."
+    },
+    "wbsGueltig": "Gültig bis {datum}",
+    "wbsAbgelaufen": "Abgelaufen am {datum}",
+    "wbsOhneDatum": "Gültig bis: nicht eingetragen",
+    "wbsBald": "Läuft am {datum} ab",
+    "wbsPersonen": {
+      "one": "für eine Person",
+      "other": "für {wort} Personen"
+    },
+    "wbsEtikett": "in Heften für Sozial­wohnungen",
+    "mitgliedschaft": "Mitgliedschaft",
+    "geno": "Genossenschaft",
+    "genoLeer": {
+      "ihr": "Seid ihr Mitglied, steht es in jedem Heft für diese Genossenschaft.",
+      "du": "Bist du Mitglied, steht es in jedem Heft für diese Genossenschaft."
+    },
+    "genoStand": "Mitglied der {name}, Nr. {nummer}",
+    "genoStandOhneNr": "Mitglied der {name}",
+    "genoEtikett": "in Heften dieser Genossenschaft"
+  },
+  "wbsSeite": {
+    "titel": "Wohn­berech­tigungs­schein",
+    "lead": {
+      "ihr": "Einmal für den ganzen Haushalt. {app} legt ihn in jedes Heft, das ihr als Sozialwohnung markiert.",
+      "du": "Einmal für den ganzen Haushalt. {app} legt ihn in jedes Heft, das du als Sozialwohnung markierst."
+    },
+    "schein": "Der Schein",
+    "abgelegt": "Abgelegt am {datum}",
+    "seiten": {
+      "one": "Eine Seite. Antippen vergrößert.",
+      "other": "{Wort} Seiten. Antippen vergrößert."
+    },
+    "ansehen": "Schein groß ansehen",
+    "steht": "Was darauf steht",
+    "gueltigBis": "Gültig bis",
+    "soSteht": "So steht es auf dem Schein.",
+    "vorschau": "Ausschnitt vom Schein, „Gültig bis“ markiert",
+    "personen": "Für wie viele Personen",
+    "personenLeer": "Nicht angegeben",
+    "raeume": "Räume oder Wohnfläche, falls angegeben",
+    "bescheid": "Kurz vor „Gültig bis“ sagt {app} Bescheid.",
+    "loeschen": "Schein löschen",
+    "geloescht": "Wohnberechtigungsschein gelöscht."
+  },
+  "heftHaushalt": {
+    "titel": "Über die Wohnung",
+    "sozial": "Sozial­wohnung",
+    "sozialText": "Wohn­berech­tigungs­schein nötig",
+    "inMappe": "In der Mappe für diese Wohnung",
+    "fuerHaushalt": "Für den ganzen Haushalt",
+    "wbs": "Wohn­berech­tigungs­schein",
+    "gueltig": "gültig bis {datum}",
+    "ohneDatum": "Gültig bis: nicht eingetragen",
+    "ausMappe": "aus der Mappe",
+    "fehlt": {
+      "ihr": "Noch nicht in der Mappe. Legt ihn einmal ab, dann kommt er hier mit.",
+      "du": "Noch nicht in der Mappe. Leg ihn einmal ab, dann kommt er hier mit."
+    },
+    "abgelaufen": "abgelaufen am {datum}",
+    "abgelaufenMit": "Trotzdem mitschicken",
+    "abgelaufenMitText": {
+      "ihr": "{app} schickt ihn nur mit, wenn ihr das anschaltet.",
+      "du": "{app} schickt ihn nur mit, wenn du das anschaltest."
+    },
+    "aus": "Keine Sozial­wohnung: Der Wohn­berech­tigungs­schein bleibt in der Mappe und kommt hier nicht mit.",
+    "werVermietet": "Wer vermietet",
+    "werLeer": "Noch nicht eingetragen",
+    "mitgliedschaft": "Mitgliedschaft",
+    "mitgliedStand": "{name}, Nr.\u00a0{nummer}"
+  },
+  "genoSeite": {
+    "titel": "Genossen­schaft",
+    "lead": {
+      "ihr": "Seid ihr Mitglied, steht die Mitgliedschaft in jedem Heft für eine Wohnung dieser Genossenschaft.",
+      "du": "Bist du Mitglied, steht die Mitgliedschaft in jedem Heft für eine Wohnung dieser Genossenschaft."
+    },
+    "name": "Genossenschaft",
+    "nummer": "Mitgliedsnummer",
+    "nachweis": "Nachweis",
+    "nachweisSeiten": {
+      "one": "PDF, eine Seite",
+      "other": "PDF, {wort} Seiten"
+    },
+    "nachweisFrei": "Freiwillig. Ohne Nachweis steht die Mitgliedschaft als Zeile in der Mappe.",
+    "weitere": "Weitere Genossenschaft",
+    "loeschen": "Mitgliedschaft löschen",
+    "geloescht": "Mitgliedschaft gelöscht.",
+    "nameFehlt": {
+      "ihr": "Tragt den Namen der Genossenschaft ein.",
+      "du": "Trag den Namen der Genossenschaft ein."
+    }
+  },
+  "vermieterWahl": {
+    "titel": "Wer vermietet?",
+    "lead": "Davon hängt ab, was in die Mappe für diese Wohnung kommt.",
+    "ausMappe": {
+      "ihr": "Aus eurer Mappe",
+      "du": "Aus deiner Mappe"
+    },
+    "mitglied": {
+      "ihr": "Ihr seid Mitglied. Die Mitgliedschaft kommt mit.",
+      "du": "Du bist Mitglied. Die Mitgliedschaft kommt mit."
+    },
+    "andere": "Andere",
+    "feld": "Name oder Firma",
+    "platz": "Name eingeben",
+    "knopf": "Übernehmen"
+  },
+  "neuImJob": {
+    "frageDu": "Seit wann bist du dort?",
+    "frageName": "Seit wann ist {name} dort?",
+    "laenger": "Länger als drei Monate",
+    "kurz": "Seit Kurzem",
+    "angefangen": "Angefangen am",
+    "davor": "Für die Monate davor gibt es keine Abrechnung. {app} fragt nicht danach.",
+    "vorschlag": "Der Anfang liegt mehr als drei Monate zurück. Dann gilt „Länger als drei Monate“.",
+    "umstellen": "Umstellen",
+    "inMappe": "Das kommt in die Mappe",
+    "vertrag": "Arbeitsvertrag",
+    "vertragUnter": "oder eine Bestätigung des Arbeitgebers",
+    "vertragFehlt": "Fehlt noch",
+    "vertragDa": "Liegt bereit",
+    "mappeSatz": "In der Mappe steht dazu: „Neu im Job seit {datum}“.",
+    "zeile": "Neu im Job: {teile}",
+    "zeileVertrag": "Arbeitsvertrag",
+    "kopf": "seit {datum}"
+  },
+  "bonitaetWahl": {
+    "lead": {
+      "ihr": "Ihn holt ihr selbst bei einer Auskunftei. Wer dort noch nicht bekannt ist, bekommt vielleicht keinen.",
+      "du": "Ihn holst du selbst bei einer Auskunftei. Wer dort noch nicht bekannt ist, bekommt vielleicht keinen."
+    },
+    "frageDu": "Wie ist es bei dir?",
+    "frageName": "Wie ist es bei {name}?",
+    "habe": "Ich habe einen",
+    "bestelle": "Ich bestelle ihn",
+    "keiner": "Ich bekomme noch keinen",
+    "warumDu": "Warum, in deinen Worten",
+    "warumName": "Warum, in den Worten von {name}",
+    "keineVertraege": "Bisher keine Verträge auf meinen Namen",
+    "eigener": "Eigener Grund",
+    "eigenerFeld": "Der Grund in eigenen Worten",
+    "satzDu": "Das steht so in der Mappe, als deine Angabe. {app} legt keinen Ersatz-Nachweis an.",
+    "satzName": "Das steht so in der Mappe, als Angabe von {name}. {app} legt keinen Ersatz-Nachweis an.",
+    "ohneGrund": "Der Grund ist freiwillig. Ohne ihn steht dort nur „Bonitätsnachweis: noch keiner möglich“.",
+    "stattTitel": {
+      "ihr": "Was ihr stattdessen beilegen könnt",
+      "du": "Was du stattdessen beilegen kannst"
+    },
+    "stattMiete": "Mietzahlungen der letzten Monate",
+    "stattVertrag": "Arbeitsvertrag",
+    "stattBuerge": "Eine Bürgschaft",
+    "stattSatz": "Ob das reicht, entscheidet der Vermieter.",
+    "zeileOhne": "Noch keiner möglich. Steht so in der Mappe.",
+    "zeileGrund": "Noch keiner möglich: {grund}. Steht so in der Mappe.",
+    "grundDu": "bisher keine Verträge auf deinen Namen",
+    "grundIhren": "bisher keine Verträge auf ihren Namen",
+    "grundSeinen": "bisher keine Verträge auf seinen Namen",
+    "grundNeutral": "bisher keine Verträge auf den eigenen Namen"
+  },
+  "lagen": {
+    "dazu": "Dazu noch eine Einkommens­quelle",
+    "nochEine": "Noch eine Einkommens­quelle",
+    "dazuLabel": "Dazu",
+    "entfernen": "Entfernen",
+    "entfernenName": "{lage} entfernen",
+    "hinweisMehr": "Davon hängt ab, welche Einkommensnachweise auf die Liste kommen. Was oben steht, steht auch in der Mappe zuerst.",
+    "titel": "Dazu noch eine Einkommens­quelle",
+    "frage": "Was kommt bei {name} zu „{lage}“ dazu?",
+    "nochArbeitgeber": "Noch ein Arbeitgeber, etwa ein Minijob.",
+    "nachweis": {
+      "angestellt": "Nachweis: Gehaltsabrechnungen",
+      "selbststaendig": "Nachweis: Einkommensteuerbescheid und BWA",
+      "studium": "Nachweis: BAföG-Bescheid oder Unterhalt",
+      "ausbildung": "Nachweis: Ausbildungsvertrag",
+      "rente": "Nachweis: Rentenbescheid",
+      "leistungsbezug": "Nachweis: Bescheid über die Mietübernahme",
+      "sonstiges": "Ein anderer Nachweis"
+    },
+    "satz": "Die Nachweise kommen auf {name} Liste dazu. Was schon da ist, wie Selbstauskunft und Bonitätsnachweis, bleibt einmal.",
+    "knopf": "Dazunehmen",
+    "kopfDazu": "{erste}, dazu {weitere}",
+    "nochArbeitgeberKurz": "Noch ein Arbeitgeber"
+  },
+  "einkommenQuellen": {
+    "lead": "Netto, für jede Quelle einzeln. {app} zählt zusammen und zeigt die Summe hier.",
+    "leadAmt": "Netto, für jede Quelle einzeln.",
+    "zuerst": "zuerst genannt",
+    "dazu": "dazu",
+    "beruf": "Beruf",
+    "taetigkeit": "Tätigkeit",
+    "arbeitgeber": "Arbeitgeber",
+    "netto": "Netto im Monat",
+    "nettoSchnitt": "Netto im Monat, im Schnitt",
+    "zusammen": "Zusammen",
+    "zusammenBetrag": "{betrag} netto",
+    "soStehtZwei": "So steht es in der Selbstauskunft: die Summe und darunter beide Beträge. Beruf und Arbeitgeber gehören zu Stufe 2, für beide Quellen.",
+    "soStehtMehr": "So steht es in der Selbstauskunft: die Summe und darunter alle Beträge. Beruf und Arbeitgeber gehören zu Stufe 2, für jede Quelle.",
+    "soStehtBogen": "So steht es im Bogen",
+    "ohneBetrag": "ohne Betrag",
+    "summeSatz": "Eine Summe steht nur dort, wo jede Quelle einen Betrag hat. Hier stehen die Teile.",
+    "amtAus": "Die Miete übernimmt das Amt; ein Nettoeinkommen steht deshalb nicht im Bogen.",
+    "amtAn": {
+      "ihr": "Die Miete übernimmt das Amt. Das Einkommen steht trotzdem im Bogen, weil ihr es angebt.",
+      "du": "Die Miete übernimmt das Amt. Dein Einkommen steht trotzdem im Bogen, weil du es angibst."
+    },
+    "schalter": "Einkommen trotzdem angeben",
+    "schalterSatz": {
+      "ihr": "Nach der Orientierungshilfe der Datenschutzkonferenz darf der Vermieter danach nicht fragen, ihr könnt es aber angeben.",
+      "du": "Nach der Orientierungshilfe der Datenschutzkonferenz darf der Vermieter danach nicht fragen, du kannst es aber angeben."
+    },
+    "schalterHinweis": "Ist der Schalter an, kommen Netto, Beruf, Arbeitgeber und Nachweise aus „{lage}“ dazu.",
+    "personHinweis": {
+      "ihr": "Gehaltsnachweise stehen nicht auf der Liste, weil das Amt die Miete übernimmt. In der Selbstauskunft könnt ihr sie dazunehmen.",
+      "du": "Gehaltsnachweise stehen nicht auf der Liste, weil das Amt die Miete übernimmt. In der Selbstauskunft kannst du sie dazunehmen."
     }
   }
 }

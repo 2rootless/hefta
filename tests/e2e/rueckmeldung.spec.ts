@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts } from '@cantoo/pdf-lib';
+import { stimmungMuster } from './stimmung-muster';
 import { expect, test, type Page } from '@playwright/test';
 import { cspMelden } from './hilfen';
 import { HEUTE, SZENARIEN, datensaetze } from './szenarien';
@@ -81,7 +82,7 @@ test('Rutsch: Register und Haarlinie, Springen; nichts geht verloren (DP39)', as
 
   // Die Reiter wechseln die Person, die Haarlinie springt innerhalb der Person.
   const navi = page.getByRole('navigation', { name: 'Zwischen den Schritten wechseln' });
-  await navi.getByRole('button', { name: /^Max / }).click();
+  await navi.getByRole('button', { name: /^Max( Fertig)?$/ }).click();
   await expect(page.getByText('1 von 5')).toBeVisible();
   const linie = page.locator('.register-rahmen .haarlinie');
   await linie.getByRole('button').nth(1).click();
@@ -95,18 +96,23 @@ test('Rutsch: Register und Haarlinie, Springen; nichts geht verloren (DP39)', as
   await page.getByRole('button', { name: 'Speichern und weiter' }).click();
   await expect(page.getByText('3 von 5')).toBeVisible();
   // Zurück auf die Unterlage: schon da, eine neuere Datei geht.
-  await navi.getByRole('button', { name: /^Max / }).click();
+  await navi.getByRole('button', { name: /^Max( Fertig)?$/ }).click();
   await expect(page.getByText('1 von 5')).toBeVisible();
   await linie.getByRole('button').nth(1).click();
   await expect(page.getByText(/^Ist schon da/)).toBeVisible();
   await expect(page.getByText('Neuere Datei wählen', { exact: true })).toBeVisible();
 
   // Vor bis ans Ende: Je Person eine Reihe, ein Tipp führt wieder hin.
-  await navi.getByRole('button', { name: /^Lea / }).click();
+  await navi.getByRole('button', { name: /^Lea( Fertig)?$/ }).click();
   await linie.getByRole('button').last().click();
   await expect(page.getByText('5 von 5')).toBeVisible();
   await page.getByRole('button', { name: /^(Überspringen|Noch nicht da)$/ }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Gut gemacht.' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: stimmungMuster('P10a', { teil: 'satz' }),
+    }),
+  ).toBeVisible();
   await expect(page.getByText(/Eine Unterlage ist drin\./)).toBeVisible();
   await expect(page.getByText(/Vier habt ihr übersprungen/)).toBeVisible();
   await page.locator('.pz-knopf').filter({ hasText: 'Lea' }).click();
@@ -133,7 +139,9 @@ test('Unterlage ohne Datum: Die Personenansicht sagt es und führt zum Nachtrage
 }) => {
   await laden(page, '23-ohne-datum', '/person/p-23-ohne-datum-0');
   const zeile = page.getByRole('link', { name: /^Bonitäts.?nachweis/ });
-  await expect(zeile).toContainText('Ohne Datum, Hefta erinnert nicht');
+  // W48: Im Browser erinnert Hefta nie; dann sagt der Satz, was er zeigt (W10).
+  await expect(zeile).toContainText('Ohne Datum zeigt Hefta nicht, wann sie zu alt wird');
+  await expect(zeile).not.toContainText('erinnert');
   await expect(zeile).toContainText('Datum eintragen');
   await zeile.click();
   // „Datum eintragen“ landet direkt im Feld, die Seite sagt, warum (UL3).
@@ -171,12 +179,13 @@ test('Mappe erstellen: Das Deckblatt öffnet die ganze Mappe; Einzeldateien übe
 
   await page.getByRole('button', { name: 'Deckblatt groß ansehen' }).click();
   await page.getByRole('button', { name: 'Ganze Mappe ansehen' }).click();
-  const ansicht = page.getByRole('dialog', { name: `Seite 1 von ${anzahl}` });
+  // DP50 P2: die ganze Mappe im Leser mit Blätterer „1 / n“ (dp50-leser.spec.ts prüft ihn genauer).
+  const ansicht = page.getByRole('dialog', { name: /^Mappe/ });
   await expect(ansicht.getByRole('img', { name: 'Seite 1' })).toBeVisible();
-  await expect(ansicht.getByRole('button', { name: '2×' })).toBeVisible();
+  await expect(ansicht.getByText(`1 / ${anzahl}`)).toBeVisible();
   // Nur ansehen: In der Vorschau gibt es nichts abzuwählen.
   await expect(ansicht.getByRole('switch')).toHaveCount(0);
-  await ansicht.getByRole('button', { name: 'Fertig' }).click();
+  await ansicht.getByRole('button', { name: 'Zurück' }).click();
   await expect(ansicht).toBeHidden();
 
   // Das große Deckblatt führt zurück zu „Mappe erstellen“.
@@ -384,13 +393,10 @@ test('Serie, zu alt, „Meist unnötig“: Satz und Hauptaktion passen (UL2, UL5
 
 test('Rolle wechseln: Folgen vor dem Speichern, nichts geht verloren (HA1)', async ({ page }) => {
   await laden(page, '25-unterlage-seiten', '/person-aendern/p-25-unterlage-seiten-2');
-  await expect(page.getByRole('radio', { name: 'Bürgschaft' })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  );
+  await expect(page.getByRole('radio', { name: 'Bürgt' })).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByRole('radio', { name: 'Bürgin' })).toBeVisible();
   await page.getByRole('radio', { name: 'Im Mietvertrag' }).click();
-  await expect(page.getByText('Wenn Petra in den Mietvertrag kommt:')).toBeVisible();
+  await expect(page.getByText('Wenn ihr speichert')).toBeVisible();
   await expect(page.getByText('Ihre Karte steht unter „Im Mietvertrag“, nach Lea.')).toBeVisible();
   await expect(
     page.getByText(
@@ -399,8 +405,8 @@ test('Rolle wechseln: Folgen vor dem Speichern, nichts geht verloren (HA1)', asy
   ).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Mitmieterin' })).toBeVisible();
   // Zurück ändert nichts: Der Hinweis geht wieder weg.
-  await page.getByRole('radio', { name: 'Bürgschaft' }).click();
-  await expect(page.getByText('Wenn Petra in den Mietvertrag kommt:')).toHaveCount(0);
+  await page.getByRole('radio', { name: 'Bürgt' }).click();
+  await expect(page.getByText('Wenn ihr speichert')).toHaveCount(0);
   await page.getByRole('radio', { name: 'Im Mietvertrag' }).click();
   await page.getByRole('button', { name: 'Speichern' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Euer Haushalt' })).toBeVisible();
@@ -414,14 +420,15 @@ test('Rolle wechseln: Folgen vor dem Speichern, nichts geht verloren (HA1)', asy
     page.getByText('Gespeichert. Wird nicht mehr gebraucht, kommt nicht in die Mappe.'),
   ).toBeVisible();
 
-  // Wer allein im Mietvertrag steht, kann nicht Bürge werden.
+  // W42 (DP93, Fall 5): Wer allein im Haushalt ist und bürgt, braucht eine Nachfolge; „Speichern“ erst mit Vornamen.
   await laden(page, '23-ohne-datum', '/person-aendern/p-23-ohne-datum-0');
-  await page.getByRole('radio', { name: 'Bürgschaft' }).click();
-  await expect(page.getByText('Im Mietvertrag muss mindestens eine Person stehen.')).toBeVisible();
-  await expect(page.getByRole('radio', { name: 'Im Mietvertrag' })).toHaveAttribute(
-    'aria-checked',
+  await page.getByRole('radio', { name: 'Bürgt' }).click();
+  await expect(page.getByText(/^Wer kommt an (seine|ihre|die) Stelle\?/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Speichern', exact: true })).toHaveAttribute(
+    'aria-disabled',
     'true',
   );
+  await expect(page.getByText('Es fehlt noch: Vorname.')).toBeVisible();
 });
 
 test('Lebenslage ändern: Was statt wessen gebraucht wird (HA2)', async ({ page }) => {
@@ -876,7 +883,7 @@ test('Bonitätsnachweis: Prüfcode statt Panik, nichts wird als offen gezählt',
   ).toBeVisible();
   await page.evaluate(() => (location.hash = '#/'));
   // Nichts offen: Der Tab „Mappe“ sagt „startklar“, die Zeile „prüfbar bis“.
-  await expect(page.getByText(/^Alles da\. (Ihr seid|Du bist) startklar\.$/)).toBeVisible();
+  await expect(page.getByText(stimmungMuster('P4', { teil: 'satz' }))).toBeVisible();
   await expect(page.getByText(/^prüfbar bis 9\.\sNov/)).toBeVisible();
 
   // Tag 70: abgelaufen, kommt aber in die Mappe.
@@ -975,6 +982,7 @@ test('Aussehen der Mappe: Farben der Personen sind Standard, Wahl bleibt, Vorsch
     'aria-checked',
     'true',
   );
+  // Die Vorschau zeigt hier die echte Hefta des Szenarios (Max und Lea), nicht die Beispiel-Mappe (W40 betrifft sie nicht).
   await expect(page.getByText(/^Kopfzeile einer Unterlage von Lea/)).toBeVisible();
   const bildVorher = await groß.locator('img').first().getAttribute('src');
 
@@ -1004,7 +1012,8 @@ test('Aussehen der Mappe ohne Unterlagen: Beispiel, als Beispiel benannt', async
   await expect(page.getByText('Beispiel. Mit euren Namen sieht es genauso aus.')).toBeVisible({
     timeout: 30_000,
   });
-  await expect(page.getByText(/^Kopfzeile einer Unterlage von Lea/)).toBeVisible();
+  // W40: Die Beispiel-Mappe zeigt Haushalt A der Namensliste (Selin statt Lea).
+  await expect(page.getByText(/^Kopfzeile einer Unterlage von Selin/)).toBeVisible();
 });
 
 test('Farbe bei der Person: wählen, vergebene wird getauscht, wirkt überall (PF1, PF1b)', async ({

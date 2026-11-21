@@ -70,6 +70,12 @@ export interface MappenPerson {
   /** Vor- und Nachname wie auf dem Deckblatt, für die Lesehilfe (Fassung 1). */
   vorname?: string;
   nachname?: string;
+  /**
+   * DP45 G1: kein Mensch, sondern „Für den Haushalt“ (etwa der Wohnberechtigungsschein). Steht im
+   * Verzeichnis vor den Personen, ohne Zeichen, nicht im Deckblatt bei den Personen und nicht in der
+   * Lesehilfe.
+   */
+  haushalt?: boolean;
 }
 
 export interface MappenQuelle {
@@ -99,6 +105,11 @@ export interface MappenTeil {
   monate?: string[];
   vom?: Tag;
   pruefweg?: 'pruefcode';
+  /**
+   * DP45 (G2 ohne Nachweis, G4): nur eine Zeile im Verzeichnis, wörtlich, ohne Seiten und ohne Seitenzahl.
+   * Sie steht nicht in den Lesezeichen und nicht in der Lesehilfe.
+   */
+  nurZeile?: boolean;
 }
 
 export interface MappenBlock {
@@ -293,7 +304,7 @@ function kopfzeile(
   if (!mitRolle) while (groesse > 8 && !passt(groesse, false)) groesse -= 0.25;
   const y = H - KOPF_GRUND;
   const farbe = hex(deckFarbe(aussehen, p.farbe));
-  personZeichen(seite, p.buerge ? 'umriss' : 'flaeche', farbe, x0, y);
+  if (!p.haushalt) personZeichen(seite, p.buerge ? 'umriss' : 'flaeche', farbe, x0, y);
   schreiben(seite, p.name, s, {
     x: x0 + vorName,
     y,
@@ -434,7 +445,8 @@ interface Eintrag {
 
 /** V6 (E223): „– Seite 6“ oder „– Seiten 3 bis 5“ hinter dem Wortlaut; so liest auch ein fremder Leser die Zeile. */
 const ziffern = (e: Pick<Eintrag, 'von' | 'bis'>) =>
-  e.von === e.bis ? `– Seite ${e.von}` : `– Seiten ${e.von} bis ${e.bis}`;
+  // DP45 G1: eine Zeile ohne Seiten (nurZeile) steht ohne Seitenangabe.
+  !e.von ? '' : e.von === e.bis ? `– Seite ${e.von}` : `– Seiten ${e.von} bis ${e.bis}`;
 
 const DECK_DATUM = new Intl.DateTimeFormat('de-DE', {
   day: 'numeric',
@@ -466,7 +478,7 @@ interface DeckLink {
  * zählt wie eine Verzeichniszeile (PC32, DP32 F1).
  */
 function verzeichnisPlatz(a: BewerbungAuftrag, bitteZeilen: number): number {
-  const oben = a.bloecke.length + a.mitziehende.length;
+  const oben = a.bloecke.filter((b) => !b.person.haushalt).length + a.mitziehende.length;
   return VERZEICHNIS_ZEILEN - 2 * Math.max(0, oben - 5) - bitteZeilen;
 }
 
@@ -549,8 +561,9 @@ function deckblattSetzen(
     }
 
   // 2. und 3. Leitsatz und Satz der Bewerber.
-  const vertrag = a.bloecke.filter((b) => !b.person.buerge);
+  const vertrag = a.bloecke.filter((b) => !b.person.buerge && !b.person.haushalt);
   const buergen = a.bloecke.filter((b) => b.person.buerge);
+  const fuerHaushalt = a.bloecke.filter((b) => b.person.haushalt);
   const leit = werIstDabeiSatz(vertrag.length, a.mitziehende, buergen.length);
   y -= 9 * MM;
   for (const zeile of umbrechen(zeichenbar(leit, s), s.bold, 12.5, breite)) {
@@ -698,6 +711,11 @@ function deckblattSetzen(
     text(nummer, x0 + breite - zahlBreite, y, g, s.regular);
     const ende = x + s.regular.widthOfTextAtSize(teile.at(-1) ?? '', g) + 3 * MM;
     const bis = x0 + breite - nummerBreite - 3 * MM;
+    // Zeile ohne Seiten (DP45): keine Punkte, keine Zahl, kein Sprung.
+    if (!e.von) {
+      y -= 1.5;
+      return;
+    }
     if (p && ende < bis)
       p.drawLine({
         start: { x: ende, y: y + 1 },
@@ -714,7 +732,7 @@ function deckblattSetzen(
     const w = breite - EINZUG;
     umbrechen(zeichenbar(b.person.name, s), s.bold, 10, w).forEach((t, i) => {
       y -= 10 * 1.35;
-      if (i === 0)
+      if (i === 0 && !b.person.haushalt)
         personZeichen(p, b.person.buerge ? 'umriss' : 'flaeche', farbeVon(b.person), x0, y);
       text(t, x0 + EINZUG, y, 10, s.bold);
     });
@@ -760,7 +778,10 @@ function deckblattSetzen(
     }
   } else if (a.inhaltsverzeichnis && !leer) {
     // Zeilen je Person (Name plus Unterlagen); eine Person wird nie geteilt (DP30, Abschnitt 3).
-    const reihe = [...vertrag, ...buergen].filter((b) => eintraege.some((e) => e.block === b));
+    // DP45 G1: „Für den Haushalt“ vor den Personen.
+    const reihe = [...fuerHaushalt, ...vertrag, ...buergen].filter((b) =>
+      eintraege.some((e) => e.block === b),
+    );
     const zeilenVon = (b: MappenBlock) => 1 + eintraege.filter((e) => e.block === b).length;
     let platz = verzeichnisPlatz(a, bitteZeilen.length);
     let belegt = 0;
@@ -1006,6 +1027,7 @@ export async function bewerbungBauen(auftrag: BewerbungAuftrag): Promise<Bewerbu
       }
       eintrag.bis = pdf.getPageCount();
       if (eintrag.bis >= eintrag.von) eintraege.push(eintrag);
+      else if (teil.nurZeile) eintraege.push({ ...eintrag, von: 0, bis: 0 });
     }
   }
 
@@ -1061,10 +1083,12 @@ export async function bewerbungBauen(auftrag: BewerbungAuftrag): Promise<Bewerbu
 
   // Lesezeichen: Person, darunter ihre Unterlagen, bei Serien die Monate; Bürgen unter „Bürgschaft“.
   const personPunkt = (block: MappenBlock): Punkt | null => {
-    const eigene = eintraege.filter((e) => e.block === block);
+    const eigene = eintraege.filter((e) => e.block === block && e.von > 0);
     if (!eigene.length) return null;
     return {
-      titel: `${block.person.name} (${block.person.rolle})`,
+      titel: block.person.rolle
+        ? `${block.person.name} (${block.person.rolle})`
+        : block.person.name,
       seite: seiten[eigene[0]!.von - 1]!,
       kinder: eigene.map((e) => ({
         titel: beschriftung(e.teil),
@@ -1092,6 +1116,8 @@ export async function bewerbungBauen(auftrag: BewerbungAuftrag): Promise<Bewerbu
   // Die Lesehilfe für Vermieter, nur mit Deckblatt und Hinweis (docs/format-hefta-json.md).
   // Fassung 1: ohne Kennung der Bewerbung keine Lesehilfe (E21, Schema).
   if (a.deckblatt && a.hinweis && a.kennung) {
+    // DP45 G1: Unterlagen für den Haushalt stehen (noch) nicht in der Lesehilfe; sie kennt nur Personen.
+    const menschen = a.bloecke.filter((b) => !b.person.haushalt);
     // Dieselben Ersetzungen wie auf dem Papier: Regel 1 des Formats, P26.
     const anhang = anhangBauen({
       datum,
@@ -1100,7 +1126,7 @@ export async function bewerbungBauen(auftrag: BewerbungAuftrag): Promise<Bewerbu
       fassung: a.lesehilfeWerte?.fassung,
       portal: a.lesehilfeWerte?.portal && s.ersetzen(a.lesehilfeWerte.portal),
       einzug: a.lesehilfeWerte?.einzug,
-      personen: a.bloecke.map((b) => ({
+      personen: menschen.map((b) => ({
         name: s.ersetzen(b.person.name),
         ...(b.person.vorname !== undefined
           ? {
@@ -1118,15 +1144,17 @@ export async function bewerbungBauen(auftrag: BewerbungAuftrag): Promise<Bewerbu
         email: a.kontaktwege.email && s.ersetzen(a.kontaktwege.email),
       },
       mitziehende: a.mitziehende.map((m) => ({ ...m, text: s.ersetzen(m.text) })),
-      unterlagen: eintraege.map((e) => ({
-        person: a.bloecke.indexOf(e.block),
-        typ: e.teil.typ,
-        von: e.von,
-        bis: e.bis,
-        monate: e.teil.monate,
-        vom: e.teil.vom,
-        pruefweg: e.teil.pruefweg,
-      })),
+      unterlagen: eintraege
+        .filter((e) => !e.block.person.haushalt && e.von > 0)
+        .map((e) => ({
+          person: menschen.indexOf(e.block),
+          typ: e.teil.typ,
+          von: e.von,
+          bis: e.bis,
+          monate: e.teil.monate,
+          vom: e.teil.vom,
+          pruefweg: e.teil.pruefweg,
+        })),
       seitenzahl: pdf.getPageCount(),
       modus: a.modus,
       schritt: a.schritt,
@@ -1147,7 +1175,7 @@ export async function bewerbungBauen(auftrag: BewerbungAuftrag): Promise<Bewerbu
   pdf.setModificationDate(datum);
 
   const inhalt: BewerbungErgebnis['inhalt'] = a.bloecke.flatMap((block) => {
-    const eigene = eintraege.filter((e) => e.block === block);
+    const eigene = eintraege.filter((e) => e.block === block && e.von > 0);
     return eigene.length
       ? [
           {

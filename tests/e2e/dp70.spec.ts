@@ -278,7 +278,9 @@ test('DP70 QA24: eine h1, jedes Bedienelement mit Namen und 44 × 44 px; Gegenpr
   expect((await bedienFehler(page)).length).toBeGreaterThanOrEqual(2);
 });
 
-test('DP70 U1: Reiter der Runde brechen bei 200 % Zoom in der Reihenfolge des Haushalts um, Max oben; Gegenprobe', async ({
+// DP70 U1 in 2.1: Das Register aus DP49 bricht nicht mehr um, es rollt in einer Reihe (A17). Was U1 verlangt, gilt
+// weiter: Bild und Vorlesen in derselben Reihenfolge, Max zuerst. Die hinteren Reiter stehen 8 px tiefer (DP49).
+test('DP70 U1: Reiter der Runde stehen bei 200 % Zoom in einer Reihe in der Reihenfolge des Haushalts, Max zuerst; Gegenprobe', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -300,19 +302,15 @@ test('DP70 U1: Reiter der Runde brechen bei 200 % Zoom in der Reihenfolge des Ha
     );
   const reiter = await lage();
   expect(reiter.length).toBeGreaterThanOrEqual(2);
-  // Bei 195 px brechen die Reiter wirklich um, sonst prüft der Test nichts.
-  expect(new Set(reiter.map((r) => r.oben)).size, JSON.stringify(reiter)).toBeGreaterThan(1);
+  // Eine Reihe: höchstens die 8 px, um die die hinteren Reiter tiefer stehen.
+  const oben = reiter.map((r) => r.oben);
+  expect(Math.max(...oben) - Math.min(...oben), JSON.stringify(reiter)).toBeLessThanOrEqual(8);
   expect(reiter[0]!.name).toBe('Max');
-  // In Lesereihenfolge: jeder Reiter steht nicht über seinem Vorgänger.
-  const geordnet = (l: { oben: number; links: number }[]) =>
-    l.every(
-      (r, i) =>
-        i === 0 ||
-        r.oben > l[i - 1]!.oben + 2 ||
-        (Math.abs(r.oben - l[i - 1]!.oben) <= 2 && r.links > l[i - 1]!.links),
-    );
+  // In Lesereihenfolge: jeder Reiter steht rechts von seinem Vorgänger.
+  const geordnet = (l: { links: number }[]) =>
+    l.every((r, i) => i === 0 || r.links > l[i - 1]!.links);
   expect(geordnet(reiter), JSON.stringify(reiter)).toBe(true);
-  // Gegenprobe: der aktive Reiter nach unten (die frühere Regel) bricht die Reihenfolge.
+  // Gegenprobe: der aktive Reiter ans Ende (wie die frühere Regel) bricht die Reihenfolge.
   await page.evaluate(() => {
     const s = document.styleSheets[0]!;
     s.insertRule(

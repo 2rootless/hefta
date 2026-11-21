@@ -7,7 +7,7 @@ import {
   teile as teileDerAuskunft,
 } from '../domain/selbstauskunft';
 import type { HaushaltsAngaben, Selbstauskunft } from '../domain/selbstauskunft';
-import type { Haushalt, Person, Rolle } from '../domain/modell';
+import type { AusbildungArt, Haushalt, Lebenssituation, Person, Rolle } from '../domain/modell';
 import { t } from '../i18n';
 import type { HaushaltAnsicht } from '../storage/speicher';
 
@@ -25,9 +25,23 @@ export interface SelbstauskunftEingabe {
   arbeitgeber: string;
   /** Als Text, damit ein leeres Feld leer bleibt. */
   netto: string;
+  /** DP47 G5: weitere Lebenslagen mit Beruf, Arbeitgeber und Netto, in Reihenfolge. */
+  lagen: LageEingabe[];
+  /** DP47b K1: „Einkommen trotzdem angeben“ bei „Leistungen vom Amt“. */
+  einkommenTrotzdem: boolean;
   sa: Selbstauskunft;
   /** Haustiere und Ort: gehören dem Haushalt, gelten in jedem Bogen. */
   hh: HaushaltsAngaben;
+}
+
+/** Eine weitere Lebenslage im Formular; Beträge als Text wie beim ersten Netto. */
+export interface LageEingabe {
+  id: string;
+  situation: Lebenssituation;
+  ausbildungArt: AusbildungArt | null;
+  beruf: string;
+  arbeitgeber: string;
+  netto: string;
 }
 
 /** Haushaltsangaben aus dem geladenen Stand (mit Rückfall auf ältere Daten an Personen). */
@@ -59,6 +73,15 @@ export function eingabeAus(person: Person, hh: HaushaltsAngaben): Selbstauskunft
     beruf: person.beruf,
     arbeitgeber: person.arbeitgeber,
     netto: person.nettoeinkommen ? String(person.nettoeinkommen) : '',
+    lagen: (person.weitereLagen ?? []).map((l) => ({
+      id: l.id,
+      situation: l.situation,
+      ausbildungArt: l.ausbildungArt ?? null,
+      beruf: l.beruf ?? '',
+      arbeitgeber: l.arbeitgeber ?? '',
+      netto: l.nettoeinkommen ? String(l.nettoeinkommen) : '',
+    })),
+    einkommenTrotzdem: !!person.einkommenTrotzdem,
     sa: selbstauskunftVon(person),
     hh: { ...hh },
   };
@@ -82,6 +105,15 @@ export function angabenAus(e: SelbstauskunftEingabe): Partial<Person> {
     beruf: e.beruf.trim(),
     arbeitgeber: e.arbeitgeber.trim(),
     nettoeinkommen: betrag(e.netto),
+    weitereLagen: e.lagen.map((l) => ({
+      id: l.id,
+      situation: l.situation,
+      ausbildungArt: l.ausbildungArt,
+      beruf: l.beruf.trim(),
+      arbeitgeber: l.arbeitgeber.trim(),
+      nettoeinkommen: betrag(l.netto),
+    })),
+    einkommenTrotzdem: e.einkommenTrotzdem,
     selbstauskunft: {
       einkommenArt: e.sa.einkommenArt,
       haustiere: null,
@@ -116,20 +148,41 @@ export function haushaltAus(
   return gleich ? null : { ...neu, angabenVon: personId };
 }
 
-/** Was noch fehlt, als Satz unter dem Knopf, oder undefined. */
+/**
+ * DP116: Ein Feldname im Satz bricht nie um, auch nicht am Bindestrich („E-“ am Zeilenende, „Mail.“ darunter).
+ * Leerzeichen werden geschützt (U+00A0), der Bindestrich wird der geschützte (U+2011).
+ */
+const GESCHUETZT = String.fromCharCode(0xa0);
+const BINDESTRICH = String.fromCharCode(0x2011);
+export function einheit(name: string): string {
+  return name.replace(/ /g, GESCHUETZT).replace(/-/g, BINDESTRICH);
+}
+
+/** Was noch fehlt, als Satz über dem Knopf, oder undefined. */
 export function grundFuer(
   person: Person,
   rolle: Rolle,
   e: SelbstauskunftEingabe,
 ): string | undefined {
+  // DP116, Frage 3: Ein ausgefülltes, aber falsches Feld fehlt nicht. Dann steht der Satz des Teils, ohne „fehlt“.
+  // Das Telefon ist das erste Feld des ersten Teils; ein Fehler dort geht darum allem anderen vor.
+  if (telefonEingabeFehler(e)) return `${t('selbstauskunft.pruefenTelefon')}.`;
   const mitEingabe = { ...person, ...angabenAus(e) };
   const fehlt = fehlendeAngaben(mitEingabe, rolle, e.hh);
   if (!fehlt.length) return undefined;
   const fragen = fehlt.filter((f) => ['insolvenz', 'raeumungstitel'].includes(f));
   // Reihenfolge wie im Akkordeon: Kontakt, Einkommen, Fragen, Haustiere, Ort.
   const teile: string[] = [];
-  if (fehlt.includes('kontakt')) teile.push(t('selbstauskunft.fehlt.kontakt'));
-  if (fehlt.includes('nettoeinkommen')) teile.push(t('selbstauskunft.fehlt.nettoeinkommen'));
+  // DP116, Frage 2: Der Satz nennt das Feld, nicht den Teil; reicht eine von zwei Angaben, heißt es „oder“.
+  if (fehlt.includes('kontakt'))
+    teile.push(
+      t('selbstauskunft.fehlt.kontakt', {
+        telefon: einheit(t('selbstauskunft.fehlt.telefon')),
+        email: einheit(t('selbstauskunft.fehlt.email')),
+      }),
+    );
+  if (fehlt.includes('nettoeinkommen'))
+    teile.push(einheit(t('selbstauskunft.fehlt.nettoeinkommen')));
   if (fragen.length) teile.push(t('selbstauskunft.fehltFragen', { anzahl: fragen.length }));
   if (fehlt.includes('haustiere')) teile.push(t('selbstauskunft.fehlt.haustiere'));
   if (fehlt.includes('ort')) teile.push(t('selbstauskunft.fehlt.ort'));

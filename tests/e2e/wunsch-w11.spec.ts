@@ -128,6 +128,7 @@ test('wunsch-W11: Keine Anfrage an einen Dienst trägt Name, Mail, Telefon, Adre
   await expect(page.locator('main')).toContainText('Max');
   // Rückmeldung schicken: der eine Dienst, den die App heute kennt.
   await page.goto('/#/einstellungen');
+  await page.getByRole('tab', { name: 'App', exact: true }).click();
   await page.getByRole('button', { name: /^Rückmeldung geben/ }).click();
   await page
     .getByRole('group', { name: 'Hat euch Hefta bei der Bewerbung geholfen?' })

@@ -263,6 +263,14 @@ export const SYMBOLE = {
     wort: 'Hineinlegen, hochladen',
     groessen: [20, 24, 28],
   },
+  teilen: {
+    voll: [
+      'M16 19.6V5.4M10.6 10.8 16 5.4l5.4 5.4',
+      'M11 14.2H8.6C7.2 14.2 6 15.4 6 16.8v6.8c0 1.4 1.2 2.6 2.6 2.6h14.8c1.4 0 2.6-1.2 2.6-2.6v-6.8c0-1.4-1.2-2.6-2.6-2.6H21',
+    ],
+    wort: 'Teilen',
+    groessen: [16, 20, 24],
+  },
   sichern: {
     voll: [
       'M16 5.4v14.2M10.6 14.2l5.4 5.4 5.4-5.4',
@@ -290,6 +298,12 @@ export const SYMBOLE = {
     ],
     wort: 'Mappe',
     groessen: [20, 24],
+  },
+  // DP45 G2: zwei Häuser für die Genossenschaft, aus der Zeichnung DP45-1 aufs 32er-Raster gesetzt.
+  genossenschaft: {
+    voll: ['M4 26.4h24', 'M6.4 26.4V14.4l4.8-4l4.8 4v12', 'M16 26.4V11.2l4.8-4l4.8 4v15.2'],
+    wort: 'Genossenschaft',
+    groessen: [16, 20, 24],
   },
   wohnung: {
     voll: [

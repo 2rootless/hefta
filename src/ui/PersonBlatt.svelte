@@ -4,13 +4,15 @@
   // Stand: Haken, Ring im Akzent (fehlt), Marke „läuft bald ab“ oder „prüfen“ in Ocker.
   import {
     listenText,
+    personZeilen,
     rollenText,
     type PersonStand,
     type UnterlagenStand,
   } from '../domain/regelkatalog';
   import { t } from '../i18n';
   import Symbol from './Symbol.svelte';
-  import { blattText } from './texte';
+  import { blattText, keinerText, mitLage } from './texte';
+  import { anrede } from '../i18n/anrede.svelte';
   import { unterlageUnlesbar } from '../app/unlesbar.svelte';
   import { aktuelleVersionen } from '../domain/fristen';
 
@@ -29,8 +31,10 @@
   const name = $derived(stand.person.rufname || stand.person.vorname);
   const anfang = $derived([...name][0]?.toUpperCase() ?? '');
 
-  type Art = 'da' | 'fehlt' | 'bald' | 'pruef' | 'unlesbar';
+  type Art = 'da' | 'fehlt' | 'bald' | 'pruef' | 'unlesbar' | 'keiner';
   function art(u: UnterlagenStand): Art {
+    // G4: weder da noch offen, also kein Zeichen.
+    if (u.keinerMoeglich) return 'keiner';
     // PC126 K5 (DP83 a): Hat Hefta beim Bauen gemerkt, dass sich eine Datei nicht öffnen lässt, steht das statt „da“.
     if (
       unterlageUnlesbar({
@@ -62,7 +66,7 @@
     </a>
   </h2>
   <ul class="zeilen">
-    {#each stand.pfad as u (u.typ.id)}
+    {#each personZeilen(stand) as u (u.typ.id)}
       {@const a = art(u)}
       <li>
         <!-- Vorgelesen: „Gehaltsnachweise Aug. bis Okt. prüfen: Falscher Monat?“ (B18 Fassung 2). -->
@@ -70,7 +74,11 @@
           <span class="sym" aria-hidden="true"><Symbol name={u.typ.symbol} groesse={20} /></span>
           <span class="tx">
             <b>{listenText(u.typ)}</b>
-            <small>{blattText(u)}</small>
+            <small
+              >{u.keinerMoeglich
+                ? keinerText(u.keinerMoeglich, stand.bezeichnung, anrede.wert === 'du')
+                : mitLage(u, blattText(u))}</small
+            >
           </span>
           {#if a === 'da'}
             <span class="ok"
@@ -89,7 +97,7 @@
                 'mappeTab.nichtOeffnen',
               )}</span
             >
-          {:else}
+          {:else if a === 'pruef'}
             <span class="marke"
               >{t('mappeTab.pruefen')}<span class="visually-hidden">: {pruefen(u.typ.id)}</span
               ></span
@@ -231,7 +239,7 @@
     flex: none;
     width: 26px;
     height: 26px;
-    border: 2px solid var(--accent);
+    border: 2px solid var(--control-border);
     border-radius: 50%;
   }
 
@@ -300,7 +308,7 @@
     width: 16px;
     height: 16px;
     border-radius: 8px;
-    background: var(--accent);
+    background: var(--fehler);
     color: var(--surface);
     font-size: calc(11 * var(--px));
     font-weight: 800;

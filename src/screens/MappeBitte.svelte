@@ -137,7 +137,8 @@
   /* DP33 A4: Fokus 2 px Tinte innen. */
   textarea:focus-visible {
     outline: 0;
-    box-shadow: inset 0 0 0 2px var(--ink);
+    /* DP49b, W33: kein Tintenrand beim Fokus; den Fokus zeigt der Cursor. */
+    box-shadow: none;
   }
 
   .unter {

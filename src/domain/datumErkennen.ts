@@ -162,8 +162,15 @@ export function datenZurAuswahl<T extends DatumFund>(funde: T[]): T[] {
     .slice(0, 8);
 }
 
-/** Alle Daten einer Seite: echte Kalendertage, nicht in der Zukunft, nicht vor 2000. */
-export function datenFinden(stuecke: TextStueck[], heute: Date = new Date()): DatumFund[] {
+/**
+ * Alle Daten einer Seite: echte Kalendertage, nicht vor 2000 und, ohne `zukunft`, nicht in der Zukunft.
+ * Mit `zukunft` auch spätere Tage, etwa „Gültig bis“ auf einem Schein (DP45 G1).
+ */
+export function datenFinden(
+  stuecke: TextStueck[],
+  heute: Date = new Date(),
+  zukunft = false,
+): DatumFund[] {
   const muster: [RegExp, (m: RegExpMatchArray) => string | null][] = [
     [
       /(?<![\d.])(\d{1,2})\.\s?(\d{1,2})\.\s?(\d{4}|\d{2})(?![\d.]*\d)/g,
@@ -184,7 +191,7 @@ export function datenFinden(stuecke: TextStueck[], heute: Date = new Date()): Da
     for (const [regel, lesen] of muster)
       for (const m of zeile.text.matchAll(regel)) {
         const tag = lesen(m);
-        if (!tag || tag > grenze || tag < '2000-01-01') continue;
+        if (!tag || (!zukunft && tag > grenze) || tag < '2000-01-01') continue;
         const start = m.index;
         const ende = start + m[0].length - 1;
         const a = zeile.herkunft[start]!;
@@ -207,6 +214,21 @@ export function datenFinden(stuecke: TextStueck[], heute: Date = new Date()): Da
 
 const STICHWORT = /ausgestellt|ausstellung|erstellt|bescheid|datum|stand|vom\b/i;
 const NICHT = /geb\.|geboren|geburt|gültig bis|fällig|zahlbar|kündig/i;
+const GUELTIG = /gültig bis|gilt bis|geltungsdauer|gültigkeit|befristet bis/i;
+
+/**
+ * „Gültig bis“ auf einem Schein (DP45 G1): der späteste Tag in einer Zeile mit „gültig bis“, „gilt bis“
+ * oder „Geltungsdauer“. Ohne solches Wort schlägt Hefta nichts vor; ein Ausstellungstag wäre falsch.
+ */
+export function gueltigBis(
+  funde: (DatumFund & { seite: number })[],
+): { tag: string; seite: number } | null {
+  const passend = funde
+    .filter((f) => GUELTIG.test(f.zeile))
+    .sort((a, b) => b.tag.localeCompare(a.tag));
+  const erster = passend[0];
+  return erster ? { tag: erster.tag, seite: erster.seite } : null;
+}
 
 /**
  * Der wahrscheinlichste Ausstellungstag: der neueste Tag in einer Zeile mit passendem Wort, sonst

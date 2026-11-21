@@ -27,7 +27,8 @@
     beimKeinen,
   }: {
     offen: boolean;
-    seiten: { dokument: PdfDokument; nummer: number; schluessel: string }[];
+    /** `drin: false`: Die Seite geht nicht in die Mappe; ihre Daten zählen nur, wenn sonst keins passt. */
+    seiten: { dokument: PdfDokument; nummer: number; schluessel: string; drin?: boolean }[];
     /** Schon eingetragener oder erkannter Tag: ist vorgewählt, wenn er im Dokument steht. */
     vorschlag?: string;
     beimDatum: (tag: string) => void;
@@ -54,6 +55,26 @@
 
   const zweistellig = (tag: string) => tag.split('-').reverse().join('.');
   const aufDieserSeite = $derived(funde.filter((f) => f.seite === index + 1));
+  // DP49 Punkt 11: Bis drei Funde stehen alle in der Liste; ab vier nur die der gezeigten Seite, darunter je
+  // andere Seite „Auf Seite n: … weitere ›“.
+  const JE_SEITE_AB = 4;
+  const jeSeite = $derived(funde.length >= JE_SEITE_AB);
+  const inDerListe = $derived(jeSeite ? aufDieserSeite : funde);
+  const weitere = $derived.by(() => {
+    if (!jeSeite) return [];
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- nur zum Zählen innerhalb der Ableitung.
+    const zahl = new Map<number, number>();
+    for (const f of funde)
+      if (f.seite !== index + 1) zahl.set(f.seite, (zahl.get(f.seite) ?? 0) + 1);
+    return [...zahl].sort((a, b) => a[0] - b[0]).map(([seite, anzahl]) => ({ seite, anzahl }));
+  });
+  /** Seiten, die nicht in die Mappe gehen, als „3“ oder „3 und 4“. */
+  const aussen = $derived(seiten.flatMap((s, i) => (s.drin === false ? [i + 1] : [])));
+  const aussenListe = $derived(
+    aussen.length < 2
+      ? String(aussen[0] ?? '')
+      : `${aussen.slice(0, -1).join(', ')} und ${aussen.at(-1)}`,
+  );
   const keinFund = $derived(!sucht && !funde.length);
 
   $effect(() => {
@@ -90,8 +111,11 @@
         alle.push(...datenFinden(stuecke).map((f) => ({ ...f, seite: i + 1 })));
       }
       ohneText = !textDa;
-      funde = datenZurAuswahl(alle);
-      const tag = vorbelegt || ausstellungstag(alle)?.tag;
+      // DP49 Punkt 11: Zuerst die Seiten, die in die Mappe gehen. Die anderen zählen nur, wenn sonst keins passt.
+      const drin = alle.filter((f) => liste[f.seite - 1]?.drin !== false);
+      const basis = drin.length ? drin : alle;
+      funde = datenZurAuswahl(basis);
+      const tag = vorbelegt || ausstellungstag(basis)?.tag;
       waehlen(funde.find((f) => f.tag === tag) ?? funde[0] ?? null);
       sucht = false;
     })();
@@ -200,6 +224,10 @@
       <p class="lead" role="status">
         {#if sucht}
           {t('ansicht.datumSucht')}
+        {:else if jeSeite}
+          {t('ansicht.datumGefundenJeSeite', { anzahl: funde.length })}
+        {:else if funde.length > 1 && seiten.length > 1}
+          {t('ansicht.datumGefundenSeiten', { anzahl: funde.length })}
         {:else if funde.length}
           {t('ansicht.datumGefunden', { anzahl: funde.length })}
         {:else if ohneText}
@@ -261,7 +289,7 @@
       </div>
       {#if funde.length}
         <div class="daten" role="radiogroup" aria-label={t('ansicht.datumGruppe')}>
-          {#each funde as f (f.tag)}
+          {#each inDerListe as f (f.tag)}
             <button
               type="button"
               class="datum"
@@ -280,7 +308,24 @@
               </span>
             </button>
           {/each}
+          {#each weitere as w (w.seite)}
+            <button
+              type="button"
+              class="datum weitere"
+              onclick={() => blaettern(w.seite - 1 - index)}
+            >
+              <span class="tx"
+                ><b>{t('ansicht.datumWeitere', { seite: w.seite, anzahl: w.anzahl })}</b></span
+              >
+              <span class="pfeil" aria-hidden="true"><Symbol name="weiter" groesse={16} /></span>
+            </button>
+          {/each}
         </div>
+        {#if aussen.length}
+          <p class="aussen">
+            {t('ansicht.datumAussen', { anzahl: aussen.length, liste: aussenListe })}
+          </p>
+        {/if}
         <div class="fuss">
           <Hauptbutton
             text={t('ansicht.datumNehmen')}
@@ -310,6 +355,22 @@
 </dialog>
 
 <style>
+  /* DP49 Punkt 11: „Auf Seite n: … weitere ›“ in der Liste; der Satz zu Seiten außerhalb der Mappe leise. */
+  .weitere {
+    justify-content: space-between;
+  }
+
+  .weitere .pfeil {
+    display: grid;
+    color: var(--ink-muted);
+  }
+
+  .aussen {
+    margin: 8px 0 0;
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
+  }
+
   /* Am Bildschirmrand festgemacht statt 100vw: folgt so auch vergrößertem Text. */
   .ansicht {
     position: fixed;
@@ -457,11 +518,12 @@
     margin-top: var(--space-2);
   }
 
+  /* PC79 (C33): Chips mit 8 px Abstand. */
   .zoom {
     display: flex;
-    flex: 0 1 152px;
+    flex: 0 1 168px;
     min-width: max-content;
-    gap: 4px;
+    gap: 8px;
     margin: 0 auto;
   }
 

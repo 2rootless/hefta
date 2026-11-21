@@ -132,10 +132,11 @@
     height: 26px;
   }
 
+  /* PC79 (C33): Neben einem Zeichen 4 px. */
   .hinweis {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
     min-height: 26px;
     color: var(--ink-muted);
     font-size: calc(13 * var(--px));

@@ -30,9 +30,10 @@ async function messenBeimHochladen(page: Page, verdorben: boolean): Promise<Prob
       }).observe(document.body, { subtree: true, childList: true, attributes: true });
     const probe = () => {
       const d = dialog();
-      const img = d.querySelector<HTMLImageElement>('.ausschnitt img');
+      // Seit DP45 G1 ist das Bild der Hintergrund des Ausschnitts (vorher geladen und vermessen), kein <img>.
+      const aus = d.querySelector<HTMLElement>('.ausschnitt');
       w.__proben.push({
-        bild: !!img && img.complete && img.naturalWidth > 0,
+        bild: !!aus && aus.style.backgroundImage.startsWith('url('),
         kasten: !!d.querySelector('[role="group"][aria-label="Bitte prüfen"]'),
         knoepfe: [...d.querySelectorAll<HTMLElement>('button, a[href], [role="radio"]')]
           .filter((e) => {

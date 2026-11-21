@@ -1,3 +1,4 @@
+import { groesseWieDateien } from '../domain/mailGroesse';
 import { APP_NAME } from '../app/name';
 import de from './de.json';
 import { anrede, type Anrede } from './anrede.svelte';
@@ -102,14 +103,12 @@ export function datum(wert: Date): string {
   return tagZusammen(datumLang.format(wert));
 }
 
-const zahl1 = new Intl.NumberFormat(sprache, { maximumFractionDigits: 1 });
-
-/** Dateigröße: „850 KB“, „12,4 MB“, „10 GB“. */
+/**
+ * Dateigröße: „850 KB“, „12,4 MB“, „10,0 GB“. PC186: überall wie „Dateien“ am iPhone, 1 MB = 1 000 000 Byte,
+ * aus derselben Funktion wie beim Mailen (W49), damit eine Zahl überall gleich aussieht (W10).
+ */
 export function groesse(bytes: number): string {
-  if (bytes === 0) return '0 KB';
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  if (bytes < 1024 ** 3) return `${zahl1.format(bytes / 1024 / 1024)} MB`;
-  return `${zahl1.format(bytes / 1024 ** 3)} GB`;
+  return groesseWieDateien(bytes);
 }
 
 const monatLang = new Intl.DateTimeFormat(sprache, { month: 'long' });
