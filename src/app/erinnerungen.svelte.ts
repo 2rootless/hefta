@@ -142,6 +142,9 @@ export async function erinnerungenAbgleichen(d: {
   einstellungen: Einstellungen | null;
 }): Promise<void> {
   if (!erinnerungenMoeglich()) return;
+  // PC188: Im Bau für die Store-Aufnahmen fragt Hefta nicht nach Mitteilungen; im Simulator kann niemand
+  // „Erlauben“ tippen, und die Frage läge über jedem Bild.
+  if (import.meta.env.VITE_AUFNAHMEN === '1') return;
   const liste = erinnerungenPlanen({
     hefte: d.hefte,
     gehalt: gehaltsPersonen(d.ansicht),
