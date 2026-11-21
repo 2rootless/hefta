@@ -37,7 +37,8 @@ aufnehmen() {
   xcrun simctl install "$UDID" "$APP"
   sleep 5
   LOG="$ZIEL/konsole.txt"
-  xcrun simctl launch --console-pty "$UDID" "$BUNDLE" > "$LOG" 2>&1 &
+  # PC189: Die App rechnet in deutscher Zeit; der Simulator läuft sonst in UTC (Termin 16 statt 17 Uhr).
+  SIMCTL_CHILD_TZ=Europe/Berlin xcrun simctl launch --console-pty "$UDID" "$BUNDLE" > "$LOG" 2>&1 &
   PID=$!
   for NR in 01 02 03 04 05 06 07 08 09; do
     I=0

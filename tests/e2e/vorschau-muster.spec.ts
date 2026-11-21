@@ -45,6 +45,17 @@ function heft(
   };
 }
 
+// PC189: Zu „Altbau mit Garten“ (1 240 € warm, 3 Zimmer, 74 m², ohne Einzug im Inserat) eine Mischung: Zimmer und
+// Fläche passen, die Warmmiete liegt darüber, der Einzug ist unbekannt.
+const WUENSCHE = {
+  warmBis: 1150,
+  zimmerAb: 3,
+  flaecheAb: 65,
+  ort: null,
+  einzugVon: null,
+  einzugBis: `${HEUTE.getFullYear() + 1}-03-31`,
+  auchBefristet: false,
+};
 const HEFTE = [
   // 02: Besichtigung mit Termin, Vermieterin Dörte Kaminski (Hausverwaltung)
   heft(
@@ -80,19 +91,25 @@ test('Musterbackup für die Vorschau', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium' || !process.env.VORSCHAU_MUSTER, 'nur für die Vorschau');
   await szenarioLaden(page, 'A-namensliste', '/');
   await page.evaluate(
-    (hefte) =>
+    ({ hefte, wuensche }) =>
       new Promise<void>((fertig) => {
         const r = indexedDB.open('hefta');
         r.onsuccess = () => {
-          const tx = r.result.transaction('hefte', 'readwrite');
+          const tx = r.result.transaction(['hefte', 'haushalte'], 'readwrite');
           for (const h of hefte) tx.objectStore('hefte').put(h);
+          // PC189: Wünsche von Haushalt A für Store-Bild 04 (erfunden, W7, W40).
+          const haushalte = tx.objectStore('haushalte');
+          haushalte.getAll().onsuccess = (e) => {
+            for (const h of (e.target as IDBRequest<{ wuensche?: unknown }[]>).result)
+              haushalte.put({ ...h, wuensche });
+          };
           tx.oncomplete = () => {
             r.result.close();
             fertig();
           };
         };
       }),
-    HEFTE,
+    { hefte: HEFTE, wuensche: WUENSCHE },
   );
   await page.reload();
   await page.evaluate(() => (window.location.hash = '#/einstellungen/backup'));
