@@ -551,7 +551,8 @@
                 </label>
               {/if}
               {#if neuGewaehlt}
-                <label class="vorname-neu">
+                <!-- PC190 (WR1, W33): wie jedes Feld der Seite, beige und so breit wie die Spalte. -->
+                <label class="eingabe vorname-neu">
                   <span>{t('personSeite.nachfolge.vorname')}</span>
                   <input type="text" autocomplete="off" bind:value={neuerVorname} />
                 </label>

@@ -160,3 +160,44 @@ test('wunsch-W42 Gegenprobe: der Weg nur über „Bürgschaft“ (2.0) wird rot'
   });
   expect(await fehlendeWege(page)).toEqual(['Zieht nur mit ein', 'Bürgt', 'Nicht mehr dabei']);
 });
+
+// PC190 (DP118, WR1 und W33): Bei 320 px mit 130 % ist die Seite mit dem Feld „Vorname“ der neuen Person nicht
+// breiter als der Bildschirm, in Fall 4 mit neuer Person und in Fall 5. Das Feld ist beige gefüllt wie die
+// anderen Felder der Seite, ohne Rand. Gegenprobe ist der Stand vor PC190.
+for (const fall of ['Fall 4 mit neuer Person', 'Fall 5'] as const)
+  test(`wunsch-W42 WR1: ${fall} bei 320 px mit 130 % ohne waagrechten Überlauf; Feld wie die anderen`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    if (fall === 'Fall 5') {
+      await haushaltMitMax(page);
+      await page.goto('/#/haushalt');
+      await page.getByRole('link', { name: 'Rolle von Max ändern' }).click();
+      await page.getByRole('radio', { name: 'Nicht mehr dabei' }).click();
+    } else {
+      const s = SZENARIEN.find((x) => x.id === '04-fertig')!;
+      const zwei = { ...s, id: 'w42-zwei', personen: [s.personen[0]!, s.personen[2]!] };
+      await szenarioLaden(page, zwei, '/person-aendern/p-w42-zwei-0');
+      await page.getByRole('radio', { name: 'Bürgt' }).click();
+      await page.getByRole('radio', { name: /^Eine neue Person/ }).check();
+    }
+    await page.evaluate(() => document.documentElement.style.setProperty('zoom', '1.3'));
+    const feld = page.locator('fieldset.nachfolge').getByLabel('Vorname', { exact: true });
+    await feld.fill('Konstantin');
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      ),
+    ).toBeLessThanOrEqual(1);
+    const [fuellung, rand, andere] = await feld.evaluate((e) => {
+      const s = getComputedStyle(e);
+      const vergleich = document.querySelector('label.eingabe input:not(fieldset input)');
+      return [
+        s.backgroundColor,
+        s.borderTopWidth,
+        vergleich ? getComputedStyle(vergleich).backgroundColor : '',
+      ];
+    });
+    expect(fuellung).toBe(andere);
+    expect(rand).toBe('0px');
+  });

@@ -25,8 +25,10 @@ export function zuAltWortlaut(
   const datum = erste ? TAG_MONAT.format(erste.ab) : '';
   if (unterlagen.length === 1 && erste)
     return {
-      titel: t('erinnerung.zuAltTitel', { unterlage: erste.name, name }),
+      // DP118: Der Titel ist kurz, damit iOS ihn nicht kürzt; der Name steht in der Zeile.
+      titel: t('erinnerung.zuAltTitel', { unterlage: erste.name }),
       text: t('erinnerung.zuAltText', {
+        name,
         datum,
         grenze: alterGrenze({ typ: { fristen: { warnungTage: erste.warnungTage } } } as never),
       }),

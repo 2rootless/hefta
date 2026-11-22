@@ -89,10 +89,14 @@ export async function aufnahmenStarten(): Promise<void> {
       mitText('main h2, main h3', /^Zu (euren|deinen) Wünschen$/),
       'Wünsche',
     );
+    // DP118: Die Oberkante der Karte liegt 82 pt unter dem oberen Bildrand, 20 pt unter dem sicheren Bereich.
+    const karte = wuensche.closest('section') ?? wuensche;
     window.scrollTo({
-      top: wuensche.getBoundingClientRect().top + window.scrollY - 24,
+      top: karte.getBoundingClientRect().top + window.scrollY - 82,
       behavior: 'instant',
     });
+    await warte(300);
+    melde(`KARTE-OBEN ${Math.round(karte.getBoundingClientRect().top)}`);
     await bereit('04');
 
     // 05 Bewerben (das Heft „Neubau am Park“ ist noch nicht beworben)

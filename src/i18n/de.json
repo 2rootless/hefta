@@ -2412,8 +2412,8 @@
     "keineAntwortText": "{titel}: seit drei Wochen. Kurz nachfragen oder ablegen, das geht im Heft.",
     "gehaltTitel": "Neuer Monat",
     "gehaltText": "Die Gehaltsabrechnung von {name} für {monat} ist meist jetzt da.",
-    "zuAltTitel": "{unterlage} von {name} wird bald zu alt",
-    "zuAltText": "Ab dem {datum} älter als {grenze}. Vielen Vermietern ist das zu alt.",
+    "zuAltTitel": "{unterlage} bald zu alt",
+    "zuAltText": "Von {name}. Ab dem {datum} älter als {grenze}. Vielen Vermietern ist das zu alt.",
     "zuAltMehrTitel": "{zahl} Unterlagen von {name} werden bald zu alt",
     "zuAltMehrText": "Ab dem {datum}: {erste}, dann {rest}.",
     "und": "und"

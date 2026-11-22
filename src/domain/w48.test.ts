@@ -77,11 +77,13 @@ describe('W48: Rechnung', () => {
 
 describe('W48: Wortlaut (Design)', () => {
   it('Titel und Zeile, eine und mehrere', () => {
-    expect(t('erinnerung.zuAltTitel', { unterlage: 'Bonitätsnachweis', name: 'Selin' })).toBe(
-      'Bonitätsnachweis von Selin wird bald zu alt',
+    expect(t('erinnerung.zuAltTitel', { unterlage: 'Bonitätsnachweis' })).toBe(
+      'Bonitätsnachweis bald zu alt',
     );
-    expect(t('erinnerung.zuAltText', { datum: '28. November', grenze: '3 Monate' })).toBe(
-      'Ab dem 28. November älter als 3 Monate. Vielen Vermietern ist das zu alt.',
+    expect(
+      t('erinnerung.zuAltText', { name: 'Selin', datum: '25. November', grenze: 'drei Monate' }),
+    ).toBe(
+      'Von Selin. Ab dem 25. November älter als drei Monate. Vielen Vermietern ist das zu alt.',
     );
     expect(t('erinnerung.zuAltMehrTitel', { zahl: 'Zwei', name: 'Selin' })).toBe(
       'Zwei Unterlagen von Selin werden bald zu alt',
@@ -149,9 +151,9 @@ describe('W48: Wortlaut aus der App', () => {
     const u = (namen: string[]) =>
       namen.map((name) => ({ name, ab: new Date(2026, 10, 28), warnungTage: 90 }));
     const eine = zuAltWortlaut('Selin', u(['Bonitätsnachweis']));
-    expect(eine.titel).toBe('Bonitätsnachweis von Selin wird bald zu alt');
+    expect(eine.titel).toBe('Bonitätsnachweis bald zu alt');
     expect(eine.text).toBe(
-      'Ab dem 28. November älter als drei Monate. Vielen Vermietern ist das zu alt.',
+      'Von Selin. Ab dem 28. November älter als drei Monate. Vielen Vermietern ist das zu alt.',
     );
     const zwei = zuAltWortlaut('Selin', u(['Bonitätsnachweis', 'Mietzahlungen']));
     expect(zwei.titel).toBe('Zwei Unterlagen von Selin werden bald zu alt');
@@ -164,5 +166,28 @@ describe('W48: Wortlaut aus der App', () => {
       expect(w.titel.length).toBeLessThanOrEqual(50);
       expect(w.text.length).toBeLessThanOrEqual(90);
     }
+  });
+});
+
+describe('DP118: Titel der Mitteilung höchstens 32 Zeichen', () => {
+  it('mit dem längsten Namen einer Unterlage, die zu alt werden kann; Gegenprobe: der alte Titel mit Name', async () => {
+    const { readFileSync } = await import('node:fs');
+    const katalog = JSON.parse(readFileSync('data/regelkatalog.de.json', 'utf-8')) as {
+      dokumenttypen: {
+        text: string;
+        textKurz?: string;
+        serie?: unknown;
+        fristen?: { warnungTage?: number };
+      }[];
+    };
+    const weich = String.fromCharCode(0xad);
+    const namen = katalog.dokumenttypen
+      .filter((d) => !d.serie && d.fristen?.warnungTage !== undefined)
+      .map((d) => (d.textKurz ?? d.text).replaceAll(weich, ''));
+    expect(namen.length).toBeGreaterThan(0);
+    const laengster = namen.sort((a, b) => b.length - a.length)[0]!;
+    expect(t('erinnerung.zuAltTitel', { unterlage: laengster }).length).toBeLessThanOrEqual(32);
+    // Gegenprobe: so stand es vorher, mit dem längsten Vornamen der Namensliste.
+    expect(`${laengster} von Konstantin wird bald zu alt`.length).toBeGreaterThan(32);
   });
 });
