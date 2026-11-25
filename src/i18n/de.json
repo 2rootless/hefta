@@ -256,8 +256,7 @@
       "leadBearbeiten": "Änderungen gelten sofort.",
       "mitmieter": "Person im Mietvertrag hinzufügen",
       "mitmieterHinweis": "Falls noch jemand unterschreibt",
-      "buerge": "Person hinzufügen, die bürgt",
-      "buergeWeiterer": "Weitere Person hinzufügen, die bürgt",
+      "buerge": "Person hinzufügen, die bürgt",
       "buergeHinweis": "Hilft, wenn das Einkommen knapp ist",
       "anlegen": "Haushalt anlegen",
       "fertig": "Fertig",
@@ -2892,18 +2891,18 @@
     "fehltBetrag": "Höchstbetrag",
     "fehltArt": "Art der Bürgschaft",
     "art": "Art der Bürgschaft",
-    "ausfall": "Ausfallbürgschaft",
+    "ausfall": "Gewöhnliche Bürgschaft",
     "selbst": "Selbstschuldnerische Bürgschaft",
     "ausfallSatz": {
       "ihr": "Der Vermieter kann sich erst an {name} wenden, wenn die Zwangsvollstreckung gegen euch erfolglos war.",
       "du": "Der Vermieter kann sich erst an {name} wenden, wenn die Zwangsvollstreckung gegen dich erfolglos war."
     },
-    "ausfallSatzOhne": "Der Vermieter kann sich erst an den Bürgen wenden, wenn die Zwangsvollstreckung gegen die Mieter erfolglos war.",
+    "ausfallSatzOhne": "Der Vermieter kann sich erst an die Person wenden, die bürgt, wenn die Zwangsvollstreckung gegen die Mieter erfolglos war.",
     "selbstSatz": {
       "ihr": "Der Vermieter kann sich sofort an {name} wenden, ohne erst gegen euch vorzugehen.",
       "du": "Der Vermieter kann sich sofort an {name} wenden, ohne erst gegen dich vorzugehen."
     },
-    "selbstSatzOhne": "Der Vermieter kann sich sofort an den Bürgen wenden, ohne erst gegen die Mieter vorzugehen.",
+    "selbstSatzOhne": "Der Vermieter kann sich sofort an die Person wenden, die bürgt, ohne erst gegen die Mieter vorzugehen.",
     "erstellen": "PDF erstellen",
     "fehlerBetrag": "Ohne Höchstbetrag erstellt {app} kein PDF.",
     "fehlerArt": "Bitte eine Art wählen.",

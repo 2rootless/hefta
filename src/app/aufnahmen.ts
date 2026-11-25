@@ -8,6 +8,7 @@ import { eingang } from './eingang.svelte';
 import { sicherungEinspielen } from '../storage/sicherung';
 import { einstellungenAendern } from '../storage/speicher';
 import { geteiltOeffnen } from '../ui/neuesHeft.svelte';
+import { uhrStellen } from './uhrStellen';
 
 const warte = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const melde = (text: string) => console.log(`AUFNAHME ${text}`);
@@ -116,8 +117,15 @@ export async function aufnahmenStarten(): Promise<void> {
     await bereit('07');
 
     // 08 Die Mappe als Grund für die Mitteilung (W48); die Mitteilung selbst setzt Design dazu (siehe CP).
+    // PC209 (DP138, W10): mit der Uhr am 18. November. Dann ist Selins Bonitätsnachweis „bald zu alt“, wie die
+    // Mitteilung sagt, nicht schon „zu alt“. Die Uhr bleibt danach gestellt; 09 hängt nicht vom Tag ab.
+    uhrStellen(new Date(2026, 10, 18, 10, 0));
+    await neuLaden();
+    gehe('/wohnungen');
+    await warte(300);
     gehe('/');
     await warteAuf(mitText('main h1', /Mappe/), 'Mappe');
+    melde(`UHR ${new Date().toISOString()}`);
     await bereit('08');
 
     // 09 Monate zuordnen: drei erfundene Abrechnungen von Selin, jede mit Blick ins Dokument (W16).

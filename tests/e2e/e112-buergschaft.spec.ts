@@ -147,7 +147,7 @@ test('E3: Ohne Höchstbetrag und Art zwei Fehler mit Warnzeichen, kein PDF; E4 u
   await expect(page.locator('.betrag-feld input')).toBeFocused();
 
   await page.locator('.betrag-feld input').fill('3600');
-  await page.getByRole('radio', { name: /^Ausfallbürgschaft/ }).click();
+  await page.getByRole('radio', { name: /^Gewöhnliche Bürgschaft/ }).click();
   await expect(page.getByText('Ohne Höchstbetrag', { exact: false })).toHaveCount(0);
   await page.getByLabel('Anschrift').first().fill('Musterweg 7, 12345 Musterstadt');
   await page

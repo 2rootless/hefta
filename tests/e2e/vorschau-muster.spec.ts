@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { pdfMit, szenarioLaden } from './szenario-laden';
 
 // PC80 (E163), PC177 (DP110, W40): das Musterbackup für die Vorschau und die Store-Bilder, ohne Passwort. Läuft nur
@@ -56,7 +56,10 @@ const WUENSCHE = {
   einzugBis: `${HEUTE.getFullYear() + 1}-03-31`,
   auchBefristet: false,
 };
-const HEFTE = [
+// PC209 (E254, DP85, F1b): Das Muster-Heft „Altbau mit Garten“ zeigt Designs Grundriss auf Karton als Foto, wie
+// in store-bilder.spec.ts, nicht die gezeichnete Fassade (Store-Bild 02). Nur Musterdaten.
+const FOTO_ALTBAU = 'foto-muster-1';
+const HEFTE: Record<string, unknown>[] = [
   // 02: Besichtigung mit Termin, Vermieterin Dörte Kaminski (Hausverwaltung)
   heft(
     'muster-1',
@@ -90,13 +93,25 @@ const HEFTE = [
 test('Musterbackup für die Vorschau', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium' || !process.env.VORSCHAU_MUSTER, 'nur für die Vorschau');
   await szenarioLaden(page, 'A-namensliste', '/');
+  const grundriss = readFileSync(
+    'tests/fixtures/store/heftbild-F1b-grundriss-karton-2412x1206.png',
+  ).toString('base64');
   await page.evaluate(
-    ({ hefte, wuensche }) =>
+    ({ hefte, wuensche, grundriss, fotoId }) =>
       new Promise<void>((fertig) => {
         const r = indexedDB.open('hefta');
         r.onsuccess = () => {
-          const tx = r.result.transaction(['hefte', 'haushalte'], 'readwrite');
-          for (const h of hefte) tx.objectStore('hefte').put(h);
+          const tx = r.result.transaction(['hefte', 'haushalte', 'dateien'], 'readwrite');
+          const roh = Uint8Array.from(atob(grundriss), (z) => z.charCodeAt(0));
+          tx.objectStore('dateien').put({
+            id: fotoId,
+            createdAt: new Date().toISOString(),
+            typ: 'image/png',
+            groesse: roh.length,
+            daten: new Blob([roh], { type: 'image/png' }),
+          });
+          for (const h of hefte)
+            tx.objectStore('hefte').put(h.id === 'muster-1' ? { ...h, foto: fotoId } : h);
           // PC189: Wünsche von Haushalt A für Store-Bild 04 (erfunden, W7, W40).
           const haushalte = tx.objectStore('haushalte');
           haushalte.getAll().onsuccess = (e) => {
@@ -109,7 +124,7 @@ test('Musterbackup für die Vorschau', async ({ page, browserName }) => {
           };
         };
       }),
-    { hefte: HEFTE, wuensche: WUENSCHE },
+    { hefte: HEFTE, wuensche: WUENSCHE, grundriss, fotoId: FOTO_ALTBAU },
   );
   await page.reload();
   await page.evaluate(() => (window.location.hash = '#/einstellungen/backup'));

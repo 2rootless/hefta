@@ -62,8 +62,10 @@ describe('PC202: Rolle unter dem Namen und kein „Pflicht“', () => {
   });
 
   it('PC205 (E363): kein „Bürgin“ oder „Bürge“ in den Texten der App und des Katalogs; Gegenprobe', () => {
-    // „Bürgen“ bleibt erlaubt: Mehrzahl und das Rechtswort in den Sätzen zur Art („an den Bürgen wenden“).
-    const wort = /[bB]ürgin(nen)?[^a-zäöüß]|[bB]ürgin(nen)?$|[bB]ürge[^a-zäöüßn]|[bB]ürge$/;
+    // „Bürgen“ bleibt in der Mehrzahl erlaubt. PC210: Die Einzahl im Wem- und Wenfall („den Bürgen“, „dem Bürgen“)
+    // fällt jetzt auch auf; das hatte die erste Fassung übersehen (DP138, Abschnitt 3).
+    const wort =
+      /[bB]ürgin(nen)?[^a-zäöüß]|[bB]ürgin(nen)?$|[bB]ürge[^a-zäöüßn]|[bB]ürge$|\b(den|dem|des) Bürgen\b/;
     const funde = (o: unknown) =>
       texte(o)
         .filter(([k, v]) => !k.startsWith('rollen.') && wort.test(v))
@@ -74,13 +76,49 @@ describe('PC202: Rolle unter dem Namen und kein „Pflicht“', () => {
       funde({
         a: 'Die Bürgin könnt ihr abwählen.',
         b: 'Der Bürge unterschreibt.',
-        c: 'an den Bürgen',
+        c: 'an den Bürgen wenden',
+        d: 'mit dem Bürgen',
+        e: 'Bürgen ziehen nicht ein.',
       }),
-    ).toEqual(['a', 'b']);
+    ).toEqual(['a', 'b', 'c', 'd']);
   });
 
   it('H2 (W32): kein „Pflicht“ in den Texten der Oberfläche; Gegenprobe', () => {
     expect(pflichtFunde(de)).toEqual([]);
     expect(pflichtFunde({ buergschaft: { pflicht: 'Pflicht' } })).toEqual(['buergschaft.pflicht']);
+  });
+});
+
+// DP138, Abschnitt 1: ein Knopf „Person hinzufügen, die bürgt“, auch wenn schon jemand bürgt, mit geschütztem
+// Leerzeichen vor „bürgt“ (sonst steht es bei 320 px und 130 % allein in der dritten Zeile).
+describe('DP138: Knopf für Bürgen', () => {
+  const haushalt = de.einrichtung.haushalt as unknown as Record<string, unknown>;
+  const geschuetzt = (s: string) => s.includes(`die${String.fromCharCode(0xa0)}bürgt`);
+  it('ein Wortlaut, mit geschütztem Leerzeichen', () => {
+    expect(haushalt.buerge).toBe(`Person hinzufügen, die${String.fromCharCode(0xa0)}bürgt`);
+    expect(geschuetzt(String(haushalt.buerge))).toBe(true);
+    expect(Object.values(haushalt).some((s) => /^Weitere Person hinzufügen/.test(String(s)))).toBe(
+      false,
+    );
+    expect(readFileSync('src/screens/Haushalt.svelte', 'utf-8')).not.toMatch(/buergeWeiterer/);
+  });
+  it('Gegenprobe: mit normalem Leerzeichen schlägt die Prüfung an', () => {
+    expect(geschuetzt('Person hinzufügen, die bürgt')).toBe(false);
+  });
+});
+
+// PC209/PC210: Die Bürgschaft nach § 771 BGB heißt „gewöhnliche Bürgschaft“. „Ausfallbürgschaft“ ist im Recht eine
+// andere Form und steht nirgends mehr, weder in der Eingabe noch auf Blatt 1 oder 2. Der interne Wert `ausfall` bleibt.
+describe('PC210: Gewöhnliche Bürgschaft', () => {
+  const pdf = readFileSync('src/pdf/buergschaft.ts', 'utf-8');
+  const sichtbar = (text: string) => /Ausfallbürgschaft/i.test(text);
+  it('kein „Ausfallbürgschaft“ in de.json und im PDF, der neue Name an drei Stellen', () => {
+    expect(texte(de).filter(([, v]) => sichtbar(v))).toEqual([]);
+    expect(sichtbar(pdf)).toBe(false);
+    expect(de.buergschaft.ausfall).toBe('Gewöhnliche Bürgschaft');
+    expect(pdf.match(/name: 'Gewöhnliche Bürgschaft'/g)).toHaveLength(2);
+  });
+  it('Gegenprobe: der alte Name würde gefunden', () => {
+    expect(sichtbar("name: 'Ausfallbürgschaft'")).toBe(true);
   });
 });

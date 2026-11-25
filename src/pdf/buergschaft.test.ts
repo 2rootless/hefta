@@ -61,7 +61,7 @@ describe('Bürgschaftserklärung als PDF (E112)', () => {
     expect(eins).not.toMatch(/2026/);
     expect(zwei).toContain('Nur für Petra Mustermann');
     expect(zwei).toContain('Bevor Sie unterschreiben');
-    // PC79: Die Regel zur Ausfallbürgschaft mit ihrer echten Quelle, dem Gesetz (W32).
+    // PC79: Die Regel zur gewöhnlichen Bürgschaft mit ihrer echten Quelle, dem Gesetz (W32).
     expect(zwei).toMatch(/Nach dem Gesetz der Regelfall \(§.771 BGB\)/);
     expect(zwei).not.toContain('MieterGemeinschaft der Regelfall');
     expect(zwei).toContain(
@@ -73,7 +73,7 @@ describe('Bürgschaftserklärung als PDF (E112)', () => {
   it('E6: die gewählte Art trägt auf Blatt 2 „auf Blatt 1 gewählt“, an der richtigen Stelle', async () => {
     for (const art of ['ausfall', 'selbstschuldnerisch'] as const) {
       const [, zwei] = await texte((await buergschaftBauen({ ...PETRA, art }, schriften)).bytes);
-      const name = art === 'ausfall' ? 'Ausfallbürgschaft' : 'Selbstschuldnerische Bürgschaft';
+      const name = art === 'ausfall' ? 'Gewöhnliche Bürgschaft' : 'Selbstschuldnerische Bürgschaft';
       expect(zwei).toContain(`${name} auf Blatt 1 gewählt`);
       expect(zwei?.match(/auf Blatt 1 gewählt/g)).toHaveLength(1);
     }

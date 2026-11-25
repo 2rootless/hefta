@@ -72,7 +72,7 @@ test('Bilder E112', async ({ page }) => {
   await ganz(page, '3-formular-fehlt');
   await page.locator('.betrag-feld input').fill('3600');
   await page.locator('.betrag-feld input').blur();
-  await page.getByRole('radio', { name: /^Ausfallbürgschaft/ }).click();
+  await page.getByRole('radio', { name: /^Gewöhnliche Bürgschaft/ }).click();
   await ganz(page, '4-formular-bereit');
   await page.getByRole('button', { name: /^PDF erstellen/ }).click();
   await page.getByRole('heading', { name: 'Im PDF' }).waitFor();

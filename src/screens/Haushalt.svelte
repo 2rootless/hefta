@@ -136,7 +136,8 @@
 
 {#snippet buergeFeld()}
   {@render plusZeile(
-    buergen.length ? t('einrichtung.haushalt.buergeWeiterer') : t('einrichtung.haushalt.buerge'),
+    // DP138: immer gleich, auch wenn schon jemand bürgt, wie „Person im Mietvertrag hinzufügen“.
+    t('einrichtung.haushalt.buerge'),
     t('einrichtung.haushalt.buergeHinweis'),
     `#/person-neu/buerge${suffix}`,
   )}

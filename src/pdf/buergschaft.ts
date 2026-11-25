@@ -180,8 +180,10 @@ function fuss(seite: PDFPage, s: S) {
 }
 
 const ART_TEXT = {
+  // PC209/PC210: Der Name nach § 771 BGB ist „gewöhnliche Bürgschaft“; der frühere Name meint im Recht eine andere
+  // Form. Der interne Wert `ausfall` bleibt, damit keine Daten umgeschrieben werden.
   ausfall: {
-    name: 'Ausfallbürgschaft',
+    name: 'Gewöhnliche Bürgschaft',
     satz: `Der Vermieter kann mich erst in Anspruch nehmen, wenn eine Zwangsvollstreckung gegen die Mieter erfolglos war (§${NB}771 BGB).`,
   },
   selbstschuldnerisch: {
@@ -365,7 +367,7 @@ function blattEins(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
   return { unten: unterschrift - 2 - 8, grenze: 12 * MM + 2 * MM + 7.5 + 4 * MM };
 }
 
-/** Blatt 2: nur für den Bürgen, nie in der Mappe. Sätze aus Ratgeber-Beitrag 4, auf „Sie“ gesetzt. */
+/** Blatt 2: nur für die Person, die bürgt, nie in der Mappe. Sätze aus Ratgeber-Beitrag 4, auf „Sie“ gesetzt. */
 function blattZwei(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
   const seite = pdf.addPage([A4.breite, A4.hoehe]);
   const x0 = BOGEN_SEITE;
@@ -431,7 +433,7 @@ function blattZwei(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
   const arten = [
     {
       id: 'ausfall' as const,
-      name: 'Ausfallbürgschaft',
+      name: 'Gewöhnliche Bürgschaft',
       // PC79: Die Regel steht im Gesetz (Einrede der Vorausklage), nicht beim Verein.
       satz: `Nach dem Gesetz der Regelfall (§${NB}771 BGB). Der Vermieter muss zuerst erfolglos gegen die Mieter vorgehen, bevor er sich an Sie wenden kann.`,
     },
