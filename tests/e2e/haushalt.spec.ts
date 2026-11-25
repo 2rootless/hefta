@@ -214,7 +214,8 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   // Tab „Mappe“ (B12b): je Person ein Blatt mit Reiter, Kind, Trennzeile, Bürgin darunter.
   await expect(page.getByRole('heading', { level: 1, name: 'Eure Mappe' })).toBeVisible();
   await expect(page.locator('.blatt .reiter')).toHaveText([/Max/, /Lea/, /Petra/]);
-  await expect(page.locator('.blatt').filter({ hasText: 'Petra' })).toContainText('Bürgin');
+  // PC202 (H1, E363): unter dem Namen „Bürgt“.
+  await expect(page.locator('.blatt').filter({ hasText: 'Petra' })).toContainText('Bürgt');
   await expect(page.getByText('Zusätzlich, falls der Vermieter fragt')).toBeVisible();
   await expect(
     page.getByRole('link', {
@@ -303,7 +304,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   }
 
   // „Wer bürgt?“ zeigt zuerst „Schon in Hefta“ (K1); Petra kommt mit allem zurück (K2).
-  await page.getByRole('link', { name: /Bürge hinzufügen/ }).click();
+  await page.getByRole('link', { name: /Person hinzufügen, die bürgt/ }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Schon in Hefta' })).toBeVisible();
   if (bilder) await page.screenshot({ path: 'docs/screenshots/k-schon-in-mappe.png' });
   await page.getByRole('button', { name: /Petra Mustermann/ }).click();

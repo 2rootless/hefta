@@ -19,7 +19,7 @@
     personStand,
     lagenVon,
     personZeilen,
-    rollenText,
+    rollenAnzeige,
     type UnterlagenStand,
   } from '../domain/regelkatalog';
   import { t, tagZusammen } from '../i18n';
@@ -121,7 +121,7 @@
   const unterzeile = $derived(
     stand
       ? [
-          rollenText(stand.rolle, stand.bezeichnung),
+          rollenAnzeige(stand.rolle),
           ...(buerge ? [t('personenseite.ziehtNicht')] : []),
           stand.person.lebenssituation
             ? (lagenText(stand.person) ?? '') +

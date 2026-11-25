@@ -8,7 +8,7 @@
   import { ansichtFuerHeft, erklaerungFuer, erklaerungTag } from '../domain/buergschaft';
   import { bloecke, standardEinstellungen, type ExportEinstellungen } from '../domain/export';
   import type { DateiVersion, Heft } from '../domain/modell';
-  import { listenText, ohneTrennstellen, rollenText } from '../domain/regelkatalog';
+  import { listenText, ohneTrennstellen, rollenAnzeige } from '../domain/regelkatalog';
   import { t, tagZusammen } from '../i18n';
   import { staendeAus } from './mappeDaten';
   import Symbol from './Symbol.svelte';
@@ -42,7 +42,7 @@
           name: s.person.rufname || s.person.vorname,
           farbe: s.farbe,
           buerge,
-          unter: buerge ? `${rollenText(s.rolle, s.bezeichnung)}. ${liste}` : liste,
+          unter: buerge ? `${rollenAnzeige(s.rolle)}. ${liste}` : liste,
           erklaerung: buerge
             ? erklaerungFuer(s.person.id, ansicht.dokumente, ansicht.versionen, heft.id)
             : null,

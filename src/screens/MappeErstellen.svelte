@@ -28,7 +28,7 @@
   import {
     dokumenttyp,
     listenText,
-    rollenText,
+    rollenAnzeige,
     warumInhalt,
     type Dokumenttyp,
     type PersonStand,
@@ -880,7 +880,7 @@
                 {@render zeileInhalt(
                   s.person.rufname || s.person.vorname,
                   t('mappe.auswahlStand', {
-                    rolle: rollenText(s.rolle, s.bezeichnung),
+                    rolle: rollenAnzeige(s.rolle),
                     dabei: zeilen.filter((u) => istAn(s, u)).length,
                     von: zeilen.length,
                   }),

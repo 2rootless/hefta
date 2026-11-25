@@ -308,7 +308,8 @@ export function selbstauskunftZeichnen(
   const name = s.ersetzen(a.name);
   const vorTitel = 'Selbstauskunft von';
   const rolle = a.buerge
-    ? `${a.rolle === 'bürgt' ? 'Bürge' : a.rolle}, zieht nicht ein.`
+    ? // PC205 (E363): wie „Rolle: Bürgt“, ohne die Form nach Geschlecht.
+      'Bürgt, zieht nicht ein.'
     : 'Im Mietvertrag.';
   const unter = s.ersetzen(
     `${rolle} Nach dem Musterbogen der Datenschutzkonferenz, Stand Januar 2026.`,

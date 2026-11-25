@@ -203,7 +203,7 @@ function blattEins(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
   const x1 = A4.breite - BOGEN_SEITE;
   const breite = x1 - x0;
   const spalte = (breite - 10 * MM) / 2;
-  const worte = buergeWorte(a.bezeichnung);
+  const worte = buergeWorte();
   const name = a.buerge.name.trim();
   const rechts = [name, worte.kopf].filter(Boolean).join(', ');
   let y = kopf(seite, a.wohnung, rechts, false, s);

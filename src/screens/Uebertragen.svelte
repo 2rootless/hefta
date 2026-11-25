@@ -3,7 +3,7 @@
   // Nur die Zwischenablage auf dem Gerät; Hefta schickt nichts von selbst.
   import { daten } from '../app/daten.svelte';
   import { zurueckGehen } from '../app/router.svelte';
-  import { rollenText } from '../domain/regelkatalog';
+  import { rollenAnzeige } from '../domain/regelkatalog';
   import { angabenZumUebertragen, einziehend } from '../domain/selbstauskunft';
   import { t } from '../i18n';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
@@ -25,9 +25,7 @@
       haushaltsAngabenAus(ansicht),
     );
   });
-  const rolle = $derived(
-    mitglied ? rollenText(mitglied.zugehoerigkeit.rolle, mitglied.zugehoerigkeit.bezeichnung) : '',
-  );
+  const rolle = $derived(mitglied ? rollenAnzeige(mitglied.zugehoerigkeit.rolle) : '');
 
   let meldung = $state('');
   async function kopieren(text: string, was: string) {

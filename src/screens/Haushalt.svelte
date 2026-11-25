@@ -7,7 +7,7 @@
   import { daten, db, neuLaden, stillLaden } from '../app/daten.svelte';
   import { abschliessen, ersetzen, neuAnfangen, zurueckGehen } from '../app/router.svelte';
   import { einmal } from '../ui/einmal';
-  import { rollenText } from '../domain/regelkatalog';
+  import { rollenAnzeige } from '../domain/regelkatalog';
   import { t, tagZusammen } from '../i18n';
   import {
     haushaltAendern,
@@ -231,7 +231,7 @@
                   <span class="rolle"
                     >{m.zugehoerigkeit.ziehtMitEin
                       ? t('personSeite.rolleWahl.mitein')
-                      : rollenText(m.zugehoerigkeit.rolle, m.zugehoerigkeit.bezeichnung)}</span
+                      : rollenAnzeige(m.zugehoerigkeit.rolle)}</span
                   ></b
                 >
                 <small

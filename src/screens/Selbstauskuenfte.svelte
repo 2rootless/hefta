@@ -4,7 +4,7 @@
   import { daten, db, gehe, neuLaden } from '../app/daten.svelte';
   import type { JaNein } from '../domain/selbstauskunft';
   import { einziehend, einziehendText, fehlendeAngaben } from '../domain/selbstauskunft';
-  import { rollenText } from '../domain/regelkatalog';
+  import { rollenAnzeige } from '../domain/regelkatalog';
   import { t, tagZusammen } from '../i18n';
   import { haushaltAendern } from '../storage/speicher';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
@@ -189,9 +189,7 @@
               <span class="tx">
                 <b
                   >{p.m.person.vorname}
-                  <span class="rolle"
-                    >{rollenText(p.m.zugehoerigkeit.rolle, p.m.zugehoerigkeit.bezeichnung)}</span
-                  ></b
+                  <span class="rolle">{rollenAnzeige(p.m.zugehoerigkeit.rolle)}</span></b
                 >
                 <small>{p.status}</small>
               </span>

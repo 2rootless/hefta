@@ -3,7 +3,7 @@
   // einzieht sind immer dabei, ohne Kästchen. Bürgen lassen sich je Zeile weglassen; die ganze Zeile
   // schaltet. Ohne Bürgen ist der Abschnitt nur zum Ansehen.
   import { mitEinSatz, werIstDabeiHinweis } from '../domain/mappeWoerter';
-  import { rollenText, type PersonStand } from '../domain/regelkatalog';
+  import { rollenAnzeige, type PersonStand } from '../domain/regelkatalog';
   import { t } from '../i18n';
   import Symbol from './Symbol.svelte';
 
@@ -47,7 +47,7 @@
         <span class="reiter" style:--farbe="var(--person-{s.farbe})" aria-hidden="true"
           >{anfang(s)}</span
         >
-        <span class="tx"><b>{name(s)}</b><small>{rollenText(s.rolle, s.bezeichnung)}</small></span>
+        <span class="tx"><b>{name(s)}</b><small>{rollenAnzeige(s.rolle)}</small></span>
       </li>
     {/each}
     {#if kinder + weitere}
@@ -79,8 +79,8 @@
           >
             <span class="reiter" aria-hidden="true">{anfang(s)}</span>
             <span class="tx"
-              ><b>{name(s)}</b><small>{rollenText(s.rolle, s.bezeichnung)}</small>{#if !an}<span
-                  class="nicht">{t('mappe.nichtInMappe')}</span
+              ><b>{name(s)}</b><small>{rollenAnzeige(s.rolle)}</small>{#if !an}<span class="nicht"
+                  >{t('mappe.nichtInMappe')}</span
                 >{/if}</span
             >
             <span class="kasten" aria-hidden="true"

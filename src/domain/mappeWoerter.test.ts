@@ -2,12 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { werIstDabeiHinweis } from './mappeWoerter';
 
 describe('Satz unter „Wer ist dabei?“ (B12c, E50)', () => {
-  it('eine Bürgin, ein Bürge, als Paar und allein', () => {
+  it('PC205 (E363): eine Person, die bürgt, steht mit Vornamen da, für jede gewählte Form', () => {
     expect(werIstDabeiHinweis([{ vorname: 'Petra', bezeichnung: 'weiblich' }], false)).toBe(
-      'Wer im Mietvertrag steht, ist immer dabei. Die Bürgin könnt ihr für diese Mappe abwählen.',
+      'Wer im Mietvertrag steht, ist immer dabei. Petra könnt ihr für diese Mappe abwählen.',
     );
     expect(werIstDabeiHinweis([{ vorname: 'Klaus', bezeichnung: 'maennlich' }], true)).toBe(
-      'Wer im Mietvertrag steht, ist immer dabei. Den Bürgen kannst du für diese Mappe abwählen.',
+      'Wer im Mietvertrag steht, ist immer dabei. Klaus kannst du für diese Mappe abwählen.',
+    );
+    // Ohne Vornamen ein neutraler Satz, nie „Die Bürgin“.
+    expect(werIstDabeiHinweis([{ vorname: ' ', bezeichnung: 'weiblich' }], false)).toBe(
+      'Wer im Mietvertrag steht, ist immer dabei. Die bürgende Person könnt ihr für diese Mappe abwählen.',
     );
   });
 

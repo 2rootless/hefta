@@ -15,7 +15,7 @@
     offeneDinge,
     personStand,
     hilfeFuer,
-    rollenText,
+    rollenAnzeige,
     type PersonStand,
   } from '../domain/regelkatalog';
   import {
@@ -156,11 +156,10 @@
   const auskunftLead = $derived.by(() => {
     if (!aktuell) return '';
     if (aktuell.rolle === 'buerge')
-      return aktuell.bezeichnung === 'neutral'
-        ? t('selbstauskunft.rutschLeadBuerge', {
-            name: aktuell.person.rufname || aktuell.person.vorname,
-          })
-        : t('selbstauskunft.rutschLeadAls', { rolle: rollenText('buerge', aktuell.bezeichnung) });
+      // PC205 (E363): für jede Form derselbe Satz mit Namen, ohne „Als Bürgin …“.
+      return t('selbstauskunft.rutschLeadBuerge', {
+        name: aktuell.person.rufname || aktuell.person.vorname,
+      });
     if (angabenVon) return t('selbstauskunft.rutschLeadSpaeter', { name: angabenVon });
     return t('selbstauskunft.rutschLead');
   });
@@ -624,10 +623,7 @@
       <ul class="karte-weiss personen">
         {#each proPerson as x (x.person.id)}
           {@const s = staende.find((y) => y.person.id === x.person.id)}
-          {@render personZeile(
-            x,
-            `${s ? rollenText(s.rolle, s.bezeichnung) : ''}, ${zahlwort(x.anzahl)}`,
-          )}
+          {@render personZeile(x, `${s ? rollenAnzeige(s.rolle) : ''}, ${zahlwort(x.anzahl)}`)}
         {/each}
       </ul>
       <p class="tipp">{t('rutsch.tipp')}</p>

@@ -90,7 +90,8 @@ test('B1: Im Heft steht der Hinweis an der Bürgin, ruhig; „Erklärung vorbere
     mappe.getByRole('heading', { name: 'In der Mappe für diese Wohnung' }),
   ).toBeVisible();
   const petra = mappe.locator('li.buerge');
-  await expect(petra.getByText(/^Bürgin\. /)).toBeVisible();
+  // PC202 (H1, E363): „Bürgt.“ statt „Bürgin.“
+  await expect(petra.getByText(/^Bürgt\. /)).toBeVisible();
   await expect(
     petra.getByText('Ohne Bürgschaftserklärung für diese Wohnung.', { exact: false }),
   ).toBeVisible();
@@ -122,8 +123,11 @@ test('B1: Im Heft steht der Hinweis an der Bürgin, ruhig; „Erklärung vorbere
   await expect(page.getByLabel('Anschrift und Lage')).toHaveValue('Lindenring 8, 20259 Hamburg');
   await expect(page.getByLabel('Name').nth(1)).toHaveValue('Hausverwaltung Beispiel GmbH');
   await expect(page.getByLabel('Einzug zum')).toHaveValue('2027-01-01');
-  // Offen: Anschrift der Bürgin, Anschrift des Vermieters, Höchstbetrag, Art.
-  await expect(page.getByRole('button', { name: /^PDF erstellen/ })).toContainText('4 offen');
+  // DP136, Abschnitt 4: Der gesperrte Knopf nennt, was fehlt, statt zu zählen.
+  await expect(page.locator('.leiste')).toContainText(
+    /Es fehlt noch: Höchstbetrag, Art.der.Bürgschaft\./,
+  );
+  await expect(page.locator('.leiste')).not.toContainText('offen');
   // Keine Art ist vorgewählt.
   await expect(page.getByRole('radio', { checked: true, name: /bürgschaft/i })).toHaveCount(0);
 });
@@ -133,7 +137,8 @@ test('E3: Ohne Höchstbetrag und Art zwei Fehler mit Warnzeichen, kein PDF; E4 u
 }) => {
   await mitHeften(page, '02-neustart', `/buergschaft/${PETRA}/h8`);
   const vorher = await erklaerungen(page);
-  await page.getByRole('button', { name: /^PDF erstellen/ }).click();
+  // DP136, Abschnitt 4: Der Knopf ist gesperrt (aria-disabled); ein Tipp darauf zeigt, was fehlt.
+  await page.getByRole('button', { name: /^PDF erstellen/ }).click({ force: true });
   await expect(page.getByText('Ohne Höchstbetrag erstellt Hefta kein PDF.')).toBeVisible();
   await expect(page.getByText('Bitte eine Art wählen.')).toBeVisible();
   await expect(page.locator('.fehler .warnzeichen')).toHaveCount(2);
@@ -149,9 +154,9 @@ test('E3: Ohne Höchstbetrag und Art zwei Fehler mit Warnzeichen, kein PDF; E4 u
     .getByLabel('Anschrift', { exact: true })
     .nth(1)
     .fill('Beispielstraße 1, 12345 Musterstadt');
-  // E4: Alles da, der Knopf zählt nichts mehr.
+  // E4: Alles da, unter dem Knopf fehlt nichts mehr.
   const knopf = page.getByRole('button', { name: /^PDF erstellen/ });
-  await expect(knopf).not.toContainText('offen');
+  await expect(page.locator('.leiste')).not.toContainText('Es fehlt noch');
   await knopf.click();
 
   await expect(page.getByRole('heading', { name: 'Im PDF' })).toBeVisible({ timeout: 20_000 });
@@ -219,14 +224,16 @@ test('Erklärung von vor DP49 (ohne Wohnung): im Heft genannt und mit „Erklär
   await expect(petra.getByRole('link', { name: 'Erklärung vorbereiten' })).toBeVisible();
 });
 
-test('E1: ohne Heft alles leer, „6 offen“, „+ Weitere Person“; E10: 320 px bei 130 %, dunkel, kein Überlauf', async ({
+test('E1: ohne Heft alles leer, „Es fehlt noch“, „+ Weitere Person“; E10: 320 px bei 130 %, dunkel, kein Überlauf', async ({
   page,
 }) => {
   await mitHeften(page, '02-neustart', '/buergschaft');
   await expect(
-    page.getByText('Der Bürge unterschreibt es von Hand', { exact: false }),
+    page.getByText('Wer bürgt, unterschreibt es von Hand', { exact: false }),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: /^PDF erstellen/ })).toContainText('6 offen');
+  await expect(page.locator('.leiste')).toContainText(
+    /Es fehlt noch: Höchstbetrag, Art.der.Bürgschaft\./,
+  );
   await page.getByRole('button', { name: 'Weitere Person' }).click();
   await expect(page.getByLabel('Mieter 2')).toBeVisible();
 

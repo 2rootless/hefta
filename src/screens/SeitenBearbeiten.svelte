@@ -14,7 +14,7 @@
     listenText,
     ohneTrennstellen,
     personStand,
-    rollenText,
+    rollenAnzeige,
     standFinden,
     type UnterlagenStand,
   } from '../domain/regelkatalog';
@@ -426,14 +426,10 @@
         <h2>{t('seiten.gruppePerson')}</h2>
         <ul class="aktionen">
           {#each anderePersonen as s (s.person.id)}
-            {@render zeileZiel(
-              s.person.rufname || s.person.vorname,
-              rollenText(s.rolle, s.bezeichnung),
-              () => {
-                zielPerson = s.person.id;
-                schritt = 'person';
-              },
-            )}
+            {@render zeileZiel(s.person.rufname || s.person.vorname, rollenAnzeige(s.rolle), () => {
+              zielPerson = s.person.id;
+              schritt = 'person';
+            })}
           {/each}
         </ul>
       {/if}

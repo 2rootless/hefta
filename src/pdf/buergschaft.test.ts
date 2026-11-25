@@ -45,15 +45,16 @@ const texte = async (bytes: Uint8Array) =>
   (await textJeSeite(bytes)).map((t) => t.replace(/\s+/g, ' '));
 
 describe('Bürgschaftserklärung als PDF (E112)', () => {
-  it('zwei Blätter: Blatt 1 für den Vermieter, Blatt 2 nur für die Bürgin', async () => {
+  it('zwei Blätter: Blatt 1 für den Vermieter, Blatt 2 nur für die Person, die bürgt', async () => {
     const erg = await buergschaftBauen(PETRA, schriften);
     expect(erg.seiten).toBe(2);
     const [eins, zwei] = await texte(erg.bytes);
     expect(eins).toContain('Bürgschaftserklärung für ein Mietverhältnis');
-    expect(eins).toContain('Petra Mustermann, Bürgin');
+    // PC205 (E363): Kopfzeile „{Name}, bürgt“.
+    expect(eins).toContain('Petra Mustermann, bürgt');
     expect(eins).toContain('Mietvertrag abzuschließen zum 1. Januar 2027');
     expect(eins).toMatch(/höchstens bis zu einem Betrag von 3\.600.Euro/);
-    expect(eins).toContain('Unterschrift der Bürgin (eigenhändig)');
+    expect(eins).toContain('Unterschrift (eigenhändig)');
     expect(eins).toContain('Muster von Hefta, keine Rechtsberatung.');
     // W10: kein „freiwillig und unaufgefordert“ auf Blatt 1, kein Datum von Hefta.
     expect(eins).not.toMatch(/freiwillig/);
@@ -88,12 +89,14 @@ describe('Bürgschaftserklärung als PDF (E112)', () => {
     expect(eins).not.toContain('abzuschließen');
   });
 
-  it('E8: Bürge und neutral: Etikett und Unterschriftszeile passen (PC51)', async () => {
-    const [bm] = await texte(
-      (await buergschaftBauen({ ...PETRA, bezeichnung: 'maennlich' }, schriften)).bytes,
-    );
-    expect(bm).toContain('Unterschrift des Bürgen (eigenhändig)');
-    expect(bm).toContain('Petra Mustermann, Bürge');
+  it('E8, PC205: jede gewählte Form gibt dasselbe Blatt 1, ohne „Bürgin“ und „Bürge“ (E363)', async () => {
+    for (const bezeichnung of ['weiblich', 'maennlich'] as const) {
+      const [b] = await texte((await buergschaftBauen({ ...PETRA, bezeichnung }, schriften)).bytes);
+      expect(b).toContain('Petra Mustermann, bürgt');
+      expect(b).toContain('Bürgschaft von');
+      expect(b).toContain('Unterschrift (eigenhändig)');
+      expect(b).not.toMatch(/Bürgin|Bürge\b|des Bürgen/);
+    }
     const [neutral] = await texte(
       (await buergschaftBauen({ ...PETRA, bezeichnung: 'neutral' }, schriften)).bytes,
     );

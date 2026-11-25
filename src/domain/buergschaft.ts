@@ -71,25 +71,16 @@ export function betragAus(text: string): number | null {
   return ziffern ? Number(ziffern) : null;
 }
 
-/** Etikett auf Blatt 1 und Unterschriftszeile nach der Karte (PC51: neutral „Bürgschaft von“). */
-export function buergeWorte(b: Bezeichnung): {
+/**
+ * Etikett auf Blatt 1, Unterschriftszeile und Kopfzeile. PC205 (E363, W57): für jede gewählte Form gleich, ohne
+ * „Bürgin“ oder „Bürge“; die Kopfzeile heißt „{Name}, bürgt“. Die Form bleibt als Angabe erhalten.
+ */
+export function buergeWorte(): {
   etikett: string;
   unterschrift: string;
   kopf: string;
 } {
-  if (b === 'weiblich')
-    return {
-      etikett: 'Bürgin',
-      unterschrift: 'Unterschrift der Bürgin (eigenhändig)',
-      kopf: 'Bürgin',
-    };
-  if (b === 'maennlich')
-    return {
-      etikett: 'Bürge',
-      unterschrift: 'Unterschrift des Bürgen (eigenhändig)',
-      kopf: 'Bürge',
-    };
-  return { etikett: 'Bürgschaft von', unterschrift: 'Unterschrift (eigenhändig)', kopf: '' };
+  return { etikett: 'Bürgschaft von', unterschrift: 'Unterschrift (eigenhändig)', kopf: 'bürgt' };
 }
 
 // ---------- Welche Fassung gilt für welches Heft (DP49 Punkt 5) ----------

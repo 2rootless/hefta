@@ -78,7 +78,7 @@ export async function haushaltDesAuftraggebers(page: Page) {
     bezeichnung: 'Mitmieterin',
   });
   await page.getByRole('button', { name: 'Mehr: Kinder' }).click();
-  await personHinzufuegen(page, /Bürge hinzufügen/, {
+  await personHinzufuegen(page, /Person hinzufügen, die bürgt/, {
     vorname: 'Petra',
     bezeichnung: 'Bürgin',
     einkommen: 'In Rente',

@@ -11,7 +11,7 @@
   import { RUECKMELDUNG_ADRESSE, rueckmeldungLink } from '../app/impressum';
   import { tageSeit } from '../domain/zeit';
   import { backupAccept } from '../storage/backup';
-  import { KATALOG_STAND, rollenText } from '../domain/regelkatalog';
+  import { KATALOG_STAND, rollenAnzeige } from '../domain/regelkatalog';
   import { THEMEN } from '../domain/besichtigungsFragen';
   import { groesse, monatName, t, zahlwort } from '../i18n';
   import { speicherBelegt } from '../storage/speicher';
@@ -342,7 +342,7 @@
                     >
                     <span class="tx"
                       ><b>{m.person.rufname || m.person.vorname}</b><small
-                        >{rollenText(m.zugehoerigkeit.rolle, m.zugehoerigkeit.bezeichnung)}</small
+                        >{rollenAnzeige(m.zugehoerigkeit.rolle)}</small
                       ></span
                     >
                     {@render pfeil()}

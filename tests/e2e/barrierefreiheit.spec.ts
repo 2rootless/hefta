@@ -78,7 +78,8 @@ test('Tab „Mappe“: Überschriften, Personen als Links, Zeilen mit Stand, Rei
   expect(kopf[1]!.slice(3)).toMatch(stimmungMuster('P2', { anzahl: 2, an: 'ihr' }));
   expect(kopf[2]).toBe('H2 Max Im Mietvertrag');
   expect(kopf[3]).toBe('H2 Lea Im Mietvertrag');
-  expect(kopf[4]).toBe('H2 Petra Bürgin');
+  // PC202 (H1, E363): unter dem Namen „Bürgt“, nicht die Form nach Geschlecht.
+  expect(kopf[4]).toBe('H2 Petra Bürgt');
   expect(kopf[5]).toBe('H2 Für den ganzen Haushalt');
 
   // Jede Zeile sagt Unterlage, Stand und Marke in Worten.
@@ -110,7 +111,7 @@ test('Tab „Mappe“: Überschriften, Personen als Links, Zeilen mit Stand, Rei
     /link "Max Im Mietvertrag"/,
     /link "Lea Im Mietvertrag"/,
     /Zusätzlich, falls der Vermieter fragt/,
-    /link "Petra Bürgin"/,
+    /link "Petra Bürgt"/,
     /link "Jetzt sichern"/,
     /link "Unterlagen hinzufügen, /,
     /button "Mappe trotzdem teilen"/,

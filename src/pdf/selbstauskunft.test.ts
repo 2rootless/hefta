@@ -110,7 +110,9 @@ describe('Selbstauskunft als festes Formular', () => {
     for (const etikett of ETIKETTEN)
       expect(t.toLowerCase(), etikett).toContain(etikett.toLowerCase());
     expect(t).toContain('Bürgschaft');
-    expect(t).toContain('Bürgin, zieht nicht ein.');
+    // PC205 (E363): „Bürgt, zieht nicht ein.“ statt der gewählten Form.
+    expect(t).toContain('Bürgt, zieht nicht ein.');
+    expect(t).not.toContain('Bürgin');
     // DP130, Antwort 4: Bei Bürgen „Rolle: Bürgt“, bei allen im Mietvertrag keine Zeile.
     expect(t).toContain('Bürgt');
     expect(t).not.toContain('Rolle im Mietvertrag');

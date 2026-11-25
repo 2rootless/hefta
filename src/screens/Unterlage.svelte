@@ -19,7 +19,7 @@
     listenText,
     ohneTrennstellen,
     personStand,
-    rollenText,
+    rollenAnzeige,
     standFinden,
     warumInhalt,
     type UnterlagenStand,
@@ -297,7 +297,7 @@
       <p class="fuer">
         {t('rutsch.fuer', {
           name,
-        })}{#if buerge}{` · ${rollenText(stand.rolle, stand.bezeichnung)}`}{/if}
+        })}{#if buerge}{` · ${rollenAnzeige(stand.rolle)}`}{/if}
       </p>
       <h1 class="unterlage" use:passend={['26px/31px', '23px/28px', '21px/25px']}>
         {listenText(u.typ)}

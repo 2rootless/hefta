@@ -13,14 +13,13 @@
     betragAus,
     betragText,
     leereAngaben,
-    offenZahl,
     pflichtFehlt,
     type BuergschaftAngaben,
     type BuergschaftsArt,
   } from '../domain/buergschaft';
   import { namensteil } from '../domain/dateiname';
   import { nameImPdf, nameText } from '../domain/namen';
-  import { rollenText } from '../domain/regelkatalog';
+  import { rollenAnzeige } from '../domain/regelkatalog';
   import { t, tIn } from '../i18n';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
   import { erklaerungHeft } from '../ui/erklaerungHeft.svelte';
@@ -68,8 +67,14 @@
   let datei = $state.raw<File | null>(null);
   let bilder = $state<string[]>([]);
 
-  const offen = $derived(offenZahl(a));
   const fehlt = $derived(pflichtFehlt(a));
+  // DP136, Abschnitt 4: Der gesperrte Knopf nennt, was fehlt, mit ganzen Namen (K9).
+  const fehltListe = $derived(
+    [
+      fehlt.betrag ? t('buergschaft.fehltBetrag') : '',
+      fehlt.art ? t('buergschaft.fehltArt') : '',
+    ].filter(Boolean),
+  );
   const zeigeFehler = $derived(versucht ? fehlt : { betrag: false, art: false });
 
   let titelEl = $state<HTMLElement | null>(null);
@@ -230,9 +235,12 @@
               bind:value={a.buerge.anschrift}
               placeholder={t('buergschaft.platzAnschrift')}
               autocomplete="off"
+              aria-describedby="b-wer"
             />
           </label>
         </div>
+        <!-- DP136, Abschnitt 2 (W30): ein Satz je Angabe. -->
+        <p class="satz w30" id="b-wer" data-w30="feld">{t('buergschaft.werSatz')}</p>
       </section>
 
       <section class="teil">
@@ -247,7 +255,7 @@
                   aria-hidden="true"
                 ></span>
                 <b>{nameText(nameImPdf(m.person))}</b>
-                <small>{rollenText(m.zugehoerigkeit.rolle, m.zugehoerigkeit.bezeichnung)}</small>
+                <small>{rollenAnzeige(m.zugehoerigkeit.rolle)}</small>
               </li>
             {/each}
           </ul>
@@ -271,6 +279,7 @@
               ><Symbol name="plus" groesse={16} />{t('buergschaft.weitere')}</button
             >
           </div>
+          <p class="satz w30" data-w30="feld">{t('buergschaft.fuerWenSatzOhne')}</p>
         {/if}
       </section>
 
@@ -291,9 +300,11 @@
               bind:value={a.vermieter.anschrift}
               placeholder={t('buergschaft.platzAnschrift')}
               autocomplete="off"
+              aria-describedby="b-vermieter"
             />
           </label>
         </div>
+        <p class="satz w30" id="b-vermieter" data-w30="feld">{t('buergschaft.vermieterSatz')}</p>
       </section>
 
       <section class="teil">
@@ -305,8 +316,10 @@
               bind:value={a.wohnung}
               placeholder={t('buergschaft.platzWohnung')}
               autocomplete="off"
+              aria-describedby="b-wohnung"
             />
           </label>
+          <p class="satz w30" id="b-wohnung" data-w30="feld">{t('buergschaft.wohnungSatz')}</p>
           <fieldset class="feld">
             <legend>{t('buergschaft.mietvertrag')}</legend>
             <div class="segmente" role="radiogroup" aria-label={t('buergschaft.mietvertrag')}>
@@ -330,13 +343,20 @@
             {a.vertrag === 'unterschrieben'
               ? t('buergschaft.vertragVom')
               : t('buergschaft.einzugZum')}
-            <input type="date" bind:value={a.vertragTag} />
+            <input
+              type="date"
+              bind:value={a.vertragTag}
+              aria-describedby={a.vertrag === 'unterschrieben' ? undefined : 'b-einzug'}
+            />
           </label>
+          {#if a.vertrag !== 'unterschrieben'}
+            <p class="satz w30" id="b-einzug" data-w30="feld">{t('buergschaft.einzugSatz')}</p>
+          {/if}
         </div>
       </section>
 
       <section class="teil">
-        {@render kopf(t('buergschaft.hoechstbetrag'), t('buergschaft.pflicht'))}
+        {@render kopf(t('buergschaft.hoechstbetrag'), '')}
         <div class="kasten">
           <label class="eingabe betrag">
             <span class="visually-hidden">{t('buergschaft.hoechstbetrag')}</span>
@@ -366,7 +386,7 @@
       </section>
 
       <section class="teil">
-        {@render kopf(t('buergschaft.art'), t('buergschaft.pflicht'))}
+        {@render kopf(t('buergschaft.art'), '')}
         <div
           class="kasten arten"
           role="radiogroup"
@@ -394,6 +414,8 @@
         {#if zeigeFehler.art}
           <div class="art-fehler">{@render fehler(t('buergschaft.fehlerArt'), 'b-fehler-art')}</div>
         {/if}
+        <!-- DP136, Abschnitt 3: Was nicht ins Formular gehört, kommt von Hand aufs Papier. -->
+        <p class="satz">{t('buergschaft.unterschriftSatz')}</p>
       </section>
       <!-- DP112 B1: Bernstein nur mit Warnzeichen und Satz, wie bei .fehler (AK5). -->
       {#if bauFehler}<p class="fehler fehler-bau" role="alert">
@@ -473,8 +495,10 @@
   {:else}
     <Aktionsleiste
       text={t('buergschaft.erstellen')}
-      zusatz={offen ? t('buergschaft.offen', { anzahl: offen }) : undefined}
-      ansage={offen ? t('buergschaft.offenAnsage', { anzahl: offen }) : undefined}
+      grund={fehltListe.length
+        ? t('buergschaft.esFehlt', { liste: fehltListe.join(', ') })
+        : undefined}
+      beiGrund={() => void erstellen()}
       onclick={() => void erstellen()}
     />
   {/if}
@@ -546,7 +570,6 @@
 
   .eingabe input {
     min-height: 48px;
-    border-radius: 14px;
   }
 
   .satz {

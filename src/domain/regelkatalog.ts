@@ -210,12 +210,22 @@ export function hilfeFuer(
   name: string,
 ): string {
   if (rolle !== 'buerge' || !typ.hilfeBuerge) return typ.hilfe ?? '';
-  const wer =
-    bezeichnung === 'weiblich' ? 'die Bürgin' : bezeichnung === 'maennlich' ? 'der Bürge' : name;
-  return typ.hilfeBuerge.replace('{buerge}', wer);
+  // PC205 (E363): immer mit Namen, nie „die Bürgin“ oder „der Bürge“; die Form bleibt den Daten.
+  void bezeichnung;
+  return typ.hilfeBuerge.replace('{buerge}', name);
 }
 
 /** Rollenbezeichnung in der gewünschten Form, z. B. „Mitmieterin“. */
+/**
+ * PC202 (H1, E363): Die Rolle, wie die App sie unter einem Namen zeigt: „Im Mietvertrag“ oder „Bürgt“, ohne Form
+ * nach Geschlecht (W57). Die gewählte Form (Bürgin, Bürge) bleibt den PDFs vorbehalten.
+ */
+export function rollenAnzeige(rolle: Rolle): string {
+  const r = katalog.rollen[rolle]!;
+  const text = r.textNeutral ?? r.text;
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 export function rollenText(rolle: Rolle, bezeichnung: Bezeichnung): string {
   const r = katalog.rollen[rolle]!;
   if (bezeichnung === 'weiblich') return r.textWeiblich ?? r.text;

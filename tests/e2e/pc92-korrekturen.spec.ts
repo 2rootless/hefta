@@ -20,11 +20,11 @@ test('K1: „Über Hefta“ zeigt „Rückmeldung geben“ ohne Testschalter (Hi
   await expect(page.getByText('Freiwillig, vier kurze Fragen')).toBeVisible();
 });
 
-test('K5: Beim Haushalt steht unter „Bürge hinzufügen“ „Hilft, wenn das Einkommen knapp ist“ (DP61-2 U5, E186)', async ({
+test('K5: Beim Haushalt steht unter „Person hinzufügen, die bürgt“ „Hilft, wenn das Einkommen knapp ist“ (DP61-2 U5, E186)', async ({
   page,
 }) => {
   await erstePerson(page, { vorname: 'Max', bezeichnung: 'Hauptmieter' });
-  const zeile = page.getByRole('link', { name: /Bürge hinzufügen/ });
+  const zeile = page.getByRole('link', { name: /Person hinzufügen, die bürgt/ });
   await expect(zeile).toContainText('Hilft, wenn das Einkommen knapp ist');
   await expect(page.getByText(/Nur nötig, wenn/)).toHaveCount(0);
   // Gegenprobe: Der alte Satz steht nirgends mehr in den Texten der App.

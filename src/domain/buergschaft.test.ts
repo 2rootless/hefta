@@ -149,11 +149,13 @@ describe('Je Wohnung (DP49 Punkt 5)', () => {
 describe('Bonität bei Bürgen (DP49 Punkt 6, B3)', () => {
   it('der Satz im Kopf nennt den Wert der Bürgschaft, nach der Karte', () => {
     const typ = dokumenttyp('bonitaet')!;
+    // PC205 (E363): immer mit Namen, für jede gewählte Form.
     expect(hilfeFuer(typ, 'buerge', 'weiblich', 'Petra')).toBe(
-      'Die Auskunft für Vermieter. Bei Bürgen fragen viele Vermieter danach, denn eine Bürgschaft ist so viel wert, wie die Bürgin zahlen kann.',
+      'Die Auskunft für Vermieter. Bei Bürgen fragen viele Vermieter danach, denn eine Bürgschaft ist so viel wert, wie Petra zahlen kann.',
     );
-    expect(hilfeFuer(typ, 'buerge', 'maennlich', 'Jonas')).toContain('wie der Bürge zahlen kann.');
+    expect(hilfeFuer(typ, 'buerge', 'maennlich', 'Jonas')).toContain('wie Jonas zahlen kann.');
     expect(hilfeFuer(typ, 'buerge', 'neutral', 'Kim')).toContain('wie Kim zahlen kann.');
+    expect(hilfeFuer(typ, 'buerge', 'weiblich', 'Petra')).not.toMatch(/Bürgin|der Bürge/);
     // Gegenprobe: Wer im Mietvertrag steht, bekommt den üblichen Satz.
     expect(hilfeFuer(typ, 'vertrag', 'weiblich', 'Lea')).toBe(typ.hilfe);
   });

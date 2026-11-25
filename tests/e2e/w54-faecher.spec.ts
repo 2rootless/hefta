@@ -440,7 +440,12 @@ const GEGEN_N: [string, string, string | null, ((p: Page) => Promise<unknown>) |
     'N1',
     'Wahlpunkt bleibt neben dem Namen (Fassung DP127)',
     '@media (max-width:300px){.zeile{flex-wrap:nowrap!important}.ap{order:0!important;flex-basis:auto!important;width:44px!important;padding-left:0!important}.apt{display:none!important}.text b{overflow-wrap:anywhere!important}.zeile .text{flex-basis:0!important}.zeile .griff{order:0!important}.ap{flex:none!important}}',
-    null,
+    // Mit dem längsten Namen der Namensliste (W40): Auf Linux setzt die Schrift schmaler, und „Jarne“ passte dort
+    // auch in die alte Fassung (GitHub, 2.2). „Konstantin“ zerbricht in ihr überall; die echte Fassung hält ihn (DP130).
+    (p) =>
+      p.evaluate(
+        () => (document.querySelector('.faecher .text b')!.firstChild!.textContent = 'Konstantin'),
+      ),
   ],
   [
     'N1',

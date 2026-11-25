@@ -5,7 +5,7 @@
   import {
     listenText,
     personZeilen,
-    rollenText,
+    rollenAnzeige,
     type PersonStand,
     type UnterlagenStand,
   } from '../domain/regelkatalog';
@@ -48,7 +48,7 @@
     return 'da';
   }
 
-  const rolle = $derived(rollenText(stand.rolle, stand.bezeichnung));
+  const rolle = $derived(rollenAnzeige(stand.rolle));
 
   function ziel(u: UnterlagenStand): string {
     if (u.typ.inAppErstellt) return `#/selbstauskunft/${stand.person.id}`;
