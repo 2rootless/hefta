@@ -62,6 +62,28 @@ const FAELLE_A = [
       'Haushalt A: Jarne und Selin, ein Kind, Hiltrud bürgt. „Marktüblich“, Schritt „Ich will die Wohnung“ (Beispiel-Mappe der Website)',
     e: {},
   },
+  // PC206 (Abschnitt 2): dieselben Fälle wie Mappe 1, aber mit Haushalt A (Namensliste, W40), für den fremden Leser.
+  {
+    datei: 'A-2-Haushalt-A-ohne-Kopfzeile.pdf',
+    titel: 'Haushalt A ohne Kopf- und Fußzeile',
+    e: { fusszeile: false },
+  },
+  {
+    datei: 'A-3-Haushalt-A-datensparsam-Besichtigung.pdf',
+    titel: 'Haushalt A, „Datensparsam“, Schritt „Besichtigung“',
+    e: { modus: 'datensparsam', schritt: 'besichtigung' },
+  },
+  {
+    datei: 'A-4-Haushalt-A-mit-Bitte-zum-Loeschen.pdf',
+    titel: 'Haushalt A, „Marktüblich“ mit der Bitte zum Löschen auf dem Deckblatt',
+    e: { bitte: true },
+  },
+  {
+    datei: 'A-5-Haushalt-A-mit-Inserat-und-Einzug.pdf',
+    titel: 'Haushalt A, zweite Fassung an diese Wohnung, mit Portal und Einzug auf dem Deckblatt',
+    e: {},
+    heft: { angaben: { portal: 'ImmoScout24' }, einzug: '2027-01-01', spur: [{ art: 'mappe' }] },
+  },
 ];
 
 // ---------- Im Browser: Backup einspielen, Mappen bauen, Scans zeichnen ----------
@@ -76,6 +98,7 @@ async function mappenBauen(page, { backup, faelle, kennung, telefonNeu }) {
       const { mappeErstellen } = await import('/src/ui/mappeErstellen.ts');
       const { AUSSEHEN_STANDARD } = await import('/src/domain/modell.ts');
       const { wohnungsSchluessel } = await import('/src/domain/adresse.ts');
+      const { deckZeilen } = await import('/src/domain/deckZeilen.ts');
       const roh = atob(b64);
       const bytes = new Uint8Array(roh.length);
       for (let i = 0; i < roh.length; i++) bytes[i] = roh.charCodeAt(i);
@@ -118,14 +141,10 @@ async function mappenBauen(page, { backup, faelle, kennung, telefonNeu }) {
         );
         const e = { ...standardEinstellungen(), ...fall.e, auswahl };
         // Fester Tag, damit die Mappen bei jedem Lauf gleich datiert sind.
-        const erg = await mappeErstellen(
-          db,
-          ansicht,
-          bewerbung,
-          e,
-          new Date(2026, 10, 6, 12),
-          AUSSEHEN_STANDARD,
-        );
+        // PC206: Portal, Einzug und Fassung der Mappe kommen sonst aus dem Heft (deckZeilen).
+        const tag = new Date(2026, 10, 6, 12);
+        const bw = fall.heft ? { ...bewerbung, ...deckZeilen(fall.heft, tag) } : bewerbung;
+        const erg = await mappeErstellen(db, ansicht, bw, e, tag, AUSSEHEN_STANDARD);
         const daten = new Uint8Array(await erg.dateien[0].arrayBuffer());
         let s = '';
         for (let i = 0; i < daten.length; i += 0x8000)

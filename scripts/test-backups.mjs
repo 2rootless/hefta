@@ -380,6 +380,8 @@ function familie(n) {
               'Selbstschuldnerische Bürgschaft',
               [
                 `Ich bürge für die Verpflichtungen aus dem Mietvertrag von ${n.vertrag}.`,
+                // PC206 (E112): Eine Bürgschaft ohne Höchstbetrag ist kein gutes Muster.
+                'Höchstens bis zu einem Betrag von 3.600 Euro.',
                 'Hamburg, 20.10.2026',
                 vollName(n.buerge),
               ],

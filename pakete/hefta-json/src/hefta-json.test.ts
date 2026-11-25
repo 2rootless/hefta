@@ -422,3 +422,34 @@ describe('hefta-json: die Zeile im Verzeichnis, genau die zwei Formen aus V6 (PC
     ).toBeGreaterThan(0);
   });
 });
+
+describe('PC206: Grenzen im Schema wie im Leser', () => {
+  const pruef = schemaPruefen;
+  const beispiel = JSON.parse(readFileSync(new URL('1-eine-person.json', ORDNER), 'utf8'));
+
+  it('51 Personen oder 51 Unterlagen verletzen das Schema; 50 nicht', () => {
+    const person = beispiel.haushalt.personen[0];
+    const mit = (n: number, m: number) => ({
+      ...beispiel,
+      haushalt: {
+        ...beispiel.haushalt,
+        personen: Array.from({ length: n }, (_, i) =>
+          i === 0
+            ? { ...person, unterlagen: Array.from({ length: m }, () => person.unterlagen[0]) }
+            : {
+                ...person,
+                ansprech: undefined,
+                telefon: undefined,
+                telefon_e164: undefined,
+                email: undefined,
+                unterlagen: [],
+              },
+        ),
+      },
+    });
+    expect(pruef(mit(50, 50))).toBe(true);
+    // Gegenproben
+    expect(pruef(mit(51, 1))).toBe(false);
+    expect(pruef(mit(1, 51))).toBe(false);
+  });
+});

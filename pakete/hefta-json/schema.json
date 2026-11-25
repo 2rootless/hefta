@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://hefta.de/format/hefta-json-2.schema.json",
   "title": "hefta.json, Fassung 2 (liest auch Fassung 1)",
-  "description": "Lesehilfe als Anhang einer PDF-Mappe aus Hefta. Beschreibung: README.md des Pakets hefta-json und docs/format-hefta-json.md. Lizenz Apache-2.0.",
+  "description": "Lesehilfe als Anhang einer PDF-Mappe aus Hefta. Beschreibung: FORMAT.md im Paket hefta-json. Lizenz Apache-2.0.",
   "type": "object",
   "required": ["hefta", "erstellt", "fassung", "seitenzahl", "bewerbung", "haushalt"],
   "properties": {
@@ -151,6 +151,7 @@
         "personen": {
           "type": "array",
           "minItems": 1,
+          "maxItems": 50,
           "items": {
             "$ref": "#/definitions/person"
           }
@@ -208,6 +209,7 @@
         },
         "unterlagen": {
           "type": "array",
+          "maxItems": 50,
           "items": {
             "$ref": "#/definitions/unterlage"
           }

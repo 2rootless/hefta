@@ -1,10 +1,14 @@
-# Format `hefta.json`, Fassung 2
+# Format `hefta.json`, Formatfassung 2
 
-**Entwurf, noch nicht ausgeliefert.** Stand: 24. November 2026. Entscheidungen E205 bis E208, E216 bis E227 und, für
-Fassung 2, E363 und E366 (W57). Fassung 1 ist die erste Fassung, die Hefta ausliefert (2.0 bis 2.1); sie bedeutet von
-da an immer dasselbe (E218). Fassung 2 ändert die Rollen und das Rollenwort auf dem Deckblatt (Abschnitt 6, „Fassung 1
-lesen“). Ältere Entwürfe gibt es nicht mehr; kein Leser muss sie kennen (E216). Die Prüfung durch einen fremden Leser
-steht für Fassung 2 noch aus.
+**Stand: 25. November 2026.** Formatfassung 1 ist die erste, die Hefta ausliefert (Hefta 2.0 bis 2.1); sie bedeutet von
+da an immer dasselbe. Formatfassung 2 kommt mit Hefta 2.2 und ändert die Rollen und das Rollenwort auf dem Deckblatt
+(Abschnitt 6, „Formatfassung 1 lesen“). Ältere Entwürfe gibt es nicht; kein Leser muss sie kennen.
+
+**Zwei Wörter für „Fassung“:**
+
+- `hefta` ist die **Formatfassung**: die Fassung dieser Beschreibung, hier `2`.
+- `fassung` ist die **Fassung der Mappe**: die wievielte Mappe an dieselbe Wohnung geht. Sie steht auf dem Deckblatt
+  („Fassung 2 vom 18. November 2026“).
 
 **Lizenz:** Diese Beschreibung, `schema.json` und die Beispiele stehen unter Apache-2.0, wie das Paket `hefta-json`, in
 dem sie liegen (Datei `LICENSE`). Die App Hefta steht unter AGPL-3.0.
@@ -12,14 +16,17 @@ dem sie liegen (Datei `LICENSE`). Die App Hefta steht unter AGPL-3.0.
 `hefta.json` ist die Lesehilfe für Vermieter. Die JSON-Datei steckt als Anhang in einer PDF-Mappe aus Hefta.
 Programme können sie lesen, Menschen merken nichts davon. Dieses Dokument beschreibt das Format vollständig. Wer
 einen Leser schreibt, braucht nur dieses Dokument, `schema.json` und die Beispiele, keinen Code von Hefta. Wo ein
-Leser raten müsste, sagt dieses Dokument, was gilt; die Nummern in Klammern (V1 bis V23, L78-1 bis L78-4) verweisen
-auf die Entscheidung dazu.
+Leser raten müsste, sagt dieses Dokument, was gilt. Die Nummern in Klammern (etwa V3, E220, L78-3, A17) verweisen auf
+Entscheidungen bei Hefta, die nicht veröffentlicht sind. Jede Regel steht hier vollständig; ein Leser braucht die
+Nummern nicht.
 
 ## 1. Drei Regeln
 
 1. **Nur, was ohnehin sichtbar ist.**
-   - Jeder Wert steht auch auf dem Deckblatt, im Verzeichnis „Was beiliegt“ oder in den Eigenschaften der
+   - Jede Angabe steht auch auf dem Deckblatt, im Verzeichnis „Was beiliegt“ oder in den Eigenschaften der
      PDF-Datei. Der Zeitpunkt `erstellt` ist das Erstelldatum der PDF.
+   - Kennungen wie `rolle`, `typ` oder `mitziehende[].art` sind Übersetzungen dessen, was auf dem Papier steht, in
+     eine feste Liste (Abschnitt 6). Sie stehen nicht selbst auf dem Papier.
    - Einige Werte stehen hier in fester Form statt in der Form vom Papier:
      - Datumsangaben als `JJJJ-MM-TT`
      - das Telefon zusätzlich international (`telefon_e164`)
@@ -52,12 +59,12 @@ auf die Entscheidung dazu.
 
 ## 3. Fassungen und Erweiterung
 
-- **Nummer:** `hefta` ist die Nummer der Fassung, hier `2`. Sie steigt nur, wenn sich die Bedeutung eines Felds
+- **Nummer:** `hefta` ist die Formatfassung, hier `2`. Sie steigt nur, wenn sich die Bedeutung eines Felds
   ändert, ein Pflichtfeld dazukommt oder sich etwas ändert, das auf dem Papier fest ist: die Überschriften (V5), die
   Rollenwörter (V9), die Form der Verzeichniszeile (V6) oder die Sätze zum Schritt (E227).
 - **Ohne neue Fassung kommen dazu:** neue freiwillige Felder und neue Kennungen in den festen Listen (Abschnitt 6).
 - **Leser:**
-  - nehmen jede Fassung ab 1 an
+  - nehmen jede Formatfassung ab 1 an
   - lesen die Felder, die sie kennen
   - überlesen unbekannte Felder
   - zeigen eine unbekannte Kennung neutral, etwa als „Unterlage“
@@ -68,10 +75,15 @@ auf die Entscheidung dazu.
   - Hefta schreibt solche Felder nie und liest sie nie.
   - Leser überlesen `x_`-Felder und **zeigen sie nie**, auch nicht „Von Hefta geprüft“ oder Ähnliches (A17). Ob die
     Datei zur Mappe passt, entscheidet allein Abschnitt 11.
+  - Im Schema stehen sie als `patternProperties`. Das Muster sagt nur, dass sie erlaubt sind. Andere unbekannte Felder
+    bleiben ebenfalls erlaubt, weil spätere Formatfassungen freiwillige Felder ergänzen dürfen; darum gibt es kein
+    `additionalProperties: false`.
+- **`x_` als Wert:** Kennungen der festen Listen beginnen nie mit `x_`. Steht `x_…` als Wert in einer Liste, etwa
+  `"typ": "x_neu"`, ist es eine unbekannte Kennung und wird neutral gezeigt (Abschnitt 6).
 
 ## 4. Aufbau
 
-Beispiel: zwei im Mietvertrag, ein Kind, eine Bürgin, zweite Fassung der Bewerbung (`beispiele/2-paar-kind-buergin.json`,
+Beispiel: zwei im Mietvertrag, ein Kind, eine Bürgin, zweite Fassung der Mappe (`beispiele/2-paar-kind-buergin.json`,
 gekürzt).
 
 ```json
@@ -118,17 +130,17 @@ gekürzt).
 
 | Feld | Pflicht | Bedeutung |
 | --- | --- | --- |
-| `hefta` | ja | Fassung des Formats, hier `2`; eine ganze Zahl (`2.0` gilt als 2, V15) |
+| `hefta` | ja | Formatfassung, hier `2`; eine ganze Zahl (`2.0` gilt als 2, V15) |
 | `erstellt` | ja | Zeitpunkt, zu dem die Mappe gebaut wurde, genau in der Form `JJJJ-MM-TTThh:mm:ss` mit `Z` oder `±hh:mm`, ohne Bruchteile von Sekunden: `2026-11-18T19:02:55+01:00`. Gleich dem Erstelldatum der PDF, Abweichung unter einer Sekunde (V11) |
-| `fassung` | ja | Nummer der Fassung, wie auf dem Deckblatt („Fassung 2 vom 18. November 2026“, V7). Zählt die Mappen, die an diese Wohnung schon hinausgingen, plus eins |
+| `fassung` | ja | Fassung der Mappe, wie auf dem Deckblatt („Fassung 2 vom 18. November 2026“, V7). Zählt die Mappen, die an diese Wohnung schon hinausgingen, plus eins |
 | `seitenzahl` | ja | Seiten der ganzen Mappe, Deckblatt eingeschlossen; wie im Fuß des Deckblatts („Seite 1 von 16“, V8) |
 | `bewerbung` | ja | Abschnitt 5, „Bewerbung“ |
 | `haushalt` | ja | Abschnitt 5, „Haushalt“ |
-| `schritt` | nein | für welchen Schritt der Bewerbung die Mappe gedacht ist; nur, wenn der feste Satz dazu auf dem Deckblatt steht (Abschnitt 6, E227). Hefta 2.0 schreibt ihn nicht |
+| `schritt` | nein | für welchen Schritt der Bewerbung die Mappe gedacht ist; nur, wenn der feste Satz dazu auf dem Deckblatt steht (Abschnitt 6). Hefta schreibt ihn bis 2.2 nicht. Formatfassung 1 kennt das Feld schon |
 | `loeschwunsch` | nein | die Bitte zum Löschen, zeichengleich mit dem Satz auf dem Deckblatt; nur, wenn sie dort steht |
 
-`modus` gehört nicht zu Fassung 1 (V23). Steht er doch in einer Datei, überliest ein Leser ihn wie jedes unbekannte
-Feld.
+`modus` gehört zu keiner Formatfassung (V23). Steht er doch in einer Datei, überliest ein Leser ihn wie jedes
+unbekannte Feld.
 
 **Bewerbung**
 
@@ -188,28 +200,38 @@ Schema offen (Kennungen aus `^[a-z][a-z0-9_]*$`). Leser zeigen Unbekanntes neutr
   wird sie nicht, weil es keine feste Form gibt (L78-1).
 - `schritt`: nicht gezeigt, nicht gebunden; die Mappe wird trotzdem gezeigt (L78-4).
 
-**`rolle` und Überschrift (V9, Fassung 2).** Auf dem Deckblatt steht jede Person unter ihrer Überschrift. Ein
+**`rolle` und Überschrift (V9, Formatfassung 2).** Auf dem Deckblatt steht jede Person unter ihrer Überschrift. Ein
 Rollenwort steht nicht mehr dahinter: Unter „Im Mietvertrag“ folgt dem Namen nur die Tätigkeit, unter „Bürgt“ steht nur
 der Name.
 
 | Kennung | Bedeutung | Überschrift |
 | --- | --- | --- |
 | `vertrag` | steht im Mietvertrag | Im Mietvertrag |
-| `buerge` | bürgt für den Haushalt, steht nicht im Mietvertrag; Abschnitt 12 | Bürgt |
+| `buerge` | bürgt gegenüber dem Vermieter für die Pflichten der Personen im Mietvertrag; der Umfang steht in der Bürgschaftserklärung (§ 765, § 767 BGB). Steht nicht im Mietvertrag; Abschnitt 12 | Bürgt |
 
-**Fassung 1 lesen (2.0 bis 2.1).** Fassung 1 kannte statt `vertrag` die Kennungen `hauptmieter` (die erste Person,
+**Formatfassung 1 lesen (Hefta 2.0 bis 2.1).** Formatfassung 1 kannte statt `vertrag` die Kennungen `hauptmieter` (die erste Person,
 genau eine) und `mitmieter`, statt `ansprech` das Feld `kontakt`, und auf dem Deckblatt stand hinter jedem Namen ein
 Rollenwort. Ein Leser zeigt beide Fassungen gleich, ohne „Hauptmieter“:
 
-| Fassung 1 | gelesen als | Rollenwort auf dem Deckblatt beginnt mit |
+| Formatfassung 1 | gelesen als | Rollenwort auf dem Deckblatt beginnt mit |
 | --- | --- | --- |
 | `hauptmieter` | im Mietvertrag | `Hauptmiet` (Hauptmieter, Hauptmieterin, Hauptmietpartei) |
 | `mitmieter` | im Mietvertrag | `Mitmiet` (Mitmieter, Mitmieterin, Mitmietpartei) |
 | `buerge` | bürgt | `Bürg` (Bürge, Bürgin, Bürgschaft) |
 | `kontakt: true` | die Person unter „Kontakt“ | |
 
-In Fassung 1 darf nach dem Rollenwort ein Komma und die Tätigkeit folgen („Hauptmieter, Elektroniker“). In Fassung 2
-gilt `kontakt` nicht mehr: Telefon und Mail stehen nur bei `ansprech`.
+In Formatfassung 1 darf nach dem Rollenwort ein Komma und die Tätigkeit folgen („Hauptmieter, Elektroniker“). In
+Formatfassung 2 gilt `kontakt` nicht mehr: Telefon und Mail stehen nur bei `ansprech`.
+
+**Gemischte Dateien.** Ein Leser richtet sich immer nach `hefta`:
+
+- `kontakt` in Formatfassung 2 wird überlesen. Telefon oder Mail ohne `ansprech` werden abgelehnt (Abschnitt 5).
+- `rolle: hauptmieter` oder `mitmieter` in Formatfassung 2 gilt als im Mietvertrag und wird unter „Im Mietvertrag“
+  gebunden. Punkt 6 aus Abschnitt 11 gilt dann in der Form für Formatfassung 2 (keine Pflicht auf genau einen
+  Hauptmieter). Hefta schreibt das nie.
+- Ein Haushalt ohne Person im Mietvertrag wird nicht abgelehnt. Hefta schreibt ihn nie.
+- Eine Lesehilfe in Formatfassung 2 an einer Mappe aus Hefta 2.0 oder 2.1 (Deckblatt mit Rollenwort hinter dem Namen)
+  passt, wenn alle Bindungen aus Abschnitt 11 aufgehen. Das Rollenwort hinter dem Namen stört die Bindung nicht.
 
 **`mitziehende[].art` und die feste Form (V22)**
 
@@ -233,7 +255,7 @@ Die Zahlen zwei bis zwölf stehen als Wort, groß geschrieben am Satzanfang, ab 
 | `einkommen_sonstig` | Sonstiger Einkommensnachweis | sonstiger Einkommensnachweis |
 | `bonitaet` | Bonitätsnachweis | Bonitätsnachweis, etwa einer Auskunftei |
 | `mietzahlung` | Mietzahlungen | Mietschuldenfreiheit oder Nachweis der Mietzahlungen |
-| `buergschaftserklaerung` | Bürgschaftserklärung | Bürgschaftserklärung; nur bei `buerge` |
+| `buergschaftserklaerung` | Bürgschaftserklärung | Bürgschaftserklärung; nur bei `buerge`. Die Mappe enthält nur eine Kopie: Wirksam ist die Erklärung nur auf Papier mit eigenhändiger Unterschrift (§ 766 BGB) |
 | `anschreiben` | Anschreiben | von Hefta erstellt |
 | `empfehlung_vorvermieter` | Empfehlung des Vorvermieters | Empfehlung des Vorvermieters |
 | `wbs` | Wohnberechtigungsschein | Wohnberechtigungsschein |
@@ -241,10 +263,13 @@ Die Zahlen zwei bis zwölf stehen als Wort, groß geschrieben am Satzanfang, ab 
 | `schufa_datenkopie` | SCHUFA-Datenkopie | Auskunft der SCHUFA an die Person selbst |
 
 **`pruefweg`:** `pruefcode`. Die Unterlage trägt einen Code, mit dem der Vermieter sie beim Aussteller prüfen kann.
+Der Prüfweg ist nicht an das Papier gebunden. Ein Leser zeigt ihn darum nie als geprüfte Angabe, höchstens als
+allgemeinen Hinweis, wie man eine solche Unterlage beim Aussteller prüfen kann; den Code selbst liest er aus der
+Unterlage, nicht aus der Lesehilfe.
 
 **`schritt` und der feste Satz (E227).** `schritt` steht nur, wenn sein Satz auf dem Deckblatt steht: direkt unter dem
-Satz zum Haushalt, vor „Im Mietvertrag“. Wortlaut und Ort sind fest wie die Überschriften; eine Änderung heißt
-Fassung 2.
+Satz zum Haushalt, vor „Im Mietvertrag“. Wortlaut und Ort sind fest wie die Überschriften; eine Änderung bringt eine
+neue Formatfassung.
 
 | Kennung | Bedeutung | Satz auf dem Deckblatt |
 | --- | --- | --- |
@@ -252,7 +277,8 @@ Fassung 2.
 | `will_wohnung` | „Ich will die Wohnung“ | Zum Mietwunsch ohne Einkommens- und Bonitätsnachweise. Beide folgen nach der Zusage. |
 | `zusage` | nach der Zusage, vor dem Vertrag | Zum Vertrag ohne Ausweiskopie. Der Ausweis wird bei der Unterschrift vorgezeigt. |
 
-Hefta 2.0 bietet keine Auswahl nach Schritt an. Es schreibt darum weder `schritt` noch einen dieser Sätze.
+Hefta bietet bis 2.2 keine Auswahl nach Schritt an, die das Deckblatt ändert. Es schreibt darum weder `schritt` noch
+einen dieser Sätze.
 
 **`vermerke[].art`:** Liste in Abschnitt 10.
 
@@ -264,8 +290,10 @@ Hefta 2.0 bietet keine Auswahl nach Schritt an. Es schreibt darum weder `schritt
 - **Kein Namenszusatz:** Hefta kennt kein eigenes Feld für Namenszusätze. Deshalb gibt es auch kein Feld
   `namenszusatz`.
 - **Nur lateinische Schrift (V18):** Jeder Buchstabe eines Namens gehört zur lateinischen Schrift, Akzente und
-  Sonderbuchstaben eingeschlossen (é, ß, Ø, ı, İ, ş, ễ). Dazu Leerzeichen, Bindestrich und Apostroph. Ein Name mit
-  Buchstaben einer anderen Schrift wird abgelehnt, auch einzelne wie das kyrillische „е“ (A5).
+  Sonderbuchstaben eingeschlossen (é, ß, Ø, ı, İ, ş, ễ). Ein Name mit Buchstaben einer anderen Schrift wird abgelehnt,
+  auch einzelne wie das kyrillische „е“ (A5).
+  - Zeichen, die keine Buchstaben sind, prüft diese Regel nicht: Leerzeichen, Bindestrich, Apostroph und Punkt („Dr.“)
+    sind erlaubt, soweit der saubere Text (Abschnitt 13) und die Regel zu Leerzeichen sie zulassen.
   - Kann das PDF einen Namen nicht schreiben, etwa in kyrillischer Schrift, trägt die Person ihn in lateinischen
     Buchstaben ein, wie im Pass. Diese Form steht auf dem Deckblatt und hier.
   - Die ursprüngliche Schrift steht nicht auf dem Papier und darum auch nicht hier (Regel 1).
@@ -290,7 +318,7 @@ Hefta 2.0 bietet keine Auswahl nach Schritt an. Es schreibt darum weder `schritt
 
 ## 8. Kontakt und Telefon
 
-- **Wo:** Kontaktdaten stehen bei der Ansprechperson (`ansprech: true`; in Fassung 1 `kontakt: true`) und nur so,
+- **Wo:** Kontaktdaten stehen bei der Ansprechperson (`ansprech: true`; in Formatfassung 1 `kontakt: true`) und nur so,
   wie sie auf dem Deckblatt stehen. Was dort fehlt, fehlt hier.
 - **Telefon mit Land (E222):** Jede Telefonnummer in Hefta hat ihr Land. Der Schreiber kennt es und schreibt die
   Nummer immer zweimal: `telefon` in der Form vom Deckblatt und `telefon_e164` international. Das eine gibt es nicht
@@ -331,16 +359,22 @@ Hefta 2.0 bietet keine Auswahl nach Schritt an. Es schreibt darum weder `schritt
 - **`land`** ist `DE`, nach ISO 3166-1 mit zwei Großbuchstaben. Hefta kennt nur Adressen in Deutschland, und die
   Nachrechnung nach V19 ergibt `DE`. Eine Lesehilfe mit einem anderen Land erfüllt das Schema, passt aber heute nicht.
 
-## 10. Vermerke (für DP64; Hefta schreibt sie erst, wenn DP64 gebaut ist)
+## 10. Vermerke (Hefta schreibt sie bis 2.2 noch nicht)
 
 - **Was ein Vermerk sagt:** wie eine Unterlage in die Mappe übernommen wurde. Im Verzeichnis „Was beiliegt“ steht er
   als graue Zeile unter der Unterlage. Ein Leser bindet ihn an diesen Wortlaut (Abschnitt 11).
 - **Seitenzahlen:** `seiten_original` zählt im **Original**, ab 1, ohne Doppel. `seiten_mappe` dagegen zählt in der
   Mappe. Beides wird nie vermischt. Mit `datei` zählt `seiten_original` in dieser Datei.
 - **Ganze Unterlage:** Betrifft ein Vermerk die ganze Unterlage, fehlt `seiten_original`.
-- **Wortlaut** (wie im Verzeichnis, DP64): „Seiten 2 und 3 weggelassen“, „Verkleinert“, „Als Bild übernommen“,
-  „Formularfelder fest“; mit Seiten etwa „Seite 3 verkleinert“; bei Serien mit dem Monat davor, etwa
-  „September 2026: als Bild übernommen“; bei mehreren Dateien „Datei 2: verkleinert“.
+- **Wortlaut** im Verzeichnis, zusammengesetzt aus Art, Seiten und Ort:
+  - Art: „weggelassen“, „verkleinert“, „als Bild übernommen“, „Formularfelder fest“; eine unbekannte Art „angepasst“.
+  - Mit `seiten_original` stehen die Seiten davor: „Seite 3 verkleinert“, „Seiten 2 und 3 weggelassen“, „Seiten 2, 3
+    und 5 weggelassen“. Ohne `seiten_original` steht nur die Art.
+  - Mit `monat` steht der Monat davor: „September 2026: als Bild übernommen“, „September 2026: Seite 2 verkleinert“.
+    `monat` geht `datei` vor: Steht beides, nennt die Zeile nur den Monat.
+  - Sonst mit `datei`: „Datei 2: verkleinert“.
+  - Ohne beides beginnt die Zeile groß: „Verkleinert“, „Seiten 2 und 3 weggelassen“.
+  - Gebunden wird der Wortlaut irgendwo im Verzeichnis, nicht nur im Block der Person.
 
 | `art` | Bedeutung | Felder |
 | --- | --- | --- |
@@ -362,14 +396,14 @@ Eine Lesehilfe kann geändert oder von einer anderen Mappe sein (Regel 3). Ein L
 gelesen wurde (Abschnitt 13) und alles Folgende stimmt, sonst gar nicht, auch nicht zum Teil:
 
 1. `seitenzahl` gleich der Zahl der Seiten der PDF.
-2. 2 ≤ `von` ≤ `bis` ≤ `seitenzahl`. Die Bereiche aller Unterlagen überschneiden sich nicht. Lücken sind erlaubt.
-   `monate` ist streng aufsteigend und ohne Doppel.
+2. 2 ≤ `von` ≤ `bis` ≤ `seitenzahl`. Die Bereiche aller Unterlagen überschneiden sich nicht. Lücken zwischen den
+   Bereichen sind erlaubt. `monate` ist streng aufsteigend und ohne Doppel.
 3. und 4. gehen in Punkt 7 auf: Namen, Straße, Telefon und Mail sind dort an ihre Stelle auf dem Papier gebunden.
 5. `name` ist gleich `vorname`, ein Leerzeichen, `nachname`; ist `nachname` leer, gleich `vorname`. Verglichen in NFC.
 6. Höchstens eine Person hat `ansprech`; wenn, dann steht sie zuerst und im Mietvertrag (E366). Bürginnen und Bürgen
    stehen nach allen im Mietvertrag. Jede bekannte Art der Mitziehenden steht höchstens einmal, ihr `text` ist die
-   feste Form (V22). *Fassung 1:* höchstens eine Person hat `kontakt`, **genau eine** hat `rolle: hauptmieter`, und
-   sie steht zuerst (E216).
+   feste Form (V22). *Formatfassung 1:* höchstens eine Person hat `kontakt`, **genau eine** hat `rolle: hauptmieter`,
+   und sie steht zuerst (E216).
 7. **Bindung an das Papier (E223).** Was ein Leser zeigt, steht auf dem Papier. Die Regeln dazu folgen.
 
 **Welches Papier (V1, V2).** Deckblatt und Verzeichnis sind die Seiten vor der kleinsten `seiten_mappe.von`; ohne
@@ -395,20 +429,22 @@ Unterlagen ist es Seite 1. Gelesen wird der Text in der Reihenfolge des Inhalts,
 - **Feste Überschriften (V5):** „Im Mietvertrag“, „Ziehen mit ein“, „Bürgt“, „Kontakt“, „Was beiliegt“, je als eigene
   Zeile. Ein Abschnitt reicht bis zur nächsten Überschrift oder bis zum Fuß („Fassung …“, „Erstellt mit Hefta“,
   „Seite 1 von …“).
+- **Zwischenzeile „Bürgschaft“:** Im Verzeichnis „Was beiliegt“ steht vor der ersten Person, die bürgt, die Zeile
+  „Bürgschaft“. Sie ist fest, beendet keinen Abschnitt und wird nicht gebunden; ein Leser überliest sie.
 
-**Was woran gebunden ist (Tabelle aus DP76, Abschnitt 3):**
+**Was woran gebunden ist:**
 
 | Anzeige | gebunden an |
 | --- | --- |
 | Wohnung | `strasse` und `rest` als ganze Wörter auf dem Deckblatt; `teile` nachgerechnet (V19) |
 | Einzug, Portal | „Einzug möglich ab 1. Januar 2027“, „Inserat auf ImmoScout24“ |
 | Satz zum Schritt | Seite 1, vor der ersten Zeile, die mit einer festen Überschrift beginnt (L78-3) |
-| Personen | ganzer Name unter „Im Mietvertrag“ oder „Bürgt“ (V9); in Fassung 1 dahinter das passende Rollenwort |
+| Personen | ganzer Name unter „Im Mietvertrag“ oder „Bürgt“ (V9); in Formatfassung 1 dahinter das passende Rollenwort |
 | Kontakt | Name unter „Kontakt“, dazu Telefon und Mail (Leerzeichen zählen nicht) |
 | Unterlagen | Zeile im Verzeichnis im Block der Person: Wortlaut, Zusatz, Seiten (V6); unbekannte Art nur die Seiten (V10) |
 | Vermerke | Wortlaut im Verzeichnis |
 | Mitziehende | Text unter „Ziehen mit ein“ |
-| Löschbitte | wörtlich auf dem Deckblatt (Leerzeichen zählen nicht) |
+| Löschbitte | wörtlich auf dem Deckblatt (Leerzeichen zählen nicht); nur in dieser Richtung, siehe unten |
 | Fassung, Seitenzahl, erstellt | „Fassung n vom …“ (V7), „Seite 1 von N“ (V8), Erstelldatum der PDF (V11) |
 | Seiten jeder Unterlage | nicht leer, also mit Text oder Bild (V12) |
 
@@ -425,6 +461,24 @@ Abschnitt 6, dann der Zusatz, dann die Seiten.
 
 Zwischen Zusatz und Seiten steht „ – “ (Leerzeichen, Gedankenstrich U+2013, Leerzeichen).
 
+- **Über Zeilen hinweg:** Eine Zeile im Verzeichnis kann auf dem Papier umbrechen; Werkzeuge liefern dann etwa
+  „Gehaltsnachweise, August bis“ und „Oktober – Seiten 3 bis 5“ getrennt. Gesucht wird darum im Text des Verzeichnisses
+  als ein Fluss, in dem ein Zeilenumbruch wie ein Leerzeichen zählt (V4, mit der Ausnahme nach einem Bindestrich).
+- **Der Block einer Person** beginnt bei ihrem `name` als ganzem Wort (V3) im Verzeichnis und endet vor dem nächsten
+  `name` einer anderen Person aus `personen` oder am Ende des Verzeichnisses. Ihre Zeilen stehen in diesem Block.
+- **Seiten:** genau „Seite n“ oder „Seiten n bis m“. Formen wie „Seiten 2–3“, eine Zahl allein oder „Seite 3 bis 5“
+  passen nicht.
+- **`monate` und `vom` zusammen:** Die Zeile nennt dann nur die Monate; `vom` wird nicht gebunden und nicht gezeigt.
+- **Serie mit Lücke:** Die Zeile nennt nur den ersten und den letzten Monat („August bis Oktober“), auch wenn
+  `monate` einen Monat dazwischen nicht enthält. Ob ein Monat fehlt, steht also nicht auf dem Papier. Ein Leser zeigt
+  darum nur die Spanne wie auf dem Papier und schließt aus `monate` nichts weiter.
+- **Das Jahr einer Serie im selben Jahr** steht nicht in der Zeile („September bis November“); es kommt aus `monate`.
+  Ein Leser zeigt die Zeile wie auf dem Papier, ohne Jahr.
+
+**Die Löschbitte** wird nur in einer Richtung gebunden: Steht `loeschwunsch`, muss der Satz auf dem Deckblatt stehen.
+Steht auf dem Deckblatt eine Bitte, aber kein `loeschwunsch`, passt die Lesehilfe trotzdem; ein Leser zeigt die Bitte
+dann nicht als Angabe der Lesehilfe.
+
 **Der Satz zum Schritt (E227, L78-3).** Steht `schritt` mit einer bekannten Kennung, steht sein Satz auf Seite 1 vor
 der ersten Überschrift. Steht irgendwo auf dem Papier ein Satz zu einem anderen Schritt, oder ein Satz ohne
 `schritt`, passt die Lesehilfe nicht. Ein Satz zählt, sobald eine Lesart ihn findet, auch über einen Umbruch nach
@@ -437,18 +491,21 @@ Zeilen je Person; im Fuß „Fassung n vom …“, die Bitte zum Löschen, „Er
 darf sich ändern; die Wörter der Überschriften, die Rollenwörter, die Form der Verzeichniszeile und die Sätze zum
 Schritt nicht.
 
-Die Funktion `pruefen()` im Paket prüft alle sieben Punkte und nennt die Gründe; `passt()` sagt nur ja oder nein. Die
-Vermieterseite von Hefta nutzt genau diese Prüfung.
+Die Funktion `pruefen()` im Paket `hefta-json` prüft alle sieben Punkte und nennt die Gründe; `passt()` sagt nur ja
+oder nein. Die Vermieterseite von Hefta nutzt genau diese Prüfung. Ein eigener Leser braucht das Paket nicht; dieses
+Dokument genügt.
 
 ## 12. Bezüge
 
 - **Unterlagen gehören zu ihrer Person.** Sie stehen in `personen[].unterlagen`. Eine Reihenfolge kann so nichts
   verwechseln.
-- **Kontakt:** Die Kontaktperson trägt `kontakt: true` und ihre Kontaktdaten selbst.
+- **Kontakt:** Die Ansprechperson trägt `ansprech: true` und ihre Kontaktdaten selbst (Formatfassung 1:
+  `kontakt: true`).
 - **Bürgschaft:**
-  - Eine Person mit `rolle: buerge` bürgt für den Haushalt, also für alle, die im Mietvertrag stehen.
+  - Eine Person mit `rolle: buerge` bürgt gegenüber dem Vermieter für die Pflichten der Personen im Mietvertrag;
+    der Umfang steht in der Bürgschaftserklärung (§ 765, § 767 BGB).
   - Hefta kennt keine Bürgschaft für eine einzelne Person, darum gibt es dafür kein Feld.
-- **Dieselbe Bewerbung über mehrere Fassungen:**
+- **Dieselbe Bewerbung über mehrere Fassungen der Mappe:**
   - Es ist dieselbe `bewerbung.kennung`.
   - Die Fassungen ordnet `erstellt`.
   - `fassung` zählt nur Mappen, die schon hinausgingen. Zwei Mappen, die vor dem Senden gebaut wurden, tragen
@@ -464,7 +521,8 @@ Was hier steht, gilt vor Abschnitt 11. Trifft eine Regel nicht zu, lehnt der Les
   nicht, der Leser braucht dafür eine eigene Prüfung.
 - **Zahlen:** ganze Zahlen; `1.0` gilt als 1 (V15). Der Schreiber schreibt keine Nachkommastellen.
 - **Grenzen (V14):** höchstens 1 MiB, 50 Personen, 50 Unterlagen je Person, 20 Ebenen tief, auch in `x_`-Feldern. Eine
-  echte Mappe erreicht keine davon.
+  echte Mappe erreicht keine davon. Im Schema stehen die Grenzen für Personen und Unterlagen als `maxItems`; Größe und
+  Tiefe prüft nur der Leser.
 - **Schema:** Die Datei erfüllt `schema.json`, mit allen Pflichtfeldern, Mustern und Abhängigkeiten.
 - **Echte Werte (E220, Regel 2):** Jeder Tag ist ein echter Kalendertag (kein 30. Februar), jeder Monat 01 bis 12,
   `erstellt` ein echter Zeitpunkt (Stunde bis 23, Minute und Sekunde bis 59, Zeitzone bis ±14:59).
@@ -473,7 +531,7 @@ Was hier steht, gilt vor Abschnitt 11. Trifft eine Regel nicht zu, lehnt der Les
   - kein Steuerzeichen, kein unsichtbares Formatzeichen (U+200B), kein Zeichen, das die Schreibrichtung ändert
     (U+202E), kein Zeilen- oder Absatztrenner, kein privates oder nicht vergebenes Zeichen
   - kein Leerzeichen am Rand, nicht nur Leerzeichen
-- **Namen:** zusätzlich V17 und V18 (Abschnitt 7).
+- **Namen:** zusätzlich die Regeln zu Leerzeichen und zur Schrift aus Abschnitt 7.
 - **Telefon:** die Regel aus Abschnitt 8.
 
 ## 14. Abgleich mit OpenImmo-Feedback
@@ -518,18 +576,20 @@ Was hier steht, gilt vor Abschnitt 11. Trifft eine Regel nicht zu, lehnt der Les
 
 ## 16. Dateien
 
-**Im Paket `hefta-json`:**
+**Im Paket `hefta-json`** (die Pfade gelten im Paket; wer nur diese Beschreibung bekommt, findet die Beispiele im
+Ordner `beispiele/` daneben):
 
 | Datei | Inhalt |
 | --- | --- |
 | `FORMAT.md` | diese Beschreibung |
 | `schema.json` | JSON Schema, draft-07; das ist der Entwurf mit der breitesten Unterstützung in Werkzeugen |
 | `beispiele/1-eine-person.json` | eine Person, mit Portal und Einzug |
-| `beispiele/2-paar-kind-buergin.json` | Paar, ein Kind, Bürgin, zweite Fassung, mit Vermerken |
-| `beispiele/3-nach-der-zusage.json` | Schritt `zusage` mit seinem Satz, dritte Fassung |
+| `beispiele/2-paar-kind-buergin.json` | Paar, ein Kind, Bürgin, zweite Fassung der Mappe, mit Vermerken |
+| `beispiele/3-nach-der-zusage.json` | Schritt `zusage` mit seinem Satz, dritte Fassung der Mappe |
 | `beispiele/4-ohne-wohnung.json` | Mappe ohne Wohnung, Kontakt nur mit Mail |
 | `beispiele/5-grenzfaelle-namen.json` | Grenzfälle bei Namen, dazu ein `x_`-Feld |
-| `test/fremd/` | Designs unabhängiger Leser in Python (DP78) als zweite Probe; nur für die Tests, nicht im veröffentlichten Paket |
+| `beispiele/fassung-1/` | dieselben fünf Beispiele in Formatfassung 1 |
+| `test/fremd/` | ein unabhängiger Leser in Python als zweite Probe; nur für die Tests, nicht im veröffentlichten Paket |
 | `test/deckblatt.ts` | Deckblatt nach Abschnitt 11 als Text, für die Tests |
 
 **Nur im Repository von Hefta:**

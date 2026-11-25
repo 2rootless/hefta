@@ -16,11 +16,13 @@ test('DP70 U3: „Weiter“ ohne Vornamen setzt den Fokus in das leere Feld', as
   // Playwright hält aria-disabled für gesperrt; ein Mensch kann den Knopf trotzdem antippen.
   await weiter.click({ force: true });
   await expect(vorname).toBeFocused();
-  // Gegenprobe: Mit Vornamen (es fehlt nur noch die Bezeichnung) springt der Fokus nicht ins Vornamen-Feld.
+  // Gegenprobe: Mit Vornamen springt der Fokus nicht ins Vornamen-Feld. Seit W57 braucht die erste Person keine
+  // Bezeichnung mehr; „Weiter“ geht dann weiter, und das Feld kann schon fort sein (GitHub, 2.2). Geprüft wird darum,
+  // dass kein Vornamen-Feld den Fokus hat, ob es noch da ist oder nicht.
   await vorname.fill('Max');
   await weiter.focus();
   await weiter.click({ force: true });
-  await expect(vorname).not.toBeFocused();
+  await expect(page.locator('main input[autocomplete="given-name"]:focus')).toHaveCount(0);
 });
 
 test('DP70 U2: Die versteckten Dateifelder im Heft sind für Vorlesen und Tab unsichtbar; Gegenprobe', async ({
