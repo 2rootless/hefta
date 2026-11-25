@@ -64,7 +64,7 @@ describe('Neu im Job (DP45 G3)', () => {
   it('ohne „Neu im Job“: drei Monate wie bisher, kein Arbeitsvertrag', () => {
     const s = personStand(
       person(),
-      'hauptmieter',
+      'vertrag',
       [dok('gehaltsnachweis')],
       [version('d-gehaltsnachweis', '2026-10')],
       HEUTE,
@@ -80,7 +80,7 @@ describe('Neu im Job (DP45 G3)', () => {
     const p = person({ neuImJob: { seit: '2026-10-01' } });
     const s = personStand(
       p,
-      'hauptmieter',
+      'vertrag',
       [dok('gehaltsnachweis'), dok('arbeitsvertrag')],
       [version('d-gehaltsnachweis', '2026-10'), version('d-arbeitsvertrag', null)],
       HEUTE,
@@ -100,7 +100,7 @@ describe('Neu im Job (DP45 G3)', () => {
     const p = person({ neuImJob: { seit: '2026-10-01' } });
     const s = personStand(
       p,
-      'hauptmieter',
+      'vertrag',
       [dok('gehaltsnachweis')],
       [version('d-gehaltsnachweis', '2026-10')],
       HEUTE,
@@ -110,11 +110,11 @@ describe('Neu im Job (DP45 G3)', () => {
 
   it('G3b: noch keine Abrechnung möglich: nur der Vertrag', () => {
     const p = person({ neuImJob: { seit: '2026-11-03' } });
-    const ohne = personStand(p, 'hauptmieter', [], [], HEUTE);
+    const ohne = personStand(p, 'vertrag', [], [], HEUTE);
     expect(gehalt(ohne).status).toBe('fehlt');
     const mit = personStand(
       p,
-      'hauptmieter',
+      'vertrag',
       [dok('arbeitsvertrag')],
       [version('d-arbeitsvertrag', null)],
       HEUTE,
@@ -125,7 +125,7 @@ describe('Neu im Job (DP45 G3)', () => {
   it('wieder „Länger als drei Monate“: der Vertrag bleibt freiwillig dabei, ändert aber nichts am Stand', () => {
     const s = personStand(
       person(),
-      'hauptmieter',
+      'vertrag',
       [dok('arbeitsvertrag')],
       [version('d-arbeitsvertrag', null)],
       HEUTE,

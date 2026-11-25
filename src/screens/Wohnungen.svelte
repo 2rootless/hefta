@@ -132,9 +132,9 @@
     </div>
     <GrafikPlatz name="erster-start" />
     <!-- W37, P5: wechselt einmal am Tag. -->
-    <p class="kasten">{stimmung('P5', { teil: 'satz', an: mitHaushalt && !ihr ? 'du' : 'ihr' })}</p>
-    <!-- Ohne Haushalt „ihr“ (E74.4). -->
-    {#if istApp()}{@render anleitung(true)}{/if}
+    <p class="kasten">{stimmung('P5', { teil: 'satz', an: ihr ? 'ihr' : 'du' })}</p>
+    <!-- Ohne Haushalt „du“ (E369, DP125). -->
+    {#if istApp()}{@render anleitung(false)}{/if}
     {#if !istApp()}
       <!-- E42: solange es keinen Haushalt gibt, gesiezt (B15). -->
       <p class="vermieter">

@@ -71,7 +71,7 @@ function version(dokumentId: string, n = 1): DateiVersion[] {
 
 describe('Regelkatalog: wer braucht was', () => {
   it('Hauptmieter, angestellt: Selbstauskunft, Gehaltsnachweise, Bonität; dazu freiwillige und unnötige', () => {
-    expect(ids(unterlagenFuer('hauptmieter', 'angestellt'))).toEqual([
+    expect(ids(unterlagenFuer('vertrag', 'angestellt'))).toEqual([
       'selbstauskunft',
       'gehaltsnachweis',
       'bonitaet',
@@ -84,7 +84,7 @@ describe('Regelkatalog: wer braucht was', () => {
 
   it('jede Lebenssituation bekommt genau einen Einkommensnachweis', () => {
     for (const situation of LEBENSSITUATIONEN) {
-      const einkommen = unterlagenFuer('mitmieter', situation).filter(
+      const einkommen = unterlagenFuer('vertrag', situation).filter(
         (d) => d.symbol === 'einkommen',
       );
       expect(einkommen, situation).toHaveLength(1);
@@ -92,7 +92,7 @@ describe('Regelkatalog: wer braucht was', () => {
   });
 
   it('ohne Lebenssituation gibt es noch keinen Einkommensnachweis', () => {
-    expect(unterlagenFuer('hauptmieter', null).some((d) => d.symbol === 'einkommen')).toBe(false);
+    expect(unterlagenFuer('vertrag', null).some((d) => d.symbol === 'einkommen')).toBe(false);
   });
 
   it('Bürge: Bürgschaftserklärung zuerst, keine Mietzahlungen', () => {
@@ -110,8 +110,8 @@ describe('Regelkatalog: wer braucht was', () => {
 
   it('Anschreiben und WBS gehören zur Bewerbung, nicht zur Person', () => {
     for (const situation of LEBENSSITUATIONEN) {
-      expect(ids(unterlagenFuer('hauptmieter', situation))).not.toContain('anschreiben');
-      expect(ids(unterlagenFuer('hauptmieter', situation))).not.toContain('wbs');
+      expect(ids(unterlagenFuer('vertrag', situation))).not.toContain('anschreiben');
+      expect(ids(unterlagenFuer('vertrag', situation))).not.toContain('wbs');
     }
   });
 
@@ -123,9 +123,12 @@ describe('Regelkatalog: wer braucht was', () => {
   });
 
   it('nennt Rollen in der gewünschten Form', () => {
-    expect(rollenText('mitmieter', 'weiblich')).toBe('Mitmieterin');
+    // W57: im Vertrag ohne Rollenwort nach Person; „Im Mietvertrag“ in jeder Form. Bürgen bleiben, wie sie waren.
+    expect(rollenText('vertrag', 'weiblich')).toBe('Im Mietvertrag');
+    expect(rollenText('vertrag', 'maennlich')).toBe('Im Mietvertrag');
     expect(rollenText('buerge', 'maennlich')).toBe('Bürge');
-    expect(rollenText('hauptmieter', 'neutral')).toBe('Hauptmietpartei');
+    expect(rollenText('buerge', 'weiblich')).toBe('Bürgin');
+    expect(rollenText('vertrag', 'neutral')).toBe('Im Mietvertrag');
     expect(rollenText('buerge', 'neutral')).toBe('bürgt');
   });
 });
@@ -135,7 +138,7 @@ const HEUTE = new Date(2026, 9, 31);
 
 describe('Stand einer Person', () => {
   it('ohne Unterlagen: alles Übliche fehlt, nächster Schritt ist die erste Unterlage im Katalog', () => {
-    const stand = personStand(person(), 'hauptmieter', [], [], HEUTE);
+    const stand = personStand(person(), 'vertrag', [], [], HEUTE);
     expect(stand.pfad.map((u) => [u.typ.id, u.status])).toEqual([
       ['selbstauskunft', 'fehlt'],
       ['gehaltsnachweis', 'fehlt'],
@@ -148,19 +151,19 @@ describe('Stand einer Person', () => {
   it('Serie: Gehaltsnachweise sind erst mit drei Monaten da', () => {
     const d = dokument('gehaltsnachweis');
     expect(
-      personStand(person(), 'hauptmieter', [d], version(d.id, 2), HEUTE).unterlagen[1]!.status,
+      personStand(person(), 'vertrag', [d], version(d.id, 2), HEUTE).unterlagen[1]!.status,
     ).toBe('fehlt');
     expect(
-      personStand(person(), 'hauptmieter', [d], version(d.id, 3), HEUTE).unterlagen[1]!.status,
+      personStand(person(), 'vertrag', [d], version(d.id, 3), HEUTE).unterlagen[1]!.status,
     ).toBe('da');
   });
 
   it('freiwillige Unterlagen liegen erst auf dem Pfad, wenn eine Version da ist', () => {
     const d = dokument('mietzahlung');
-    expect(
-      personStand(person(), 'mitmieter', [], [], HEUTE).pfad.map((u) => u.typ.id),
-    ).not.toContain('mietzahlung');
-    const mit = personStand(person(), 'mitmieter', [d], version(d.id), HEUTE);
+    expect(personStand(person(), 'vertrag', [], [], HEUTE).pfad.map((u) => u.typ.id)).not.toContain(
+      'mietzahlung',
+    );
+    const mit = personStand(person(), 'vertrag', [d], version(d.id), HEUTE);
     expect(mit.pfad.map((u) => u.typ.id)).toContain('mietzahlung');
     expect(mit.unterlagen.find((u) => u.typ.id === 'mietzahlung')?.status).toBe('da');
   });
@@ -185,13 +188,13 @@ describe('Stand einer Person', () => {
         ort: 'Hamburg',
       },
     });
-    const stand = personStand(ausgefuellt, 'hauptmieter', doks, versionen, HEUTE);
+    const stand = personStand(ausgefuellt, 'vertrag', doks, versionen, HEUTE);
     expect(stand.naechster).toBeNull();
     expect(offeneDinge([stand])).toBe(0);
   });
 
   it('zählt offene Dinge im ganzen Haushalt', () => {
-    const max = personStand(person(), 'hauptmieter', [], [], HEUTE);
+    const max = personStand(person(), 'vertrag', [], [], HEUTE);
     const petra = personStand(
       person({ id: 'p3', lebenssituation: 'rente' }),
       'buerge',
@@ -233,7 +236,7 @@ describe('Studium oder Ausbildung', () => {
 
   it('verlangt je nach Art die passende Unterlage, unter derselben Kennung', () => {
     const typ = (art: 'studium' | 'ausbildung') =>
-      unterlagenFuer('hauptmieter', 'studierend_azubi', art).find(
+      unterlagenFuer('vertrag', 'studierend_azubi', art).find(
         (u) => u.id === 'einkommen_ausbildung',
       )!;
     expect(typ('studium').text).toBe('BAföG oder Unterhalt');

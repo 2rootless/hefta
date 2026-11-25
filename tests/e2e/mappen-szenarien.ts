@@ -164,7 +164,6 @@ function auskunft(m: Mensch, alle: Mensch[]): MappenTeil {
       rolle: m.rolleText,
       farbe: m.farbe,
       bloecke: selbstauskunftBloecke(m.person, m.rolle, wer, HH, 'zusage', {
-        rolleText: m.rolleText,
         buergschaftDabei: m.rolle === 'buerge',
       }),
       ...ortUndDatum(m.rolle, HH.ort, '2. November 2026'),
@@ -238,8 +237,8 @@ function auftrag(
   };
 }
 
-const MAX = mensch('Max', 'Mustermann', 'hauptmieter', 'Hauptmieter', { beruf: 'Elektroniker' });
-const LEA = mensch('Lea', 'Mustermann', 'mitmieter', 'Mitmieterin', {
+const MAX = mensch('Max', 'Mustermann', 'vertrag', 'Hauptmieter', { beruf: 'Elektroniker' });
+const LEA = mensch('Lea', 'Mustermann', 'vertrag', 'Mitmieterin', {
   n: 1,
   beruf: 'Lehrerin',
   nettoeinkommen: 2310,
@@ -306,19 +305,13 @@ export const SZENARIEN: Record<string, () => Promise<BewerbungAuftrag>> = {
       mitziehende: [],
     }),
   'MP3-lange-namen': async () => {
-    const a = mensch(
-      'Maximilian-Alexander',
-      'Müller-Lüdenscheidt',
-      'hauptmieter',
-      'Hauptmietpartei',
-      {
-        beruf: 'Elektroingenieur im öffentlichen Dienst',
-      },
-    );
-    const b = mensch('Bartholomäus', 'Wiśniewski-Kowalczyk', 'mitmieter', 'Mitmietpartei', {
+    const a = mensch('Maximilian-Alexander', 'Müller-Lüdenscheidt', 'vertrag', 'Hauptmietpartei', {
+      beruf: 'Elektroingenieur im öffentlichen Dienst',
+    });
+    const b = mensch('Bartholomäus', 'Wiśniewski-Kowalczyk', 'vertrag', 'Mitmietpartei', {
       n: 1,
     });
-    const c = mensch('Jonas', 'Becker', 'mitmieter', 'Mitmieter', { n: 2 });
+    const c = mensch('Jonas', 'Becker', 'vertrag', 'Mitmieter', { n: 2 });
     const d = mensch('Anna-Katharina Josephine', 'von Hohenstein', 'buerge', 'Bürgin');
     return auftrag(
       [a, b, c, d],
@@ -370,10 +363,10 @@ export const SZENARIEN: Record<string, () => Promise<BewerbungAuftrag>> = {
     ),
   'MP8-langer-inhalt': async () => {
     const leute = [
-      mensch('Max', 'Mustermann', 'hauptmieter', 'Hauptmieter', { beruf: 'Elektroniker' }),
-      mensch('Lea', 'Mustermann', 'mitmieter', 'Mitmieterin', { n: 1 }),
-      mensch('Tom', 'Becker', 'mitmieter', 'Mitmieter', { n: 2 }),
-      mensch('Anna', 'Schmidt', 'mitmieter', 'Mitmieterin', { n: 3 }),
+      mensch('Max', 'Mustermann', 'vertrag', 'Hauptmieter', { beruf: 'Elektroniker' }),
+      mensch('Lea', 'Mustermann', 'vertrag', 'Mitmieterin', { n: 1 }),
+      mensch('Tom', 'Becker', 'vertrag', 'Mitmieter', { n: 2 }),
+      mensch('Anna', 'Schmidt', 'vertrag', 'Mitmieterin', { n: 3 }),
       mensch('Petra', 'Mustermann', 'buerge', 'Bürgin'),
     ];
     const seite = await zeilen('Unterlage', ['Eine Seite']);
@@ -403,23 +396,23 @@ export const SZENARIEN: Record<string, () => Promise<BewerbungAuftrag>> = {
   // Die volle Leiste: passt noch ohne Stufe (mappe-pdf.md, „Volle Leiste“).
   'MP10-volle-leiste': async () => {
     const vertrag = [
-      mensch('Maximilian-Alexander', 'Müller-Lüdenscheidt', 'hauptmieter', 'Hauptmietpartei', {
+      mensch('Maximilian-Alexander', 'Müller-Lüdenscheidt', 'vertrag', 'Hauptmietpartei', {
         beruf: 'Elektroingenieur im öffentlichen Dienst',
       }),
-      mensch('Bartholomäus', 'Wiśniewski-Kowalczyk', 'mitmieter', 'Mitmietpartei', {
+      mensch('Bartholomäus', 'Wiśniewski-Kowalczyk', 'vertrag', 'Mitmietpartei', {
         n: 1,
         beruf: 'Auszubildender zum Mechatroniker',
       }),
-      mensch('Anna-Katharina Josephine', 'von Hohenstein', 'mitmieter', 'Mitmieterin', {
+      mensch('Anna-Katharina Josephine', 'von Hohenstein', 'vertrag', 'Mitmieterin', {
         n: 2,
         beruf: 'Fachärztin für Kinder- und Jugendmedizin',
       }),
-      mensch('Jonas', 'Becker', 'mitmieter', 'Mitmieter', { n: 3, beruf: 'Pflegefachmann' }),
-      mensch('Mira', 'Yılmaz', 'mitmieter', 'Mitmieterin', {
+      mensch('Jonas', 'Becker', 'vertrag', 'Mitmieter', { n: 3, beruf: 'Pflegefachmann' }),
+      mensch('Mira', 'Yılmaz', 'vertrag', 'Mitmieterin', {
         n: 4,
         beruf: 'Studentin der Rechtswissenschaft',
       }),
-      mensch('Tom', 'Nguyen', 'mitmieter', 'Mitmieter', { n: 5, beruf: 'Koch' }),
+      mensch('Tom', 'Nguyen', 'vertrag', 'Mitmieter', { n: 5, beruf: 'Koch' }),
     ];
     const buergen = [
       mensch('Petra', 'Mustermann', 'buerge', 'Bürgin'),
@@ -442,7 +435,7 @@ export const SZENARIEN: Record<string, () => Promise<BewerbungAuftrag>> = {
     );
   },
   'MP9-andere-schrift': async () => {
-    const olena = mensch('Олена', 'Коваленко', 'hauptmieter', 'Hauptmieterin', {
+    const olena = mensch('Олена', 'Коваленко', 'vertrag', 'Hauptmieterin', {
       nameMappe: { vorname: 'Olena', nachname: 'Kovalenko' },
       kontakt: {
         telefon: '0171 3920004',
@@ -451,8 +444,8 @@ export const SZENARIEN: Record<string, () => Promise<BewerbungAuftrag>> = {
         email: 'olena@example.com',
       },
     });
-    const piotr = mensch('Piotr', 'Wiśniewski', 'mitmieter', 'Mitmieter', { n: 1 });
-    const mai = mensch('Thị Mai', 'Nguyễn', 'mitmieter', 'Mitmieterin', {
+    const piotr = mensch('Piotr', 'Wiśniewski', 'vertrag', 'Mitmieter', { n: 1 });
+    const mai = mensch('Thị Mai', 'Nguyễn', 'vertrag', 'Mitmieterin', {
       n: 2,
       kontakt: {
         telefon: '0171 3920005',

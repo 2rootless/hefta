@@ -51,7 +51,7 @@ async function mitAlterNummer(telefon: string): Promise<{ db: HeftaDb; id: strin
         vorname: 'Lea',
         nachname: 'Muster-Beispiel',
         bezeichnung: 'weiblich',
-        rolle: 'hauptmieter',
+        rolle: 'vertrag',
         lebenssituation: 'angestellt',
       },
     ],

@@ -62,10 +62,10 @@ describe('Frage offen nach der Zusage', () => {
 
   it('erst nach einer Zusage, nur für Personen im Mietvertrag, nur ohne Antwort', () => {
     expect(zusageDa(zusage as never)).toBe(true);
-    expect(mietFrageOffen(person(null), 'hauptmieter', zusage as never)).toBe(true);
-    expect(mietFrageOffen(person(null), 'hauptmieter', ohne as never)).toBe(false);
+    expect(mietFrageOffen(person(null), 'vertrag', zusage as never)).toBe(true);
+    expect(mietFrageOffen(person(null), 'vertrag', ohne as never)).toBe(false);
     expect(mietFrageOffen(person(null), 'buerge', zusage as never)).toBe(false);
-    expect(mietFrageOffen(person('nein'), 'mitmieter', zusage as never)).toBe(false);
-    expect(mietFrageOffen({}, 'mitmieter', zusage as never)).toBe(true);
+    expect(mietFrageOffen(person('nein'), 'vertrag', zusage as never)).toBe(false);
+    expect(mietFrageOffen({}, 'vertrag', zusage as never)).toBe(true);
   });
 });

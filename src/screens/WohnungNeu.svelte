@@ -14,8 +14,8 @@
 
   const app = istApp();
   const ihr = $derived(
-    // Ohne Haushalt „ihr“ (E74.4, Design 12.11.), sonst ab zwei Personen ohne Bürgen.
-    !daten.ansicht ||
+    // Ohne Haushalt „du“ (E369, hebt E74.4 auf), sonst „ihr“ ab zwei Personen ohne Bürgen.
+    !!daten.ansicht &&
       daten.ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
   );
   const ablageGeht = typeof navigator !== 'undefined' && !!navigator.clipboard?.readText;

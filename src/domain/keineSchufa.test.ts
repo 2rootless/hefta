@@ -54,7 +54,7 @@ const nachweis: DateiVersion = {
   vomNutzerBestaetigt: null,
 };
 
-const platz = { rolle: 'mitmieter' as const, farbe: 2, bezeichnung: 'weiblich' as const };
+const platz = { rolle: 'vertrag' as const, farbe: 2, bezeichnung: 'weiblich' as const };
 
 describe('Noch keine SCHUFA (DP45 G4, K1)', () => {
   it('G4a: zählt weder als da noch als offen, steht aber als Zeile', () => {

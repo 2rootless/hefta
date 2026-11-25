@@ -17,7 +17,7 @@ interface SzenarioPerson {
   nachname?: string;
   rufname?: string;
   bezeichnung: 'maennlich' | 'weiblich' | 'neutral';
-  rolle: 'hauptmieter' | 'mitmieter' | 'buerge';
+  rolle: 'vertrag' | 'buerge';
   lage: Lage;
   /** Zustand je Dokumenttyp (Regelkatalog-ID); nicht genannte übliche Unterlagen fehlen. */
   unterlagen: Record<string, Zustand>;
@@ -59,7 +59,7 @@ const max = (u: Record<string, Zustand>): SzenarioPerson => ({
   vorname: 'Max',
   nachname: 'Mustermann',
   bezeichnung: 'maennlich',
-  rolle: 'hauptmieter',
+  rolle: 'vertrag',
   lage: 'angestellt',
   unterlagen: u,
 });
@@ -68,9 +68,9 @@ const LEA_DA: SzenarioPerson = {
   vorname: 'Lea',
   nachname: 'Mustermann',
   bezeichnung: 'weiblich',
-  rolle: 'mitmieter',
+  rolle: 'vertrag',
   lage: 'angestellt',
-  unterlagen: { ...alleDa('angestellt', 'mitmieter'), mietzahlung: 'da' },
+  unterlagen: { ...alleDa('angestellt', 'vertrag'), mietzahlung: 'da' },
 };
 const petra = (u: Record<string, Zustand>): SzenarioPerson => ({
   vorname: 'Petra',
@@ -91,7 +91,7 @@ const jonas = (u: Record<string, Zustand>, lage: Lage = 'angestellt'): SzenarioP
   vorname: 'Jonas',
   nachname: 'Beispiel',
   bezeichnung: 'maennlich',
-  rolle: 'mitmieter',
+  rolle: 'vertrag',
   lage,
   unterlagen: u,
 });
@@ -113,12 +113,12 @@ export const SZENARIEN: Szenario[] = [
   {
     id: '04-fertig',
     kinder: 1,
-    personen: [max(alleDa('angestellt', 'hauptmieter')), LEA_DA, PETRA_DA],
+    personen: [max(alleDa('angestellt', 'vertrag')), LEA_DA, PETRA_DA],
   },
   {
     id: '05-nur-buerge-offen',
     personen: [
-      max(alleDa('angestellt', 'hauptmieter')),
+      max(alleDa('angestellt', 'vertrag')),
       LEA_DA,
       petra({ buergschaftserklaerung: 'da' }),
     ],
@@ -151,9 +151,9 @@ export const SZENARIEN: Szenario[] = [
         vorname: 'Mira',
         nachname: 'Beispiel',
         bezeichnung: 'weiblich',
-        rolle: 'mitmieter',
+        rolle: 'vertrag',
         lage: 'angestellt',
-        unterlagen: alleDa('angestellt', 'mitmieter'),
+        unterlagen: alleDa('angestellt', 'vertrag'),
       },
     ],
   },
@@ -202,7 +202,7 @@ export const SZENARIEN: Szenario[] = [
         vorname: 'Maximilian-Alexander',
         nachname: 'Mustermann',
         bezeichnung: 'neutral',
-        rolle: 'hauptmieter',
+        rolle: 'vertrag',
         lage: 'angestellt',
         unterlagen: { selbstauskunft: 'da', gehaltsnachweis: 'bald', bonitaet: 'da' },
       },
@@ -210,9 +210,9 @@ export const SZENARIEN: Szenario[] = [
         vorname: 'Bartholomäus',
         nachname: 'Mustermann',
         bezeichnung: 'neutral',
-        rolle: 'mitmieter',
+        rolle: 'vertrag',
         lage: 'angestellt',
-        unterlagen: alleDa('angestellt', 'mitmieter'),
+        unterlagen: alleDa('angestellt', 'vertrag'),
       },
       {
         vorname: 'Anna-Katharina Josephine',
@@ -262,9 +262,9 @@ export const SZENARIEN: Szenario[] = [
         vorname: 'Lea',
         nachname: 'Mustermann',
         bezeichnung: 'weiblich',
-        rolle: 'hauptmieter',
+        rolle: 'vertrag',
         lage: 'angestellt',
-        unterlagen: alleDa('angestellt', 'hauptmieter'),
+        unterlagen: alleDa('angestellt', 'vertrag'),
       },
       PETRA_FEHLT,
     ],
@@ -293,12 +293,12 @@ export const SZENARIEN: Szenario[] = [
     // Selbstauskunft im Rutsch, zweite Person (A2): Max hat die Haushaltsangaben schon eingetragen.
     id: '16-auskunft-lea',
     kinder: 1,
-    personen: [max(alleDa('angestellt', 'hauptmieter')), { ...LEA_DA, unterlagen: {} }],
+    personen: [max(alleDa('angestellt', 'vertrag')), { ...LEA_DA, unterlagen: {} }],
   },
   {
     // PC187 (Lücke aus CP110): Im Rutsch fehlt bei Max nur das Netto; alles andere der Selbstauskunft ist da.
     id: '28-nur-netto',
-    personen: [{ ...max(alleDa('angestellt', 'hauptmieter')), angaben: { nettoeinkommen: null } }],
+    personen: [{ ...max(alleDa('angestellt', 'vertrag')), angaben: { nettoeinkommen: null } }],
   },
   {
     // Person und Haushalt (K, E3d): Jonas ist herausgenommen und bringt vier Unterlagen mit.
@@ -385,7 +385,7 @@ export const SZENARIEN: Szenario[] = [
         vorname: 'Олена',
         nachname: 'Коваленко',
         bezeichnung: 'weiblich',
-        rolle: 'mitmieter',
+        rolle: 'vertrag',
         lage: 'angestellt',
         unterlagen: { selbstauskunft: 'da', gehaltsnachweis: 'da', bonitaet: 'da' },
       },
@@ -445,11 +445,11 @@ export const SZENARIEN: Szenario[] = [
         vorname: 'Jarne',
         nachname: 'Ostendorp',
         bezeichnung: 'maennlich',
-        rolle: 'hauptmieter',
+        rolle: 'vertrag',
         lage: 'angestellt',
-        unterlagen: { ...alleDa('angestellt', 'hauptmieter'), mietzahlung: 'da' },
+        unterlagen: { ...alleDa('angestellt', 'vertrag'), mietzahlung: 'da' },
         angaben: {
-          beruf: 'Mechatroniker',
+          beruf: 'Logistikplaner',
           kontakt: {
             telefon: '0171 3920011',
             telefonLand: 'DE',
@@ -462,11 +462,11 @@ export const SZENARIEN: Szenario[] = [
         vorname: 'Selin',
         nachname: 'Akgül',
         bezeichnung: 'weiblich',
-        rolle: 'mitmieter',
+        rolle: 'vertrag',
         lage: 'angestellt',
         unterlagen: { selbstauskunft: 'da', gehaltsnachweis: 'da', bonitaet: 'bald' },
         angaben: {
-          beruf: 'Pflegefachfrau',
+          beruf: 'Bauingenieurin',
           kontakt: {
             telefon: '0171 3920012',
             telefonLand: 'DE',

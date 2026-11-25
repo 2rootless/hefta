@@ -56,7 +56,7 @@ const petra = personStand(
   [],
   HEUTE,
 );
-const max = personStand(person('p1', 'Max'), 'hauptmieter', [], [], HEUTE);
+const max = personStand(person('p1', 'Max'), 'vertrag', [], [], HEUTE);
 
 describe('Liste an andere schicken (Version 2.0)', () => {
   // DP49 Punkt 5: Die Bürgschaftserklärung gilt je Wohnung und ist freiwillig; sie steht nicht auf der Liste.
@@ -83,7 +83,7 @@ describe('Liste an andere schicken (Version 2.0)', () => {
   it('nennt nur, was fehlt, und nur andere als die erste Person', () => {
     const fertig = personStand(
       person('p3', 'Lea', { lebenssituation: 'rente' }),
-      'mitmieter',
+      'vertrag',
       [dok('p3', 'bonitaet'), dok('p3', 'rentenbescheid')],
       [version('p3', 'bonitaet', '2026-10-20'), version('p3', 'rentenbescheid', '2026-10-01')],
       HEUTE,

@@ -37,9 +37,9 @@ const MAX: MappenPerson = {
   name: 'Max Mustermann',
   vorname: 'Max',
   nachname: 'Mustermann',
-  rolle: 'Hauptmieter',
+  rolle: '',
   farbe: '#e9a970',
-  rolleId: 'hauptmieter',
+  rolleId: 'vertrag',
 };
 const PETRA: MappenPerson = {
   name: 'Petra Mustermann',
@@ -149,10 +149,10 @@ async function mappeAus(bytes: Uint8Array, a: HeftaAnhang): Promise<Mappe> {
   }
 }
 
-describe('Lesehilfe hefta.json, Fassung 1', () => {
+describe('Lesehilfe hefta.json, Fassung 2 (W57)', () => {
   it('beschreibt die Mappe: Personen mit ihren Unterlagen, Kontakt bei der Person, Fassung, Einzug, Portal', async () => {
     const { a, e, seiten, erstellt } = await gebaut();
-    expect(a.hefta).toBe(1);
+    expect(a.hefta).toBe(2);
     expect(a.erstellt).toBe(zeitpunktAus(DATUM));
     // Der Zeitpunkt ist das Erstelldatum in den Eigenschaften der PDF (Regel 1, E207).
     expect(new Date(a.erstellt).getTime()).toBe(erstellt!.getTime());
@@ -180,8 +180,8 @@ describe('Lesehilfe hefta.json, Fassung 1', () => {
         name: 'Max Mustermann',
         vorname: 'Max',
         nachname: 'Mustermann',
-        rolle: 'hauptmieter',
-        kontakt: true,
+        rolle: 'vertrag',
+        ansprech: true,
         telefon: '0171 3920001',
         telefon_e164: '+491713920001',
         email: 'max@example.com',
@@ -279,7 +279,7 @@ describe('Lesehilfe hefta.json, Fassung 1', () => {
       })
     ).a.haushalt.personen[0]!;
     expect(nurTelefon).toMatchObject({
-      kontakt: true,
+      ansprech: true,
       telefon: '0171 3920005',
       telefon_e164: '+491713920005',
     });
@@ -291,10 +291,10 @@ describe('Lesehilfe hefta.json, Fassung 1', () => {
     expect('telefon' in ohneVorwahl).toBe(false);
     expect('telefon_e164' in ohneVorwahl).toBe(false);
     const ohne = (await gebaut({ kontakt: ['Max Mustermann'], kontaktwege: undefined })).a;
-    expect(ohne.haushalt.personen[0]!.kontakt).toBe(true);
+    expect(ohne.haushalt.personen[0]!.ansprech).toBe(true);
     expect('telefon' in ohne.haushalt.personen[0]!).toBe(false);
     const keinKontakt = (await gebaut({ kontakt: [], kontaktwege: undefined })).a;
-    expect(keinKontakt.haushalt.personen[0]!.kontakt).toBeUndefined();
+    expect(keinKontakt.haushalt.personen[0]!.ansprech).toBeUndefined();
   });
 
   it('Namen (F1): wie eingetragen, nie von Hefta geteilt; Grenzfälle vom Eintrag bis in die Datei', async () => {
@@ -382,7 +382,7 @@ describe('Lesehilfe hefta.json, Fassung 1', () => {
       kennung: '3b7c2f1e-8d4a-4c6b-9e2f-1a5d7c9b0e42',
     });
     expect(a.bewerbung.wohnung).toBeNull();
-    expect(a.haushalt.personen[0]!.rolle).toBe('hauptmieter');
+    expect(a.haushalt.personen[0]!.rolle).toBe('vertrag');
     const neuer = anhangLesen(anhangBytes({ ...a, hefta: 7, x_fremd: 'x' } as HeftaAnhang));
     expect(neuer?.hefta).toBe(7);
     expect(anhangLesen(new TextEncoder().encode('{"hefta":0}'))).toBeNull();

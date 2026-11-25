@@ -52,7 +52,7 @@ const version = (typ: string, teil: Partial<DateiVersion>): DateiVersion => ({
 describe('Erinnerungen als Kalendereintrag (Version 2)', () => {
   const stand = personStand(
     max,
-    'hauptmieter',
+    'vertrag',
     [dok('gehaltsnachweis'), dok('bonitaet')],
     [
       ...['2026-07', '2026-08', '2026-09'].map((m) =>
@@ -76,11 +76,11 @@ describe('Erinnerungen als Kalendereintrag (Version 2)', () => {
   });
 
   it('nimmt den Tag aus „Anfang“ und „Mitte“, ohne Gehalt den Ersten', () => {
-    const mitte = personStand({ ...max, abrechnungMeist: 'mitte' }, 'hauptmieter', [], [], HEUTE);
+    const mitte = personStand({ ...max, abrechnungMeist: 'mitte' }, 'vertrag', [], [], HEUTE);
     expect(monatsTermin('h1', [mitte], HEUTE).tag).toBe('2026-11-15');
-    const anfang = personStand({ ...max, abrechnungMeist: 'anfang' }, 'hauptmieter', [], [], HEUTE);
+    const anfang = personStand({ ...max, abrechnungMeist: 'anfang' }, 'vertrag', [], [], HEUTE);
     expect(monatsTermin('h1', [anfang], HEUTE).tag).toBe('2026-12-05');
-    const rente = personStand({ ...max, lebenssituation: 'rente' }, 'hauptmieter', [], [], HEUTE);
+    const rente = personStand({ ...max, lebenssituation: 'rente' }, 'vertrag', [], [], HEUTE);
     expect(monatsTermin('h1', [rente], HEUTE).tag).toBe('2026-12-01');
   });
 

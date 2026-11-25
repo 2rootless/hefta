@@ -1,40 +1,59 @@
-// Genau eine hauptmietende Person je Haushalt (PC102, E209, Frage 1).
+// W57 (PC198, E363, E366): die Ansprechperson des Haushalts.
 //
-// Fehlt sie, weil sie herausgenommen, gelöscht oder Bürge wurde, rückt die nächste Person im Mietvertrag nach
-// (die erste nach der Reihenfolge). Kommt eine frühere hauptmietende Person zurück, während schon eine andere
-// hauptmietet, steht sie wieder im Vertrag, aber als Mitmieter. Die Lesehilfe (FORMAT.md, Abschnitt 11, Punkt 6)
-// verlangt darum genau eine.
+// Sie steht im Mietvertrag, zuerst. Verlässt sie den Vertrag (herausgenommen, gelöscht, Bürge), wird ohne Frage
+// die nächste Person im Vertrag nach der Reihenfolge Ansprechperson. Kommt sie zurück, bleibt die neue. Ersetzt
+// `rollenNachruecken` (PC102, E209): Es gibt keine hauptmietende Person mehr, die nachrücken müsste.
 
-import type { Id, Zugehoerigkeit } from './modell';
+import type { Haushalt, Id, Rolle, RolleAlt, Zugehoerigkeit } from './modell';
 
-type Zug = Pick<Zugehoerigkeit, 'id' | 'haushaltId' | 'rolle' | 'reihenfolge'> & {
+type Zug = Pick<Zugehoerigkeit, 'personId' | 'rolle' | 'reihenfolge'> & {
   herausgenommenAm?: string | null;
 };
 
-const nachReihenfolge = <Z extends Zug>(a: Z, b: Z) => a.reihenfolge - b.reihenfolge;
+/** Rolle aus Schema 1 bis 3: Hauptmieter und Mitmieter stehen beide im Vertrag. */
+export function rolleNeu(rolle: Rolle | RolleAlt | string): Rolle {
+  return rolle === 'buerge' ? 'buerge' : 'vertrag';
+}
+
+/** Im Vertrag und nicht herausgenommen, nach der Reihenfolge. */
+export function imVertrag<Z extends Zug>(alle: readonly Z[]): Z[] {
+  return alle
+    .filter((z) => !z.herausgenommenAm && rolleNeu(z.rolle) === 'vertrag')
+    .sort((a, b) => a.reihenfolge - b.reihenfolge);
+}
 
 /**
- * Die Zugehörigkeiten, deren Rolle sich ändern muss, damit jeder Haushalt mit jemandem im Mietvertrag genau
- * eine hauptmietende Person hat. Gibt geänderte Kopien zurück; die übrigen bleiben, wie sie sind.
- *
- * - Keine: Die erste im Vertrag (nach der Reihenfolge) wird hauptmietend.
- * - Mehrere: Die erste bleibt, die anderen werden Mitmieter. Wer zurückkommt, steht hinten und gibt nach.
- * - Herausgenommene zählen nicht. Bürgen rücken nie nach.
+ * Die Person-ID der Ansprechperson: die gespeicherte, wenn sie noch im Vertrag steht, sonst die erste im Vertrag.
+ * Null nur, wenn niemand im Vertrag steht.
  */
-export function rollenNachruecken<Z extends Zug>(alle: readonly Z[]): Z[] {
-  const haushalte = new Map<Id, Z[]>();
-  for (const z of alle) {
-    if (z.herausgenommenAm || z.rolle === 'buerge') continue;
-    haushalte.set(z.haushaltId, [...(haushalte.get(z.haushaltId) ?? []), z]);
-  }
-  const aenderungen: Z[] = [];
-  for (const vertrag of haushalte.values()) {
-    const haupt = vertrag.filter((z) => z.rolle === 'hauptmieter').sort(nachReihenfolge);
-    if (haupt.length === 0) {
-      const erste = [...vertrag].sort(nachReihenfolge)[0]!;
-      aenderungen.push({ ...erste, rolle: 'hauptmieter' });
-    }
-    for (const z of haupt.slice(1)) aenderungen.push({ ...z, rolle: 'mitmieter' });
-  }
-  return aenderungen;
+export function ansprechperson(
+  haushalt: Pick<Haushalt, 'ansprechpersonId'> | null | undefined,
+  alle: readonly Zug[],
+): Id | null {
+  const vertrag = imVertrag(alle);
+  const gespeichert = haushalt?.ansprechpersonId;
+  if (gespeichert && vertrag.some((z) => z.personId === gespeichert)) return gespeichert;
+  return vertrag[0]?.personId ?? null;
+}
+
+/** Die Ansprechperson zuerst, dann der Vertrag nach der Reihenfolge, dann die Bürgen (E366). */
+export function geordnet<Z extends Zug>(
+  haushalt: Pick<Haushalt, 'ansprechpersonId'> | null | undefined,
+  alle: readonly Z[],
+): Z[] {
+  const an = ansprechperson(haushalt, alle);
+  const rang = (z: Z) => (z.personId === an ? 0 : rolleNeu(z.rolle) === 'vertrag' ? 1 : 2);
+  return [...alle].sort((a, b) => rang(a) - rang(b) || a.reihenfolge - b.reihenfolge);
+}
+
+/**
+ * Nach einer Änderung an Rollen oder Plätzen: die neue Ansprechperson, wenn sie sich ändern muss, sonst `undefined`.
+ * So bleibt die Wahl bestehen, auch wenn die frühere Ansprechperson zurückkommt (E366).
+ */
+export function ansprechNachruecken(
+  haushalt: Pick<Haushalt, 'ansprechpersonId'>,
+  alle: readonly Zug[],
+): Id | null | undefined {
+  const neu = ansprechperson(haushalt, alle);
+  return neu === (haushalt.ansprechpersonId ?? null) ? undefined : neu;
 }

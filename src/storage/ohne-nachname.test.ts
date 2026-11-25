@@ -19,7 +19,7 @@ async function haushaltMitAylin(db: HeftaDb, ohneNachname: boolean) {
         vorname: 'Aylin',
         nachname: '',
         bezeichnung: 'weiblich',
-        rolle: 'hauptmieter',
+        rolle: 'vertrag',
         lebenssituation: 'angestellt',
       },
     ],

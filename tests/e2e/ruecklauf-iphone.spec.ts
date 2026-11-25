@@ -128,7 +128,8 @@ test('Zurück oben links tut dasselbe wie die Wischgeste', async ({ page }) => {
   await laden(page, '01-standard', '/');
   await page.getByRole('link', { name: /^Haushalt bearbeiten: / }).click();
   await expect(page.getByRole('heading', { name: 'Euer Haushalt' })).toBeVisible();
-  await page.getByRole('link', { name: 'Rolle von Lea ändern' }).click();
+  // W54: Der Name in den Fächern führt zur Personenseite.
+  await page.locator('.faecher a.text', { hasText: 'Lea' }).click();
   await expect(page.getByLabel('Vorname')).toHaveValue('Lea');
   await page.getByRole('link', { name: 'Abbrechen' }).click();
   await expect(page.getByRole('heading', { name: 'Euer Haushalt' })).toBeVisible();

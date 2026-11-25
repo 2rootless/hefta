@@ -31,7 +31,7 @@ describe('Rutsch', () => {
   it('Person für Person: Hauptmieter, Mitmieter, dann Bürgen; je Person in Katalog-Reihenfolge', () => {
     // Bürgin bewusst zuerst übergeben: Reihenfolge kommt aus der Rolle
     const liste = rutschListe(
-      [stand('petra', 'buerge', 'rente'), stand('max', 'hauptmieter'), stand('lea', 'mitmieter')],
+      [stand('petra', 'buerge', 'rente'), stand('max', 'vertrag'), stand('lea', 'vertrag')],
       true,
     );
     expect(liste.map((p) => `${p.personId}:${p.typ}`)).toEqual([
@@ -48,12 +48,12 @@ describe('Rutsch', () => {
   });
 
   it('lässt Formulare (Selbstauskunft) weg, solange sie nicht gebaut sind', () => {
-    const liste = rutschListe([stand('max', 'hauptmieter')], false);
+    const liste = rutschListe([stand('max', 'vertrag')], false);
     expect(liste.map((p) => p.typ)).toEqual(['gehaltsnachweis', 'bonitaet']);
   });
 
   it('zählt hochgeladene und übersprungene Unterlagen und endet nach dem letzten Posten', () => {
-    let r = neuerRutsch([stand('max', 'hauptmieter')], false);
+    let r = neuerRutsch([stand('max', 'vertrag')], false);
     expect(fertig(r)).toBe(false);
     r = weiter(r, 'hochgeladen');
     r = weiter(r, 'uebersprungen');
@@ -65,7 +65,7 @@ describe('Rutsch', () => {
 
 describe('neuDazu (Z4)', () => {
   it('nennt nur, was seit dem Start fällig wurde und nicht in der Liste steht', () => {
-    const a = personStand(person('a'), 'hauptmieter', [], [], HEUTE);
+    const a = personStand(person('a'), 'vertrag', [], [], HEUTE);
     const stand = { liste: rutschListe([a], true).slice(0, 1), index: 1, ergebnisse: {} };
     const neu = neuDazu(stand, [a]);
     expect(neu.length).toBe(rutschListe([a], true).length - 1);

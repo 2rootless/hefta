@@ -88,7 +88,8 @@ function mappenPerson(s: PersonStand): MappenPerson {
     // Fassung 1 der Lesehilfe: Vor- und Nachname wie auf dem Deckblatt, von Hefta nie selbst geteilt.
     vorname: nameImPdf(s.person).vorname,
     nachname: nameImPdf(s.person).nachname,
-    rolle: rollenText(s.rolle, s.bezeichnung),
+    // W57 (DP124, Abschnitt 3): kein Rollenwort für den Vertrag; Bürgen „bürgt“ (Kopfzeile, Lesezeichen).
+    rolle: s.rolle === 'buerge' ? 'bürgt' : '',
     beruf: deckTaetigkeit(s.person),
     farbe: farbe(s.farbe),
     buerge: s.rolle === 'buerge',
@@ -205,7 +206,6 @@ export async function mappeErstellen(
               hh,
               auskunftsSchritt(e),
               {
-                rolleText: rollenText(block.person.rolle, block.person.bezeichnung),
                 antwortenImmer: auskunftAntwortenImmer(e),
                 // PC65: Unbeantwortet steht immer „Beantworte ich nach der Zusage“ bzw. „… wir …“.
                 zusageText: nachZusageSatz(

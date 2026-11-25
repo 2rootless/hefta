@@ -3,14 +3,30 @@
 
 export const ANHANG_NAME = 'hefta.json';
 
-/** Die Fassung, die dieses Paket schreibt und vollständig kennt. */
-export const FASSUNG = 1;
+/** Die Fassung, die dieses Paket schreibt und vollständig kennt (W57: Fassung 2). Fassung 1 liest es weiter. */
+export const FASSUNG = 2;
 
 export const ROLLEN = {
-  hauptmieter: 'steht im Mietvertrag, als erste Person des Haushalts',
-  mitmieter: 'steht ebenfalls im Mietvertrag',
+  vertrag: 'steht im Mietvertrag',
   buerge: 'bürgt für den Haushalt, steht nicht im Mietvertrag',
+  /** Nur Fassung 1. */
+  hauptmieter: 'steht im Mietvertrag, als erste Person des Haushalts (Fassung 1)',
+  /** Nur Fassung 1. */
+  mitmieter: 'steht ebenfalls im Mietvertrag (Fassung 1)',
 } as const;
+
+/** Steht die Person im Mietvertrag? In Fassung 2 `vertrag`, in Fassung 1 `hauptmieter` und `mitmieter`. */
+export function imVertrag(rolle: string): boolean {
+  return rolle === 'vertrag' || rolle === 'hauptmieter' || rolle === 'mitmieter';
+}
+
+/** Trägt die Person Kontakt und Telefon? Fassung 2: `ansprech`; Fassung 1: `kontakt`. */
+export function kontaktPerson(
+  p: { ansprech?: unknown; kontakt?: unknown },
+  fassung: number,
+): boolean {
+  return fassung >= 2 ? p.ansprech === true : p.kontakt === true;
+}
 
 export const MITZIEHENDE = {
   kind: 'Kind',

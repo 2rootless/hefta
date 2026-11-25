@@ -10,33 +10,22 @@
   import { abschliessen, zurueckGehen } from '../app/router.svelte';
   import { rufnameFolgt, type Rolle } from '../domain/modell';
   import { gleicherName, lateinFehlt, nameMappeAus } from '../domain/namen';
-  import {
-    dokumenttyp,
-    listenText,
-    personStand,
-    situationText,
-    rollenText,
-  } from '../domain/regelkatalog';
+  import { dokumenttyp, listenText, personStand, situationText } from '../domain/regelkatalog';
   import { t, tagZusammen } from '../i18n';
   import {
-    haushaltLaden,
-    hauptmieterSetzen,
-    mitgliedHerausnehmen,
     mitgliedHinzufuegen,
-    mitgliedZiehtMitEin,
     mitgliedZurueckholen,
     personAendern,
-    rolleWechseln,
     farbeSetzen,
     zugehoerigkeitAendern,
     type Mitglied,
   } from '../storage/speicher';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
   import Eintragen from '../ui/Eintragen.svelte';
-  import Notiz from '../ui/Notiz.svelte';
   import FarbWahl from '../ui/FarbWahl.svelte';
   import PersonFormular, { type PersonEingabe } from '../ui/PersonFormular.svelte';
   import Symbol from '../ui/Symbol.svelte';
+  import PersonZiele from '../ui/PersonZiele.svelte';
 
   let {
     neueRolle = null,
@@ -44,68 +33,30 @@
     zurueckZu,
     ziel = null,
   }: {
-    neueRolle?: Extract<Rolle, 'mitmieter' | 'buerge'> | null;
+    neueRolle?: Rolle | null;
     personId?: string | null;
     zurueckZu: string;
     /** DP74 C3: `ueber` öffnet beim Kasten „Über …“. */
     ziel?: 'ueber' | null;
   } = $props();
 
+  // W54: auch wer nur mit einzieht oder nicht mehr dabei ist, hat seine Seite; zurück geht es über die Ziele.
   const mitglied = $derived(
-    personId ? daten.ansicht?.mitglieder.find((m) => m.person.id === personId) : undefined,
+    personId
+      ? [...(daten.ansicht?.mitglieder ?? []), ...(daten.ansicht?.herausgenommen ?? [])].find(
+          (m) => m.person.id === personId,
+        )
+      : undefined,
   );
-  // HA1: „Im Mietvertrag“ oder „Bürgschaft“; gespeichert wird erst mit „Speichern“.
   const bisher = $derived(mitglied?.zugehoerigkeit.rolle ?? null);
   // W42 (DP93, Variante A): vier Möglichkeiten für jede Person, auch für die hauptmietende. Gespeichert wird erst mit
   // „Speichern“; davor nennt der Kasten die Folgen, und wo nötig fragt Hefta, wer nachrückt.
-  type Wahl = 'vertrag' | 'mitein' | 'buerge' | 'raus';
-  let wahl = $state<Wahl | null>(null);
-  const aktuell = $derived<Wahl | null>(
-    bisher ? (bisher === 'buerge' ? 'buerge' : 'vertrag') : null,
+  // W57/W54: Die Rolle wechselt man über die Ziele (PersonZiele), sofort wirksam; hier gilt die gespeicherte.
+  const rolle = $derived<Rolle>(!bisher ? (neueRolle ?? 'vertrag') : bisher);
+  // W57 (E366): Die Ansprechperson des Haushalts; sie steht im Vertrag.
+  const istAnsprech = $derived(
+    !!mitglied && daten.ansicht?.haushalt.ansprechpersonId === mitglied.person.id,
   );
-  const rolleGewaehlt = $derived<Wahl | null>(wahl ?? aktuell);
-  const rolle = $derived<Rolle>(
-    !bisher
-      ? (neueRolle ?? 'mitmieter')
-      : rolleGewaehlt === 'buerge'
-        ? 'buerge'
-        : rolleGewaehlt === 'vertrag' && bisher === 'buerge'
-          ? 'mitmieter'
-          : bisher,
-  );
-  const imVertrag = $derived(
-    (daten.ansicht?.mitglieder ?? [])
-      .filter((m) => m.zugehoerigkeit.rolle !== 'buerge')
-      .sort((a, b) => a.zugehoerigkeit.reihenfolge - b.zugehoerigkeit.reihenfolge),
-  );
-  const andereImVertrag = $derived(imVertrag.filter((m) => m.person.id !== mitglied?.person.id));
-  const buergenSonst = $derived(
-    (daten.ansicht?.mitglieder ?? []).filter(
-      (m) => m.zugehoerigkeit.rolle === 'buerge' && m.person.id !== mitglied?.person.id,
-    ),
-  );
-  /**
-   * Wer nachrückt, wenn die Person den Vertrag verlässt (DP93, Fälle 2 bis 5): `wahl` mit zwei oder mehr Übrigen,
-   * `eine` mit genau einer, `ersatz` wenn niemand sonst im Vertrag ist, aber jemand bürgt, `neu` wenn sonst niemand
-   * im Haushalt ist. Eine Mitmieterin, die geht, braucht keine Nachfolge.
-   */
-  const nachfolgeArt = $derived.by<'wahl' | 'eine' | 'ersatz' | 'neu' | null>(() => {
-    if (!bisher || bisher === 'buerge' || rolleGewaehlt === 'vertrag') return null;
-    if (andereImVertrag.length === 0) return buergenSonst.length ? 'ersatz' : 'neu';
-    if (bisher !== 'hauptmieter') return null;
-    return andereImVertrag.length === 1 ? 'eine' : 'wahl';
-  });
-  /** Gewählte Nachfolge: Zugehörigkeit einer Person oder „neu“. */
-  let nachfolger = $state<string | null>(null);
-  let neuerVorname = $state('');
-  const neuGewaehlt = $derived(
-    nachfolgeArt === 'neu' || (nachfolgeArt === 'ersatz' && nachfolger === 'neu'),
-  );
-
-  function rolleWaehlen(neu: Wahl) {
-    wahl = neu === aktuell ? null : neu;
-    nachfolger = null;
-  }
   const bekannte = $derived(daten.ansicht?.herausgenommen ?? []);
 
   // Hinzufügen: Auswahl (K1), Formular (K1/K1b) oder Bestätigung einer bekannten Person (K2).
@@ -183,110 +134,6 @@
     });
   });
 
-  // Die Folgen stehen vor dem Speichern da (HA1, DP93): höchstens vier Zeilen, nur die, die zutreffen.
-  const folgen = $derived.by(() => {
-    if (!mitglied || !bisher || !rolleGewaehlt || rolleGewaehlt === aktuell) return null;
-    const name = mitglied.person.rufname || mitglied.person.vorname;
-    const form = { weiblich: 'weiblich', maennlich: 'maennlich', neutral: 'neutral' }[
-      werte.bezeichnung ?? 'neutral'
-    ] as 'weiblich' | 'maennlich' | 'neutral';
-    const p = {
-      weiblich: { Ihre: 'Ihre', ihre: 'ihre', ihrer: 'ihrer', Ihr: 'Ihr' },
-      maennlich: { Ihre: 'Seine', ihre: 'seine', ihrer: 'seiner', Ihr: 'Sein' },
-      neutral: { Ihre: 'Die', ihre: 'die', ihrer: 'der', Ihr: 'Der' },
-    }[form];
-    const rufname = (m: Mitglied) => m.person.rufname || m.person.vorname;
-    const liste: string[] = [];
-    // 1. Wer nachrückt
-    if (nachfolgeArt === 'eine' || (nachfolgeArt === 'wahl' && nachfolger)) {
-      const nach =
-        nachfolgeArt === 'eine'
-          ? andereImVertrag[0]!
-          : andereImVertrag.find((m) => m.zugehoerigkeit.id === nachfolger)!;
-      liste.push(
-        t('personSeite.folgen.vorn', {
-          name: rufname(nach),
-          rolle: rollenText('hauptmieter', nach.zugehoerigkeit.bezeichnung),
-        }),
-      );
-    } else if (nachfolgeArt === 'ersatz' && nachfolger && nachfolger !== 'neu') {
-      const nach = buergenSonst.find((m) => m.zugehoerigkeit.id === nachfolger)!;
-      const ihre = { weiblich: 'Ihre', maennlich: 'Seine', neutral: 'Die' }[
-        nach.zugehoerigkeit.bezeichnung ?? 'neutral'
-      ];
-      liste.push(
-        t('personSeite.folgen.ersatzBuerge', {
-          name: rufname(nach),
-          rolle: rollenText('hauptmieter', nach.zugehoerigkeit.bezeichnung),
-          Ihre: ihre,
-        }),
-      );
-    } else if (neuGewaehlt) {
-      // DP117: Solange kein Vorname da ist, „Die neue Person …“; ab dem ersten Buchstaben der Name.
-      liste.push(
-        neuerVorname.trim()
-          ? t('personSeite.folgen.ersatzNeu', { name: neuerVorname.trim() })
-          : t('personSeite.folgen.ersatzNeuOhneName'),
-      );
-    }
-    // 2. Was mit der Person geschieht
-    if (rolleGewaehlt === 'buerge') {
-      liste.push(
-        t('personSeite.folgen.buergeKarte', p),
-        t('personSeite.folgen.buergeErklaerung'),
-        t('personSeite.folgen.buergeAngaben', p),
-      );
-    } else if (rolleGewaehlt === 'raus') {
-      liste.push(
-        bisher === 'buerge'
-          ? t('personSeite.folgen.rausBuerge', { name })
-          : t('personSeite.folgen.rausVertrag', { name }),
-        t('personSeite.folgen.rausUnterlagen', { ...p, name }),
-        t('personSeite.folgen.geschickt'),
-      );
-    } else if (rolleGewaehlt === 'mitein') {
-      liste.push(
-        t('personSeite.folgen.miteinZaehlt', { ...p, name }),
-        t('personSeite.folgen.miteinUnterlagen', p),
-        t('personSeite.folgen.geschickt'),
-      );
-    } else {
-      const letzte = imVertrag.at(-1);
-      const erklaerung = unterlagenVon(mitglied.person.id).some(
-        (d) => d.typ === 'buergschaftserklaerung',
-      );
-      liste.push(
-        t('personSeite.folgen.vertragKarte', { ...p, nach: letzte ? rufname(letzte) : '' }),
-        erklaerung
-          ? t('personSeite.folgen.vertragErklaerungDa')
-          : t('personSeite.folgen.vertragErklaerung'),
-        t('personSeite.folgen.vertragAngaben', p),
-      );
-    }
-    return { titel: t('personSeite.folgen.titel'), liste: liste.slice(0, 4) };
-  });
-
-  /** Die Frage nach der Nachfolge (DP93, Fälle 2, 4, 5). */
-  const nachfolgeFrage = $derived.by(() => {
-    if (!mitglied || !nachfolgeArt || nachfolgeArt === 'eine') return null;
-    const name = mitglied.person.rufname || mitglied.person.vorname;
-    const b = werte.bezeichnung ?? 'neutral';
-    const seine = { weiblich: 'ihre', maennlich: 'seine', neutral: 'die' }[b];
-    const einzige = { weiblich: 'Einzige', maennlich: 'Einziger', neutral: 'Einzige' }[b];
-    if (nachfolgeArt === 'wahl')
-      return {
-        frage: t('personSeite.nachfolge.frageVorn'),
-        hinweis: t('personSeite.nachfolge.hinweisVorn'),
-      };
-    return {
-      frage: t('personSeite.nachfolge.frageErsatz', { seine }),
-      hinweis:
-        nachfolgeArt === 'ersatz'
-          ? t('personSeite.nachfolge.hinweisErsatz', { name, einzige })
-          : t('personSeite.nachfolge.hinweisNeu', { name, einzige }),
-    };
-  });
-
   /** Unterlagen, die eine Person schon hat (Dokumente mit mindestens einer Version). */
   function unterlagenVon(id: string) {
     const ansicht = daten.ansicht;
@@ -362,13 +209,7 @@
         ? t('personSeite.grundLatein')
         : !werte.bezeichnung
           ? t('einrichtung.erste.grundBezeichnung')
-          : nachfolgeArt === 'wahl' && !nachfolger
-            ? t('personSeite.nachfolge.grundWahl')
-            : nachfolgeArt === 'ersatz' && !nachfolger
-              ? t('personSeite.nachfolge.grundErsatz')
-              : neuGewaehlt && !neuerVorname.trim()
-                ? t('personSeite.nachfolge.grundVorname')
-                : undefined,
+          : undefined,
   );
 
   let speichert = $state(false);
@@ -402,40 +243,6 @@
           bezeichnung: werte.bezeichnung,
         });
         await farbeSetzen(verbindung, mitglied.zugehoerigkeit.id, farbe);
-        if (rolleGewaehlt && rolleGewaehlt !== aktuell) {
-          // W42 (DP93, F2): erst die Nachfolge, dann der Wechsel; so ist der Vertrag nie leer.
-          if (nachfolgeArt === 'eine')
-            await hauptmieterSetzen(verbindung, andereImVertrag[0]!.zugehoerigkeit.id);
-          else if (nachfolger && nachfolger !== 'neu')
-            await hauptmieterSetzen(verbindung, nachfolger);
-          else if (neuGewaehlt) {
-            const neu = await mitgliedHinzufuegen(verbindung, daten.ansicht.haushalt.id, {
-              vorname: neuerVorname.trim(),
-              nachname: '',
-              bezeichnung: 'neutral',
-              rolle: 'mitmieter',
-              lebenssituation: null,
-            });
-            const zug = (
-              await haushaltLaden(verbindung, daten.ansicht.haushalt.id)
-            )?.mitglieder.find((m) => m.person.id === neu.id);
-            if (zug) await hauptmieterSetzen(verbindung, zug.zugehoerigkeit.id);
-          }
-          const id = mitglied.zugehoerigkeit.id;
-          if (rolleGewaehlt === 'raus') await mitgliedHerausnehmen(verbindung, id);
-          else if (rolleGewaehlt === 'mitein') await mitgliedZiehtMitEin(verbindung, id);
-          else
-            await rolleWechseln(
-              verbindung,
-              id,
-              rolleGewaehlt === 'buerge' ? 'buerge' : 'mitmieter',
-            );
-          if (rolleGewaehlt === 'raus' || rolleGewaehlt === 'mitein') {
-            await neuLaden();
-            abschliessen(zurueckZu.startsWith('/person/') ? '/haushalt' : zurueckZu);
-            return;
-          }
-        }
       } else {
         await mitgliedHinzufuegen(verbindung, daten.ansicht.haushalt.id, {
           ...angaben,
@@ -486,90 +293,9 @@
       <section class="teil">
         {@render abschnitt(t('personSeite.inEuremHaushalt'), t('personSeite.giltNurHier'))}
         <div class="kasten">
-          <PersonFormular bind:werte {rolle} teil="haushalt" fokus={false}>
-            {#snippet rollenWahl()}
-              <fieldset class="rollen">
-                <legend>{t('personSeite.rolle')}</legend>
-                <div class="segmente" role="radiogroup">
-                  {#each ['vertrag', 'mitein', 'buerge', 'raus'] as const as w (w)}
-                    <button
-                      type="button"
-                      class="chip"
-                      role="radio"
-                      aria-checked={rolleGewaehlt === w}
-                      onclick={() => rolleWaehlen(w)}>{t(`personSeite.rolleWahl.${w}`)}</button
-                    >
-                  {/each}
-                </div>
-              </fieldset>
-            {/snippet}
-          </PersonFormular>
-          {#if nachfolgeFrage}
-            <!-- W42 (DP93, Fälle 2, 4, 5): Wer nachrückt; „Speichern“ geht erst nach der Wahl. -->
-            <fieldset class="nachfolge">
-              <legend>{nachfolgeFrage.frage}</legend>
-              <p class="hinweis-klein">{nachfolgeFrage.hinweis}</p>
-              {#if nachfolgeArt === 'wahl'}
-                {#each andereImVertrag as m (m.zugehoerigkeit.id)}
-                  <label class="wahl-zeile">
-                    <input
-                      type="radio"
-                      name="nachfolge"
-                      value={m.zugehoerigkeit.id}
-                      bind:group={nachfolger}
-                    />
-                    <span
-                      >{m.person.rufname || m.person.vorname}<small
-                        >{rollenText(m.zugehoerigkeit.rolle, m.zugehoerigkeit.bezeichnung)}</small
-                      ></span
-                    >
-                  </label>
-                {/each}
-              {:else if nachfolgeArt === 'ersatz'}
-                {#each buergenSonst as m (m.zugehoerigkeit.id)}
-                  <label class="wahl-zeile">
-                    <input
-                      type="radio"
-                      name="nachfolge"
-                      value={m.zugehoerigkeit.id}
-                      bind:group={nachfolger}
-                    />
-                    <span
-                      >{m.person.rufname || m.person.vorname}<small
-                        >{t('personSeite.nachfolge.buergtBisher')}</small
-                      ></span
-                    >
-                  </label>
-                {/each}
-                <label class="wahl-zeile">
-                  <input type="radio" name="nachfolge" value="neu" bind:group={nachfolger} />
-                  <span
-                    >{t('personSeite.nachfolge.neuePerson')}<small
-                      >{t('personSeite.nachfolge.neuePersonHinweis')}</small
-                    ></span
-                  >
-                </label>
-              {/if}
-              {#if neuGewaehlt}
-                <!-- PC190 (WR1, W33): wie jedes Feld der Seite, beige und so breit wie die Spalte. -->
-                <label class="eingabe vorname-neu">
-                  <span>{t('personSeite.nachfolge.vorname')}</span>
-                  <input type="text" autocomplete="off" bind:value={neuerVorname} />
-                </label>
-              {/if}
-            </fieldset>
-          {/if}
-          {#if folgen && folgen.liste.length}
-            <!-- DP63c F2, DP93: Die Folgen heben nur hervor, sie warnen nicht: „info“ in Tinte. -->
-            <Notiz>
-              <p class="folgen-titel" role="status"><b>{folgen.titel}</b></p>
-              <ul class="folgen">
-                {#each folgen.liste as punkt, i (i)}<li>{punkt}</li>{/each}
-              </ul>
-            </Notiz>
-          {:else if !folgen}
-            <p class="satz">{t(`personSeite.rolleSatz.${rolle}`)}</p>
-          {/if}
+          <PersonFormular bind:werte {rolle} teil="haushalt" fokus={false} />
+          <!-- W57/W54 (PC199, Punkt 9): dieselben Ziele wie im Haushalt, sofort wirksam, mit „Rückgängig“. -->
+          <PersonZiele zugehoerigkeitId={mitglied.zugehoerigkeit.id} />
         </div>
       </section>
       <section class="teil">
@@ -599,7 +325,7 @@
           />
         </div>
       </section>
-      {#if rolle !== 'hauptmieter'}
+      {#if !istAnsprech}
         <a class="textlink loeschen" href="#/person-loeschen/{mitglied.person.id}"
           >{t('personSeite.ganzLoeschenLink', { name: mitglied.person.vorname })}</a
         >
@@ -759,83 +485,6 @@
 
   .teil {
     margin-top: var(--space-5);
-  }
-
-  .rollen {
-    margin: 0;
-    padding: 0;
-    border: 0;
-  }
-
-  .rollen legend {
-    margin-bottom: var(--space-2);
-    padding: 0;
-    font-size: calc(14 * var(--px));
-    font-weight: 700;
-  }
-
-  .nachfolge {
-    margin: var(--space-4) 0 0;
-    padding: 0;
-    border: 0;
-  }
-
-  .nachfolge legend {
-    padding: 0;
-    font-weight: 700;
-  }
-
-  .hinweis-klein {
-    margin: var(--space-1) 0 var(--space-2);
-    color: var(--ink-muted);
-    font-size: calc(14 * var(--px));
-  }
-
-  .wahl-zeile {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    min-height: var(--tap-target);
-    padding: var(--space-2) 0;
-  }
-
-  .wahl-zeile + .wahl-zeile {
-    border-top: 1px solid var(--line);
-  }
-
-  .wahl-zeile input {
-    width: 20px;
-    height: 20px;
-    margin: 0;
-    accent-color: var(--ink);
-  }
-
-  .wahl-zeile span {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .wahl-zeile small {
-    color: var(--ink-muted);
-  }
-
-  .vorname-neu {
-    display: grid;
-    gap: var(--space-1);
-    margin-top: var(--space-2);
-  }
-
-  .folgen-titel {
-    margin: 0;
-  }
-
-  .folgen {
-    margin: 6px 0 0;
-    padding-left: 18px;
-  }
-
-  .folgen li + li {
-    margin-top: 4px;
   }
 
   .abschnitt-kopf {

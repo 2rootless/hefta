@@ -44,7 +44,9 @@ describe.skipIf(!PYTHON)('hefta-json: Werkzeug für die zweite Probe (E214)', ()
 });
 
 type Urteil = 'gezeigt' | 'passt nicht' | 'abgelehnt' | 'ABSTURZ';
-const ORDNER = new URL('../beispiele/', import.meta.url);
+// W57: leser78 kennt nur Fassung 1. Er urteilt über die Beispiele in Fassung 1; Fassung 2 prüft ein neuer fremder
+// Leser, sobald die Planung ihn bestimmt hat (PC198, E356).
+const ORDNER = new URL('../beispiele/fassung-1/', import.meta.url);
 const beispiele = readdirSync(ORDNER)
   .filter((n) => n.endsWith('.json'))
   .sort()
@@ -62,7 +64,8 @@ const FAELLE: [nr: string, text: string, seiten: number][] = [
   ...beispiele.map(([n, t]): [string, string, number] => [n, t, JSON.parse(t).seitenzahl]),
   ['seitenzahl', beispiele[1]![1], 17],
   ['fassung 0', geaendert((l) => (l.hefta = 0)), 16],
-  ['fassung 2', geaendert((l) => (l.hefta = 2)), 16],
+  // W57: „fassung 2“ (dieselben Felder, nur `hefta: 2`) fällt weg. Seit es Fassung 2 gibt, fehlt so die
+  // Ansprechperson; das Paket lehnt ab, leser78 kennt Fassung 2 nicht. Geprüft in hefta-json.test.ts.
   ['erstellt nur Tag', geaendert((l) => (l.erstellt = '2026-11-18')), 16],
   ['name ≠ vor+nach', geaendert((l) => (l.haushalt.personen[1]!.name = 'Lea M.')), 16],
   [

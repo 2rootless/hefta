@@ -518,7 +518,7 @@ const BILDER: Bild[] = [
     vorher: async (page) => {
       await page.getByLabel('Vorname').fill('Max');
       await page.getByLabel('Nachname', { exact: true }).fill('Mustermann');
-      await page.getByRole('radio', { name: 'Hauptmieter', exact: true }).click();
+      // W57: Im Vertrag wählt man keine Form des Rollenworts mehr.
     },
   },
   { id: 'E2-H1', gruppe: 'E', szenario: '11-allein', pfad: '/einrichtung/2' },
@@ -562,7 +562,7 @@ const BILDER: Bild[] = [
     vorher: async (page) => {
       await page.getByLabel('Vorname', { exact: true }).fill('Олена');
       await page.getByLabel('Nachname', { exact: true }).fill('Коваленко');
-      await page.getByRole('radio', { name: 'Mitmieterin' }).click();
+      // W57: keine Form des Rollenworts im Vertrag.
     },
   },
   {
@@ -573,7 +573,7 @@ const BILDER: Bild[] = [
     vorher: async (page) => {
       await page.getByLabel('Vorname', { exact: true }).fill('Олена');
       await page.getByLabel('Nachname', { exact: true }).fill('Коваленко');
-      await page.getByRole('radio', { name: 'Mitmieterin' }).click();
+      // W57: keine Form des Rollenworts im Vertrag.
       await page.getByLabel('Vorname in der Mappe').fill('Olena');
       await page.getByLabel('Nachname in der Mappe').fill('Kovalenko');
     },
@@ -1871,8 +1871,10 @@ const BILDER: Bild[] = [
     gruppe: 'E',
     szenario: '25-unterlage-seiten',
     pfad: '/person-aendern/p-25-unterlage-seiten-2',
+    // W54: Das Ziel „Im Mietvertrag“ wirkt sofort; geprüft wird die Seite mit der Zeile danach.
     vorher: async (page) => {
-      await page.getByRole('radio', { name: 'Im Mietvertrag' }).click();
+      await page.locator('.person-ziele [data-z="vertrag"]').click();
+      await page.locator('.person-ziele .folge').waitFor();
     },
   },
   {

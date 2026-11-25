@@ -109,8 +109,9 @@ async function beispielAuftrag(aussehen: MappenAussehen): Promise<BewerbungAuftr
       {
         person: {
           name: 'Jarne Ostendorp',
-          rolle: 'Hauptmieter',
-          beruf: 'Mechatroniker',
+          // W57 (DP124, Abschnitt 3): kein Rollenwort für den Vertrag.
+          rolle: '',
+          beruf: 'Logistikplaner',
           farbe: PERSONENFARBEN[0]!,
         },
         teile: teile([
@@ -122,8 +123,8 @@ async function beispielAuftrag(aussehen: MappenAussehen): Promise<BewerbungAuftr
       {
         person: {
           name: 'Selin Akgül',
-          rolle: 'Mitmieterin',
-          beruf: 'Pflegefachfrau',
+          rolle: '',
+          beruf: 'Bauingenieurin',
           farbe: PERSONENFARBEN[1]!,
         },
         teile: teile([['Selbstauskunft'], ['Gehaltsnachweise', 'Juli bis September']]),

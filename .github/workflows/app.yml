@@ -255,8 +255,9 @@ jobs:
 
   # PC188 (E349): Store-Bilder 01 bis 09 im Simulator, nur von Hand (Haken „Store-Bilder“). Der Bau für die
   # Aufnahmen (VITE_AUFNAHMEN=1) spielt das Musterbackup mit Haushalt A ein und geht die Bildschirme selbst
-  # durch; scripts/store-aufnahmen.sh nimmt sie in zwei Größen auf. Keine anderen Daten, nichts vom Auftraggeber.
-  # Die Musterdateien kommen aus der Vorschau app-2-1 (noindex, nur Musterdaten, W7). Ergebnis: Artefakt.
+  # durch; scripts/store-aufnahmen.sh nimmt sie in 1206 × 2622 auf (PC191). Keine anderen Daten, nichts vom
+  # Auftraggeber. Die Musterdateien kommen aus der Vorschau app-2-2 (noindex, nur Musterdaten, W7). Ergebnis:
+  # Artefakt; Insel und Statusleiste übermalt danach werkzeug/store-bilder-ohne-leiste.py (W52).
   store-bilder:
     if: github.event_name == 'workflow_dispatch' && inputs.store_bilder
     runs-on: macos-15
@@ -272,7 +273,7 @@ jobs:
         run: |
           mkdir -p public/aufnahme
           for f in hefta-muster.hefta gehalt-selin-august.pdf gehalt-selin-september.pdf gehalt-selin-oktober.pdf inserat-rotdornbogen.html; do
-            curl -fsSL "https://app-2-1.hefta.pages.dev/muster/$f" -o "public/aufnahme/$f"
+            curl -fsSL "https://app-2-2.hefta.pages.dev/muster/$f" -o "public/aufnahme/$f"
           done
           ls -l public/aufnahme
       - name: Bau für die Aufnahmen
@@ -296,6 +297,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: store-bilder-2-1
+          name: store-bilder-2-2
           path: aufnahmen/
           retention-days: 14

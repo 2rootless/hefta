@@ -33,8 +33,9 @@
 
   // ---------- B28b: Urteile mit Zeichen und Daumenbild auf jeder Karte ----------
 
+  // Ohne Haushalt „du“ (E369, hebt E74.4 auf), sonst „ihr“ ab zwei Personen ohne Bürgen.
   const ihr = $derived(
-    !daten.ansicht ||
+    !!daten.ansicht &&
       daten.ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
   );
   const URTEIL_REIHE = ['nicht', 'knapp', 'offen'] as const;

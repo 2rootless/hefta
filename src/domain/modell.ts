@@ -22,7 +22,14 @@ export type Lebenssituation =
 /** Gewünschte Form der Rollenbezeichnung (Entscheidung F). Kein Geschlecht. */
 export type Bezeichnung = 'maennlich' | 'weiblich' | 'neutral';
 
-export type Rolle = 'hauptmieter' | 'mitmieter' | 'buerge';
+/**
+ * W57 (PC198, E363, Schema 4): Im Mietvertrag oder Bürge. „Hauptmieter“ und „Mitmieter“ gibt es nicht mehr; wer
+ * Kontakt hält und unterschreibt, ist die Ansprechperson des Haushalts (`Haushalt.ansprechpersonId`).
+ */
+export type Rolle = 'vertrag' | 'buerge';
+
+/** Rollen bis Schema 3 (2.0 bis 2.1); nur zum Lesen alter Daten und Mappen. */
+export type RolleAlt = 'hauptmieter' | 'mitmieter' | 'buerge';
 
 export type AusbildungArt = 'studium' | 'ausbildung';
 
@@ -132,13 +139,19 @@ export interface Haushalt extends Basis {
   mietgrenze?: number | null;
   /** Hefta 2: Wünsche an die Wohnung, je Haushalt (E53); fehlen sie, gibt es keine Urteile. */
   wuensche?: import('./urteile').Wuensche | null;
+  /**
+   * W57 (E363, E366): die Person (Person-ID), die Kontakt hält, zuerst steht und das Anschreiben unterschreibt. Sie
+   * steht im Mietvertrag. Fehlt sie oder ist sie nicht mehr im Vertrag, gilt die erste im Vertrag nach der
+   * Reihenfolge (`ansprechperson`).
+   */
+  ansprechpersonId?: Id | null;
 }
 
 export interface Zugehoerigkeit extends Basis {
   haushaltId: Id;
   personId: Id;
   rolle: Rolle;
-  /** Wie es auf der Karte steht („Hauptmieterin“, „Mitmietpartei“); gilt nur in diesem Haushalt. */
+  /** Form des Rollenworts für Bürgen („Bürgin“, „Bürge“); gilt nur in diesem Haushalt. */
   bezeichnung: Bezeichnung;
   /** Personenfarbe 1 bis 4 in diesem Haushalt (design/person-und-haushalt.md, Abschnitt 1). */
   farbe: number;

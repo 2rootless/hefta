@@ -25,6 +25,8 @@ export {
   UNBEKANNT,
   VERMERKE,
   VERZEICHNIS,
+  imVertrag,
+  kontaktPerson,
   typText,
 } from './listen.js';
 export type {

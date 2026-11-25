@@ -43,7 +43,7 @@ async function bauen(e: ExportEinstellungen) {
         vorname: 'Zoë',
         nachname: 'Beispiel',
         bezeichnung: 'weiblich',
-        rolle: 'hauptmieter',
+        rolle: 'vertrag',
         lebenssituation: 'angestellt',
       },
     ],

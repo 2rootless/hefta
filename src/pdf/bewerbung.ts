@@ -270,7 +270,8 @@ function passendeGroesse(
 }
 
 /**
- * Kopfzeile der Seiten mit Unterlagen (DP31): eine Zeile, links „■ Max Mustermann, Hauptmieter“, rechts der
+ * Kopfzeile der Seiten mit Unterlagen (DP31, W57): eine Zeile, links „■ Max Mustermann“ (Bürgen „■ Petra Mustermann,
+ * bürgt“), rechts der
  * Name der Unterlage mit Datum, darunter eine Linie in Tinte. Farbe nur am Zeichen. Der Name rechts steht
  * als eigener Text: Die Vermieterseite liest ihn als „Name aus dem Seitenkopf“.
  */
@@ -291,7 +292,7 @@ function kopfzeile(
     color: FARBE.ink,
   });
   const vorName = ZEICHEN + 5;
-  const rolle = `, ${p.rolle}`;
+  const rolle = p.rolle ? `, ${p.rolle}` : '';
   const platz = x1 - x0 - vorName - 6 * MM;
   const passt = (g: number, mitRolle: boolean) =>
     breiteVon(p.name, s.bold, g, s) +
@@ -312,7 +313,7 @@ function kopfzeile(
     font: s.bold,
     color: FARBE.ink,
   });
-  if (mitRolle)
+  if (mitRolle && rolle)
     schreiben(seite, rolle, s, {
       x: x0 + vorName + breiteVon(p.name, s.bold, groesse, s),
       y,
@@ -639,7 +640,8 @@ function deckblattSetzen(
       if (a.mitziehende.length) yy -= 1 * MM;
       yy = etikett(GRUPPE_BUERGT, spalteX(1), yy);
       for (const b of buergen)
-        yy = person(spalteX(1), yy, b.person.name, b.person.rolle, 'umriss', farbeVon(b.person));
+        // W57 (DP124, Abschnitt 3): unter „Bürgt“ nur der Name.
+        yy = person(spalteX(1), yy, b.person.name, '', 'umriss', farbeVon(b.person));
     }
     spaltenUnten.push(yy);
   }

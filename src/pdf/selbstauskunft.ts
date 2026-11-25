@@ -309,7 +309,7 @@ export function selbstauskunftZeichnen(
   const vorTitel = 'Selbstauskunft von';
   const rolle = a.buerge
     ? `${a.rolle === 'bürgt' ? 'Bürge' : a.rolle}, zieht nicht ein.`
-    : `${a.rolle}, im Mietvertrag.`;
+    : 'Im Mietvertrag.';
   const unter = s.ersetzen(
     `${rolle} Nach dem Musterbogen der Datenschutzkonferenz, Stand Januar 2026.`,
   );

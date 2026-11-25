@@ -63,6 +63,7 @@ interface Typ {
   schritt?: string;
 }
 interface Rolle {
+  text?: string;
   textNeutral?: string;
 }
 
@@ -262,7 +263,16 @@ export const unterlageHinweis = (u: AnhangUnterlage, erklaert = false) =>
 export const unterlageQuelle = (u: AnhangUnterlage) => stimme.hinweisQuellen[u.typ] ?? '';
 /** Nennt der Hinweis die Datenschutzkonferenz? Dann erklärt ihn das erste Vorkommen auf der Seite. */
 export const nenntDsk = (u: AnhangUnterlage) => u.typ in stimme.hinweiseErklaert;
-export const rolleText = (p: AnhangPerson) => katalog.rollen[p.rolle]?.textNeutral ?? 'Mietpartei';
+/**
+ * W57: Fassung 1 und 2 zeigen dasselbe, ohne „Hauptmieter“ und „Mitmieter“: im Vertrag „Im Mietvertrag“, Bürgen „bürgt“.
+ * Eine unbekannte Rolle heißt „Mietpartei“ (E220, Regel 6).
+ */
+export const rolleText = (p: AnhangPerson) =>
+  p.rolle === 'buerge'
+    ? (katalog.rollen.buerge?.textNeutral ?? 'bürgt')
+    : p.rolle === 'vertrag' || p.rolle === 'hauptmieter' || p.rolle === 'mitmieter'
+      ? (katalog.rollen.vertrag?.text ?? 'Im Mietvertrag')
+      : 'Mietpartei';
 export const ueblichText = (f: Fehlend) => stimme.schritte[f.schritt].ueblich;
 export const gehoertText = (s: SchrittId) => stimme.schritte[s].gehoert;
 
@@ -341,9 +351,14 @@ export function alleUnterlagen(
     .sort((x, y) => x.u.seiten_mappe.von - y.u.seiten_mappe.von);
 }
 
-/** Die Person, die als Kontakt auf dem Deckblatt steht; sonst null. */
+/** Die Person, die als Kontakt auf dem Deckblatt steht (Fassung 2: `ansprech`, Fassung 1: `kontakt`); sonst null. */
 export function kontaktPerson(a: HeftaAnhang): AnhangPerson | null {
-  return a.haushalt.personen.find((p) => p.kontakt) ?? null;
+  return a.haushalt.personen.find((p) => istKontakt(a, p)) ?? null;
+}
+
+/** Ist diese Person die Kontakt- bzw. Ansprechperson? */
+export function istKontakt(a: HeftaAnhang, p: AnhangPerson): boolean {
+  return a.hefta >= 2 ? p.ansprech === true : p.kontakt === true;
 }
 
 /** Telefon und Mail der Kontaktperson, wie auf dem Deckblatt; null, wenn keins von beiden da ist. */

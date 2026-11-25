@@ -134,7 +134,7 @@ test('Nachname fehlt: eigener Punkt im Kasten, führt zum Ändern und zurück zu
   page,
 }) => {
   await erstePerson(page, { vorname: 'Max', nachname: '', bezeichnung: 'Hauptmieter' });
-  await personHinzufuegen(page, /Mitmieter hinzufügen/, {
+  await personHinzufuegen(page, /Person im Mietvertrag hinzufügen/, {
     vorname: 'Lea',
     bezeichnung: 'Mitmieterin',
   });
@@ -156,7 +156,7 @@ test('Schwelle oben (13.11.): frisch angelegt höchstens drei Aufgaben, der Rest
   page,
 }) => {
   await erstePerson(page, { vorname: 'Max', bezeichnung: 'Hauptmieter' });
-  await personHinzufuegen(page, /Mitmieter hinzufügen/, {
+  await personHinzufuegen(page, /Person im Mietvertrag hinzufügen/, {
     vorname: 'Lea',
     bezeichnung: 'Mitmieterin',
   });

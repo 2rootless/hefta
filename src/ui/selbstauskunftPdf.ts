@@ -45,7 +45,7 @@ export async function selbstauskunftDatei(
       einziehend(vertrag, ansicht.haushalt),
       hh,
       schritt,
-      { rolleText: rollenText(rolle, platz?.bezeichnung ?? 'neutral'), antwortenImmer: true },
+      { antwortenImmer: true },
     ),
     ...ortUndDatum(rolle, hh.ort, datum(heute)),
     schriften: await pdfSchriftenLaden(ansicht.haushalt.mappeAussehen?.schrift),

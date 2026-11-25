@@ -115,7 +115,10 @@ test('B1: Im Heft steht der Hinweis an der Bürgin, ruhig; „Erklärung vorbere
   await expect(page.getByText('Petra unterschreibt es von Hand', { exact: false })).toBeVisible();
   // Aus dem Heft: Bürgin, Mieter, Wohnung, Vermieter, Einzug.
   await expect(page.getByLabel('Name').first()).toHaveValue('Petra Mustermann');
-  await expect(page.locator('.mieter li')).toHaveText([/Max .*Hauptmieter/, /Lea .*Mitmieterin/]);
+  await expect(page.locator('.mieter li')).toHaveText([
+    /Max .*Im Mietvertrag/,
+    /Lea .*Im Mietvertrag/,
+  ]);
   await expect(page.getByLabel('Anschrift und Lage')).toHaveValue('Lindenring 8, 20259 Hamburg');
   await expect(page.getByLabel('Name').nth(1)).toHaveValue('Hausverwaltung Beispiel GmbH');
   await expect(page.getByLabel('Einzug zum')).toHaveValue('2027-01-01');

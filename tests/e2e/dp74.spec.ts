@@ -261,7 +261,8 @@ test('Fall „Haken aus Versehen“: Haken weg, dann fragt Hefta wieder; ein get
   // Haken wieder weg: Der offene Punkt kommt zurück.
   await page.goto('/#/haushalt');
   await expect(page.getByRole('heading', { level: 1, name: 'Euer Haushalt' })).toBeVisible();
-  await page.getByRole('link', { name: /^Rolle von Aylin/ }).click();
+  // W54: Der Name in den Fächern führt zur Personenseite.
+  await page.locator('.faecher a.text', { hasText: 'Aylin' }).click();
   await expect(page.locator('label.ohne-nachname')).toBeVisible();
   await page.getByRole('checkbox', { name: 'Aylin hat keinen Nachnamen' }).uncheck();
   await page.getByRole('button', { name: 'Speichern', exact: true }).click();

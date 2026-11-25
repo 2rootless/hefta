@@ -240,10 +240,12 @@ describe('wunsch-W7: nur Musterdaten', () => {
   const MIT_PAARUNG: [datei: string, folgeZeilen: number][] = [
     ['tests/e2e/store-bilder.spec.ts', 6],
     ['src/vermieter/stressSchreiber.test.ts', 3],
-    ...readdirSync('pakete/hefta-json/beispiele').map((d): [string, number] => [
-      `pakete/hefta-json/beispiele/${d}`,
-      8,
-    ]),
+    // W57: dazu die Beispiele in Fassung 1 (beispiele/fassung-1/).
+    ...['pakete/hefta-json/beispiele', 'pakete/hefta-json/beispiele/fassung-1'].flatMap((o) =>
+      readdirSync(o)
+        .filter((d) => d.endsWith('.json'))
+        .map((d): [string, number] => [`${o}/${d}`, 8]),
+    ),
     ['pakete/hefta-json/FORMAT.md', 3],
   ];
   it('BF2b und BF2 (PC138, PC139): Bilder, Testmappen und Beispiele im Paket stehen in ihrer Paarung', () => {

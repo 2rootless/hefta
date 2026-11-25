@@ -213,9 +213,7 @@
 
   // Reiter „Mappe“: Haushalt mit Marke und Rolle; „Haushalt löschen“ nur nach dem Blatt (E96).
   const vertragZahl = $derived(
-    (ansicht?.mitglieder ?? []).filter((m) =>
-      ['hauptmieter', 'mitmieter'].includes(m.zugehoerigkeit.rolle),
-    ).length,
+    (ansicht?.mitglieder ?? []).filter((m) => m.zugehoerigkeit.rolle === 'vertrag').length,
   );
   let loeschenOffen = $state(false);
 </script>

@@ -79,6 +79,11 @@
   let rufnameOffen = $state(!!werte.rufname && werte.rufname !== rufnameAus(werte.vorname));
   const rufname = $derived(werte.rufname.trim() || rufnameAus(werte.vorname));
   const bezeichnungen: Bezeichnung[] = ['maennlich', 'weiblich', 'neutral'];
+  // W57 (Übergang bis zur neuen Bedienung, PD171): Im Vertrag gibt es kein Rollenwort mehr, also auch keine Form zu
+  // wählen; es gilt „neutral“. Die Wahl steht nur für Bürgen („Bürge“, „Bürgin“, „Neutral“).
+  $effect(() => {
+    if (rolle !== 'buerge' && !werte.bezeichnung) werte.bezeichnung = 'neutral';
+  });
   const id = $props.id();
   const wechsel = $derived(
     gespeichert ? einkommenWechsel(rolle, gespeichert, werte, gespeicherteTypen) : null,
@@ -292,12 +297,11 @@
   {/if}
   {#if teil !== 'person'}
     {@render rollenWahl?.()}
+  {/if}
+  {#if teil !== 'person' && rolle === 'buerge'}
     <fieldset class="feld">
-      <legend
-        >{teil === 'haushalt' && !rollenWahl
-          ? t('personSeite.rolle')
-          : t('personSeite.bezeichnung')}</legend
-      >
+      <!-- W57: Die Wahl betrifft nur die Form für Bürgen; die Rolle selbst wechselt man über die Ziele. -->
+      <legend>{t('personSeite.bezeichnung')}</legend>
       <div class="segmente" role="radiogroup">
         {#each bezeichnungen as b (b)}
           <button
@@ -311,6 +315,8 @@
         {/each}
       </div>
     </fieldset>
+  {/if}
+  {#if teil !== 'person'}
     <p class="hinweis w30" data-w30="feld">{t('angabeSatz.rolle')}</p>
   {/if}
 
@@ -449,6 +455,8 @@
     margin: 0;
     padding: 0;
     border: 0;
+    /* DP119 (2.1.1): wie .rollen in PersonSeite; ein Fieldset wächst sonst mit seinem Inhalt. */
+    min-width: 0;
   }
 
   legend {

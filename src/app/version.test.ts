@@ -4,9 +4,9 @@ import paket from '../../package.json';
 import { versionKurz } from './version';
 
 describe('PC81 U5: Version in den Einstellungen', () => {
-  it('der Stand von 2.1 zeigt „2.1“ (PC134, PC187)', () => {
-    expect(paket.version).toBe('2.1.0');
-    expect(versionKurz(paket.version)).toBe('2.1');
+  it('der Stand von 2.2 zeigt „2.2“ (PC134, PC201: 2.1.1 mit W57 heißt 2.2)', () => {
+    expect(paket.version).toBe('2.2.0');
+    expect(versionKurz(paket.version)).toBe('2.2');
   });
 
   it('PC134: Der Lauf für TestFlight nimmt die Version aus package.json, nicht fest „2.0.0“', () => {

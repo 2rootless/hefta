@@ -17,6 +17,7 @@
     NB,
     ORIENTIERUNGSHILFE,
     personenGesamt,
+    istKontakt,
     kontaktwege,
     pruefPunkte,
     rolleText,
@@ -200,8 +201,12 @@
                 <span class="vs-m vs-m-v" aria-hidden="true"></span>
                 <span>
                   <b>{p.name}</b>
-                  <small>{rolleText(p)}{p.kontakt && !kontakt ? t('mappe.kontakt') : ''}</small>
-                  {#if p.kontakt && kontakt}
+                  <small
+                    >{rolleText(p)}{a && istKontakt(a, p) && !kontakt
+                      ? t('mappe.kontakt')
+                      : ''}</small
+                  >
+                  {#if a && istKontakt(a, p) && kontakt}
                     <span class="vs-kw">
                       {#if kontakt.telefon}
                         {@const tel = telefonLink(kontakt.telefon)}

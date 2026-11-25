@@ -1,5 +1,5 @@
 {
-  "hefta": 1,
+  "hefta": 2,
   "erstellt": "2026-11-18T10:00:00+01:00",
   "fassung": 1,
   "seitenzahl": 6,
@@ -24,8 +24,8 @@
         "name": "Anna Maria von Muster-Beispiel",
         "vorname": "Anna Maria",
         "nachname": "von Muster-Beispiel",
-        "rolle": "hauptmieter",
-        "kontakt": true,
+        "rolle": "vertrag",
+        "ansprech": true,
         "telefon": "0171 3920006",
         "telefon_e164": "+491713920006",
         "unterlagen": [
@@ -42,7 +42,7 @@
         "name": "Aylin",
         "vorname": "Aylin",
         "nachname": "",
-        "rolle": "mitmieter",
+        "rolle": "vertrag",
         "unterlagen": [
           {
             "typ": "selbstauskunft",
@@ -57,7 +57,7 @@
         "name": "Sergej Ivanov",
         "vorname": "Sergej",
         "nachname": "Ivanov",
-        "rolle": "mitmieter",
+        "rolle": "vertrag",
         "unterlagen": [
           {
             "typ": "selbstauskunft",
@@ -72,7 +72,7 @@
         "name": "Thị Mai Nguyễn",
         "vorname": "Thị Mai",
         "nachname": "Nguyễn",
-        "rolle": "mitmieter",
+        "rolle": "vertrag",
         "unterlagen": [
           {
             "typ": "selbstauskunft",

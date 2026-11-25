@@ -23,8 +23,8 @@
       (m) => !m.zugehoerigkeit.herausgenommenAm && m.zugehoerigkeit.rolle !== 'buerge',
     ),
   );
-  // Ohne Haushalt „ihr“ (E74.4), sonst ab zwei Personen im Vertrag.
-  const ihr = $derived(!daten.ansicht || vertrag.length > 1);
+  // Ohne Haushalt „du“ (E369, hebt E74.4 auf), sonst „ihr“ ab zwei Personen im Vertrag.
+  const ihr = $derived(!!daten.ansicht && vertrag.length > 1);
   const an = $derived(erkennen(heft?.inseratText ?? '').mail);
 
   const vorschlag = $derived.by(() => {

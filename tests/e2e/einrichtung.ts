@@ -14,7 +14,9 @@ export interface NeuePerson {
 async function personAusfuellen(page: Page, p: NeuePerson) {
   await page.getByLabel('Vorname').fill(p.vorname);
   await page.getByLabel('Nachname', { exact: true }).fill(p.nachname ?? 'Mustermann');
-  await page.getByRole('radio', { name: p.bezeichnung, exact: true }).click();
+  // W57: Die Form wählt man nur noch für Bürgen; im Vertrag gibt es kein Rollenwort mehr.
+  if (/^(Bürge|Bürgin|Neutral)$/.test(p.bezeichnung))
+    await page.getByRole('radio', { name: p.bezeichnung, exact: true }).click();
   if (p.einkommen) await page.getByLabel(/Einkommen\?$/).selectOption({ label: p.einkommen });
 }
 
@@ -71,7 +73,7 @@ export async function personHinzufuegen(page: Page, feld: RegExp, p: NeuePerson)
 /** Max, Lea, ein Kind, Bürgin Petra (in Rente); danach Start des Rutschs. */
 export async function haushaltDesAuftraggebers(page: Page) {
   await erstePerson(page, { vorname: 'Max', bezeichnung: 'Hauptmieter' });
-  await personHinzufuegen(page, /Mitmieter hinzufügen/, {
+  await personHinzufuegen(page, /Person im Mietvertrag hinzufügen/, {
     vorname: 'Lea',
     bezeichnung: 'Mitmieterin',
   });

@@ -55,8 +55,9 @@ async function mappe(nr: string, b: Bau): Promise<Uint8Array> {
       name: name(p),
       vorname: p.vorname,
       nachname: p.nachname,
-      rolle: p.rolle === 'hauptmieter' ? 'Hauptmieterin' : 'Mitmieterin',
-      rolleId: p.rolle,
+      // W57: kein Rollenwort für den Vertrag; die Kennung ist „vertrag“.
+      rolle: '',
+      rolleId: 'vertrag',
       farbe: ['#e9a970', '#8fb9e8', '#a8d5a2', '#c8abff'][i % 4]!,
     };
     return {
@@ -311,7 +312,10 @@ describe('Stresstest, Teil G: echte Mappen aus dem Schreiber (PC126, DP76 Teil 2
     expect(ergebnisse.map((e) => e.nr)).toEqual(FAELLE.map((f) => f[0]));
   });
 
-  it('leser78 (Fassung 4) urteilt bei jeder Mappe wie die Seite', () => {
+  // W57 (PC198): Der Schreiber schreibt Fassung 2. leser78 kennt nur Fassung 1 (Rollenwort, `kontakt`) und kann diese
+  // Mappen nicht beurteilen. Der Vergleich wartet auf einen fremden Leser für Fassung 2 (PC198, E356); bis dahin
+  // prüft fremd.test.ts leser78 gegen die Beispiele in Fassung 1.
+  it.skip('leser78 (Fassung 1) urteilt bei jeder Mappe wie die Seite: wartet auf den Leser für Fassung 2', () => {
     if (!python()) return;
     const anders = ergebnisse
       .filter((e) => e.fremd?.[0] !== e.unser.urteil)

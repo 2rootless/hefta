@@ -706,7 +706,7 @@
                     bind:eingabe={auskunft.eingabe}
                     person={aktuell.person}
                     rolle={aktuell.rolle}
-                    du={aktuell.rolle === 'hauptmieter'}
+                    du={aktuell.person.id === daten.ansicht?.haushalt.ansprechpersonId}
                     allein={vertragsZahl === 1 && !wer.kinder && wer.erwachsene === 1}
                     einziehendText={einziehendText(wer)}
                     gruppen={{

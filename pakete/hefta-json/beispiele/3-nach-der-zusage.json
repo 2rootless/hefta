@@ -1,5 +1,5 @@
 {
-  "hefta": 1,
+  "hefta": 2,
   "erstellt": "2026-12-03T11:15:42+01:00",
   "fassung": 3,
   "seitenzahl": 15,
@@ -25,8 +25,8 @@
         "name": "Max Mustermann",
         "vorname": "Max",
         "nachname": "Mustermann",
-        "rolle": "hauptmieter",
-        "kontakt": true,
+        "rolle": "vertrag",
+        "ansprech": true,
         "telefon": "0171 3920001",
         "telefon_e164": "+491713920001",
         "email": "max.mustermann@example.com",
@@ -79,7 +79,7 @@
         "name": "Lea Mustermann",
         "vorname": "Lea",
         "nachname": "Mustermann",
-        "rolle": "mitmieter",
+        "rolle": "vertrag",
         "unterlagen": [
           {
             "typ": "selbstauskunft",

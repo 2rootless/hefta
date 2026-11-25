@@ -80,15 +80,15 @@ for (const ansicht of ANSICHTEN) {
     await expect(page.getByText(/Merkmal/)).toHaveCount(0);
     await expect(page.getByText(/Name der Wohnung/)).toHaveCount(0);
 
-    // (3) Ohne Haushalt „ihr“; der Satz steht unter dem Feld und hängt mit dem Zähler am Feld.
+    // (3) Ohne Haushalt „du“ (E369); der Satz steht unter dem Feld und hängt mit dem Zähler am Feld.
     const feld = page.getByRole('textbox', { name: 'Name' });
     await expect(feld).toHaveValue('');
-    const satz = page.getByText('Bis ihr einen Namen eintragt, steht die Straße oben.');
+    const satz = page.getByText('Bis du einen Namen einträgst, steht die Straße oben.');
     await expect(satz).toBeVisible();
     await expect(page.getByText(/kein Merkmal/)).toHaveCount(0);
     expect((await satz.boundingBox())!.y).toBeGreaterThan((await feld.boundingBox())!.y);
     await expect(feld).toHaveAccessibleDescription(
-      '0 von 40 Bis ihr einen Namen eintragt, steht die Straße oben.',
+      '0 von 40 Bis du einen Namen einträgst, steht die Straße oben.',
     );
 
     // (2) Gezeigt wird genau, was eingesetzt wird; danach ist „Übernehmen“ frei.
@@ -98,7 +98,7 @@ for (const ansicht of ANSICHTEN) {
     await expect(page.getByText(`${VORSCHLAG.length} von 40`)).toBeVisible();
     await expect(page.getByText('Etwas kürzer')).toHaveCount(0);
     await frei(page, `${VORSCHLAG.length} von 40`);
-    await frei(page, 'Bis ihr einen Namen eintragt, steht die Straße oben.');
+    await frei(page, 'Bis du einen Namen einträgst, steht die Straße oben.');
     const knopf = page.getByRole('button', { name: 'Übernehmen' });
     await expect(knopf).not.toHaveAttribute('aria-disabled', 'true');
 

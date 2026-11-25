@@ -26,8 +26,8 @@
   );
   const vertrag = $derived(aktive.filter((m) => m.zugehoerigkeit.rolle !== 'buerge'));
   const buergen = $derived(aktive.filter((m) => m.zugehoerigkeit.rolle === 'buerge'));
-  // Ohne fertigen Haushalt „ihr“ (E74, E83); angefangen mit nur einer Person im Vertrag „du“ (12y).
-  const du = $derived(angefangen && vertrag.length === 1);
+  // „du“ ohne Haushalt und mit nur einer Person im Vertrag (12y, E369 hebt E74.4 auf), sonst „ihr“.
+  const du = $derived(vertrag.length <= 1);
   const name = (m: (typeof aktive)[number]) => m.person.rufname || m.person.vorname;
 
   // Wer seit dem letzten Blick dazukam, erscheint einmal mit bw-punkt. Beim ersten Blick keiner.

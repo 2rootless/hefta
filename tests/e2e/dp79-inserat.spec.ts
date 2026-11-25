@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { haushaltMitMax } from './einrichtung';
+import { haushaltDesAuftraggebers, haushaltMitMax } from './einrichtung';
 
 // DP79 (E235, PC120 Abschnitt 4): Wenn Hefta ein Inserat nicht lesen kann. Prüfkatalog IL1 bis IL14 aus Designs
 // pruef79.py, an der echten Seite: Die Antwort des Lesers kommt über den Prüfhaken `window.__heftaInseratTest`, kein
@@ -527,8 +527,9 @@ async function oeffnen(browser: Browser, lauf: Lauf, anrede: Anrede, baseURL: st
   }, lauf.seite);
   const page = await ctx.newPage();
   await page.clock.setFixedTime(new Date(2026, 10, 18, 10, 0));
-  // Ohne Haushalt „ihr“ (E74.4); allein im Haushalt „du“.
+  // E369 hebt E74.4 auf: ohne Haushalt und allein „du“; „ihr“ erst mit zwei im Vertrag.
   if (anrede === 'du') await haushaltMitMax(page);
+  else await haushaltDesAuftraggebers(page);
   return { ctx, page, fremd };
 }
 

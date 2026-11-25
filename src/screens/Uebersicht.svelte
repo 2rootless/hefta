@@ -85,11 +85,8 @@
         )
       : [],
   );
-  // Rollenreihenfolge: Hauptmieter, Mitmieter (in Reihenfolge der Einrichtung), dann Bürgen.
-  const vertrag = $derived([
-    ...staende.filter((s) => s.rolle === 'hauptmieter'),
-    ...staende.filter((s) => s.rolle === 'mitmieter'),
-  ]);
+  // W57 (E366): Ansprechperson zuerst, dann der Vertrag nach der Reihenfolge, dann die Bürgen.
+  const vertrag = $derived(staende.filter((s) => s.rolle === 'vertrag'));
   const buergen = $derived(staende.filter((s) => s.rolle === 'buerge'));
   // Aufgaben: alles, was fehlt oder bald abläuft, Person für Person (Nachricht 10.11. k: alle).
   const aufgaben = $derived(

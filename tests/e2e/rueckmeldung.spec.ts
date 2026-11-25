@@ -236,7 +236,7 @@ test('Mappe teilen (B23): Satz, Liste, Stand unten, Auswahl je Person (ME5, ME8)
 
   // Eigene Auswahl: immer nur eine Person offen, mit Stand.
   await page.getByRole('button', { name: /^Eigene Auswahl/ }).click();
-  const max = page.getByRole('button', { name: /^Max Hauptmieter · \d+ von \d+ dabei/ });
+  const max = page.getByRole('button', { name: /^Max Im Mietvertrag · \d+ von \d+ dabei/ });
   const lea = page.getByRole('button', { name: /^Lea .* von \d+ dabei/ });
   await expect(max).toHaveAttribute('aria-expanded', 'true');
   await expect(lea).toHaveAttribute('aria-expanded', 'false');
@@ -391,44 +391,40 @@ test('Serie, zu alt, „Meist unnötig“: Satz und Hauptaktion passen (UL2, UL5
   await expect(miete.getByRole('listitem')).toHaveCount(0);
 });
 
-test('Rolle wechseln: Folgen vor dem Speichern, nichts geht verloren (HA1)', async ({ page }) => {
+test('Rolle wechseln auf der Personenseite: wirkt sofort, mit Zeile danach, nichts geht verloren (HA1, W54)', async ({
+  page,
+}) => {
   await laden(page, '25-unterlage-seiten', '/person-aendern/p-25-unterlage-seiten-2');
-  await expect(page.getByRole('radio', { name: 'Bürgt' })).toHaveAttribute('aria-checked', 'true');
+  const ziele = page.locator('.person-ziele');
+  await expect(ziele.locator('.platz b')).toHaveText('Bürgt');
   await expect(page.getByRole('radio', { name: 'Bürgin' })).toBeVisible();
-  await page.getByRole('radio', { name: 'Im Mietvertrag' }).click();
-  await expect(page.getByText('Wenn ihr speichert')).toBeVisible();
-  await expect(page.getByText('Ihre Karte steht unter „Im Mietvertrag“, nach Lea.')).toBeVisible();
-  await expect(
-    page.getByText(
-      'Die Bürgschaftserklärung braucht es nicht mehr. Sie bleibt gespeichert und kommt nicht in die Mappe.',
-    ),
-  ).toBeVisible();
-  await expect(page.getByRole('radio', { name: 'Mitmieterin' })).toBeVisible();
-  // Zurück ändert nichts: Der Hinweis geht wieder weg.
-  await page.getByRole('radio', { name: 'Bürgt' }).click();
-  await expect(page.getByText('Wenn ihr speichert')).toHaveCount(0);
-  await page.getByRole('radio', { name: 'Im Mietvertrag' }).click();
-  await page.getByRole('button', { name: 'Speichern' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Euer Haushalt' })).toBeVisible();
+  // W54: Das Ziel wirkt sofort, ohne „Speichern“; „Rückgängig“ holt den Stand davor.
+  await ziele.locator('[data-z="vertrag"]').click();
+  await expect(ziele.locator('.folge')).toContainText('steht jetzt im Mietvertrag.');
+  await expect(ziele.locator('.platz b')).toHaveText('Im Mietvertrag');
+  // Die Form (Bürge, Bürgin, neutral) gibt es nur für Bürgen.
+  await expect(page.getByRole('radio', { name: 'Bürgin' })).toHaveCount(0);
+  await ziele.locator('.rueck').click();
+  await expect(ziele.locator('.platz b')).toHaveText('Bürgt');
+  await ziele.locator('[data-z="vertrag"]').click();
+  await expect(ziele.locator('.platz b')).toHaveText('Im Mietvertrag');
 
-  await page.evaluate(() => (location.hash = '#/person/p-25-unterlage-seiten-2'));
-  await expect(page.getByText(/^Mitmieterin/).first()).toBeVisible();
   // Die Erklärung bleibt gespeichert und steht unter „Nicht mehr nötig“, nicht im Band.
+  await page.evaluate(() => (location.hash = '#/person/p-25-unterlage-seiten-2'));
   await page.getByRole('button', { name: /^Nicht mehr nötig 1/ }).click();
   await page.getByRole('link', { name: /^Bürgschafts.?erklärung/ }).click();
   await expect(
     page.getByText('Gespeichert. Wird nicht mehr gebraucht, kommt nicht in die Mappe.'),
   ).toBeVisible();
 
-  // W42 (DP93, Fall 5): Wer allein im Haushalt ist und bürgt, braucht eine Nachfolge; „Speichern“ erst mit Vornamen.
+  // W42: Wer allein im Vertrag steht und bürgen soll, braucht jemanden im Vertrag; bis dahin bleibt alles, wie es ist.
   await laden(page, '23-ohne-datum', '/person-aendern/p-23-ohne-datum-0');
-  await page.getByRole('radio', { name: 'Bürgt' }).click();
-  await expect(page.getByText(/^Wer kommt an (seine|ihre|die) Stelle\?/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Speichern', exact: true })).toHaveAttribute(
-    'aria-disabled',
-    'true',
-  );
-  await expect(page.getByText('Es fehlt noch: Vorname.')).toBeVisible();
+  const allein = page.locator('.person-ziele');
+  await allein.locator('[data-z="buerge"]').click();
+  await expect(allein.getByText('Wer kommt in den Mietvertrag?')).toBeVisible();
+  await expect(allein.locator('.platz b')).toHaveText('Im Mietvertrag');
+  await allein.getByRole('button', { name: 'Doch nicht' }).click();
+  await expect(allein.getByText('Wer kommt in den Mietvertrag?')).toHaveCount(0);
 });
 
 test('Lebenslage ändern: Was statt wessen gebraucht wird (HA2)', async ({ page }) => {
@@ -1055,7 +1051,7 @@ test('Farbe bei der Person: wählen, vergebene wird getauscht, wirkt überall (P
   await page.goto('/#/haushalt');
   // Petra bürgt: Zeichen mit Umriss in ihrer neuen Farbe (DP39, 5).
   await expect(
-    page.locator('.hh-gruppe .zeile', { hasText: 'Petra' }).locator('.zeichen'),
+    page.locator('.faecher .zeile', { hasText: 'Petra' }).locator('.zeichen'),
   ).toHaveAttribute('style', /--p-app: ?#efce7e/);
   await page.goto('about:blank');
   await page.goto('/#/person-aendern/p-01-standard-2');
@@ -1221,7 +1217,7 @@ test('Neues Logo: Symbole, Zeichen im Kopf, Ziel offen und erreicht, Kachel beim
   await page.goto('about:blank');
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Fangt an, wo ihr gerade seid' }),
+    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
   ).toBeVisible();
   await expect(page.locator('.kopf .logo').first()).toBeVisible();
 });

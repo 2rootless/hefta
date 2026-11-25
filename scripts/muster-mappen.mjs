@@ -415,7 +415,7 @@ const rolle = (b) =>
   b.lesehilfe?.haushalt.personen.map((p) => `${p.name} (${p.rolle})`).join(', ') ?? '–';
 const zeilen = bericht.map(
   (b) =>
-    `| ${b.datei} | ${b.titel} | ${b.seiten} | ${b.kb} KB | ${b.lesehilfe ? `Fassung ${b.lesehilfe.hefta}, ${b.lesehilfe.modus}, ${b.lesehilfe.schritt ?? '–'}` : 'keine'} | ${b.mitText.length} von ${b.seiten} |`,
+    `| ${b.datei} | ${b.titel} | ${b.seiten} | ${b.kb} KB | ${b.lesehilfe ? `Lesehilfe Fassung ${b.lesehilfe.hefta}, Mappe ${b.lesehilfe.fassung ?? '–'}` : 'keine'} | ${b.mitText.length} von ${b.seiten} |`,
 );
 writeFileSync(
   join(ZIEL, 'LIESMICH.md'),
@@ -445,7 +445,7 @@ for (const b of bericht)
     b.datei,
     b.seiten,
     `${b.kb} KB`,
-    b.lesehilfe ? `hefta ${b.lesehilfe.hefta} ${b.lesehilfe.modus} ${b.lesehilfe.schritt}` : 'ohne',
+    b.lesehilfe ? `hefta ${b.lesehilfe.hefta}, Mappe ${b.lesehilfe.fassung ?? '–'}` : 'ohne',
     'Text:',
     b.mitText.join(','),
   );

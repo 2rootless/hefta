@@ -3,6 +3,8 @@
 import {
   SCHRITT_SATZ,
   datumText,
+  imVertrag,
+  kontaktPerson,
   seitenText,
   vermerkText,
   verzeichnisZeile,
@@ -10,6 +12,7 @@ import {
   type Mappe,
 } from '../src/index.js';
 
+/** Nur Fassung 1 (V9): das Rollenwort hinter dem Namen. Fassung 2 schreibt keins (W57, DP124 Abschnitt 3). */
 const ROLLENWORT: Record<string, string> = {
   hauptmieter: 'Hauptmieter',
   mitmieter: 'Mitmieter',
@@ -18,7 +21,8 @@ const ROLLENWORT: Record<string, string> = {
 
 /**
  * Seite 1 so, wie Heftas Schreiber sie setzt (V5 bis V9, E227): Wohnung, Satz zum Schritt, feste Überschriften,
- * Name mit Rollenwort, Kontakt, „Was beiliegt“ mit „– Seite n“, „Fassung n vom …“, Löschbitte, Fuß.
+ * Namen (in Fassung 1 mit Rollenwort, in Fassung 2 unter „Im Mietvertrag“ mit der Tätigkeit, unter „Bürgt“ nur der
+ * Name), Kontakt, „Was beiliegt“ mit „– Seite n“, „Fassung n vom …“, Löschbitte, Fuß.
  */
 export function deckblattZeilen(l: Lesehilfe): string[] {
   const z: string[] = ['Bewerbung um die Wohnung'];
@@ -30,15 +34,20 @@ export function deckblattZeilen(l: Lesehilfe): string[] {
   if (l.schritt && SCHRITT_SATZ[l.schritt]) z.push(SCHRITT_SATZ[l.schritt]!);
   const vertrag = l.haushalt.personen.filter((p) => p.rolle !== 'buerge');
   const buergen = l.haushalt.personen.filter((p) => p.rolle === 'buerge');
+  const zwei = l.hefta >= 2;
   z.push('Im Mietvertrag');
-  for (const p of vertrag) z.push(p.name, ROLLENWORT[p.rolle] ?? 'Person');
+  for (const p of vertrag)
+    z.push(
+      p.name,
+      zwei ? (imVertrag(p.rolle) ? 'Angestellt' : 'Person') : (ROLLENWORT[p.rolle] ?? 'Person'),
+    );
   if (l.haushalt.mitziehende.length)
     z.push('Ziehen mit ein', ...l.haushalt.mitziehende.map((m) => m.text));
   if (buergen.length) {
     z.push('Bürgt');
-    for (const p of buergen) z.push(p.name, 'Bürge');
+    for (const p of buergen) z.push(...(zwei ? [p.name] : [p.name, 'Bürge']));
   }
-  const k = l.haushalt.personen.find((p) => p.kontakt);
+  const k = l.haushalt.personen.find((p) => kontaktPerson(p, l.hefta));
   if (k)
     z.push('Kontakt', k.name, ...(k.telefon ? [k.telefon] : []), ...(k.email ? [k.email] : []));
   z.push('Was beiliegt');

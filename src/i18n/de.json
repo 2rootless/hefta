@@ -254,10 +254,8 @@
         "du": "Dein Haushalt"
       },
       "leadBearbeiten": "Änderungen gelten sofort.",
-      "mitmieter": "Mitmieter hinzufügen",
-      "mitmieterHinweis": "Wer mit im Mietvertrag steht",
-      "weiterePerson": "Weitere Person im Vertrag",
-      "weiterePersonHinweis": "Falls noch jemand unterschreibt",
+      "mitmieter": "Person im Mietvertrag hinzufügen",
+      "mitmieterHinweis": "Falls noch jemand unterschreibt",
       "buerge": "Bürge hinzufügen",
       "buergeWeiterer": "Weiteren Bürgen hinzufügen",
       "buergeHinweis": "Hilft, wenn das Einkommen knapp ist",
@@ -399,7 +397,10 @@
     "reiterHefte": "Hefte",
     "reiterMappe": "Mappe",
     "reiterApp": "App",
-    "wasIhrSucht": { "ihr": "Was ihr sucht", "du": "Was du suchst" },
+    "wasIhrSucht": {
+      "ihr": "Was ihr sucht",
+      "du": "Was du suchst"
+    },
     "wasIhrSuchtSatz": "Danach zeigt jedes Heft, was passt.",
     "warmBis": "bis {betrag}",
     "zimmerAb": "ab {zahl}",
@@ -700,7 +701,7 @@
     "hinzufuegen": "Wohnung hinzufügen",
     "subIhr": "Hier sammelt ihr eure Wohnungen, jede in einem eigenen Heft.",
     "subDu": "Hier sammelst du deine Wohnungen, jede in einem eigenen Heft.",
-    "subOhne": "Hier sammelt ihr Wohnungen und eure Unterlagen für die Bewerbung.",
+    "subOhne": "Hier sammelst du Wohnungen und deine Unterlagen für die Bewerbung.",
     "leerTitel": "Noch keine Wohnung",
     "leerAppIhr": "Findet ihr ein Inserat, teilt es aus Safari an {app}. Daraus wird ein Heft, und {app} liest die Eckdaten für euch.",
     "leerAppDu": "Findest du ein Inserat, teil es aus Safari an {app}. Daraus wird ein Heft, und {app} liest die Eckdaten für dich.",
@@ -709,12 +710,12 @@
     "knopfApp": "Wohnung hinzufügen",
     "knopfWeb": "Text des Inserats einfügen",
     "mappeBereit": "Die Mappe ist schon bereit, auch ohne Wohnung",
-    "ohneTitel": "Fangt an, wo ihr gerade seid",
+    "ohneTitel": "Fang an, wo du gerade bist",
     "wegWohnung": "Eine Wohnung gefunden?",
-    "wegWohnungApp": "Teilt das Inserat aus Safari an {app}. Dafür braucht ihr noch keinen Haushalt.",
-    "wegWohnungWeb": "Kopiert den Text des Inserats und fügt ihn hier ein. Dafür braucht ihr noch keinen Haushalt.",
+    "wegWohnungApp": "Teil das Inserat aus Safari an {app}. Dafür brauchst du noch keinen Haushalt.",
+    "wegWohnungWeb": "Kopier den Text des Inserats und füg ihn hier ein. Dafür brauchst du noch keinen Haushalt.",
     "wegHaushalt": "Wer zieht ein?",
-    "wegHaushaltText": "Legt euren Haushalt an. Daraus baut {app} eure Bewerbungsmappe.",
+    "wegHaushaltText": "Leg deinen Haushalt an. Daraus baut {app} deine Bewerbungsmappe.",
     "anleitung": "Anleitung"
   },
   "navigation": {
@@ -868,7 +869,10 @@
         "ihr": "Die Angaben für euren Haushalt fallen aus {ihrer} Selbstauskunft.",
         "du": "Die Angaben für deinen Haushalt fallen aus {ihrer} Selbstauskunft."
       },
-      "titel": { "ihr": "Wenn ihr speichert", "du": "Wenn du speicherst" },
+      "titel": {
+        "ihr": "Wenn ihr speichert",
+        "du": "Wenn du speicherst"
+      },
       "rausVertrag": "{name} steht nicht mehr im Mietvertrag und nicht mehr in neuen Mappen.",
       "rausBuerge": "{name} bürgt nicht mehr und steht nicht mehr in neuen Mappen.",
       "rausUnterlagen": {
@@ -878,8 +882,7 @@
       "geschickt": "Geschickte Mappen bleiben, wie sie sind.",
       "miteinZaehlt": "{name} zählt dann unter „Ziehen mit ein“. {Ihr} Name steht nicht in der Mappe.",
       "miteinUnterlagen": "{Ihre} Unterlagen bleiben gespeichert, kommen aber nicht in die Mappe.",
-      "vorn": "{name} steht dann vorn im Mietvertrag und wird {rolle}.",
-      "ersatzBuerge": "{name} wird {rolle}. {Ihre} Bürgschafts­erklärung bleibt gespeichert, kommt aber nicht mehr in die Mappe.",
+      "ersatzBuerge": "{name} kommt in den Mietvertrag. {Ihre} Bürgschafts­erklärung bleibt gespeichert, kommt aber nicht mehr in die Mappe.",
       "ersatzNeu": "{name} steht dann vorn im Mietvertrag.",
       "ersatzNeuOhneName": "Die neue Person steht dann vorn im Mietvertrag."
     },
@@ -890,8 +893,6 @@
       "raus": "Nicht mehr dabei"
     },
     "nachfolge": {
-      "frageVorn": "Wer steht dann vorn im Mietvertrag?",
-      "hinweisVorn": "Die erste Person im Vertrag ist Hauptmieter oder Hauptmieterin.",
       "frageErsatz": "Wer kommt an {seine} Stelle?",
       "hinweisErsatz": "{name} ist als {einzige} im Mietvertrag. Dort steht immer mindestens eine Person.",
       "hinweisNeu": {
@@ -902,10 +903,6 @@
       "neuePerson": "Eine neue Person",
       "neuePersonHinweis": "Vorname genügt, den Rest später",
       "vorname": "Vorname",
-      "grundWahl": {
-        "ihr": "Wählt, wer vorn im Mietvertrag steht.",
-        "du": "Wähl, wer vorn im Mietvertrag steht."
-      },
       "grundErsatz": {
         "ihr": "Wählt, wer in den Mietvertrag kommt.",
         "du": "Wähl, wer in den Mietvertrag kommt."
@@ -1003,8 +1000,8 @@
     "giltUeberall": "gilt überall",
     "rolle": "Rolle",
     "rolleSatz": {
-      "hauptmieter": "Erste Person im Mietvertrag.",
-      "mitmieter": "Steht mit im Mietvertrag.",
+      "vertrag": "Steht im Mietvertrag.",
+      "ansprech": "Ansprechperson, steht im Mietvertrag.",
       "buerge": {
         "ihr": "Bürgt für euch, zieht nicht ein.",
         "du": "Bürgt für dich, zieht nicht ein."
@@ -2260,7 +2257,7 @@
     "stadtteil": "Stadtteil",
     "passtIhr": "Passt zu euren Wünschen.",
     "passtDu": "Passt zu deinen Wünschen.",
-    "ohneWuensche": "Legt fest, wer einzieht und was ihr sucht. Dann zeigt {app} hier, was passt.",
+    "ohneWuensche": "Leg fest, wer einzieht und was du suchst. Dann zeigt {app} hier, was passt.",
     "weitere": {
       "one": "Eine weitere Abweichung steht in der Kontrolle.",
       "other": "{anzahl} weitere Abweichungen stehen in der Kontrolle."
@@ -2312,7 +2309,7 @@
     "titelIhr": "Was sucht ihr?",
     "titelDu": "Was suchst du?",
     "sub": "Einmal festlegen. {app} vergleicht jede Wohnung damit, Punkt für Punkt, ohne Gesamtnote.",
-    "ohneHaushalt": "Legt fest, wer einzieht und was ihr sucht. Dann zeigt {app} hier, was passt.",
+    "ohneHaushalt": "Leg fest, wer einzieht und was du suchst. Dann zeigt {app} hier, was passt.",
     "zimmer": "Zimmer",
     "flaeche": "Fläche",
     "weg": "Weg dorthin",
@@ -3040,7 +3037,7 @@
     "werVermietet": "Wer vermietet",
     "werLeer": "Noch nicht eingetragen",
     "mitgliedschaft": "Mitgliedschaft",
-    "mitgliedStand": "{name}, Nr.\u00a0{nummer}"
+    "mitgliedStand": "{name}, Nr. {nummer}"
   },
   "genoSeite": {
     "titel": "Genossen­schaft",
@@ -3188,5 +3185,43 @@
       "ihr": "Gehaltsnachweise stehen nicht auf der Liste, weil das Amt die Miete übernimmt. In der Selbstauskunft könnt ihr sie dazunehmen.",
       "du": "Gehaltsnachweise stehen nicht auf der Liste, weil das Amt die Miete übernimmt. In der Selbstauskunft kannst du sie dazunehmen."
     }
+  },
+  "faecher": {
+    "satz": "Alle im Mietvertrag sind gleich. Eine Person ist Ansprechperson. Zum Verschieben am Griff ziehen.",
+    "fach": {
+      "vertrag": "Im Mietvertrag",
+      "nurmit": "Zieht mit ein",
+      "buerge": "Bürgt",
+      "weg": "Nicht mehr dabei"
+    },
+    "ansprech": "Ansprechperson",
+    "ansprechMarke": "Ansprech­person",
+    "leer": {
+      "vertrag": "Hier steht immer mindestens eine Person.",
+      "nurmit": "Erwachsene ohne Vertrag und Kinder.",
+      "buerge": "Wer bürgt, zieht nicht ein.",
+      "weg": "Unterlagen bleiben gespeichert. Zurückziehen holt alles wieder."
+    },
+    "kind": "Kind",
+    "kindUnter": "Zieht immer mit ein",
+    "weitere": "Weitere Person",
+    "weitereUnter": "Erwachsen, zieht mit ein, ohne Vertrag",
+    "apLabel": "{name} ist Ansprechperson",
+    "griffLabel": "{name} verschieben",
+    "zieleLabel": "{name} verschieben nach",
+    "folge": {
+      "vertrag": "{name} steht jetzt im Mietvertrag.",
+      "nurmit": "{name} zieht jetzt nur mit ein.",
+      "buerge": "{name} bürgt jetzt. Die Bürgschafts­erklärung fehlt noch.",
+      "weg": "{name} ist nicht mehr dabei. Die Unterlagen bleiben gespeichert.",
+      "ansprech": "{name} ist jetzt Ansprechperson.",
+      "kommt": "{name} kommt in den Mietvertrag und ist jetzt Ansprechperson."
+    },
+    "rueckgaengig": "Rückgängig",
+    "frageNur": "Nur {name} steht im Mietvertrag. Dort steht immer mindestens eine Person.",
+    "frage": "Wer kommt in den Mietvertrag?",
+    "dochNicht": "Doch nicht",
+    "neuePerson": "Vorname einer neuen Person",
+    "dazu": "Dazu"
   }
 }

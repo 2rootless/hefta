@@ -233,7 +233,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   }
 
   // Personenansicht: ohne „zum Haushalt“, zurück heißt „Übersicht“.
-  await page.getByRole('link', { name: /^Max Hauptmieter$/ }).click();
+  await page.getByRole('link', { name: /^Max Im Mietvertrag$/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Max', exact: true })).toBeVisible();
   await expect(page.getByText('zum Haushalt')).toHaveCount(0);
   await expect(page.locator('a.zurueck')).toBeVisible();
@@ -276,21 +276,27 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
     await barrierefrei(page, 'Haushalt');
     await page.screenshot({ path: 'docs/screenshots/stilc-haushalt.png', fullPage: true });
   }
-  // Petras Seite in zwei Abschnitten (K3b); herausnehmen ist umkehrbar und braucht keine Rückfrage.
-  await page.getByRole('link', { name: 'Rolle von Petra ändern' }).click();
+  // W54: Der Name in den Fächern führt zur Personenseite in zwei Abschnitten (K3b).
+  const name = (n: string) => page.locator('.faecher a.text', { hasText: n });
+  const fach = (n: string) =>
+    name(n).evaluate((e) => e.closest<HTMLElement>('[data-gruppe]')?.dataset.gruppe);
+  const verschieben = async (n: string, ziel: string) => {
+    await page.getByRole('button', { name: `${n} verschieben`, exact: true }).click();
+    await page.locator(`.faecher .ziele [data-z="${ziel}"]`).click();
+  };
+  await name('Petra').click();
   await expect(page.getByRole('heading', { level: 2, name: 'In eurem Haushalt' })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: 'Über Petra' })).toBeVisible();
   if (bilder) {
     await barrierefrei(page, 'Person ändern');
     await page.screenshot({ path: 'docs/screenshots/k-person-aendern.png', fullPage: true });
   }
-  // W42 (DP93): „Nicht mehr dabei“, dann „Speichern“.
-  await page.getByRole('radio', { name: 'Nicht mehr dabei' }).click();
-  await page.getByRole('button', { name: 'Speichern', exact: true }).click();
+  await page.goBack();
   await expect(page.getByRole('heading', { level: 1, name: 'Euer Haushalt' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Rolle von Petra ändern' })).toHaveCount(0);
-  await expect(page.getByRole('heading', { level: 2, name: 'Herausgenommen' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Zurückholen Petra' })).toBeVisible();
+  // Herausnehmen ist umkehrbar und wirkt sofort, mit „Rückgängig“ in der Zeile danach (W54).
+  await verschieben('Petra', 'weg');
+  await expect(page.locator('.faecher .folge')).toContainText('Petra ist nicht mehr dabei.');
+  expect(await fach('Petra')).toBe('weg');
   if (bilder) {
     await barrierefrei(page, 'Haushalt mit Herausgenommenen');
     await page.screenshot({ path: 'docs/screenshots/k-herausgenommen.png', fullPage: true });
@@ -308,14 +314,12 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   }
   await page.getByRole('button', { name: 'Hinzufügen', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Euer Haushalt' })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 2, name: 'Herausgenommen' })).toHaveCount(0);
+  expect(await fach('Petra')).toBe('buerge');
 
   // Namensabgleich (K1b): Lea herausnehmen, dann als „neue“ Lea Mustermann eintippen.
-  await page.getByRole('link', { name: 'Rolle von Lea ändern' }).click();
-  // W42 (DP93): „Nicht mehr dabei“, dann „Speichern“.
-  await page.getByRole('radio', { name: 'Nicht mehr dabei' }).click();
-  await page.getByRole('button', { name: 'Speichern', exact: true }).click();
-  await page.getByRole('link', { name: /Weitere Person im Vertrag|Mitmieter hinzufügen/ }).click();
+  await verschieben('Lea', 'weg');
+  await expect(page.locator('.faecher .folge')).toContainText('Lea ist nicht mehr dabei.');
+  await page.getByRole('link', { name: /Person im Mietvertrag hinzufügen/ }).click();
   await page.getByRole('button', { name: /Neue Person anlegen/ }).click();
   await page.getByLabel('Vorname').fill('lea');
   await page.getByLabel('Nachname', { exact: true }).fill('mustermann');
@@ -324,9 +328,10 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await expect(page.getByRole('heading', { level: 1, name: 'Lea kommt dazu' })).toBeVisible();
   await page.getByRole('button', { name: 'Hinzufügen', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Euer Haushalt' })).toBeVisible();
+  expect(await fach('Lea')).toBe('vertrag');
 
-  // Ganz löschen als eigener Schritt (K4b), aus „Petra ändern“.
-  await page.getByRole('link', { name: 'Rolle von Petra ändern' }).click();
+  // Ganz löschen als eigener Schritt (K4b), von Petras Seite aus.
+  await name('Petra').click();
   await page.getByRole('link', { name: 'Petra ganz löschen' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Petra ganz löschen?' })).toBeVisible();
   await expect(page.getByRole('listitem').first()).toHaveText('Petra Mustermann');
@@ -336,8 +341,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   }
   await page.getByRole('button', { name: 'Petra löschen' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Euer Haushalt' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Rolle von Petra ändern' })).toHaveCount(0);
-  await expect(page.getByRole('heading', { level: 2, name: 'Herausgenommen' })).toHaveCount(0);
+  await expect(name('Petra')).toHaveCount(0);
   await page.getByRole('link', { name: 'Fertig', exact: true }).click();
   await expect(page.locator('.blatt')).toHaveCount(2);
 
@@ -400,7 +404,7 @@ test('Backup mit Passwort: sichern, alles löschen, einspielen ergibt denselben 
   if (browserName === 'chromium') await barrierefrei(page, 'Alles löschen');
   await page.getByRole('button', { name: 'Alles endgültig löschen' }).click();
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Fangt an, wo ihr gerade seid' }),
+    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
   ).toBeVisible();
 
   // Einspielen (S6–S8): falsches Passwort, dann richtiges.

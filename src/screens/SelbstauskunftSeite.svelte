@@ -49,7 +49,7 @@
   const ablauf = $derived(`/selbstauskunft/${personId}`);
   const einstiegPfad = $derived((void route.pfad, einstieg(ablauf)));
   const zurueckText = $derived(einstiegText(einstiegPfad ?? zurueckZu, daten.ansicht));
-  const rolle = $derived(mitglied?.zugehoerigkeit.rolle ?? 'mitmieter');
+  const rolle = $derived(mitglied?.zugehoerigkeit.rolle ?? 'vertrag');
   const vertragsZahl = $derived(
     (daten.ansicht?.mitglieder ?? []).filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length,
   );
@@ -203,7 +203,7 @@
         vonName={angabenVon}
         person={mitglied.person}
         {rolle}
-        du={rolle === 'hauptmieter'}
+        du={!!mitglied && mitglied.person.id === daten.ansicht?.haushalt.ansprechpersonId}
         allein={vertragsZahl === 1 && wer.erwachsene === 1 && !wer.kinder}
         einziehendText={einziehendText(wer)}
         gruppen={{

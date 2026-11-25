@@ -23,7 +23,7 @@ if (lesehilfe && gruende?.length === 0) {
 }
 ```
 
-- `lesen()` nimmt Text oder Bytes und liest streng nach Fassung 1: Schema, echte Daten, sauberer Text, Grenzen, keine
+- `lesen()` nimmt Text oder Bytes und liest streng nach Fassung 2 und 1: Schema, echte Daten, sauberer Text, Grenzen, keine
   doppelten Schlüssel. Was keine Lesehilfe ist, ergibt `null`. Die Funktion wirft nie.
 - `pruefen()` prüft, ob die Lesehilfe zur Mappe passt, Punkte 1 bis 7: Seitenzahl, Seitenbereiche, Rollen und
   Reihenfolge, und dass alles, was Sie zeigen würden, auf dem Deckblatt oder im Verzeichnis steht. `passt()` sagt

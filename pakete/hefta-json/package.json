@@ -2,7 +2,7 @@
   "name": "hefta-json",
   "version": "1.0.0",
   "private": true,
-  "description": "Lesehilfe hefta.json aus PDF-Mappen von Hefta lesen und prüfen (Format Fassung 1).",
+  "description": "Lesehilfe hefta.json aus PDF-Mappen von Hefta lesen und prüfen (Format Fassung 2, liest Fassung 1).",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",

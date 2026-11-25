@@ -119,7 +119,8 @@ function verstoesse(text: string, d: Datensatz, weg: BewerbungsWeg, inserat: boo
   if (text.split(mappe).length !== 2) f.push('Satz zur Mappe nicht genau einmal wörtlich');
   for (const a of d.angaben)
     if (!text.includes(`\n${angabeZeile(a)}\n`)) f.push(`Angabe fehlt: ${a.label}`);
-  if (!text.endsWith(`\n${d.name}\n${d.telefon} · ${d.mail}`))
+  // 2.1.1 (PC191): Telefon und Mail je in einer eigenen Zeile.
+  if (!text.endsWith(`\n${d.name}\n${d.telefon}\n${d.mail}`))
     f.push('Name und Kontakt nicht am Ende');
   if (/[{}]/.test(text)) f.push('Platzhalter offen');
   if (/ {2}| [,.]|\.\.|\n /.test(text)) f.push('Lücke');
@@ -127,7 +128,8 @@ function verstoesse(text: string, d: Datensatz, weg: BewerbungsWeg, inserat: boo
   if ((text.match(/\bgern\b/g) ?? []).length > 1) f.push('„gern“ zweimal');
   if (!inserat && text.includes('Inserat gesehen')) f.push('Inserat ohne Inserat');
   const anrede = text.split('\n')[0]!;
-  const gruss = text.split('\n').at(-3)!;
+  const zeilen = text.split('\n');
+  const gruss = zeilen[zeilen.lastIndexOf(d.name) - 1]!;
   const passend =
     pools.anschreiben.gruss_zur_anrede[
       anrede.startsWith('Sehr geehrte') ? 'Sehr geehrte …' : 'Guten Tag …'
@@ -152,7 +154,9 @@ describe('wunsch-W37: Anschreiben aus Bausteinen', () => {
         '',
         'Mit freundlichen Grüßen',
         'Erika Musterfrau',
-        '0171 3920003 · erika.musterfrau@example.com',
+        // 2.1.1 (PC191): Telefon und Mail je in einer eigenen Zeile.
+        '0171 3920003',
+        'erika.musterfrau@example.com',
       ].join('\n'),
     );
   });

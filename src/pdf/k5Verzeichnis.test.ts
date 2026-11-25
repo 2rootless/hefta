@@ -64,7 +64,7 @@ async function auftrag(gehalt: 'alle' | 'eine-kaputt' | 'weggelassen'): Promise<
           vorname: 'Lea',
           nachname: 'Muster',
           rolle: 'Hauptmieterin',
-          rolleId: 'hauptmieter',
+          rolleId: 'vertrag',
           farbe: '#e9a970',
         },
         teile,

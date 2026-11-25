@@ -47,7 +47,7 @@ export interface AnhangQuelle {
     rolle?: Rolle;
     buerge?: boolean;
   }[];
-  /** Die erste Person steht als Kontakt auf dem Deckblatt. */
+  /** Die erste Person ist die Ansprechperson und steht unter „Kontakt“ auf dem Deckblatt (W57, Fassung 2). */
   kontakt: boolean;
   /** Telefon und Mail, wie sie auf dem Deckblatt stehen. */
   /** E222: `telefon` in fester Form, dazu die internationale Nummer aus der Eingabe (DP77). */
@@ -99,17 +99,19 @@ export function anhangBauen(q: AnhangQuelle): HeftaAnhang {
   // der Eingabe mit Land (DP77); passen sie nicht nach der Regel für Leser, bleibt die Nummer aus der Lesehilfe.
   const e164 = q.kontakt ? q.kontaktwege?.telefonE164?.trim() : undefined;
   const mitTelefon = !!telefon && !!e164 && telefonPasst(telefon, e164);
+  // W57 (Fassung 2): `vertrag` oder `buerge`; die erste Person im Vertrag ist die Ansprechperson (`ansprech`).
   const personen: Person[] = q.personen.map((p, i) => {
     const vorname = (p.vorname ?? p.name).trim();
     const nachname = p.vorname === undefined ? '' : (p.nachname ?? '').trim();
+    const rolle = p.rolle === 'buerge' || p.buerge ? 'buerge' : 'vertrag';
     return {
       name: `${vorname} ${nachname}`.trim(),
       vorname,
       nachname,
-      rolle: p.rolle ?? (p.buerge ? 'buerge' : i === 0 ? 'hauptmieter' : 'mitmieter'),
-      ...(q.kontakt && i === 0
+      rolle,
+      ...(q.kontakt && i === 0 && rolle === 'vertrag'
         ? {
-            kontakt: true as const,
+            ansprech: true as const,
             ...(mitTelefon ? { telefon, telefon_e164: e164 } : {}),
             ...(email ? { email } : {}),
           }

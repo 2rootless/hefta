@@ -61,8 +61,8 @@
   );
   const vertrag = $derived(aktive.filter((m) => m.zugehoerigkeit.rolle !== 'buerge'));
   const buergen = $derived(aktive.filter((m) => m.zugehoerigkeit.rolle === 'buerge'));
-  // Ohne Haushalt „ihr“ (E74.4), sonst ab zwei Personen ohne Bürgen.
-  const ihr = $derived(!ansicht || vertrag.length > 1);
+  // Ohne Haushalt „du“ (E369, hebt E74.4 auf), sonst „ihr“ ab zwei Personen ohne Bürgen.
+  const ihr = $derived(!!ansicht && vertrag.length > 1);
   const person = $derived(vertrag[0]?.person ?? null);
   const heute = new Date();
 

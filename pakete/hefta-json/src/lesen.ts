@@ -137,14 +137,17 @@ function aufbau(l: Roh) {
       if (!istText(q[k])) ab(`personen[${i}].${k} fehlt`);
     if (!istText(q.rolle) || !KENNUNG_LISTE.test(q.rolle as string)) ab(`personen[${i}].rolle`);
     if (q.kontakt !== undefined && q.kontakt !== true) ab(`personen[${i}].kontakt ist nur true`);
+    if (q.ansprech !== undefined && q.ansprech !== true) ab(`personen[${i}].ansprech ist nur true`);
     for (const k of ['telefon', 'telefon_e164', 'email'])
       if (q[k] !== undefined && !istText(q[k])) ab(`personen[${i}].${k} ist kein Text`);
     if (q.email !== undefined && (q.email as string).length < 3) ab(`personen[${i}].email zu kurz`);
     if (!(q.vorname as string).length || !(q.name as string).length)
       ab(`personen[${i}]: name und vorname sind nicht leer`);
-    // Schema, dependencies: Telefon und Mail nur bei der Kontaktperson; E222: telefon genau mit telefon_e164.
+    // Schema, dependencies: Telefon und Mail nur bei der Kontaktperson (Fassung 2: `ansprech`, Fassung 1:
+    // `kontakt`); E222: telefon genau mit telefon_e164.
+    const marke = (l.hefta as number) >= 2 ? 'ansprech' : 'kontakt';
     for (const k of ['telefon', 'email'])
-      if (q[k] !== undefined && q.kontakt !== true) ab(`personen[${i}].${k} ohne kontakt`);
+      if (q[k] !== undefined && q[marke] !== true) ab(`personen[${i}].${k} ohne ${marke}`);
     if ((q.telefon === undefined) !== (q.telefon_e164 === undefined))
       ab(`personen[${i}]: telefon und telefon_e164 nur zusammen`);
     if (!Array.isArray(q.unterlagen)) ab(`personen[${i}].unterlagen fehlt`);

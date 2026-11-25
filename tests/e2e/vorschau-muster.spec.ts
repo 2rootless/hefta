@@ -131,7 +131,7 @@ test('Abrechnungen für die Vorschau', async ({ browserName }) => {
       `test-results/gehalt-selin-${monat.toLowerCase()}.pdf`,
       await pdfMit(
         [
-          `Pflegezentrum Seilerkoppel
+          `Seilerkoppel Ingenieure GmbH
 Verdienstabrechnung ${monat} 2026
 Selin Akgül
 Erfunden – kein echtes Dokument`,

@@ -241,10 +241,28 @@ export const LANG: Probe = {
 // Alle Proben mit Lesehilfe in Fassung 1 (E218); die kurze Schreibweise oben bleibt lesbar.
 for (const p of [M1, M2, M4, M4z, M6, M7, LANG]) p.anhang = alsFassung1(p.anhang!);
 /** Eine neuere Fassung (2) mit einem Feld, das diese Seite nicht kennt. */
+/** Fassung 2 (W57): wie Fassung 1, nur `vertrag` oder `buerge` als Rolle und `ansprech` statt `kontakt`. */
+export function alsFassung2(fassung1: Record<string, unknown>, hefta = 2): Record<string, unknown> {
+  const haushalt = fassung1.haushalt as { personen: Record<string, unknown>[] };
+  return {
+    ...fassung1,
+    hefta,
+    haushalt: {
+      ...haushalt,
+      personen: haushalt.personen.map(({ kontakt, ...p }) => ({
+        ...p,
+        rolle: p.rolle === 'buerge' ? 'buerge' : 'vertrag',
+        ...(kontakt ? { ansprech: true } : {}),
+      })),
+    },
+  };
+}
+
 export const M5: Probe = {
   ...M1,
   datei: 'Bewerbung_Mustermann_neu.pdf',
-  anhang: { ...M1.anhang, hefta: 2, x_zusatz: 'unbekannt' },
+  // eine Fassung über der, die die Seite kennt (W57: die Seite kennt Fassung 2)
+  anhang: { ...alsFassung2(M1.anhang!, 3), x_zusatz: 'unbekannt' },
 };
 /** Für den Export als CSV. */
 export const M8: Probe = { ...M1, datei: 'Bewerbung_Mustermann_Fassung_1.pdf' };

@@ -354,7 +354,7 @@ export function bewerbungsText(o: {
   if (o.angaben.length) z.push('', ...o.angaben.map(angabeZeile));
   if (o.schluss?.trim()) z.push('', o.schluss.trim());
   z.push('', o.gruss ?? 'Mit freundlichen Grüßen', o.name.trim());
-  const kontakt = [o.telefon.trim(), o.mail.trim()].filter(Boolean).join(' · ');
-  if (kontakt) z.push(kontakt);
+  // 2.1.1 (PC191): Telefon und Mail je in einer eigenen Zeile, nicht mehr mit „·“ in einer.
+  for (const k of [o.telefon.trim(), o.mail.trim()]) if (k) z.push(k);
   return z.join('\n').trim();
 }

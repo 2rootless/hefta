@@ -155,6 +155,6 @@ describe('Bonität bei Bürgen (DP49 Punkt 6, B3)', () => {
     expect(hilfeFuer(typ, 'buerge', 'maennlich', 'Jonas')).toContain('wie der Bürge zahlen kann.');
     expect(hilfeFuer(typ, 'buerge', 'neutral', 'Kim')).toContain('wie Kim zahlen kann.');
     // Gegenprobe: Wer im Mietvertrag steht, bekommt den üblichen Satz.
-    expect(hilfeFuer(typ, 'hauptmieter', 'weiblich', 'Lea')).toBe(typ.hilfe);
+    expect(hilfeFuer(typ, 'vertrag', 'weiblich', 'Lea')).toBe(typ.hilfe);
   });
 });

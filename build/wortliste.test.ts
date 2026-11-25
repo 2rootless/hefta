@@ -15,17 +15,13 @@ describe('Wortliste der Mappe', () => {
   });
 
   it('nennt jede Rolle, jede Unterlage und die festen Wörter des Deckblatts', () => {
-    for (const wort of [
-      'Hauptmieterin',
-      'Mitmietpartei',
-      'Bürgin',
-      'Gehaltsnachweise',
-      'Mietzahlungen',
-    ])
+    // W57: „Im Mietvertrag“ statt „Hauptmieterin“ und „Mitmietpartei“; Gegenprobe unten.
+    for (const wort of ['Im Mietvertrag', 'Bürgin', 'Gehaltsnachweise', 'Mietzahlungen'])
       expect(neu).toContain(wort);
     expect(neu).toContain('Gehaltsnachweis Juli bis September 2026');
     expect(neu).toContain('Ein Kind');
     expect(neu).toContain('Eine weitere Person');
+    expect(neu).not.toMatch(/Hauptmiet|Mitmiet/);
   });
 
   it('liest die festen Wörter wirklich aus dem Quelltext', () => {

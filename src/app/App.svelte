@@ -353,7 +353,7 @@
       {#key route.pfad}
         {#await seiten.personSeite() then m}
           <m.default
-            neueRolle={personNeu[1] as 'mitmieter' | 'buerge'}
+            neueRolle={personNeu[1] === 'buerge' ? 'buerge' : 'vertrag'}
             zurueckZu={zurueckZu(personNeu[2])}
           />
         {/await}

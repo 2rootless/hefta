@@ -30,7 +30,7 @@ import {
   haushaltLaden,
   haushaltLoeschen,
   haushaltZaehlen,
-  hauptmieterSichern,
+  ansprechpersonSetzen,
   hefteAusVersion1EinordnenEinmal,
   mitgliedEntfernen,
   mitgliedHerausnehmen,
@@ -39,6 +39,7 @@ import {
   personAendern,
   personAufnehmen,
   personGanzLoeschen,
+  rolleWechseln,
   speicherBelegt,
   unterlageSpeichern,
   versionLoeschen,
@@ -61,14 +62,14 @@ async function haushaltDesAuftraggebers(db: HeftaDb) {
         vorname: 'Max',
         nachname: 'Mustermann',
         bezeichnung: 'maennlich',
-        rolle: 'hauptmieter',
+        rolle: 'vertrag',
         lebenssituation: 'angestellt',
       },
       {
         vorname: 'Lea',
         nachname: 'Mustermann',
         bezeichnung: 'weiblich',
-        rolle: 'mitmieter',
+        rolle: 'vertrag',
         lebenssituation: 'angestellt',
       },
       {
@@ -156,7 +157,7 @@ describe('Datenbank', () => {
     alt.close();
 
     const db = await datenbankOeffnen(name);
-    expect(db.version).toBe(3);
+    expect(db.version).toBe(4);
     const hefte = await db.getAll('hefte');
     expect(hefte).toHaveLength(1);
     expect(hefte[0]).toMatchObject({
@@ -270,8 +271,8 @@ describe('Haushalt', () => {
       ]),
     ).toEqual([
       // B14: Vergabe in der Reihenfolge der Palette, nicht nach Nummer: Apricot 1, Lavendel 7, Minze 8.
-      ['Max', 'hauptmieter', 1],
-      ['Lea', 'mitmieter', 7],
+      ['Max', 'vertrag', 1],
+      ['Lea', 'vertrag', 7],
       ['Petra', 'buerge', 8],
     ]);
     for (const m of ansicht.mitglieder) {
@@ -334,13 +335,14 @@ describe('Haushalt', () => {
       vorname: 'Tom',
       nachname: 'Beispiel',
       bezeichnung: 'neutral',
-      rolle: 'mitmieter',
+      rolle: 'vertrag',
       lebenssituation: null,
     });
     let ansicht = (await haushaltLaden(db))!;
-    const zug = ansicht.mitglieder[3]!.zugehoerigkeit;
+    // W57: Tom steht im Vertrag und damit vor der Bürgin; seine Reihenfolge ist die letzte.
+    const zug = ansicht.mitglieder[2]!.zugehoerigkeit;
     expect(zug.reihenfolge).toBe(3);
-    expect(tom.id).toBe(ansicht.mitglieder[3]!.person.id);
+    expect(tom.id).toBe(ansicht.mitglieder[2]!.person.id);
     expect(zug.farbe).toBe(9);
 
     const dateiId = await dateiSpeichern(db, new Blob(['pdf'], { type: 'application/pdf' }));
@@ -437,7 +439,7 @@ describe('Backup des ganzen Bestands', () => {
           vorname: 'Alt',
           nachname: 'Bestand',
           bezeichnung: 'neutral',
-          rolle: 'hauptmieter',
+          rolle: 'vertrag',
           lebenssituation: null,
         },
       ],
@@ -604,7 +606,7 @@ describe('Kennung der Bewerbung (E6)', () => {
           vorname: 'Max',
           nachname: 'Muster',
           bezeichnung: 'maennlich',
-          rolle: 'hauptmieter',
+          rolle: 'vertrag',
           lebenssituation: 'angestellt',
         },
       ],
@@ -629,75 +631,106 @@ describe('Kennung der Bewerbung (E6)', () => {
   });
 });
 
-describe('Hauptmieter rückt nach (PC102, E209, Frage 1)', () => {
-  const rollen = async (db: HeftaDb) =>
-    (await haushaltLaden(db))!.mitglieder.map((m) => [m.person.vorname, m.zugehoerigkeit.rolle]);
+// W57 (E363, E366): die Ansprechperson rückt nach, ohne Frage; ersetzt „Hauptmieter rückt nach“ (PC102).
+describe('Ansprechperson (W57, E366)', () => {
+  const stand = async (db: HeftaDb) => {
+    const a = (await haushaltLaden(db))!;
+    const an = a.mitglieder.find((m) => m.person.id === a.haushalt.ansprechpersonId);
+    return {
+      an: an?.person.vorname ?? null,
+      gespeichert: (await db.get('haushalte', a.haushalt.id))!.ansprechpersonId ?? null,
+      reihe: a.mitglieder.map((m) => [m.person.vorname, m.zugehoerigkeit.rolle]),
+    };
+  };
 
-  it('Herausnehmen: Lea rückt nach; kommt Max zurück, steht er als Mitmieter im Vertrag', async () => {
+  it('ein neuer Haushalt: die erste im Vertrag ist Ansprechperson, gespeichert und zuerst', async () => {
+    const db = await neueDb();
+    await haushaltDesAuftraggebers(db);
+    const s1 = await stand(db);
+    expect(s1.an).toBe('Max');
+    expect(s1.gespeichert).not.toBeNull();
+    expect(s1.reihe).toEqual([
+      ['Max', 'vertrag'],
+      ['Lea', 'vertrag'],
+      ['Petra', 'buerge'],
+    ]);
+  });
+
+  it('Herausnehmen: Lea wird Ansprechperson; kommt Max zurück, bleibt sie es und er steht hinten', async () => {
     const db = await neueDb();
     await haushaltDesAuftraggebers(db);
     const max = (await haushaltLaden(db))!.mitglieder[0]!;
     await mitgliedHerausnehmen(db, max.zugehoerigkeit.id);
-    expect(await rollen(db)).toEqual([
-      ['Lea', 'hauptmieter'],
-      ['Petra', 'buerge'],
-    ]);
+    expect((await stand(db)).an).toBe('Lea');
     await mitgliedZurueckholen(db, max.zugehoerigkeit.id);
-    expect(await rollen(db)).toEqual([
-      ['Lea', 'hauptmieter'],
+    const s2 = await stand(db);
+    expect(s2.an).toBe('Lea');
+    expect(s2.reihe).toEqual([
+      ['Lea', 'vertrag'],
+      ['Max', 'vertrag'],
       ['Petra', 'buerge'],
-      ['Max', 'mitmieter'],
     ]);
+    // Gegenprobe: Die frühere Ansprechperson ist nicht mehr gespeichert.
+    expect(s2.gespeichert).not.toBe(max.person.id);
   });
 
-  it('Entfernen und ganz Löschen: Lea rückt nach', async () => {
-    const db = await neueDb();
-    await haushaltDesAuftraggebers(db);
-    await mitgliedEntfernen(db, (await haushaltLaden(db))!.mitglieder[0]!.zugehoerigkeit.id);
-    expect(await rollen(db)).toEqual([
-      ['Lea', 'hauptmieter'],
-      ['Petra', 'buerge'],
-    ]);
-    const db2 = await neueDb();
-    await haushaltDesAuftraggebers(db2);
-    await personGanzLoeschen(db2, (await haushaltLaden(db2))!.mitglieder[0]!.person.id);
-    expect(await rollen(db2)).toEqual([
-      ['Lea', 'hauptmieter'],
-      ['Petra', 'buerge'],
-    ]);
+  it('Bürge werden, Entfernen und ganz Löschen: Lea wird Ansprechperson', async () => {
+    for (const weg of ['buerge', 'entfernen', 'loeschen'] as const) {
+      const db = await neueDb();
+      await haushaltDesAuftraggebers(db);
+      const max = (await haushaltLaden(db))!.mitglieder[0]!;
+      if (weg === 'buerge') await rolleWechseln(db, max.zugehoerigkeit.id, 'buerge');
+      if (weg === 'entfernen') await mitgliedEntfernen(db, max.zugehoerigkeit.id);
+      if (weg === 'loeschen') await personGanzLoeschen(db, max.person.id);
+      expect((await stand(db)).an, weg).toBe('Lea');
+    }
   });
 
-  it('Bürgin rückt nicht nach: Ist niemand mehr im Vertrag, bleibt sie Bürgin', async () => {
+  it('niemand mehr im Vertrag: keine Ansprechperson, die Bürgin bleibt Bürgin', async () => {
     const db = await neueDb();
     await haushaltDesAuftraggebers(db);
     const [max, lea] = (await haushaltLaden(db))!.mitglieder;
     await mitgliedHerausnehmen(db, lea!.zugehoerigkeit.id);
     await mitgliedHerausnehmen(db, max!.zugehoerigkeit.id);
-    expect(await rollen(db)).toEqual([['Petra', 'buerge']]);
+    const s3 = await stand(db);
+    expect(s3.an).toBeNull();
+    expect(s3.reihe).toEqual([['Petra', 'buerge']]);
   });
 
-  it('beim Start: Ein Haushalt, aus dem 2.0 den Hauptmieter nahm, bekommt Lea als Hauptmieterin', async () => {
+  it('ansprechpersonSetzen: Lea wird Ansprechperson und steht zuerst; die Bürgin kommt dabei in den Vertrag', async () => {
     const db = await neueDb();
     await haushaltDesAuftraggebers(db);
-    const max = (await haushaltLaden(db))!.mitglieder[0]!;
-    // So hinterließ es 2.0: herausgenommen, niemand rückte nach.
-    await db.put('zugehoerigkeiten', {
-      ...max.zugehoerigkeit,
-      herausgenommenAm: '2026-11-18T09:00:00.000Z',
-    });
-    expect(await rollen(db)).toEqual([
-      ['Lea', 'mitmieter'],
+    const [, lea, petra] = (await haushaltLaden(db))!.mitglieder;
+    await ansprechpersonSetzen(db, lea!.zugehoerigkeit.id);
+    expect((await stand(db)).reihe[0]).toEqual(['Lea', 'vertrag']);
+    await ansprechpersonSetzen(db, petra!.zugehoerigkeit.id);
+    const s4 = await stand(db);
+    expect(s4.an).toBe('Petra');
+    expect(s4.reihe).toEqual([
+      ['Petra', 'vertrag'],
+      ['Lea', 'vertrag'],
+      ['Max', 'vertrag'],
+    ]);
+  });
+
+  it('Daten ohne Ansprechperson (aus 2.1, ohne Übernahme): die erste im Vertrag', async () => {
+    const db = await neueDb();
+    const h = await haushaltDesAuftraggebers(db);
+    await db.put('haushalte', { ...(await db.get('haushalte', h.id))!, ansprechpersonId: null });
+    // So schrieb 2.1: Rollen „hauptmieter“ und „mitmieter“.
+    for (const z of await db.getAll('zugehoerigkeiten'))
+      if (z.rolle === 'vertrag')
+        await db.put('zugehoerigkeiten', {
+          ...z,
+          rolle: (z.reihenfolge === 0 ? 'hauptmieter' : 'mitmieter') as never,
+        });
+    const s5 = await stand(db);
+    expect(s5.an).toBe('Max');
+    expect(s5.reihe).toEqual([
+      ['Max', 'vertrag'],
+      ['Lea', 'vertrag'],
       ['Petra', 'buerge'],
     ]);
-    await hauptmieterSichern(db);
-    expect(await rollen(db)).toEqual([
-      ['Lea', 'hauptmieter'],
-      ['Petra', 'buerge'],
-    ]);
-    // Ein zweites Mal ändert nichts.
-    const vorher = await db.getAll('zugehoerigkeiten');
-    await hauptmieterSichern(db);
-    expect(await db.getAll('zugehoerigkeiten')).toEqual(vorher);
   });
 });
 
@@ -739,20 +772,21 @@ describe('Herausnehmen', () => {
       vorname: 'Tom',
       nachname: 'Beispiel',
       bezeichnung: 'neutral',
-      rolle: 'mitmieter',
+      rolle: 'vertrag',
       lebenssituation: null,
     });
+    // W57: Max, Tom (im Vertrag), dann Petra (bürgt).
     expect((await haushaltLaden(db))!.mitglieder.map((m) => m.zugehoerigkeit.farbe)).toEqual([
-      1, 8, 7,
+      1, 7, 8,
     ]);
     await mitgliedZurueckholen(db, lea.zugehoerigkeit.id);
     const ansicht = (await haushaltLaden(db))!;
     expect(ansicht.herausgenommen).toEqual([]);
     expect(ansicht.mitglieder.map((m) => [m.person.vorname, m.zugehoerigkeit.farbe])).toEqual([
       ['Max', 1],
-      ['Petra', 8],
       ['Tom', 7],
       ['Lea', 9],
+      ['Petra', 8],
     ]);
   });
   it('holt als Bürgin zurück, wenn sie diesmal bürgt (Rolle gilt nur hier)', async () => {
@@ -954,7 +988,7 @@ describe('Backup je Haushalt und Hinzufügen (Version 2)', () => {
           vorname: 'Tom',
           nachname: 'Andere',
           bezeichnung: 'maennlich',
-          rolle: 'hauptmieter',
+          rolle: 'vertrag',
           lebenssituation: 'angestellt',
         },
       ],
@@ -975,7 +1009,7 @@ describe('Backup je Haushalt und Hinzufügen (Version 2)', () => {
           vorname: 'Ida',
           nachname: 'Schon-da',
           bezeichnung: 'weiblich',
-          rolle: 'hauptmieter',
+          rolle: 'vertrag',
           lebenssituation: 'rente',
         },
       ],
@@ -1065,7 +1099,7 @@ describe('Mehrere Haushalte, Modell (E53)', () => {
           vorname: 'Jonas',
           nachname: 'Becker',
           bezeichnung: 'maennlich',
-          rolle: 'hauptmieter',
+          rolle: 'vertrag',
           lebenssituation: 'angestellt',
         },
       ],

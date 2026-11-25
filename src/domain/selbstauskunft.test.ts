@@ -59,7 +59,7 @@ const AUSGEFUELLT = person({
 
 describe('Felder der Selbstauskunft (Abnahme M4)', () => {
   it('entsprechen dem Regelkatalog; nie zulässige Felder gibt es nicht', () => {
-    const ids = felderFuer('hauptmieter', 'angestellt').map((f) => f.id);
+    const ids = felderFuer('vertrag', 'angestellt').map((f) => f.id);
     expect(ids).toEqual([
       'name',
       'kontakt',
@@ -99,19 +99,19 @@ describe('Felder der Selbstauskunft (Abnahme M4)', () => {
   });
 
   it('Nettoeinkommen entfällt, wenn eine öffentliche Stelle die Miete zahlt', () => {
-    expect(felderFuer('hauptmieter', 'leistungsbezug').map((f) => f.id)).not.toContain(
+    expect(felderFuer('vertrag', 'leistungsbezug').map((f) => f.id)).not.toContain(
       'nettoeinkommen',
     );
   });
 
   it('WBS hängt an der Wohnung und ist hier nicht dabei', () => {
-    expect(felderFuer('hauptmieter', 'angestellt').map((f) => f.id)).not.toContain('wbs_vorhanden');
+    expect(felderFuer('vertrag', 'angestellt').map((f) => f.id)).not.toContain('wbs_vorhanden');
   });
 });
 
 describe('Vollständigkeit', () => {
   it('leer fehlt alles Nötige, Beruf und Arbeitgeber sind freiwillig', () => {
-    expect(fehlendeAngaben(person(), 'hauptmieter')).toEqual([
+    expect(fehlendeAngaben(person(), 'vertrag')).toEqual([
       'kontakt',
       'nettoeinkommen',
       'haustiere',
@@ -126,19 +126,19 @@ describe('Vollständigkeit', () => {
       ...AUSGEFUELLT,
       selbstauskunft: { ...AUSGEFUELLT.selbstauskunft!, mietrueckstaende: null },
     };
-    expect(vollstaendig(ohne, 'hauptmieter')).toBe(true);
+    expect(vollstaendig(ohne, 'vertrag')).toBe(true);
   });
 
   it('ausgefüllt ist vollständig, auch ohne Telefon (eine Kontaktangabe genügt)', () => {
-    expect(vollstaendig(AUSGEFUELLT, 'hauptmieter')).toBe(true);
+    expect(vollstaendig(AUSGEFUELLT, 'vertrag')).toBe(true);
     const ohneArbeit: Person = { ...AUSGEFUELLT, beruf: '', arbeitgeber: '' };
-    expect(vollstaendig(ohneArbeit, 'hauptmieter')).toBe(true);
+    expect(vollstaendig(ohneArbeit, 'vertrag')).toBe(true);
   });
 
   it('Bürgin ohne Haustier-Antwort ist vollständig', () => {
     const petra = { ...AUSGEFUELLT, selbstauskunft: { ...ALLES_NEIN, haustiere: null } };
     expect(vollstaendig(petra, 'buerge')).toBe(true);
-    expect(vollstaendig(petra, 'mitmieter')).toBe(false);
+    expect(vollstaendig(petra, 'vertrag')).toBe(false);
   });
 });
 
@@ -162,7 +162,7 @@ describe('Haushalt: Haustiere und Ort einmal für alle', () => {
   it('vier Teile, Bürgen ohne Haushaltsteil; offene Fragen werden gezählt', () => {
     const hh = haushaltsAngaben({ haustiere: null, ort: '' });
     const max = { ...AUSGEFUELLT, selbstauskunft: { ...ALLES_NEIN, insolvenz: null } };
-    expect(teile(max, 'hauptmieter', hh)).toEqual([
+    expect(teile(max, 'vertrag', hh)).toEqual([
       { id: 'kontakt', fertig: true, offen: 0 },
       { id: 'einkommen', fertig: true, offen: 0 },
       { id: 'fragen', fertig: false, offen: 1 },
@@ -174,7 +174,7 @@ describe('Haushalt: Haustiere und Ort einmal für alle', () => {
   it('Bürgen brauchen weder Haustiere noch Ort', () => {
     const hh = haushaltsAngaben({ haustiere: null, ort: '' });
     expect(vollstaendig(AUSGEFUELLT, 'buerge', hh)).toBe(true);
-    expect(vollstaendig(AUSGEFUELLT, 'mitmieter', hh)).toBe(false);
+    expect(vollstaendig(AUSGEFUELLT, 'vertrag', hh)).toBe(false);
   });
 });
 
@@ -182,9 +182,7 @@ describe('Festes Formular fürs PDF', () => {
   const HH = haushaltsAngaben({ haustiere: 'ja', haustiereText: 'eine Katze', ort: 'Hamburg' });
   const WER = einziehend(2, { kinder: 1, weitereErwachsene: 0 });
   const zeilen = (p: typeof AUSGEFUELLT, schritt: 'will_wohnung' | 'zusage' | 'besichtigung') =>
-    selbstauskunftBloecke(p, 'hauptmieter', WER, HH, schritt, { rolleText: 'Hauptmieter' }).flatMap(
-      (b) => b.zeilen,
-    );
+    selbstauskunftBloecke(p, 'vertrag', WER, HH, schritt, {}).flatMap((b) => b.zeilen);
   const zeile = (l: FormZeile[], id: string) =>
     l.find((z) => z.id === id && z.etikett !== 'Lebenslage');
 
@@ -194,9 +192,7 @@ describe('Festes Formular fürs PDF', () => {
     expect(ids('zusage')).toEqual(ids('besichtigung'));
     expect(ids('zusage')).toEqual(ids('will_wohnung'));
     expect(
-      selbstauskunftBloecke(AUSGEFUELLT, 'hauptmieter', WER, HH, 'zusage', { rolleText: 'X' }).map(
-        (b) => b.id,
-      ),
+      selbstauskunftBloecke(AUSGEFUELLT, 'vertrag', WER, HH, 'zusage', {}).map((b) => b.id),
     ).toEqual(['person', 'haushalt', 'einkommen', 'fragen']);
   });
 
@@ -248,7 +244,7 @@ describe('Festes Formular fürs PDF', () => {
 
   describe('Antworten nach der Zusage (mappe-feinschliff.md, § 1)', () => {
     const zeileVon = (p: Person, schritt: Schritt, antwortenImmer?: boolean) =>
-      selbstauskunftBloecke(p, 'hauptmieter', WER, HH, schritt, { rolleText: 'X', antwortenImmer })
+      selbstauskunftBloecke(p, 'vertrag', WER, HH, schritt, { antwortenImmer })
         .flatMap((b) => b.zeilen)
         .find((z) => z.id === 'mietrueckstaende');
     const ohne: Person = {
@@ -307,7 +303,6 @@ describe('P19: Selbstauskunft von Bürgen', () => {
 
   it('nur eigene Angaben: keine Personen, die einziehen, keine Haustiere, kein Ort', () => {
     const bloecke = selbstauskunftBloecke(AUSGEFUELLT, 'buerge', WER, HH, 'zusage', {
-      rolleText: 'Bürgin',
       buergschaftDabei: true,
     });
     const ids = bloecke.flatMap((b) => b.zeilen.map((z) => z.id));
@@ -322,7 +317,7 @@ describe('P19: Selbstauskunft von Bürgen', () => {
       ortDatum: '2. November 2026',
       ortLabel: 'Datum',
     });
-    expect(ortUndDatum('mitmieter', 'Hamburg', '2. November 2026')).toEqual({
+    expect(ortUndDatum('vertrag', 'Hamburg', '2. November 2026')).toEqual({
       ortDatum: 'Hamburg, 2. November 2026',
       ortLabel: 'Ort, Datum',
     });
@@ -342,8 +337,7 @@ describe('E49: Mietrückstände erst nach der Zusage', () => {
   const HH = haushaltsAngaben({ haustiere: 'nein', haustiereText: '', ort: 'Hamburg' });
   const WER = einziehend(2, { kinder: 0, weitereErwachsene: 0 });
   const zeile = (zusageText?: string) =>
-    selbstauskunftBloecke(AUSGEFUELLT, 'hauptmieter', WER, HH, 'will_wohnung', {
-      rolleText: 'Hauptmieter',
+    selbstauskunftBloecke(AUSGEFUELLT, 'vertrag', WER, HH, 'will_wohnung', {
       zusageText,
     })
       .flatMap((b) => b.zeilen)
@@ -369,11 +363,11 @@ describe('E222 (DP77, Abschnitt 5): Kontakt mit einer Nummer, die sich nicht ums
   const mit = (kontakt: Person['kontakt']) => person({ ...AUSGEFUELLT, kontakt });
   it('mit Mail ist der Teil fertig: Nur die Nummer fehlt in der Mappe, nicht die Selbstauskunft', () => {
     const p = mit({ telefon: '0171 3920001-12', email: 'lea@example.com' });
-    expect(fehlendeAngaben(p, 'mitmieter')).not.toContain('kontakt');
+    expect(fehlendeAngaben(p, 'vertrag')).not.toContain('kontakt');
   });
   it('ohne Mail fehlt der Kontakt („Eine Angabe reicht“, die Nummer zählt nicht)', () => {
     const p = mit({ telefon: '0171 3920001-12', email: '' });
-    expect(fehlendeAngaben(p, 'mitmieter')).toContain('kontakt');
+    expect(fehlendeAngaben(p, 'vertrag')).toContain('kontakt');
   });
   it('Gegenprobe: eine umgesetzte Nummer allein reicht', () => {
     const p = mit({
@@ -382,15 +376,14 @@ describe('E222 (DP77, Abschnitt 5): Kontakt mit einer Nummer, die sich nicht ums
       telefonE164: '+491713920001',
       email: '',
     });
-    expect(fehlendeAngaben(p, 'mitmieter')).not.toContain('kontakt');
+    expect(fehlendeAngaben(p, 'vertrag')).not.toContain('kontakt');
   });
 });
 
 describe('Einkommen je Quelle im Bogen (DP47 G5, DP47b K1, PC60 K5)', () => {
   const HH = haushaltsAngaben({ haustiere: 'nein', haustiereText: '', ort: 'Hamburg' });
   const WER = einziehend(1, { kinder: 0, weitereErwachsene: 0 });
-  const bogen = (p: Person) =>
-    selbstauskunftBloecke(p, 'hauptmieter', WER, HH, 'zusage', { rolleText: 'Hauptmieter' });
+  const bogen = (p: Person) => selbstauskunftBloecke(p, 'vertrag', WER, HH, 'zusage', {});
   const einkommen = (p: Person) =>
     bogen(p)
       .find((b) => b.id === 'einkommen')!
@@ -424,7 +417,7 @@ describe('Einkommen je Quelle im Bogen (DP47 G5, DP47b K1, PC60 K5)', () => {
       weitereLagen: [{ id: 'l2', situation: 'selbststaendig' }],
     });
     expect(einkommen(max).some((z) => z.startsWith('Einkommen im Monat'))).toBe(false);
-    expect(fehlendeAngaben(max, 'hauptmieter', HH)).toContain('nettoeinkommen');
+    expect(fehlendeAngaben(max, 'vertrag', HH)).toContain('nettoeinkommen');
   });
 
   const amt = (an: boolean) =>
@@ -450,7 +443,7 @@ describe('Einkommen je Quelle im Bogen (DP47 G5, DP47b K1, PC60 K5)', () => {
     const zeilen = einkommen(amt(false));
     expect(zeilen[0]).toBe('Lebenslage: Miete zahlt eine öffentliche Stelle');
     expect(alles(amt(false))).not.toMatch(/angestellt|Aushilfe|Supermarkt|520/i);
-    expect(fehlendeAngaben(amt(false), 'hauptmieter', HH)).not.toContain('nettoeinkommen');
+    expect(fehlendeAngaben(amt(false), 'vertrag', HH)).not.toContain('nettoeinkommen');
   });
 
   it('L16 Gegenprobe: „dazu angestellt“ im Druck wäre ein Fehler', () => {

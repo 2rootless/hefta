@@ -25,7 +25,7 @@ const DP39_BEREICHE = [
   '.person-ton',
   '.register-rahmen',
   '.haarlinie',
-  '.hh-gruppe',
+  '.faecher',
   '.ab-karte',
   '.karte-weiss',
   '.stand-karte',
@@ -267,11 +267,13 @@ test('A18: Haushalt allein: „du“', async ({ page }) => {
 // ---------------------------------------------------------------------------------------------------
 // Einrichtung, Person ändern, abgelegte Hefte (A19 bis A22)
 
-test('A19: zwei Bürgen: beide mit Umriss, eigene Druckfarbe', async ({ page }) => {
+test('A19: zwei Bürgen: beide im Fach „Bürgt“, jede in eigener Farbe (W54)', async ({ page }) => {
   await szenarioLaden(page, '08-zwei-buergen', '/haushalt');
-  const zeichen = page.locator('.hh-gruppe .zeichen.zusatz');
+  const zeichen = page.locator('.faecher [data-gruppe="buerge"] .zeichen');
   await expect(zeichen).toHaveCount(2);
-  const farben = await zeichen.evaluateAll((z) => z.map((e) => getComputedStyle(e).boxShadow));
+  const farben = await zeichen.evaluateAll((z) =>
+    z.map((e) => getComputedStyle(e).backgroundColor),
+  );
   expect(farben[0]).not.toBe(farben[1]);
   expect(await page.evaluate(rasterPruefen, DP39_BEREICHE)).toEqual([]);
 });

@@ -1,6 +1,7 @@
 // Passt eine Lesehilfe zu ihrer Mappe? (Abschnitt 11 der Beschreibung, Punkte 1 bis 7.) Eine Lesehilfe ist eine
 // Angabe der Bewerber und kein Echtheitsnachweis: Jeder kann sie ändern. Ein Leser zeigt sie darum nur, wenn alles
 // passt, und sonst gar nicht, auch nicht zum Teil. Dieselben Regeln wie Designs fremder Leser `leser78.py`.
+import { imVertrag, kontaktPerson } from './listen.js';
 import { papierGruende, type Papier } from './papier.js';
 import type { Lesehilfe } from './typen.js';
 
@@ -75,13 +76,21 @@ export function punkteOhnePapier(l: Lesehilfe, seiten: number): string[] {
     if (v === '' || p.name.normalize('NFC') !== soll.normalize('NFC'))
       g.push(`Punkt 5: name „${p.name}“ ist nicht vorname + nachname`);
   }
-  // Punkt 6: höchstens eine Kontaktperson; genau ein Hauptmieter, und er steht zuerst (E216); Bürgen nach allen im
+  // Punkt 6. Fassung 2 (W57): höchstens eine Ansprechperson, und wenn, dann zuerst und im Mietvertrag. Fassung 1:
+  // höchstens eine Kontaktperson; genau ein Hauptmieter, und er steht zuerst (E216). Beide: Bürgen nach allen im
   // Mietvertrag. Unbekannte Rollen zählen weder als im Vertrag noch als Bürge (E220, Regel 6).
-  if (personen.filter((p) => p.kontakt === true).length > 1)
-    g.push('Punkt 6: mehr als eine Kontaktperson');
-  const haupt = personen.flatMap((p, i) => (p.rolle === 'hauptmieter' ? [i] : []));
-  if (haupt.length !== 1 || haupt[0] !== 0)
-    g.push('Punkt 6: nicht genau ein Hauptmieter an erster Stelle');
+  if (l.hefta >= 2) {
+    const an = personen.flatMap((p, i) => (kontaktPerson(p, l.hefta) ? [i] : []));
+    if (an.length > 1) g.push('Punkt 6: mehr als eine Ansprechperson');
+    if (an.length === 1 && (an[0] !== 0 || !imVertrag(personen[0]!.rolle)))
+      g.push('Punkt 6: die Ansprechperson steht nicht zuerst im Mietvertrag');
+  } else {
+    if (personen.filter((p) => p.kontakt === true).length > 1)
+      g.push('Punkt 6: mehr als eine Kontaktperson');
+    const haupt = personen.flatMap((p, i) => (p.rolle === 'hauptmieter' ? [i] : []));
+    if (haupt.length !== 1 || haupt[0] !== 0)
+      g.push('Punkt 6: nicht genau ein Hauptmieter an erster Stelle');
+  }
   const buerge = personen.map((p) => p.rolle === 'buerge');
   const erster = buerge.indexOf(true);
   if (erster >= 0 && buerge.slice(erster).includes(false))

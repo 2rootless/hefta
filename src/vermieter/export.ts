@@ -3,6 +3,7 @@
 // ihrer Mappe passen. Beschreibung: docs/hefta-json-4/export-entwurf.md (Hefta 2), Abschnitt 2.
 import { SCHRITT_SATZ, typText } from '../../pakete/hefta-json/src/index';
 import type { HeftaAnhang } from '../pdf/anhang';
+import { istKontakt } from './regel';
 
 export const SPALTEN = [
   'kennung',
@@ -86,7 +87,7 @@ export function csvText(lesehilfen: HeftaAnhang[]): string {
         vorname: p.vorname,
         nachname: p.nachname,
         name: p.name,
-        kontakt: p.kontakt ? 'ja' : '',
+        kontakt: istKontakt(a, p) ? 'ja' : '',
         telefon: p.telefon,
         telefon_e164: p.telefon_e164,
         email: p.email,

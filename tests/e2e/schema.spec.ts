@@ -55,7 +55,7 @@ test('Schema 1 → 2: Die Bewerbung mit Adresse wird ein Heft, nichts geht verlo
 
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Fangt an, wo ihr gerade seid' }),
+    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
   ).toBeVisible();
   const stand = await page.evaluate(
     () =>
@@ -74,7 +74,7 @@ test('Schema 1 → 2: Die Bewerbung mit Adresse wird ein Heft, nichts geht verlo
       }),
   );
   // Seit 2.1 (W42) läuft die Datenbank danach bis Schema 3 weiter; Schema 3 baut nichts um.
-  expect(stand.version).toBe(3);
+  expect(stand.version).toBe(4);
   expect(stand.bewerbungen).toBe(1);
   expect(stand.hefte).toHaveLength(1);
   expect(stand.hefte[0]).toMatchObject({

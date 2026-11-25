@@ -14,7 +14,7 @@ test('zeigt den ersten Start im Stil des Designs', async ({ page, browserName })
     page.getByRole('heading', { level: 1, name: /^(Guten Morgen|Hallo|Guten Abend)$/ }),
   ).toBeVisible();
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Fangt an, wo ihr gerade seid' }),
+    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: /^Wer zieht ein\?/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /^Eine Wohnung gefunden\?/ })).toBeVisible();
@@ -95,7 +95,7 @@ test('öffnet offline aus dem Service Worker', async ({ page, context, browserNa
   await context.setOffline(true);
   await page.reload();
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Fangt an, wo ihr gerade seid' }),
+    page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }),
   ).toBeVisible();
   await page.goto('/#/technik-test');
   await expect(page.getByRole('heading', { level: 1, name: 'Technik-Test' })).toBeVisible();
@@ -196,8 +196,9 @@ test('ohne Speicher: ruhiger Hinweis statt leerer Seite, „Erneut versuchen“'
     });
   });
   await page.goto('/');
+  // Ohne lesbaren Haushalt „du“ (E369, hebt E74.4 auf).
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Hefta kommt gerade nicht an eure Daten.' }),
+    page.getByRole('heading', { level: 1, name: 'Hefta kommt gerade nicht an deine Daten.' }),
   ).toBeVisible();
   await expect(page.getByText('Hefta hat nichts gelöscht.', { exact: false })).toBeVisible();
   await expect(page.getByRole('listitem')).toHaveCount(3);
@@ -217,7 +218,7 @@ test('unerwarteter Fehler: Kasten mit „Noch einmal versuchen“, schließbar, 
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('heading', { level: 2, name: 'Fangt an, wo ihr gerade seid' }).waitFor();
+  await page.getByRole('heading', { level: 2, name: 'Fang an, wo du gerade bist' }).waitFor();
   const obenVorher = await page.locator('h1').evaluate((e) => e.getBoundingClientRect().top);
   await page.evaluate(() => {
     void Promise.reject(new Error('Testfehler'));
@@ -271,7 +272,7 @@ test('erster Start: „Später“ fragt höchstens noch einmal, „Ich habe ein 
   await expect(page.getByRole('heading', { level: 1, name: 'Wer bist du?' })).toBeVisible();
   await page.getByLabel('Vorname').fill('Max');
   await page.getByLabel('Nachname', { exact: true }).fill('Mustermann');
-  await page.getByRole('radio', { name: 'Hauptmieter', exact: true }).click();
+  // W57: Im Vertrag wählt man keine Form des Rollenworts mehr.
   await page.getByRole('button', { name: 'Weiter', exact: true }).click();
   await page.getByRole('link', { name: 'Haushalt anlegen' }).click();
   // Einmal fragt Hefta noch, dann nie wieder.

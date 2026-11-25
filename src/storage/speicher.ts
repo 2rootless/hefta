@@ -28,7 +28,8 @@ import {
   type VersionFakten,
 } from '../domain/modell';
 import { dokumenttyp } from '../domain/regelkatalog';
-import { rollenNachruecken } from '../domain/nachruecken';
+import { ansprechNachruecken, ansprechperson, geordnet, rolleNeu } from '../domain/nachruecken';
+import { geordnet as faecherGeordnet, type Eintrag, type Fach } from '../domain/faecher';
 import { erklaerungenFestlegen, farbeImHaushalt, giltImHaushalt } from '../domain/zugehoerigkeiten';
 import { ALLE_ORTE, type HeftaDb } from './db';
 import type { HeftaSchema } from './db';
@@ -174,6 +175,15 @@ export async function haushaltAnlegen(db: HeftaDb, entwurf: HaushaltEntwurf): Pr
     alle.push(zug);
     await tx.objectStore('zugehoerigkeiten').put(zug);
   }
+  // W57 (E366): Ansprechperson ist die erste im Vertrag.
+  const an = ansprechperson(
+    null,
+    alle.filter((z) => z.haushaltId === haushalt.id),
+  );
+  if (an) {
+    haushalt.ansprechpersonId = an;
+    await tx.objectStore('haushalte').put(haushalt);
+  }
   await tx.done;
   return haushalt;
 }
@@ -213,9 +223,11 @@ export async function haushaltLaden(
   if (!haushalt) return null;
   // Ein Lesevorgang über alle Orte, Abfragen parallel: wird nach jeder Änderung aufgerufen.
   const tx = db.transaction(['zugehoerigkeiten', 'personen', 'dokumente', 'versionen'], 'readonly');
-  const zugehoerigkeiten = (
+  // W57: Rollen aus Schema 1 bis 3 werden als „vertrag“ gelesen (auch Daten, die ohne Migration hineinkamen).
+  const zugehoerigkeitenRoh = (
     await tx.objectStore('zugehoerigkeiten').index('haushaltId').getAll(haushalt.id)
-  ).sort((a, b) => a.reihenfolge - b.reihenfolge);
+  ).map((z) => ({ ...z, rolle: rolleNeu(z.rolle) }));
+  const zugehoerigkeiten = geordnet(haushalt, zugehoerigkeitenRoh);
   // E257: ein bis 2.0 aus einem Titel gebildeter Rufname („Dr.“) wird beim Lesen neu gebildet.
   const personen = (
     await Promise.all(zugehoerigkeiten.map((z) => tx.objectStore('personen').get(z.personId)))
@@ -251,7 +263,16 @@ export async function haushaltLaden(
       a.zugehoerigkeit.herausgenommenAm ?? '',
     ),
   );
-  return { haushalt, mitglieder, herausgenommen, dokumente, haushaltDokumente, versionen };
+  // W57 (E366): Die Ansprechperson ist immer gesetzt, solange jemand im Vertrag steht.
+  const mitAnsprech = { ...haushalt, ansprechpersonId: ansprechperson(haushalt, zugehoerigkeiten) };
+  return {
+    haushalt: mitAnsprech,
+    mitglieder,
+    herausgenommen,
+    dokumente,
+    haushaltDokumente,
+    versionen,
+  };
 }
 
 export async function personAendern(
@@ -319,28 +340,41 @@ export async function haushaltAendern(
   await db.put('haushalte', { ...haushalt, ...teil, updatedAt: jetzt() });
 }
 
-/** Der Ort der Zugehörigkeiten in einer laufenden Transaktion (für `nachruecken`). */
+/** Die Orte der Zugehörigkeiten und Haushalte in einer laufenden Transaktion (für `nachruecken`). */
 interface ZugehoerigkeitenOrt {
   index(name: 'haushaltId'): { getAll(haushaltId: Id): Promise<Zugehoerigkeit[]> };
-  put(z: Zugehoerigkeit): Promise<unknown>;
+}
+interface HaushalteOrt {
+  get(id: Id): Promise<Haushalt | undefined>;
+  put(h: Haushalt): Promise<unknown>;
 }
 
 /**
- * PC102 (E209), Frage 1: Nach jeder Änderung an Rollen oder Plätzen hat jeder Haushalt mit jemandem im
- * Mietvertrag genau eine hauptmietende Person (`rollenNachruecken`). Läuft in derselben Transaktion.
+ * W57 (E366): Nach jeder Änderung an Rollen oder Plätzen steht die Ansprechperson im Vertrag. Verließ sie ihn, wird
+ * ohne Frage die nächste im Vertrag nach der Reihenfolge Ansprechperson. Ersetzt das Nachrücken der hauptmietenden
+ * Person (PC102, E209). Läuft in derselben Transaktion.
  */
-async function nachruecken(ort: ZugehoerigkeitenOrt, haushaltIds: Iterable<Id>, zeit: string) {
-  for (const id of new Set(haushaltIds))
-    for (const z of rollenNachruecken(await ort.index('haushaltId').getAll(id)))
-      await ort.put({ ...z, updatedAt: zeit });
+async function nachruecken(
+  ort: ZugehoerigkeitenOrt,
+  haushalte: HaushalteOrt,
+  haushaltIds: Iterable<Id>,
+  zeit: string,
+) {
+  for (const id of new Set(haushaltIds)) {
+    const haushalt = await haushalte.get(id);
+    if (!haushalt) continue;
+    const neu = ansprechNachruecken(haushalt, await ort.index('haushaltId').getAll(id));
+    if (neu !== undefined)
+      await haushalte.put({ ...haushalt, ansprechpersonId: neu, updatedAt: zeit });
+  }
 }
 
 /**
  * Rolle wechseln (design/unterlage-warum-haushalt.md, HA1). Aus der Bürgschaft kommt man hinten in den
- * Vertrag. Wird die hauptmietende Person Bürge, rückt die nächste im Vertrag an ihre Stelle.
+ * Vertrag. Wird die Ansprechperson Bürge, wird die nächste im Vertrag Ansprechperson (W57, E366).
  */
 export async function rolleWechseln(db: HeftaDb, id: Id, neu: Rolle): Promise<void> {
-  const tx = db.transaction('zugehoerigkeiten', 'readwrite');
+  const tx = db.transaction(['zugehoerigkeiten', 'haushalte'], 'readwrite');
   const ort = tx.objectStore('zugehoerigkeiten');
   const z = await ort.get(id);
   if (!z) throw new Error('Zugehörigkeit nicht gefunden');
@@ -351,19 +385,7 @@ export async function rolleWechseln(db: HeftaDb, id: Id, neu: Rolle): Promise<vo
       ? andere.reduce((max, x) => Math.max(max, x.reihenfolge + 1), z.reihenfolge)
       : z.reihenfolge;
   await ort.put({ ...z, rolle: neu, reihenfolge, updatedAt: zeit });
-  await nachruecken(ort, [z.haushaltId], zeit);
-  await tx.done;
-}
-
-/**
- * Einmal je Start (PC102, E209): Haushalte ohne hauptmietende Person, etwa weil sie in 2.0 herausgenommen
- * wurde, bekommen die nächste im Vertrag. Ändert nur Rollen, löscht nichts.
- */
-export async function hauptmieterSichern(db: HeftaDb): Promise<void> {
-  const tx = db.transaction('zugehoerigkeiten', 'readwrite');
-  const zeit = jetzt();
-  for (const z of rollenNachruecken(await tx.store.getAll()))
-    await tx.store.put({ ...z, updatedAt: zeit });
+  await nachruecken(ort, tx.objectStore('haushalte'), [z.haushaltId], zeit);
   await tx.done;
 }
 
@@ -398,7 +420,7 @@ export async function mitgliedHinzufuegen(
   entwurf: PersonEntwurf,
 ): Promise<Person> {
   const zeit = jetzt();
-  const tx = db.transaction(['personen', 'zugehoerigkeiten'], 'readwrite');
+  const tx = db.transaction(['personen', 'zugehoerigkeiten', 'haushalte'], 'readwrite');
   const bisher = await tx.objectStore('zugehoerigkeiten').index('haushaltId').getAll(haushaltId);
   const reihenfolge = bisher.reduce((max, z) => Math.max(max, z.reihenfolge + 1), 0);
   const person = personAus(entwurf, zeit);
@@ -416,6 +438,12 @@ export async function mitgliedHinzufuegen(
     reihenfolge,
     herausgenommenAm: null,
   });
+  await nachruecken(
+    tx.objectStore('zugehoerigkeiten'),
+    tx.objectStore('haushalte'),
+    [haushaltId],
+    zeit,
+  );
   await tx.done;
   return person;
 }
@@ -473,13 +501,14 @@ export async function personAufnehmen(
  * (Person ist unabhängig vom Haushalt, docs/03-datenmodell.md).
  */
 export async function mitgliedHerausnehmen(db: HeftaDb, zugehoerigkeitId: Id): Promise<void> {
-  const tx = db.transaction('zugehoerigkeiten', 'readwrite');
-  const zug = await tx.store.get(zugehoerigkeitId);
+  const tx = db.transaction(['zugehoerigkeiten', 'haushalte'], 'readwrite');
+  const ort = tx.objectStore('zugehoerigkeiten');
+  const zug = await ort.get(zugehoerigkeitId);
   if (!zug) return;
   const zeit = jetzt();
-  await tx.store.put({ ...zug, herausgenommenAm: zeit, updatedAt: zeit });
-  // PC102 (E209): War sie hauptmietend, rückt die nächste im Vertrag nach.
-  await nachruecken(tx.store, [zug.haushaltId], zeit);
+  await ort.put({ ...zug, herausgenommenAm: zeit, updatedAt: zeit });
+  // W57 (E366): War sie Ansprechperson, wird die nächste im Vertrag Ansprechperson.
+  await nachruecken(ort, tx.objectStore('haushalte'), [zug.haushaltId], zeit);
   await tx.done;
 }
 
@@ -520,35 +549,35 @@ export async function mitgliedZurueckholen(
     reihenfolge: alle.reduce((m, z) => Math.max(m, z.reihenfolge + 1), 0),
     updatedAt: jetzt(),
   });
-  // PC102 (E209): Hauptmietet inzwischen jemand anderes, steht sie als Mitmieter im Vertrag.
-  await nachruecken(ort, [zug.haushaltId], jetzt());
+  // W57 (E366): Die Ansprechperson bleibt, wer sie inzwischen ist; ohne eine wird es die Zurückgeholte.
+  await nachruecken(ort, tx.objectStore('haushalte'), [zug.haushaltId], jetzt());
   await tx.done;
 }
 
 /**
- * W42 (DP93, F2): Macht eine Person zur hauptmietenden. Sie steht vorn im Vertrag; wer bisher hauptmietete, steht
- * weiter im Vertrag, als Mitmieter. Kommt sie aus der Bürgschaft, steht sie danach im Vertrag; ihre Erklärung bleibt
- * gespeichert. Zuerst die Nachfolge, dann der Wechsel der bisherigen: So ist der Vertrag nie leer.
+ * W57 (E363, E366): Macht eine Person zur Ansprechperson. Sie steht danach im Vertrag und vorn; kommt sie aus der
+ * Bürgschaft, bleibt ihre Erklärung gespeichert. Für die neue Bedienung (PD171); 2.1 kennt dafür keinen Knopf.
  */
-export async function hauptmieterSetzen(db: HeftaDb, id: Id): Promise<void> {
-  const tx = db.transaction('zugehoerigkeiten', 'readwrite');
+export async function ansprechpersonSetzen(db: HeftaDb, id: Id): Promise<void> {
+  const tx = db.transaction(['zugehoerigkeiten', 'haushalte'], 'readwrite');
   const ort = tx.objectStore('zugehoerigkeiten');
   const z = await ort.get(id);
   if (!z) throw new Error('Zugehörigkeit nicht gefunden');
   const zeit = jetzt();
   const alle = await ort.index('haushaltId').getAll(z.haushaltId);
-  for (const x of alle)
-    if (x.id !== id && x.rolle === 'hauptmieter' && !x.herausgenommenAm)
-      await ort.put({ ...x, rolle: 'mitmieter', updatedAt: zeit });
   const vorn = alle.reduce((min, x) => Math.min(min, x.reihenfolge), z.reihenfolge) - 1;
-  await ort.put({ ...z, rolle: 'hauptmieter', reihenfolge: vorn, updatedAt: zeit });
-  await nachruecken(ort, [z.haushaltId], zeit);
+  await ort.put({ ...z, rolle: 'vertrag', reihenfolge: vorn, updatedAt: zeit });
+  const haushalt = await tx.objectStore('haushalte').get(z.haushaltId);
+  if (haushalt)
+    await tx
+      .objectStore('haushalte')
+      .put({ ...haushalt, ansprechpersonId: z.personId, updatedAt: zeit });
   await tx.done;
 }
 
 /**
  * W42 Fall 7 (DP94): „Zieht nur mit ein“. Die Person ist danach nicht mehr in der Mappe, Angaben und Unterlagen bleiben,
- * und sie zählt unter „Weitere Erwachsene“ des Haushalts mit. War sie hauptmietend, rückt die nächste nach.
+ * und sie zählt unter „Weitere Erwachsene“ des Haushalts mit. War sie Ansprechperson, rückt die nächste nach.
  */
 export async function mitgliedZiehtMitEin(db: HeftaDb, zugehoerigkeitId: Id): Promise<void> {
   const tx = db.transaction(['zugehoerigkeiten', 'haushalte'], 'readwrite');
@@ -564,7 +593,7 @@ export async function mitgliedZiehtMitEin(db: HeftaDb, zugehoerigkeitId: Id): Pr
       weitereErwachsene: haushalt.weitereErwachsene + 1,
       updatedAt: zeit,
     });
-  await nachruecken(ort, [zug.haushaltId], zeit);
+  await nachruecken(ort, tx.objectStore('haushalte'), [zug.haushaltId], zeit);
   await tx.done;
 }
 
@@ -574,13 +603,18 @@ export async function mitgliedZiehtMitEin(db: HeftaDb, zugehoerigkeitId: Id): Pr
  */
 export async function mitgliedEntfernen(db: HeftaDb, zugehoerigkeitId: Id): Promise<void> {
   const tx = db.transaction(
-    ['zugehoerigkeiten', 'personen', 'dokumente', 'versionen', 'dateien'],
+    ['zugehoerigkeiten', 'personen', 'dokumente', 'versionen', 'dateien', 'haushalte'],
     'readwrite',
   );
   const zug = await tx.objectStore('zugehoerigkeiten').get(zugehoerigkeitId);
   if (!zug) return;
   await tx.objectStore('zugehoerigkeiten').delete(zug.id);
-  await nachruecken(tx.objectStore('zugehoerigkeiten'), [zug.haushaltId], jetzt());
+  await nachruecken(
+    tx.objectStore('zugehoerigkeiten'),
+    tx.objectStore('haushalte'),
+    [zug.haushaltId],
+    jetzt(),
+  );
   const weitere = await tx.objectStore('zugehoerigkeiten').index('personId').getAll(zug.personId);
   if (weitere.length === 0) {
     // Eine verschobene Seite kann die Datei mit einer anderen Person teilen.
@@ -640,13 +674,14 @@ export async function haushaltLoeschen(db: HeftaDb, haushaltId: Id): Promise<voi
  */
 export async function personGanzLoeschen(db: HeftaDb, personId: Id): Promise<void> {
   const tx = db.transaction(
-    ['zugehoerigkeiten', 'personen', 'dokumente', 'versionen', 'dateien'],
+    ['zugehoerigkeiten', 'personen', 'dokumente', 'versionen', 'dateien', 'haushalte'],
     'readwrite',
   );
   const plaetze = await tx.objectStore('zugehoerigkeiten').index('personId').getAll(personId);
   for (const z of plaetze) await tx.objectStore('zugehoerigkeiten').delete(z.id);
   await nachruecken(
     tx.objectStore('zugehoerigkeiten'),
+    tx.objectStore('haushalte'),
     plaetze.map((z) => z.haushaltId),
     jetzt(),
   );
@@ -1323,4 +1358,100 @@ export async function heftAnlegen(
   if (foto) heft.foto = await dateiSpeichern(db, foto);
   await db.put('hefte', heft);
   return heft;
+}
+
+// ---------- W57/W54, Bedienung R1 „Fächer“ (PC199, DP128) ----------
+
+/** Fach einer Zugehörigkeit: im Vertrag, zieht (nur) mit ein, bürgt, nicht mehr dabei. */
+export function fachVon(z: Zugehoerigkeit): Fach {
+  if (z.herausgenommenAm) return z.ziehtMitEin ? 'nurmit' : 'weg';
+  return rolleNeu(z.rolle) === 'buerge' ? 'buerge' : 'vertrag';
+}
+
+/** Die Fächer eines Haushalts: Ansprechperson zuerst, dann der Vertrag, dann die anderen, je nach Reihenfolge. */
+export function faecherAus(ansicht: HaushaltAnsicht): Eintrag[] {
+  const an = ansicht.haushalt.ansprechpersonId;
+  const alle = [...ansicht.mitglieder, ...ansicht.herausgenommen].sort(
+    (a, b) =>
+      Number(b.person.id === an) - Number(a.person.id === an) ||
+      a.zugehoerigkeit.reihenfolge - b.zugehoerigkeit.reihenfolge,
+  );
+  return faecherGeordnet(
+    alle.map((m) => ({
+      id: m.zugehoerigkeit.id,
+      personId: m.person.id,
+      name: m.person.rufname || m.person.vorname,
+      farbe: m.zugehoerigkeit.farbe,
+      fach: fachVon(m.zugehoerigkeit),
+    })),
+  );
+}
+
+/**
+ * Speichert einen ganzen Stand der Fächer in einer Transaktion: Rolle, Herausnahme, „zieht mit ein“, Reihenfolge,
+ * die Zahl der weiteren Erwachsenen und die Ansprechperson (die erste im Vertrag). Neue Personen aus der Frage
+ * (W42) werden angelegt. Nichts wird gelöscht; Unterlagen bleiben. Dieselbe Funktion nimmt „Rückgängig“ (G5).
+ */
+export async function faecherSpeichern(
+  db: HeftaDb,
+  haushaltId: Id,
+  liste: readonly Eintrag[],
+): Promise<void> {
+  const zeit = jetzt();
+  const tx = db.transaction(['zugehoerigkeiten', 'haushalte', 'personen'], 'readwrite');
+  const ort = tx.objectStore('zugehoerigkeiten');
+  const haushalt = await tx.objectStore('haushalte').get(haushaltId);
+  if (!haushalt) throw new Error('Haushalt nicht gefunden');
+  const vorher = await ort.index('haushaltId').getAll(haushaltId);
+  const mitVorher = vorher.filter((z) => z.herausgenommenAm && z.ziehtMitEin).length;
+  let ansprech: Id | null = null;
+  let mitNachher = 0;
+  for (const [i, e] of liste.entries()) {
+    let z = vorher.find((x) => x.id === e.id);
+    if (!z && e.neu) {
+      const person = personAus(
+        {
+          vorname: e.name,
+          nachname: '',
+          bezeichnung: 'neutral',
+          rolle: 'vertrag',
+          lebenssituation: null,
+        },
+        zeit,
+      );
+      await tx.objectStore('personen').put(person);
+      z = {
+        id: neueId(),
+        createdAt: zeit,
+        updatedAt: zeit,
+        haushaltId,
+        personId: person.id,
+        rolle: 'vertrag',
+        bezeichnung: 'neutral',
+        farbe: e.farbe,
+        reihenfolge: i,
+        herausgenommenAm: null,
+      };
+    }
+    if (!z) continue;
+    const raus = e.fach === 'nurmit' || e.fach === 'weg';
+    const neu: Zugehoerigkeit = {
+      ...z,
+      rolle: e.fach === 'buerge' ? 'buerge' : e.fach === 'vertrag' ? 'vertrag' : rolleNeu(z.rolle),
+      herausgenommenAm: raus ? (z.herausgenommenAm ?? zeit) : null,
+      ziehtMitEin: e.fach === 'nurmit',
+      reihenfolge: i,
+      updatedAt: zeit,
+    };
+    if (e.fach === 'nurmit') mitNachher++;
+    if (e.fach === 'vertrag' && !ansprech) ansprech = neu.personId;
+    await ort.put(neu);
+  }
+  await tx.objectStore('haushalte').put({
+    ...haushalt,
+    weitereErwachsene: Math.max(0, haushalt.weitereErwachsene + mitNachher - mitVorher),
+    ansprechpersonId: ansprech,
+    updatedAt: zeit,
+  });
+  await tx.done;
 }

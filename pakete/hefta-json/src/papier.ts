@@ -2,7 +2,7 @@
 // Deckblatt oder im Verzeichnis „Was beiliegt“, also auf den Seiten vor der ersten Unterlage (V1). Gelesen wird der
 // Text in der Reihenfolge des Inhalts, wie PDF.js ihn mit `getTextContent()` liefert, Zeile für Zeile (V2).
 // Gleiche Regeln wie Designs fremder Leser `test/fremd/leser78.py`, Funktion `papier()`.
-import { VERZEICHNIS } from './listen.js';
+import { VERZEICHNIS, kontaktPerson } from './listen.js';
 import type { Lesehilfe, Person, Unterlage, Vermerk } from './typen.js';
 
 const ZEILE = String.fromCharCode(10);
@@ -178,10 +178,21 @@ export interface Papier {
   erstellt: Date | null;
 }
 
+/** Fassung 1 (V9): Überschrift und Anfang des Rollenworts hinter dem Namen. */
 const ROLLENWORT: Readonly<Record<string, [string, string]>> = {
   hauptmieter: ['im mietvertrag', 'hauptmiet'],
   mitmieter: ['im mietvertrag', 'mitmiet'],
   buerge: ['bürgt', 'bürg'],
+};
+/**
+ * Fassung 2 (W57, DP124 Abschnitt 3): kein Rollenwort mehr. Unter „Im Mietvertrag“ steht hinter dem Namen nur die
+ * Tätigkeit, unter „Bürgt“ nur der Name. Gebunden wird der ganze Name unter seiner Überschrift.
+ */
+const UEBERSCHRIFT_2: Readonly<Record<string, string>> = {
+  vertrag: 'im mietvertrag',
+  hauptmieter: 'im mietvertrag',
+  mitmieter: 'im mietvertrag',
+  buerge: 'bürgt',
 };
 
 /** Gründe, warum etwas, das ein Leser zeigt, nicht auf dem Papier steht. Leer: alles gebunden. */
@@ -271,12 +282,15 @@ export function papierGruende(l: Lesehilfe, papier: Papier): string[] {
   if (!papier.erstellt || !(Math.abs(papier.erstellt.getTime() - erstellt) < 1000))
     g.push(`erstellt ${l.erstellt} ist nicht das Erstelldatum der PDF`);
 
-  // V5, V9: ganzer Name unter seiner Überschrift, dahinter das Rollenwort; Kontakt unter „Kontakt“.
+  // V5, V9: ganzer Name unter seiner Überschrift, in Fassung 1 dahinter das Rollenwort; Kontakt unter „Kontakt“.
   for (const p of personen) {
-    const [kopf, rolle] = ROLLENWORT[p.rolle] ?? ['im mietvertrag', ''];
+    const [kopf, rolle] =
+      l.hefta >= 2
+        ? [UEBERSCHRIFT_2[p.rolle] ?? 'im mietvertrag', undefined]
+        : (ROLLENWORT[p.rolle] ?? ['im mietvertrag', '']);
     if (!im(kopf, normiert(p.name), rolle))
       g.push(`${p.name}: steht nicht als ganzer Name mit dieser Rolle auf dem Deckblatt`);
-    if (p.kontakt) {
+    if (kontaktPerson(p, l.hefta)) {
       const a = x.abschnitt(
         'kontakt',
         UEBERSCHRIFTEN.filter((k) => k !== 'kontakt'),

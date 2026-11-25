@@ -23,7 +23,8 @@ for f in json.load(open(FAELLE, encoding='utf-8')):
     except Exception as e:
         erg[f['nr']] = ['ABSTURZ', f'{type(e).__name__}: {e}'[:200]]
 csv = {}
-for d in sorted(glob.glob(f'{PAKET}/beispiele/*.json')):
+# W57 (Code, 24.11.): leser78 kennt Fassung 1; die Beispiele dazu liegen seit Fassung 2 in beispiele/fassung-1/.
+for d in sorted(glob.glob(f'{PAKET}/beispiele/fassung-1/*.json')):
     lh = L.lesen(open(d, 'rb').read(), schema)
     csv[os.path.basename(d)] = L.als_csv([lh]).decode('utf-8')
 json.dump({'faelle': erg, 'csv': csv}, open(AUS, 'w', encoding='utf-8'), ensure_ascii=False)

@@ -274,7 +274,9 @@ describe('PDF-Mappe nach design/mappe-pdf.md', () => {
       expect(t).toContain('Bewerbung Beispielstraße 1, Max und Lea Mustermann');
     }
     // DP30: Die Selbstauskunft trägt den Briefkopf, ihr Titel nennt die Person und die Rolle.
-    expect(texte[1]).toContain('Hauptmieter, im Mietvertrag.');
+    // W57: kein Rollenwort mehr, nur „Im Mietvertrag.“
+    expect(texte[1]).toContain('Im Mietvertrag. Nach dem Musterbogen');
+    expect(texte[1]).not.toMatch(/Hauptmiet|Mitmiet/);
     // Bürgen: „Bürgschaft“ statt der Rolle.
     expect(texte[9]).toContain('Petra Mustermann');
     expect(texte[9]).toContain(', Bürgin');

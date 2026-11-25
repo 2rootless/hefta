@@ -330,13 +330,10 @@ export function selbstauskunftBloecke(
   hh: HaushaltsAngaben,
   schritt: Schritt,
   {
-    rolleText,
     antwortenImmer = false,
     buergschaftDabei = false,
     zusageText,
   }: {
-    /** Wie die Rolle bei dieser Person heißt, z. B. „Bürgin“. */
-    rolleText: string;
     /**
      * Beantwortete Fragen drucken, auch wenn sie erst später dran wären (mappe-feinschliff.md, § 1). Nicht bei
      * „Datensparsam“: Dort gilt der gewählte Schritt, und eine Antwort bleibt draußen, bis er erreicht ist.
@@ -385,12 +382,11 @@ export function selbstauskunftBloecke(
       titel: 'Zur Person',
       zeilen: [
         { id: 'name', etikett: 'Name', art: 'text', wert: nameText(nameImPdf(person)) },
-        {
-          id: 'rolle',
-          etikett: 'Rolle im Mietvertrag',
-          art: 'text',
-          wert: rolle === 'buerge' ? `${rolleText} (zieht nicht ein)` : rolleText,
-        },
+        // DP130, Antwort 4: Für alle im Mietvertrag fällt die Zeile weg (Normalfall, das Deckblatt sagt es). Wer
+        // bürgt, steht als „Rolle: Bürgt“ da: Eine Selbstauskunft wird auch einzeln gelesen.
+        ...(rolle === 'buerge'
+          ? [{ id: 'rolle', etikett: 'Rolle', art: 'text' as const, wert: 'Bürgt' }]
+          : []),
         text(
           'kontakt',
           feld('kontakt').pdfText,

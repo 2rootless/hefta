@@ -25,9 +25,9 @@ export function postenSchluessel(p: RutschPosten): string {
 
 /** Selbstauskunft (in der App erstellt) erst mitnehmen, wenn das Formular gebaut ist (M4). */
 export function rutschListe(staende: PersonStand[], mitFormularen: boolean): RutschPosten[] {
+  // W57: Die Stände kommen geordnet (Ansprechperson zuerst); der Vertrag vor den Bürgen.
   const reihenfolge = [
-    ...staende.filter((s) => s.rolle === 'hauptmieter'),
-    ...staende.filter((s) => s.rolle === 'mitmieter'),
+    ...staende.filter((s) => s.rolle === 'vertrag'),
     ...staende.filter((s) => s.rolle === 'buerge'),
   ];
   return reihenfolge.flatMap((s) => {

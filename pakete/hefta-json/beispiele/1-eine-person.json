@@ -1,5 +1,5 @@
 {
-  "hefta": 1,
+  "hefta": 2,
   "erstellt": "2026-11-18T09:41:07+01:00",
   "fassung": 1,
   "seitenzahl": 6,
@@ -28,8 +28,8 @@
         "name": "Jonas Muster",
         "vorname": "Jonas",
         "nachname": "Muster",
-        "rolle": "hauptmieter",
-        "kontakt": true,
+        "rolle": "vertrag",
+        "ansprech": true,
         "telefon": "0171 3920002",
         "telefon_e164": "+491713920002",
         "email": "jonas.muster@example.com",

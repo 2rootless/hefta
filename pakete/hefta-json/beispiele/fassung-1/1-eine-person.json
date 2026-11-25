@@ -1,0 +1,66 @@
+{
+  "hefta": 1,
+  "erstellt": "2026-11-18T09:41:07+01:00",
+  "fassung": 1,
+  "seitenzahl": 6,
+  "bewerbung": {
+    "kennung": "5f0c2a9e-7b1d-4e3a-9c8f-2d6b1e4a7c30",
+    "wohnung": {
+      "strasse": "Musterweg 7",
+      "rest": "1. OG rechts, 12345 Musterstadt",
+      "teile": {
+        "strasse": "Musterweg",
+        "hausnummer": "7",
+        "plz": "12345",
+        "ort": "Musterstadt",
+        "lage": "1. OG rechts",
+        "land": "DE"
+      }
+    },
+    "inserat": {
+      "portal": "ImmoScout24"
+    },
+    "einzug": "2027-02-01"
+  },
+  "haushalt": {
+    "personen": [
+      {
+        "name": "Jonas Muster",
+        "vorname": "Jonas",
+        "nachname": "Muster",
+        "rolle": "hauptmieter",
+        "kontakt": true,
+        "telefon": "0171 3920002",
+        "telefon_e164": "+491713920002",
+        "email": "jonas.muster@example.com",
+        "unterlagen": [
+          {
+            "typ": "selbstauskunft",
+            "seiten_mappe": {
+              "von": 2,
+              "bis": 2
+            }
+          },
+          {
+            "typ": "gehaltsnachweis",
+            "seiten_mappe": {
+              "von": 3,
+              "bis": 5
+            },
+            "monate": ["2026-08", "2026-09", "2026-10"]
+          },
+          {
+            "typ": "bonitaet",
+            "seiten_mappe": {
+              "von": 6,
+              "bis": 6
+            },
+            "vom": "2026-10-28",
+            "pruefweg": "pruefcode"
+          }
+        ]
+      }
+    ],
+    "mitziehende": []
+  }
+}

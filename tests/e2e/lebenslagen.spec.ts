@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function personAendern(page: Page) {
-  await page.getByRole('link', { name: /^Max Hauptmieter$/ }).click();
+  await page.getByRole('link', { name: /^Max Im Mietvertrag$/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Max' })).toBeVisible();
   await page.getByRole('link', { name: 'Ändern', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Speichern' })).toBeVisible();

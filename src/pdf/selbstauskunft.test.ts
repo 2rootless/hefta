@@ -37,7 +37,6 @@ const ETIKETTEN = [
   'Nach dem Musterbogen der Datenschutzkonferenz, Stand Januar 2026',
   'Zur Person',
   'Name',
-  'Rolle im Mietvertrag',
   'Telefon oder E-Mail',
   'Beruf',
   'Arbeitgeber',
@@ -52,7 +51,7 @@ const ETIKETTEN = [
 
 async function bauen(
   person: Person = MAX,
-  rolle: 'hauptmieter' | 'buerge' = 'hauptmieter',
+  rolle: 'vertrag' | 'buerge' = 'vertrag',
   rolleText = 'Hauptmieter',
   teil: { unterschrift?: boolean; mitHinweis?: boolean; schritt?: 'will_wohnung' | 'zusage' } = {},
 ) {
@@ -62,7 +61,7 @@ async function bauen(
     rolle: rolleText,
     buerge: rolle === 'buerge',
     farbe: '#e9a970',
-    bloecke: selbstauskunftBloecke(person, rolle, WER, HH, teil.schritt ?? 'zusage', { rolleText }),
+    bloecke: selbstauskunftBloecke(person, rolle, WER, HH, teil.schritt ?? 'zusage', {}),
     ortDatum: 'Hamburg, 6. November 2026',
     schriften: pdfSchriften(),
     datum: new Date(2026, 10, 6),
@@ -81,7 +80,8 @@ describe('Selbstauskunft als festes Formular', () => {
     for (const etikett of [...ETIKETTEN, 'Haushalt', 'Personen, die einziehen', 'Haustiere'])
       expect(t.toLowerCase(), etikett).toContain(etikett.toLowerCase());
     expect(t).toContain('Max Mustermann');
-    expect(t).toContain('Hauptmieter, im Mietvertrag.');
+    // W57: kein Rollenwort mehr, nur „Im Mietvertrag.“
+    expect(t).toContain('Im Mietvertrag. Nach dem Musterbogen');
     // DP30: Komma statt Mittelpunkt.
     expect(t).toContain('0171 3920001, max.mustermann@example.com');
     expect(t).toContain('3 (2 Erwachsene, 1 Kind)');
@@ -111,24 +111,24 @@ describe('Selbstauskunft als festes Formular', () => {
       expect(t.toLowerCase(), etikett).toContain(etikett.toLowerCase());
     expect(t).toContain('Bürgschaft');
     expect(t).toContain('Bürgin, zieht nicht ein.');
-    expect(t).toContain('Bürgin (zieht nicht ein)');
+    // DP130, Antwort 4: Bei Bürgen „Rolle: Bürgt“, bei allen im Mietvertrag keine Zeile.
+    expect(t).toContain('Bürgt');
+    expect(t).not.toContain('Rolle im Mietvertrag');
     expect(t).toContain('Bürgschaftserklärung folgt');
     expect(t).not.toContain('Haustiere');
     expect(t).not.toContain('Personen, die einziehen');
   });
 
   it('vor der Zusage: Die Frage steht da, mit dem Satz, wann sie kommt', async () => {
-    const t = await text(
-      await bauen(MAX, 'hauptmieter', 'Hauptmieter', { schritt: 'will_wohnung' }),
-    );
+    const t = await text(await bauen(MAX, 'vertrag', 'Hauptmieter', { schritt: 'will_wohnung' }));
     expect(t).toContain('Mietrückstände');
     expect(t).toContain('Wird erst bei der Zusage gefragt und dann ergänzt');
   });
 
   it('Der Dienst steht nur in der Fußnote, wenn der Hinweis an ist', async () => {
-    expect(
-      await text(await bauen(MAX, 'hauptmieter', 'Hauptmieter', { mitHinweis: true })),
-    ).toContain('fragt Hefta nicht');
+    expect(await text(await bauen(MAX, 'vertrag', 'Hauptmieter', { mitHinweis: true }))).toContain(
+      'fragt Hefta nicht',
+    );
     expect(await text(await bauen())).not.toContain('Hefta');
   });
 
@@ -162,7 +162,7 @@ describe('Unterschriftszeile (X8b)', () => {
   it('steht nur auf Wunsch im Bogen', async () => {
     expect(await text(await bauen())).not.toContain('Unterschrift');
     expect(
-      await text(await bauen(MAX, 'hauptmieter', 'Hauptmieter', { unterschrift: true })),
+      await text(await bauen(MAX, 'vertrag', 'Hauptmieter', { unterschrift: true })),
     ).toContain('Unterschrift');
   });
 });

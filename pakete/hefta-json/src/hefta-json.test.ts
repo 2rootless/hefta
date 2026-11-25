@@ -31,6 +31,12 @@ const beispiele = readdirSync(ORDNER)
   .filter((n) => n.endsWith('.json'))
   .sort()
   .map((n) => [n, readFileSync(new URL(n, ORDNER), 'utf8')] as const);
+// W57: dieselben Haushalte in Fassung 1, wie Mappen aus 2.0 bis 2.1 sie tragen. Sie bleiben lesbar.
+const ORDNER_1 = new URL('../beispiele/fassung-1/', import.meta.url);
+const beispiele1 = readdirSync(ORDNER_1)
+  .filter((n) => n.endsWith('.json'))
+  .sort()
+  .map((n) => [n, readFileSync(new URL(n, ORDNER_1), 'utf8')] as const);
 
 const kopie = (l: Lesehilfe): Lesehilfe => JSON.parse(JSON.stringify(l)) as Lesehilfe;
 /** Wie ein Leser urteilt: erst streng lesen, dann gegen das Papier prüfen. */
@@ -38,6 +44,32 @@ const gezeigt = (l: unknown, mappe: Mappe): boolean => {
   const x = lesen(JSON.stringify(l));
   return x !== null && passt(x, mappe);
 };
+
+describe('hefta-json: Fassung 1 bleibt lesbar (W57)', () => {
+  it('die fünf Beispiele in Fassung 1 bestehen Schema, lesen() und passt() mit ihrem Deckblatt (Rollenwort)', () => {
+    expect(beispiele1.map(([n]) => n)).toEqual(beispiele.map(([n]) => n));
+    for (const [name, text] of beispiele1) {
+      expect(schemaPruefen(JSON.parse(text)), name).toBe(true);
+      const g = lesenMitGrund(text);
+      expect(g.grund, name).toBeNull();
+      expect(g.lesehilfe!.hefta, name).toBe(1);
+      expect(pruefen(g.lesehilfe!, musterMappe(g.lesehilfe!)), name).toEqual([]);
+    }
+  });
+
+  it('Gegenproben: Fassung 1 ohne Rollenwort auf dem Deckblatt passt nicht; Fassung 2 mit Feldern aus 1 wird abgelehnt', () => {
+    const l1 = lesen(beispiele1[1]![1])!;
+    const mappe = musterMappe(l1);
+    const ohneWort = { ...mappe, text: mappe.text.replace(/^Hauptmieter$/m, 'Angestellt') };
+    expect(pruefen(l1, ohneWort).join(' ')).toContain('mit dieser Rolle');
+    // Fassung 2 mit `kontakt` statt `ansprech`: Telefon ohne Ansprechperson.
+    expect(lesenMitGrund(JSON.stringify({ ...l1, hefta: 2 })).grund).toContain('ohne ansprech');
+    // Fassung 2 mit `hauptmieter` als erster Rolle bleibt erlaubt (gelesen wie `vertrag`).
+    const l2 = lesen(beispiele[1]![1])!;
+    l2.haushalt.personen[0]!.rolle = 'hauptmieter';
+    expect(pruefen(l2, musterMappe(l2))).toEqual([]);
+  });
+});
 
 describe('hefta-json: die Beispiele', () => {
   it('gibt es fünf, und jedes besteht Schema, lesen() und passt() mit seinem Deckblatt', () => {
@@ -50,7 +82,7 @@ describe('hefta-json: die Beispiele', () => {
       const g = lesenMitGrund(text);
       expect(g.grund, name).toBeNull();
       expect(pruefen(g.lesehilfe!, musterMappe(g.lesehilfe!)), name).toEqual([]);
-      expect(JSON.parse(text).hefta, name).toBe(1);
+      expect(JSON.parse(text).hefta, name).toBe(2);
       expect('modus' in JSON.parse(text), name).toBe(false);
     }
   });
@@ -100,7 +132,19 @@ describe('hefta-json: Gegenproben, jede wird nicht gezeigt', () => {
       (l) => (l.haushalt.personen[2]!.unterlagen[2]!.seiten_mappe.bis = 17),
       { schema: false },
     ],
-    ['zwei Kontaktpersonen', (l) => (l.haushalt.personen[1]!.kontakt = true), { schema: false }],
+    ['zwei Ansprechpersonen', (l) => (l.haushalt.personen[1]!.ansprech = true), { schema: false }],
+    [
+      'Ansprechperson nicht zuerst',
+      (l) => {
+        const [a, b] = l.haushalt.personen;
+        delete a!.ansprech;
+        delete a!.telefon;
+        delete a!.telefon_e164;
+        delete a!.email;
+        b!.ansprech = true;
+      },
+      { schema: false },
+    ],
     [
       'Telefon bei einer Person ohne Kontakt',
       (l) => {
@@ -137,7 +181,18 @@ describe('hefta-json: Gegenproben, jede wird nicht gezeigt', () => {
       { schema: false },
     ],
     ['Rolle keine Kennung', (l) => (l.haushalt.personen[1]!.rolle = 'Mit Mieter' as P['rolle'])],
-    ['zwei Hauptmieter', (l) => (l.haushalt.personen[1]!.rolle = 'hauptmieter'), { schema: false }],
+    [
+      'Bürgin als Ansprechperson',
+      (l) => {
+        const p = l.haushalt.personen;
+        const b = p[2]!;
+        p.splice(2, 1);
+        p.unshift(b);
+        for (const x of p) delete x.ansprech;
+        b.ansprech = true;
+      },
+      { schema: false },
+    ],
     ['Bürgin vor jemandem im Mietvertrag', (l) => l.haushalt.personen.reverse(), { schema: false }],
     [
       'Unterlage auf dem Deckblatt (Seite 1)',
@@ -287,7 +342,7 @@ describe('hefta-json: lesen()', () => {
   });
 
   it('ein doppelter Schlüssel macht die Lesehilfe unlesbar', () => {
-    const text = beispiele[0]![1].replace('"hefta": 1,', '"hefta": 1, "hefta": 1,');
+    const text = beispiele[0]![1].replace('"hefta": 2,', '"hefta": 2, "hefta": 2,');
     expect(lesenMitGrund(text).lesehilfe).toBeNull();
   });
 });

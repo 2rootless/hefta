@@ -1,5 +1,7 @@
 #!/bin/sh
-# PC188: Nimmt die Store-Bilder 01 bis 09 im Simulator auf, je in 1320 × 2868 (Pro Max) und 1206 × 2622 (Pro).
+# PC188: Nimmt die Store-Bilder 01 bis 09 im Simulator auf, seit PC191 nur in 1206 × 2622 (Pro): Mit der größeren
+# Abmessung konnte App Store Connect nichts anfangen. Insel und Statusleiste übermalt danach
+# werkzeug/store-bilder-ohne-leiste.py mit dem Grund der App (W52); der Inhalt bleibt in seiner echten Lage.
 # Die App (Bau mit VITE_AUFNAHMEN=1) meldet „AUFNAHME BEREIT nn“ auf die Konsole; dann wird das Bild genommen.
 # Je Gerät stehen in aufnahmen/<gerät>/messung.txt Gerät, Pixelgröße, Skala und safe-area-inset-top.
 set -eu
@@ -66,6 +68,5 @@ aufnehmen() {
   xcrun simctl delete "$UDID" || true
 }
 
-aufnehmen "iPhone 17 Pro Max" "1320x2868" "iPhone 16 Pro Max"
 aufnehmen "iPhone 17 Pro" "1206x2622" "iPhone 16 Pro"
 ls -R aufnahmen

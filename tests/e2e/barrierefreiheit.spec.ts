@@ -76,8 +76,8 @@ test('Tab „Mappe“: Überschriften, Personen als Links, Zeilen mit Stand, Rei
   // W37: Der Satz kommt aus Pool P2 (zwei offen, ihr).
   expect(kopf[1]!.slice(0, 3)).toBe('H2 ');
   expect(kopf[1]!.slice(3)).toMatch(stimmungMuster('P2', { anzahl: 2, an: 'ihr' }));
-  expect(kopf[2]).toBe('H2 Max Hauptmieter');
-  expect(kopf[3]).toBe('H2 Lea Mitmieterin');
+  expect(kopf[2]).toBe('H2 Max Im Mietvertrag');
+  expect(kopf[3]).toBe('H2 Lea Im Mietvertrag');
   expect(kopf[4]).toBe('H2 Petra Bürgin');
   expect(kopf[5]).toBe('H2 Für den ganzen Haushalt');
 
@@ -107,8 +107,8 @@ test('Tab „Mappe“: Überschriften, Personen als Links, Zeilen mit Stand, Rei
     /link "Haushalt bearbeiten: /,
     // W37: der Satz aus Pool P2.
     new RegExp(`heading "${stimmungMuster('P2', { anzahl: 2, an: 'ihr', ganz: false }).source}`),
-    /link "Max Hauptmieter"/,
-    /link "Lea Mitmieterin"/,
+    /link "Max Im Mietvertrag"/,
+    /link "Lea Im Mietvertrag"/,
     /Zusätzlich, falls der Vermieter fragt/,
     /link "Petra Bürgin"/,
     /link "Jetzt sichern"/,
@@ -128,9 +128,10 @@ test('Tab „Mappe“: Überschriften, Personen als Links, Zeilen mit Stand, Rei
 test('Ohne Bürgen gibt es keine Trennzeile: Die Personen sind Ebene 2', async ({ page }) => {
   await laden(page, '23-ohne-datum');
   const kopf = await ueberschriften(page);
-  expect(kopf).toContain('H2 Max Hauptmieter');
+  expect(kopf).toContain('H2 Max Im Mietvertrag');
   await expect(page.getByText('Zusätzlich, falls der Vermieter fragt')).toHaveCount(0);
-  expect(kopf.some((k) => k.includes('Im Mietvertrag'))).toBe(false);
+  // keine Gruppenüberschrift „Im Mietvertrag“ als Trennzeile; der Personenkopf darf es sagen
+  expect(kopf.some((k) => /^H\d Im Mietvertrag$/.test(k))).toBe(false);
 });
 
 test('Personenseite und Rutsch: Haarlinie als benannte Liste, Register mit Reitern (DP39)', async ({
@@ -159,7 +160,7 @@ test('Fokus: nach einem Seitenwechsel auf dem Titel, sichtbarer Ring, Felder beh
   browserName,
 }) => {
   await laden(page, '01-standard');
-  await page.getByRole('link', { name: /^Lea Mitmieterin$/ }).click();
+  await page.getByRole('link', { name: /^Lea Im Mietvertrag$/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Lea' })).toBeFocused();
 
   await page.getByRole('link', { name: 'Ändern', exact: false }).first().click();
@@ -242,7 +243,7 @@ test.describe('PC153, ohne Service Worker (sonst sieht der Test die Dateien nich
       (window as unknown as { __heftaOhneVorladen: boolean }).__heftaOhneVorladen = true;
     });
     await laden(page, '01-standard');
-    await page.getByRole('link', { name: /^Lea Mitmieterin$/ }).click();
+    await page.getByRole('link', { name: /^Lea Im Mietvertrag$/ }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Lea' })).toBeFocused();
     let aufgehalten = 0;
     await page.route('**/assets/*.js', async (r) => {

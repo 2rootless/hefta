@@ -93,7 +93,7 @@ test('Abbruch mit Max und Lea: „ihr“, zwei Personen im Deckblatt, Lea ersche
   await page.getByRole('link', { name: 'Person hinzufügen' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Wer zieht mit ein\?/);
   await page.getByLabel('Vorname').fill('Lea');
-  await page.getByRole('radio', { name: 'Mitmieterin', exact: true }).click();
+  // W57: Im Vertrag wählt man keine Form des Rollenworts mehr.
   await page.getByRole('button', { name: 'Hinzufügen', exact: true }).click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'Wer gehört noch dazu?' }),
@@ -160,7 +160,7 @@ test('Fertig angelegt (über „Wohnungen“): „Mappe“ zeigt die Mappe, nich
   page,
 }) => {
   await erstePerson(page, { vorname: 'Max', bezeichnung: 'Hauptmieter' });
-  await personHinzufuegen(page, /Mitmieter hinzufügen/, {
+  await personHinzufuegen(page, /Person im Mietvertrag hinzufügen/, {
     vorname: 'Lea',
     bezeichnung: 'Mitmieterin',
   });

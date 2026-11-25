@@ -1,5 +1,5 @@
 {
-  "hefta": 1,
+  "hefta": 2,
   "erstellt": "2026-11-18T21:07:30+01:00",
   "fassung": 1,
   "seitenzahl": 4,
@@ -13,8 +13,8 @@
         "name": "Paul Beispiel",
         "vorname": "Paul",
         "nachname": "Beispiel",
-        "rolle": "hauptmieter",
-        "kontakt": true,
+        "rolle": "vertrag",
+        "ansprech": true,
         "email": "paul.beispiel@example.com",
         "unterlagen": [
           {
@@ -38,7 +38,7 @@
         "name": "Mia Beispiel",
         "vorname": "Mia",
         "nachname": "Beispiel",
-        "rolle": "mitmieter",
+        "rolle": "vertrag",
         "unterlagen": [
           {
             "typ": "selbstauskunft",

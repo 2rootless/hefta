@@ -3,7 +3,7 @@ import type { PersonStand } from '../domain/regelkatalog';
 import type { HaushaltsAngaben } from '../domain/selbstauskunft';
 import { zeichenFunde } from './mappeDaten';
 
-const stand = (person: object, rolle = 'hauptmieter') =>
+const stand = (person: object, rolle = 'vertrag') =>
   ({
     rolle,
     person: {

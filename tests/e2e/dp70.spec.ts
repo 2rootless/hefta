@@ -347,7 +347,7 @@ test('DP70 K1-3: 200 % Zoom (195 × 422), Wahl „Gehaltsabrechnung / Kontoauszu
   const pdf = Buffer.from(await doc.save());
   await page.setViewportSize({ width: 390, height: 844 });
   await haushaltMitMax(page);
-  await page.getByRole('link', { name: /^Max Hauptmieter$/ }).click();
+  await page.getByRole('link', { name: /^Max Im Mietvertrag$/ }).click();
   await page.getByRole('link', { name: /^Gehalts.?nachweise/ }).click();
   await expect(page.getByRole('heading', { level: 1 })).not.toHaveText('Max');
   const plus = page.locator('button.zeile.plus', { hasNotText: 'Notiz' });

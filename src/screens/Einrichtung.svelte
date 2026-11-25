@@ -21,7 +21,7 @@
   import Zurueck from '../ui/Zurueck.svelte';
 
   const erste = $derived(
-    daten.ansicht?.mitglieder.find((m) => m.zugehoerigkeit.rolle === 'hauptmieter'),
+    daten.ansicht?.mitglieder.find((m) => m.person.id === daten.ansicht?.haushalt.ansprechpersonId),
   );
   let werte = $state<PersonEingabe>({
     vorname: '',
@@ -92,7 +92,7 @@
       const neu = await haushaltAnlegen(verbindung, {
         kinder: 0,
         weitereErwachsene: 0,
-        personen: [{ ...angaben, rolle: 'hauptmieter' }],
+        personen: [{ ...angaben, rolle: 'vertrag' }],
       });
       // Angefangen, bis Schritt 2 fertig ist (B26): Bricht man ab, zeigt der Tab „Mappe“ den Stand.
       await haushaltAendern(verbindung, neu.id, { einrichtungOffen: true });
@@ -125,7 +125,7 @@
   <div class="inhalt">
     <PersonFormular
       bind:werte
-      rolle="hauptmieter"
+      rolle="vertrag"
       du
       gespeichert={erste?.person}
       gespeicherteTypen={(daten.ansicht?.dokumente ?? [])

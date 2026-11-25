@@ -107,11 +107,11 @@ function haushalt() {
   ];
   const dokumente = teile.map((x) => x.d);
   const versionen = teile.flatMap((x) => x.v);
-  const stand = (p: Person, rolle: 'hauptmieter' | 'mitmieter' | 'buerge', farbe: number) =>
+  const stand = (p: Person, rolle: 'vertrag' | 'buerge', farbe: number) =>
     personStand(p, { rolle, farbe, bezeichnung: 'neutral' }, dokumente, versionen, HEUTE);
   return [
-    stand(person('Max'), 'hauptmieter', 1),
-    stand(person('Lea'), 'mitmieter', 2),
+    stand(person('Max'), 'vertrag', 1),
+    stand(person('Lea'), 'vertrag', 2),
     stand(person('Petra'), 'buerge', 3),
   ];
 }

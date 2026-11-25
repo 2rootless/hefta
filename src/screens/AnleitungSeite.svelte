@@ -6,8 +6,9 @@
   import AnleitungTeilen from '../ui/AnleitungTeilen.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
 
+  // Ohne Haushalt „du“ (E369, hebt E74.4 auf), sonst „ihr“ ab zwei Personen ohne Bürgen.
   const ihr = $derived(
-    !daten.ansicht ||
+    !!daten.ansicht &&
       daten.ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
   );
 </script>

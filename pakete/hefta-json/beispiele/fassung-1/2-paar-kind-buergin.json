@@ -1,0 +1,144 @@
+{
+  "hefta": 1,
+  "erstellt": "2026-11-18T19:02:55+01:00",
+  "fassung": 2,
+  "seitenzahl": 16,
+  "bewerbung": {
+    "kennung": "d2e0f734-0b59-41ea-95f4-c9715acbe034",
+    "wohnung": {
+      "strasse": "Lindenring 3",
+      "rest": "Erdgeschoss, 20259 Hamburg",
+      "teile": {
+        "strasse": "Lindenring",
+        "hausnummer": "3",
+        "plz": "20259",
+        "ort": "Hamburg",
+        "lage": "Erdgeschoss",
+        "land": "DE"
+      }
+    },
+    "einzug": "2027-01-01"
+  },
+  "haushalt": {
+    "personen": [
+      {
+        "name": "Max Mustermann",
+        "vorname": "Max",
+        "nachname": "Mustermann",
+        "rolle": "hauptmieter",
+        "kontakt": true,
+        "telefon": "0171 3920001",
+        "telefon_e164": "+491713920001",
+        "email": "max.mustermann@example.com",
+        "unterlagen": [
+          {
+            "typ": "selbstauskunft",
+            "seiten_mappe": {
+              "von": 2,
+              "bis": 2
+            }
+          },
+          {
+            "typ": "gehaltsnachweis",
+            "seiten_mappe": {
+              "von": 3,
+              "bis": 5
+            },
+            "monate": ["2026-08", "2026-09", "2026-10"],
+            "vermerke": [
+              {
+                "art": "als_bild",
+                "datei": 2,
+                "monat": "2026-09"
+              }
+            ]
+          },
+          {
+            "typ": "bonitaet",
+            "seiten_mappe": {
+              "von": 6,
+              "bis": 6
+            },
+            "vom": "2026-10-28",
+            "vermerke": [
+              {
+                "art": "seiten_weggelassen",
+                "seiten_original": [2, 3]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Lea Mustermann",
+        "vorname": "Lea",
+        "nachname": "Mustermann",
+        "rolle": "mitmieter",
+        "unterlagen": [
+          {
+            "typ": "selbstauskunft",
+            "seiten_mappe": {
+              "von": 7,
+              "bis": 7
+            }
+          },
+          {
+            "typ": "gehaltsnachweis",
+            "seiten_mappe": {
+              "von": 8,
+              "bis": 10
+            },
+            "monate": ["2026-08", "2026-09", "2026-10"]
+          },
+          {
+            "typ": "bonitaet",
+            "seiten_mappe": {
+              "von": 11,
+              "bis": 11
+            },
+            "vom": "2026-10-30",
+            "pruefweg": "pruefcode"
+          }
+        ]
+      },
+      {
+        "name": "Petra Mustermann",
+        "vorname": "Petra",
+        "nachname": "Mustermann",
+        "rolle": "buerge",
+        "unterlagen": [
+          {
+            "typ": "selbstauskunft",
+            "seiten_mappe": {
+              "von": 12,
+              "bis": 12
+            }
+          },
+          {
+            "typ": "rentenbescheid",
+            "seiten_mappe": {
+              "von": 13,
+              "bis": 14
+            },
+            "vom": "2026-01-15"
+          },
+          {
+            "typ": "buergschaftserklaerung",
+            "seiten_mappe": {
+              "von": 15,
+              "bis": 16
+            }
+          }
+        ]
+      }
+    ],
+    "mitziehende": [
+      {
+        "text": "Ein Kind",
+        "anzahl": 1,
+        "art": "kind"
+      }
+    ]
+  },
+  "loeschwunsch": "Falls die Wohnung an jemand anderen geht, löschen Sie diese Unterlagen bitte. Vielen Dank."
+}

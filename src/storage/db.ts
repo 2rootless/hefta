@@ -6,6 +6,7 @@ import {
   type StoreNames,
 } from 'idb';
 import { hefteAusBewerbungen } from '../domain/hefte';
+import { ansprechperson, rolleNeu } from '../domain/nachruecken';
 import {
   type Bewerbung,
   type DateiEintrag,
@@ -91,7 +92,52 @@ const MIGRATIONEN: ((db: HeftaDb, tx: Upgrade) => void)[] = [
   // Zugehörigkeit. Die höhere Nummer sorgt dafür, dass 2.0.1 ein Backup aus 2.1 sauber ablehnt („aus einer neueren
   // Version“), statt es halb zu verstehen.
   () => {},
+  // Schema 4, W57 (PC198, E363): Hauptmieter und Mitmieter werden „vertrag“; der Haushalt bekommt
+  // `ansprechpersonId`, die bisherige hauptmietende Person. Nichts wird gelöscht. 2.1 lehnt Backups mit Schema 4 ab,
+  // bevor es schreibt („aus einer neueren Version“).
+  (_db, tx) => {
+    const zug = tx.objectStore('zugehoerigkeiten');
+    const hh = tx.objectStore('haushalte');
+    void Promise.all([zug.getAll(), hh.getAll()]).then(async ([zugs, haushalte]) => {
+      const neu = schema4({ zugehoerigkeiten: zugs, haushalte });
+      for (const z of neu.zugehoerigkeiten as Zugehoerigkeit[]) await zug.put(z);
+      for (const h of neu.haushalte as Haushalt[]) await hh.put(h);
+    });
+  },
 ];
+
+/**
+ * Die Übernahme in Schema 4 als reine Funktion (Datenbank und Backups). Ansprechperson wird die hauptmietende Person,
+ * die noch im Haushalt ist (die erste nach der Reihenfolge); gibt es keine, die erste im Vertrag. Eine schon
+ * gesetzte Ansprechperson bleibt.
+ */
+export function schema4(daten: Record<string, unknown[]>): Record<string, unknown[]> {
+  type ZugAlt = Omit<Zugehoerigkeit, 'rolle'> & { rolle: string };
+  const zugs = (daten.zugehoerigkeiten ?? []) as ZugAlt[];
+  const haushalte = (daten.haushalte ?? []) as Haushalt[];
+  const nachHaushalt = new Map<string, ZugAlt[]>();
+  for (const z of zugs)
+    nachHaushalt.set(z.haushaltId, [...(nachHaushalt.get(z.haushaltId) ?? []), z]);
+  const neueHaushalte = haushalte.map((h) => {
+    if (h.ansprechpersonId) return h;
+    const eigene = nachHaushalt.get(h.id) ?? [];
+    const haupt = eigene
+      .filter((z) => z.rolle === 'hauptmieter' && !z.herausgenommenAm)
+      .sort((a, b) => a.reihenfolge - b.reihenfolge)[0];
+    const id =
+      haupt?.personId ??
+      ansprechperson(
+        null,
+        eigene.map((z) => ({ ...z, rolle: rolleNeu(z.rolle) })),
+      );
+    return id ? { ...h, ansprechpersonId: id } : h;
+  });
+  return {
+    ...daten,
+    zugehoerigkeiten: zugs.map((z) => ({ ...z, rolle: rolleNeu(z.rolle) })),
+    haushalte: neueHaushalte,
+  };
+}
 
 export const SCHEMA_VERSION = MIGRATIONEN.length;
 export const DB_NAME = 'hefta';
@@ -134,6 +180,8 @@ export const DATEN_MIGRATIONEN: Record<
   }),
   // Schema 3 (W42): Es kommt nur `ziehtMitEin` dazu; alte Daten haben es nicht und bleiben, wie sie sind.
   2: (daten) => daten,
+  // Schema 4 (W57): Rollen „vertrag“ und „buerge“, Ansprechperson am Haushalt.
+  3: schema4,
 };
 
 export function datenMigrieren(

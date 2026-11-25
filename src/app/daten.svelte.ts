@@ -6,7 +6,6 @@ import { datenbankOeffnen, type HeftaDb } from '../storage/db';
 import {
   einstellungenLaden,
   haushaltLaden,
-  hauptmieterSichern,
   telefoneUmsetzen,
   hefteLaden,
   hefteAusVersion1EinordnenEinmal,
@@ -59,17 +58,12 @@ function verbindungVerloren(e: unknown): boolean {
   );
 }
 
-// PC102 (E209): einmal je Start prüfen, dass jeder Haushalt genau eine hauptmietende Person hat.
-let hauptmieterGeprueft = false;
 let telefoneGeprueft = false;
 
 async function lesen() {
   const verbindung = await db();
   if (!daten.einstellungen?.version1Eingeordnet) await hefteAusVersion1EinordnenEinmal(verbindung);
-  if (!hauptmieterGeprueft) {
-    await hauptmieterSichern(verbindung);
-    hauptmieterGeprueft = true;
-  }
+  // W57: Die Prüfung der hauptmietenden Person je Start (PC102) fällt weg; die Ansprechperson ergibt sich beim Laden.
   // E222 (DP77, Abschnitt 5): einmal je Start; ein eingespieltes Backup setzt `sicherungEinspielen` selbst um.
   // Nicht bei jedem Laden: Die Schreibtransaktion nach jedem Speichern verzögerte das Neuzeichnen (NN8, WebKit).
   if (!telefoneGeprueft) {

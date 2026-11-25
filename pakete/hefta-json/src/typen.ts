@@ -1,6 +1,8 @@
-// Das Bild einer Lesehilfe `hefta.json` nach Fassung 1 (E218; Beschreibung: FORMAT.md und README.md).
+// Das Bild einer Lesehilfe `hefta.json` nach Fassung 2 (W57, E363; Fassung 1: E218; Beschreibung: FORMAT.md und
+// README.md).
 
-export type Rolle = 'hauptmieter' | 'mitmieter' | 'buerge';
+/** Fassung 2: `vertrag` oder `buerge`. Fassung 1 kannte `hauptmieter` und `mitmieter` statt `vertrag`. */
+export type Rolle = 'vertrag' | 'buerge' | 'hauptmieter' | 'mitmieter';
 export type MitziehendArt = 'kind' | 'erwachsen';
 export type Schritt = 'besichtigung' | 'will_wohnung' | 'zusage';
 
@@ -33,7 +35,12 @@ export interface Person {
   /** Pflicht in Fassung 1; darf leer sein. */
   nachname?: string;
   rolle: Rolle;
-  /** Diese Person steht als Kontakt auf dem Deckblatt; höchstens eine. */
+  /**
+   * Fassung 2: die Ansprechperson des Haushalts; höchstens eine, und sie steht zuerst. Sie steht unter „Kontakt“ auf
+   * dem Deckblatt und trägt Telefon und Mail.
+   */
+  ansprech?: true;
+  /** Nur Fassung 1: Diese Person steht als Kontakt auf dem Deckblatt; höchstens eine. In Fassung 2 `ansprech`. */
   kontakt?: true;
   telefon?: string;
   /** Dasselbe Telefon international; steht genau dann, wenn `telefon` steht (E222, L78-2). */

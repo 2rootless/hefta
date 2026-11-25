@@ -38,7 +38,7 @@ const ids = (liste: { typ: { id: string } }[]) => liste.map((x) => x.typ.id);
 describe('Mehrere Lebenslagen (DP47 G5)', () => {
   it('L2: angestellt, dazu selbstständig: fünf Unterlagen, keine doppelt, Einkommen in Reihenfolge', () => {
     const max = person({ weitereLagen: [{ id: 'l2', situation: 'selbststaendig' }] });
-    const s = personStand(max, 'hauptmieter', [], [], HEUTE);
+    const s = personStand(max, 'vertrag', [], [], HEUTE);
     expect(s.pfad.map((u) => u.typ.id)).toEqual([
       'selbstauskunft',
       'gehaltsnachweis',
@@ -53,7 +53,7 @@ describe('Mehrere Lebenslagen (DP47 G5)', () => {
   });
 
   it('L1: eine Lage: keine Lage vorn, Liste wie bisher', () => {
-    const s = personStand(person(), 'hauptmieter', [], [], HEUTE);
+    const s = personStand(person(), 'vertrag', [], [], HEUTE);
     expect(s.unterlagen.every((u) => !u.lage)).toBe(true);
   });
 
@@ -75,7 +75,7 @@ describe('Mehrere Lebenslagen (DP47 G5)', () => {
       lebenssituation: 'selbststaendig',
       weitereLagen: [{ id: 'l2', situation: 'angestellt' }],
     });
-    const liste = ids(unterlagenFuerPerson('hauptmieter', umgekehrt));
+    const liste = ids(unterlagenFuerPerson('vertrag', umgekehrt));
     expect(liste.indexOf('einkommen_selbststaendig')).toBeLessThan(
       liste.indexOf('gehaltsnachweis'),
     );
@@ -87,7 +87,7 @@ describe('Mehrere Lebenslagen (DP47 G5)', () => {
       ausbildungArt: 'studium',
       weitereLagen: [{ id: 'l2', situation: 'angestellt' }],
     });
-    expect(ids(unterlagenFuerPerson('mitmieter', lea))).toEqual(
+    expect(ids(unterlagenFuerPerson('vertrag', lea))).toEqual(
       expect.arrayContaining(['einkommen_ausbildung', 'gehaltsnachweis']),
     );
   });
@@ -98,7 +98,7 @@ describe('Mehrere Lebenslagen (DP47 G5)', () => {
       weitereLagen: [{ id: 'l2', situation: 'angestellt' }],
     });
     expect(wirksameLagen(amt).map((l) => l.situation)).toEqual(['leistungsbezug']);
-    expect(ids(unterlagenFuerPerson('hauptmieter', amt))).not.toContain('gehaltsnachweis');
+    expect(ids(unterlagenFuerPerson('vertrag', amt))).not.toContain('gehaltsnachweis');
     expect(lagenVon(amt)).toHaveLength(2);
   });
 
@@ -108,7 +108,7 @@ describe('Mehrere Lebenslagen (DP47 G5)', () => {
       weitereLagen: [{ id: 'l2', situation: 'angestellt' }],
       einkommenTrotzdem: true,
     });
-    expect(ids(unterlagenFuerPerson('hauptmieter', an))).toContain('gehaltsnachweis');
+    expect(ids(unterlagenFuerPerson('vertrag', an))).toContain('gehaltsnachweis');
     const dok = {
       id: 'd',
       createdAt: '',
@@ -135,7 +135,7 @@ describe('Mehrere Lebenslagen (DP47 G5)', () => {
       erkannteWerte: null,
       vomNutzerBestaetigt: null,
     };
-    const aus = personStand({ ...an, einkommenTrotzdem: false }, 'hauptmieter', [dok], [v], HEUTE);
+    const aus = personStand({ ...an, einkommenTrotzdem: false }, 'vertrag', [dok], [v], HEUTE);
     expect(aus.nichtMehrNoetig.map((u) => u.typ.id)).toContain('gehaltsnachweis');
   });
 
@@ -144,7 +144,7 @@ describe('Mehrere Lebenslagen (DP47 G5)', () => {
       arbeitgeber: 'Musterwerk GmbH',
       weitereLagen: [{ id: 'l2', situation: 'angestellt', arbeitgeber: 'Café Beispiel' }],
     });
-    const liste = unterlagenFuerPerson('hauptmieter', max);
+    const liste = unterlagenFuerPerson('vertrag', max);
     expect(ids(liste).filter((id) => id.startsWith('gehaltsnachweis'))).toEqual([
       'gehaltsnachweis',
       'gehaltsnachweis2',
@@ -186,7 +186,7 @@ describe('Mehrere Lebenslagen (DP47 G5)', () => {
     });
     const s = personStand(
       max,
-      'hauptmieter',
+      'vertrag',
       [dok('gehaltsnachweis2')],
       [v('d-gehaltsnachweis2')],
       HEUTE,
@@ -223,7 +223,7 @@ describe('Mehrere Lebenslagen (DP47 G5)', () => {
       erkannteWerte: null,
       vomNutzerBestaetigt: null,
     };
-    const s = personStand(person(), 'hauptmieter', [dok], [v], HEUTE);
+    const s = personStand(person(), 'vertrag', [dok], [v], HEUTE);
     expect(s.nichtMehrNoetig.map((u) => u.typ.id)).toEqual(['gehaltsnachweis2']);
   });
 
@@ -312,7 +312,7 @@ describe('Mehrere Lebenslagen (DP47 G5)', () => {
     });
     const s = personStand(
       max,
-      'hauptmieter',
+      'vertrag',
       [dok('gehaltsnachweis'), dok('einkommen_selbststaendig')],
       [v('gehaltsnachweis', '2026-10'), v('einkommen_selbststaendig', null)],
       HEUTE,

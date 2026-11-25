@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { lagenText } from '../ui/texte';
   // Einrichtung Schritt 2 „Wer gehört noch dazu?“ (design/einrichtung-rutsch-navigation.md): Das Band
   // baut sich mit dem Haushalt auf. Rangfolge über Größe und Ort: Mitmieter groß oben, Zähler klein in
   // der Mitte, Bürge abgesetzt unten. Später „Euer Haushalt“: dieselben Inhalte als ruhige Liste ohne
@@ -8,7 +7,6 @@
   import { daten, db, neuLaden, stillLaden } from '../app/daten.svelte';
   import { abschliessen, ersetzen, neuAnfangen, zurueckGehen } from '../app/router.svelte';
   import { einmal } from '../ui/einmal';
-  import type { Mitglied } from '../storage/speicher';
   import { rollenText } from '../domain/regelkatalog';
   import { t, tagZusammen } from '../i18n';
   import {
@@ -23,19 +21,17 @@
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
   import { homescreenNochmal } from '../ui/homescreen';
   import Symbol from '../ui/Symbol.svelte';
-  import { tonStil } from '../ui/personTon';
   import Zurueck from '../ui/Zurueck.svelte';
   import { herkunftsReiter } from '../ui/herkunft.svelte';
   import HaushaltLoeschenBlatt from '../ui/HaushaltLoeschenBlatt.svelte';
+  import HaushaltFaecher from '../ui/HaushaltFaecher.svelte';
 
   let { einrichtung = false }: { einrichtung?: boolean } = $props();
   const herkunft = $derived(herkunftsReiter());
 
   const mitglieder = $derived(daten.ansicht?.mitglieder ?? []);
-  const vertrag = $derived([
-    ...mitglieder.filter((m) => m.zugehoerigkeit.rolle === 'hauptmieter'),
-    ...mitglieder.filter((m) => m.zugehoerigkeit.rolle === 'mitmieter'),
-  ]);
+  // W57: Die Mitglieder kommen geordnet, die Ansprechperson zuerst (E366).
+  const vertrag = $derived(mitglieder.filter((m) => m.zugehoerigkeit.rolle === 'vertrag'));
   const buergen = $derived(mitglieder.filter((m) => m.zugehoerigkeit.rolle === 'buerge'));
   // PC10 (DP20): Solange die Einrichtung nicht weiß, wer einzieht, „ihr“. Danach ab zwei Personen „ihr“,
   // allein „du“.
@@ -48,6 +44,15 @@
   const suffix = $derived(einrichtung ? '/einrichtung' : '');
 
   const herausgenommen = $derived(daten.ansicht?.herausgenommen ?? []);
+  const herausgenommenFrage = $derived(
+    herausgenommen.filter(
+      (m) =>
+        !!m.zugehoerigkeit.herausgenommenAm &&
+        !m.zugehoerigkeit.ziehtMitEin &&
+        !m.zugehoerigkeit.behalten &&
+        dreiMonateHer(m.zugehoerigkeit.herausgenommenAm),
+    ),
+  );
   const auskunftFertig = $derived.by(() => {
     const hh = haushaltsAngabenAus(daten.ansicht);
     return mitglieder.filter((m) => vollstaendig(m.person, m.zugehoerigkeit.rolle, hh)).length;
@@ -93,34 +98,6 @@
   });
 </script>
 
-{#snippet zeile(m: Mitglied, zusatz: boolean)}
-  <li class="zeile">
-    <!-- DP39, 1.1: Zeichen in der App-Farbe; Bürgen mit Umriss in der Druckfarbe. -->
-    <span
-      class="zeichen person-ton"
-      class:zusatz
-      style={tonStil(m.zugehoerigkeit.farbe)}
-      aria-hidden="true"
-    ></span>
-    <span class="tx">
-      <b
-        >{m.person.vorname}
-        <span class="rolle">{rollenText(m.zugehoerigkeit.rolle, m.zugehoerigkeit.bezeichnung)}</span
-        ></b
-      >
-      <small>{m.person.lebenssituation ? lagenText(m.person) : ''}</small>
-    </span>
-    <!-- W42 (DP93, Fall 6): „Rolle“ an jeder Person; die ganze Zeile öffnet die Personenseite zur Wahl, nach
-         „Speichern“ geht es zurück in den Haushalt (W39). -->
-    <a
-      class="aendern"
-      href="#/person-aendern/{m.person.id}{suffix}"
-      aria-label={t('einrichtung.haushalt.rolleAendern', { name: m.person.vorname })}
-      >{t('personSeite.rolle')}</a
-    >
-  </li>
-{/snippet}
-
 {#snippet zaehler(feld: 'kinder' | 'weitereErwachsene', titel: string, hinweis: string)}
   <div class="zaehler">
     <span class="lab">{titel}<small>{hinweis}</small></span>
@@ -149,19 +126,12 @@
 {/snippet}
 
 {#snippet mitmieterFeld()}
-  {#if vertrag.length <= 1}
-    {@render plusZeile(
-      t('einrichtung.haushalt.mitmieter'),
-      t('einrichtung.haushalt.mitmieterHinweis'),
-      `#/person-neu/mitmieter${suffix}`,
-    )}
-  {:else}
-    {@render plusZeile(
-      t('einrichtung.haushalt.weiterePerson'),
-      t('einrichtung.haushalt.weiterePersonHinweis'),
-      `#/person-neu/mitmieter${suffix}`,
-    )}
-  {/if}
+  <!-- DP130, B3: eine Fassung, überall „Mietvertrag“ (W6). -->
+  {@render plusZeile(
+    t('einrichtung.haushalt.mitmieter'),
+    t('einrichtung.haushalt.mitmieterHinweis'),
+    `#/person-neu/mitmieter${suffix}`,
+  )}
 {/snippet}
 
 {#snippet buergeFeld()}
@@ -229,40 +199,24 @@
   {/if}
 
   {#if haushalt}
-    <!-- DP39, Abschnitt 5: Gruppen als Etikett über einer Karte; Personen als Zeilen, keine Farbflächen. -->
+    <!-- W57/W54, Bedienung R1 „Fächer“ (PC199, DP128): Im Mietvertrag, Zieht mit ein, Bürgt, Nicht mehr dabei. -->
+    <HaushaltFaecher {suffix} />
+    <!-- Hinzufügen und Zählen bleiben unter den Fächern. -->
     <section class="hh-gruppe">
-      <h2>{t('uebersicht.abschnittVertrag')}</h2>
       <ul class="liste">
-        {#each vertrag as m (m.person.id)}
-          {@render zeile(m, false)}
-        {/each}
         {@render mitmieterFeld()}
-      </ul>
-    </section>
-    <section class="hh-gruppe">
-      <h2>{t('einrichtungZwei.ziehenMitEin')}</h2>
-      <div class="zaehler-kasten">{@render zaehlerBeide()}</div>
-    </section>
-    <section class="hh-gruppe">
-      <div class="gruppe-kopf">
-        <h2>{t('uebersicht.abschnittBuergen')}</h2>
-        <p class="gruppe-satz">{t('uebersicht.zusatzZeile')}</p>
-      </div>
-      <ul class="liste">
-        {#each buergen as m (m.person.id)}
-          {@render zeile(m, true)}
-        {/each}
         {@render buergeFeld()}
       </ul>
+      <div class="zaehler-kasten">{@render zaehlerBeide()}</div>
     </section>
   {/if}
   {#if haushalt}
-    {#if herausgenommen.length}
-      <!-- E3d: Herausgenommene bleiben mit Unterlagen, bis man sie zurückholt oder ganz löscht. -->
+    {#if herausgenommenFrage.length}
+      <!-- E3d: Die Frage nach drei Monaten bleibt; Zurückholen geht jetzt über die Fächer (W54). -->
       <section class="raus">
         <h2>{t('einrichtung.haushalt.herausgenommen')}</h2>
         <ul>
-          {#each herausgenommen as m (m.person.id)}
+          {#each herausgenommenFrage as m (m.person.id)}
             {@const zahl = unterlagenVon(m.person.id)}
             {@const frage =
               !!m.zugehoerigkeit.herausgenommenAm &&
@@ -411,12 +365,6 @@
     text-wrap: balance;
   }
 
-  .zusatz {
-    border: 2px solid var(--farbe);
-    background: var(--surface);
-    color: var(--ink);
-  }
-
   .rolle {
     font-size: calc(14 * var(--px));
     line-height: calc(18 * var(--px));
@@ -424,21 +372,6 @@
   }
 
   /* DP35 R2: Pfeil (16 px, grau) statt „Ändern“; die Fläche des Links deckt die ganze Zeile. */
-  .aendern {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--tap-target);
-    color: var(--ink);
-    font-weight: 600;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-
-  .aendern::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-  }
 
   .zeile {
     position: relative;
@@ -506,20 +439,6 @@
     margin: var(--space-5) var(--space-4) 0;
   }
 
-  .hh-gruppe h2 {
-    margin: 0 var(--space-1) 8px;
-    font-size: calc(17 * var(--px));
-    line-height: calc(22 * var(--px));
-    font-weight: 800;
-  }
-
-  .gruppe-satz {
-    margin: -4px var(--space-1) 8px;
-    font-size: calc(13 * var(--px));
-    line-height: calc(18 * var(--px));
-    color: var(--ink-muted);
-  }
-
   .liste,
   .zaehler-kasten {
     margin: 0;
@@ -553,20 +472,10 @@
     line-height: calc(22 * var(--px));
   }
 
-  .zeile .rolle {
-    margin-left: 4px;
-    font-size: calc(14 * var(--px));
-    font-weight: 600;
-  }
-
   .zeile small {
     font-size: calc(13 * var(--px));
     line-height: calc(18 * var(--px));
     color: var(--ink-muted);
-  }
-
-  .zeile .aendern {
-    margin-left: auto;
   }
 
   .zaehler-kasten .zaehler {
@@ -709,32 +618,6 @@
     margin: 24px 16px 0;
   }
 
-  .hh-gruppe h2 {
-    margin: 0 4px 8px;
-    font-size: calc(15 * var(--px));
-    line-height: calc(20 * var(--px));
-    font-weight: 650;
-  }
-
-  .gruppe-kopf {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 0 12px;
-    margin: 0 4px 8px;
-  }
-
-  .gruppe-kopf h2 {
-    margin: 0;
-  }
-
-  .gruppe-kopf .gruppe-satz {
-    margin: 0;
-    font-size: calc(13 * var(--px));
-    color: var(--ink-muted);
-  }
-
   .liste,
   .zaehler-kasten {
     margin: 0;
@@ -758,30 +641,10 @@
     border-top: 1px solid var(--track);
   }
 
-  .zeichen {
-    flex: none;
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
-    background: var(--p-app);
-  }
-
-  .zeichen.zusatz {
-    background: none;
-    box-shadow: inset 0 0 0 2px var(--p-linie);
-  }
-
   .zeile b {
     font-size: calc(16 * var(--px));
     line-height: calc(21 * var(--px));
     font-weight: 650;
-  }
-
-  .zeile .rolle {
-    margin-left: 8px;
-    font-size: calc(14 * var(--px));
-    font-weight: 400;
-    color: var(--ink-muted);
   }
 
   .zeile small {

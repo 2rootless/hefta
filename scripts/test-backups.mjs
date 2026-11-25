@@ -61,15 +61,18 @@ async function pdf(seiten, { grau = false, kennzeichnung = KENNZEICHEN_MUSTER } 
   return Buffer.from(await doc.save()).toString('base64');
 }
 
-const gehaltSeite = (name, firma, monat, netto) => ({
+// Brutto und Abzüge wie bisher (Mappe 1 bleibt Byte für Byte gleich). Haushalt A bringt eigene Werte mit, die
+// zum Beruf passen und genau auf den Auszahlungsbetrag aufgehen (W10, PC193, DP121).
+const ABZUEGE_ALT = { brutto: '3.980,00', lohnsteuer: '512,33', sozial: '824,67' };
+const gehaltSeite = (name, firma, monat, netto, abzuege = ABZUEGE_ALT) => ({
   kopf: firma,
   titel: `Verdienstabrechnung ${monatText(monat)}`,
   zeilen: [
     `Mitarbeiter: ${name}`,
     `Abrechnungsmonat: ${monatText(monat)}`,
-    'Gesamtbrutto 3.980,00 EUR',
-    'Lohnsteuer 512,33 EUR',
-    'Sozialversicherung 824,67 EUR',
+    `Gesamtbrutto ${abzuege.brutto} EUR`,
+    `Lohnsteuer ${abzuege.lohnsteuer} EUR`,
+    `Sozialversicherung ${abzuege.sozial} EUR`,
     `Auszahlungsbetrag ${netto} EUR`,
   ],
 });
@@ -181,12 +184,23 @@ const ausListe = (voll) => {
 const HAUSHALT_A = {
   id: '6-haushalt-a',
   titel: 'Haushalt A: Jarne und Selin, ein Kind, Hiltrud bürgt, mit Passwort (W40)',
-  haupt: { ...ausListe('Jarne Ostendorp'), ag: 'Tidenwerk Anlagenbau GmbH' },
-  mit: { ...ausListe('Selin Akgül'), ag: 'Pflegezentrum Seilerkoppel' },
+  // PC193 (E360, DP121): Jarne Logistikplaner, Selin Bauingenieurin; beide Firmen im Registerportal der Länder am
+  // 24.11. ohne Treffer. Netto, Brutto und Abzüge passend zum Beruf (W10), Lohnsteuerklasse I, gerundet.
+  haupt: {
+    ...ausListe('Jarne Ostendorp'),
+    ag: 'Tidenwerk Logistik GmbH',
+    lohn: { netto: 2850, brutto: '4.400,00', lohnsteuer: '637,00', sozial: '913,00' },
+  },
+  mit: {
+    ...ausListe('Selin Akgül'),
+    ag: 'Seilerkoppel Ingenieure GmbH',
+    lohn: { netto: 2700, brutto: '4.150,00', lohnsteuer: '588,87', sozial: '861,13' },
+  },
   buerge: {
     ...ausListe('Hiltrud Ostendorp'),
     ag: 'Wohnungsbau Kalkbrenner eG',
     lage: 'angestellt',
+    lohn: { netto: 2100, brutto: '3.200,00', lohnsteuer: '436,00', sozial: '664,00' },
   },
   vertrag: 'Jarne Ostendorp und Selin Akgül',
   adresse: 'Kranichstieg 3, Erdgeschoss\n20259 Hamburg',
@@ -213,10 +227,17 @@ const vollName = (p) => `${p.vor} ${p.nach}`;
 function familie(n) {
   // Kennzeichnung und Absender je Haushalt (PC180): Mappe 1 behält „MUSTER“, Haushalt A trägt „Erfunden“.
   const k = { kennzeichnung: n.marke.kennzeichnung };
-  const gehalt = (name, firma, monat, netto) => pdf([gehaltSeite(name, firma, monat, netto)], k);
-  const gehaltSammel = (name, firma, monate, netto) =>
+  // Netto als Zahl für die Angaben, als Text für die Abrechnung; ohne eigene Werte wie bisher (Mappe 1).
+  const netto = (p, alt) => p.lohn?.netto ?? alt;
+  const nettoText = (p, alt) =>
+    `${netto(p, alt).toLocaleString('de-DE', { minimumFractionDigits: 2 })}`;
+  const gehalt = (p, monat, alt) =>
+    pdf([gehaltSeite(vollName(p), p.ag, monat, nettoText(p, alt), p.lohn ?? ABZUEGE_ALT)], k);
+  const gehaltSammel = (p, monate, alt) =>
     pdf(
-      monate.map((x) => gehaltSeite(name, firma, x, netto)),
+      monate.map((x) =>
+        gehaltSeite(vollName(p), p.ag, x, nettoText(p, alt), p.lohn ?? ABZUEGE_ALT),
+      ),
       k,
     );
   const bonitaet = (name, datum) =>
@@ -245,13 +266,13 @@ function familie(n) {
         n.haupt.vor,
         n.haupt.nach,
         'maennlich',
-        'hauptmieter',
+        'vertrag',
         'angestellt',
         {
           ...kontakt(n.haupt.tel, n.haupt.mail),
           beruf: n.haupt.beruf,
           arbeitgeber: n.haupt.ag,
-          nettoeinkommen: 2850,
+          nettoeinkommen: netto(n.haupt, 2850),
           abrechnungMeist: 'ende',
           selbstauskunft: { ...NEIN, haustiere: 'ja', haustiereText: 'eine Katze' },
         },
@@ -261,12 +282,7 @@ function familie(n) {
             variante: 'gehaltsabrechnung',
             name: 'Gehalt_Aug-Okt.pdf',
             aufteilung: ['2026-08', '2026-09', '2026-10'],
-            daten: gehaltSammel(
-              vollName(n.haupt),
-              n.haupt.ag,
-              ['2026-08', '2026-09', '2026-10'],
-              '2.850,00',
-            ),
+            daten: gehaltSammel(n.haupt, ['2026-08', '2026-09', '2026-10'], 2850),
           },
           {
             typ: 'bonitaet',
@@ -296,13 +312,13 @@ function familie(n) {
         n.mit.vor,
         n.mit.nach,
         'weiblich',
-        'mitmieter',
+        'vertrag',
         'angestellt',
         {
           ...kontakt(n.mit.tel, n.mit.mail),
           beruf: n.mit.beruf,
           arbeitgeber: n.mit.ag,
-          nettoeinkommen: 1950,
+          nettoeinkommen: netto(n.mit, 1950),
           abrechnungMeist: 'ende',
           selbstauskunft: { ...NEIN, haustiere: 'ja', haustiereText: 'eine Katze' },
         },
@@ -312,7 +328,7 @@ function familie(n) {
             monat: m,
             variante: 'gehaltsabrechnung',
             name: `${n.mit.vor}_Gehalt_${m}.pdf`,
-            daten: gehalt(vollName(n.mit), n.mit.ag, m, '1.950,00'),
+            daten: gehalt(n.mit, m, 1950),
           })),
           {
             typ: 'bonitaet',
@@ -351,7 +367,7 @@ function familie(n) {
           ...kontakt(n.buerge.tel, n.buerge.mail),
           beruf: n.buerge.beruf,
           arbeitgeber: n.buerge.ag,
-          nettoeinkommen: 2100,
+          nettoeinkommen: netto(n.buerge, 2100),
           selbstauskunft: NEIN,
         },
         [
@@ -384,12 +400,7 @@ function familie(n) {
                 variante: 'gehaltsabrechnung',
                 name: `${n.buerge.vor}_Gehalt_Aug-Okt.pdf`,
                 aufteilung: ['2026-08', '2026-09', '2026-10'],
-                daten: gehaltSammel(
-                  vollName(n.buerge),
-                  n.buerge.ag,
-                  ['2026-08', '2026-09', '2026-10'],
-                  '2.100,00',
-                ),
+                daten: gehaltSammel(n.buerge, ['2026-08', '2026-09', '2026-10'], 2100),
               },
           {
             typ: 'bonitaet',
@@ -423,7 +434,7 @@ async function plaene() {
           'Max',
           'Mustermann',
           'maennlich',
-          'hauptmieter',
+          'vertrag',
           'angestellt',
           {
             ...kontakt('0171 3920001', 'max.mustermann@example.com'),
@@ -470,7 +481,7 @@ async function plaene() {
           'Jonas',
           'Becker',
           'maennlich',
-          'hauptmieter',
+          'vertrag',
           'selbststaendig',
           {
             ...kontakt('0171 3920008', 'jonas.becker@example.com'),
@@ -509,7 +520,7 @@ async function plaene() {
           'Mira',
           'Yılmaz',
           'weiblich',
-          'mitmieter',
+          'vertrag',
           'studierend_azubi',
           {
             ...kontakt('0171 3920004', ''),
@@ -536,7 +547,7 @@ async function plaene() {
           'Kim',
           'Nowak',
           'neutral',
-          'mitmieter',
+          'vertrag',
           'leistungsbezug',
           {
             ...kontakt('', 'kim.nowak@example.com'),
@@ -613,7 +624,7 @@ async function plaene() {
           'Maximilian-Alexander',
           'Müller-Lüdenscheidt',
           'maennlich',
-          'hauptmieter',
+          'vertrag',
           'angestellt',
           {
             ...kontakt('0171 3920005', ''),
@@ -665,7 +676,7 @@ async function plaene() {
           'Олена',
           'Коваленко',
           'weiblich',
-          'mitmieter',
+          'vertrag',
           'angestellt',
           {
             ...kontakt('', 'olena@example.com'),
@@ -728,7 +739,7 @@ async function plaene() {
           'Max',
           'Mustermann',
           'maennlich',
-          'hauptmieter',
+          'vertrag',
           'angestellt',
           {
             ...kontakt('0171 3920001', 'max.mustermann@example.com'),

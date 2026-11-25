@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://hefta.de/format/hefta-json-1.schema.json",
-  "title": "hefta.json, Fassung 1",
+  "$id": "https://hefta.de/format/hefta-json-2.schema.json",
+  "title": "hefta.json, Fassung 2 (liest auch Fassung 1)",
   "description": "Lesehilfe als Anhang einer PDF-Mappe aus Hefta. Beschreibung: README.md des Pakets hefta-json und docs/format-hefta-json.md. Lizenz Apache-2.0.",
   "type": "object",
   "required": ["hefta", "erstellt", "fassung", "seitenzahl", "bewerbung", "haushalt"],
@@ -184,10 +184,15 @@
         "rolle": {
           "type": "string",
           "pattern": "^[a-z][a-z0-9_]*$",
-          "description": "Feste Liste, offen (Abschnitt 6); unbekannt als „Person“ zeigen."
+          "description": "Feste Liste, offen (Abschnitt 6): Fassung 2 vertrag oder buerge, Fassung 1 hauptmieter, mitmieter oder buerge; unbekannt als „Person“ zeigen."
+        },
+        "ansprech": {
+          "const": true,
+          "description": "Fassung 2: die Ansprechperson; höchstens eine, zuerst, im Mietvertrag. Trägt Telefon und Mail."
         },
         "kontakt": {
-          "const": true
+          "const": true,
+          "description": "Nur Fassung 1: die Kontaktperson; in Fassung 2 ansprech."
         },
         "telefon": {
           "type": "string",
@@ -209,8 +214,13 @@
         }
       },
       "dependencies": {
-        "telefon": ["kontakt", "telefon_e164"],
-        "email": ["kontakt"],
+        "telefon": {
+          "required": ["telefon_e164"],
+          "anyOf": [{ "required": ["ansprech"] }, { "required": ["kontakt"] }]
+        },
+        "email": {
+          "anyOf": [{ "required": ["ansprech"] }, { "required": ["kontakt"] }]
+        },
         "telefon_e164": ["telefon"]
       },
       "patternProperties": {

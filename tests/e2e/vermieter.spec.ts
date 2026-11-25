@@ -72,7 +72,9 @@ test('Eine Mappe: nach Schritten geordnet, Herkunft, Prüfen, Bitte und Löschen
   expect(text).toContain('keine Rechtsberatung');
   expect(text).not.toMatch(/dürfen Vermieter|können Sie nicht verlangen|löschen Sie,/);
   // Die Rollen raten kein Geschlecht: Die Lesehilfe kennt es nicht.
-  expect(text).toContain('Hauptmietpartei');
+  // W57: Fassung 1 wird ohne „Hauptmieter“ gezeigt.
+  expect(text).toContain('Im Mietvertrag');
+  expect(text).not.toMatch(/Hauptmiet|Mitmiet/);
   await expect(d.getByRole('link', { name: /meineSCHUFA/ }).first()).toHaveAttribute(
     'href',
     'https://www.meineschufa.de/check',
@@ -227,7 +229,7 @@ test('Mappe aus Version 1 (PC107, K3): öffnet ohne Lesehilfe, ohne Fehlermeldun
   await expect(d).toContainText('Die Lesehilfe dieser Mappe lässt sich nicht lesen');
   await expect(d).not.toContainText('keine Lesehilfe');
   const text = (await d.innerText()).replaceAll('­', '');
-  expect(text).not.toContain('Hauptmietpartei');
+  expect(text).not.toContain('Im Mietvertrag');
   expect(text).not.toContain('passt nicht');
   expect(text).not.toContain('Fassung 3');
   await expect(d.locator('.vs-was')).toHaveCount(0);

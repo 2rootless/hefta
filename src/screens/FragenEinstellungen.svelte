@@ -19,8 +19,9 @@
 
   const ansicht = $derived(daten.ansicht);
   const hh = $derived(ansicht?.haushalt ?? null);
+  // Ohne Haushalt „du“ (E369, hebt E74.4 auf), sonst „ihr“ ab zwei Personen ohne Bürgen.
   const ihr = $derived(
-    !ansicht || ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
+    !!ansicht && ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length > 1,
   );
 
   function frageText(th: Thema): string {

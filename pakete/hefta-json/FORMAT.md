@@ -1,8 +1,10 @@
-# Format `hefta.json`, Fassung 1
+# Format `hefta.json`, Fassung 2
 
-Stand: 18. November 2026. Entscheidungen E205 bis E208 und E216 bis E227. Fassung 1 ist die erste Fassung, die
-Hefta ausliefert. Sie bedeutet von da an immer dasselbe (E218). Ältere Entwürfe gibt es nicht mehr; kein Leser muss sie
-kennen (E216).
+**Entwurf, noch nicht ausgeliefert.** Stand: 24. November 2026. Entscheidungen E205 bis E208, E216 bis E227 und, für
+Fassung 2, E363 und E366 (W57). Fassung 1 ist die erste Fassung, die Hefta ausliefert (2.0 bis 2.1); sie bedeutet von
+da an immer dasselbe (E218). Fassung 2 ändert die Rollen und das Rollenwort auf dem Deckblatt (Abschnitt 6, „Fassung 1
+lesen“). Ältere Entwürfe gibt es nicht mehr; kein Leser muss sie kennen (E216). Die Prüfung durch einen fremden Leser
+steht für Fassung 2 noch aus.
 
 **Lizenz:** Diese Beschreibung, `schema.json` und die Beispiele stehen unter Apache-2.0, wie das Paket `hefta-json`, in
 dem sie liegen (Datei `LICENSE`). Die App Hefta steht unter AGPL-3.0.
@@ -50,7 +52,7 @@ auf die Entscheidung dazu.
 
 ## 3. Fassungen und Erweiterung
 
-- **Nummer:** `hefta` ist die Nummer der Fassung, hier `1`. Sie steigt nur, wenn sich die Bedeutung eines Felds
+- **Nummer:** `hefta` ist die Nummer der Fassung, hier `2`. Sie steigt nur, wenn sich die Bedeutung eines Felds
   ändert, ein Pflichtfeld dazukommt oder sich etwas ändert, das auf dem Papier fest ist: die Überschriften (V5), die
   Rollenwörter (V9), die Form der Verzeichniszeile (V6) oder die Sätze zum Schritt (E227).
 - **Ohne neue Fassung kommen dazu:** neue freiwillige Felder und neue Kennungen in den festen Listen (Abschnitt 6).
@@ -74,7 +76,7 @@ gekürzt).
 
 ```json
 {
-  "hefta": 1,
+  "hefta": 2,
   "erstellt": "2026-11-18T19:02:55+01:00",
   "fassung": 2,
   "seitenzahl": 16,
@@ -91,7 +93,7 @@ gekürzt).
     "personen": [
       {
         "name": "Max Mustermann", "vorname": "Max", "nachname": "Mustermann",
-        "rolle": "hauptmieter", "kontakt": true,
+        "rolle": "vertrag", "ansprech": true,
         "telefon": "0171 3920001", "telefon_e164": "+491713920001", "email": "max.mustermann@example.com",
         "unterlagen": [
           { "typ": "selbstauskunft", "seiten_mappe": { "von": 2, "bis": 2 } },
@@ -101,7 +103,7 @@ gekürzt).
             "vermerke": [{ "art": "seiten_weggelassen", "seiten_original": [2, 3] }] }
         ]
       },
-      { "name": "Lea Mustermann", "vorname": "Lea", "nachname": "Mustermann", "rolle": "mitmieter", "unterlagen": [ … ] },
+      { "name": "Lea Mustermann", "vorname": "Lea", "nachname": "Mustermann", "rolle": "vertrag", "unterlagen": [ … ] },
       { "name": "Petra Mustermann", "vorname": "Petra", "nachname": "Mustermann", "rolle": "buerge", "unterlagen": [ … ] }
     ],
     "mitziehende": [{ "text": "Ein Kind", "anzahl": 1, "art": "kind" }]
@@ -116,7 +118,7 @@ gekürzt).
 
 | Feld | Pflicht | Bedeutung |
 | --- | --- | --- |
-| `hefta` | ja | Fassung des Formats, hier `1`; eine ganze Zahl (`1.0` gilt als 1, V15) |
+| `hefta` | ja | Fassung des Formats, hier `2`; eine ganze Zahl (`2.0` gilt als 2, V15) |
 | `erstellt` | ja | Zeitpunkt, zu dem die Mappe gebaut wurde, genau in der Form `JJJJ-MM-TTThh:mm:ss` mit `Z` oder `±hh:mm`, ohne Bruchteile von Sekunden: `2026-11-18T19:02:55+01:00`. Gleich dem Erstelldatum der PDF, Abweichung unter einer Sekunde (V11) |
 | `fassung` | ja | Nummer der Fassung, wie auf dem Deckblatt („Fassung 2 vom 18. November 2026“, V7). Zählt die Mappen, die an diese Wohnung schon hinausgingen, plus eins |
 | `seitenzahl` | ja | Seiten der ganzen Mappe, Deckblatt eingeschlossen; wie im Fuß des Deckblatts („Seite 1 von 16“, V8) |
@@ -144,7 +146,7 @@ Feld.
 
 | Feld | Pflicht | Bedeutung |
 | --- | --- | --- |
-| `personen[]` | ja, 1 bis 50 | In der Reihenfolge des Deckblatts: zuerst genau ein Hauptmieter, dann wer sonst im Mietvertrag steht, dann Bürginnen und Bürgen |
+| `personen[]` | ja, 1 bis 50 | In der Reihenfolge des Deckblatts: zuerst die Ansprechperson, dann wer sonst im Mietvertrag steht, dann Bürginnen und Bürgen |
 | `mitziehende[]` | ja, darf leer sein | Kinder und weitere Personen ohne Vertrag |
 | `mitziehende[].text` | ja | die feste Form aus `anzahl` und `art`, wie auf dem Deckblatt (V22, Abschnitt 6) |
 | `mitziehende[].anzahl` | ja | ganze Zahl ab 1 |
@@ -157,11 +159,11 @@ Feld.
 | `name` | ja | Der volle Name wie auf dem Deckblatt. Immer gleich `vorname`, ein Leerzeichen, `nachname`; ohne Nachnamen nur der Vorname. Abschnitt 7 |
 | `vorname` | ja, nicht leer | Vorname oder Vornamen, wie auf dem Deckblatt |
 | `nachname` | ja, darf leer sein | Nachname, wie auf dem Deckblatt |
-| `rolle` | ja | `hauptmieter`, `mitmieter` oder `buerge`; Abschnitt 6 |
-| `kontakt` | nein | `true` bei der Person, die auf dem Deckblatt als Kontakt steht; höchstens eine |
-| `telefon` | nein, nur bei `kontakt`, nur mit `telefon_e164` | Telefon, zeichengleich wie auf dem Deckblatt, in fester Form; Abschnitt 8 |
+| `rolle` | ja | `vertrag` oder `buerge`; Abschnitt 6 |
+| `ansprech` | nein | `true` bei der Ansprechperson des Haushalts: Sie steht zuerst, im Mietvertrag, und unter „Kontakt“ auf dem Deckblatt; höchstens eine |
+| `telefon` | nein, nur bei `ansprech`, nur mit `telefon_e164` | Telefon, zeichengleich wie auf dem Deckblatt, in fester Form; Abschnitt 8 |
 | `telefon_e164` | genau dann, wenn `telefon` steht | Dasselbe Telefon international, `+` und 7 bis 15 Ziffern; Abschnitt 8 |
-| `email` | nein, nur bei `kontakt` | Mail, zeichengleich wie auf dem Deckblatt |
+| `email` | nein, nur bei `ansprech` | Mail, zeichengleich wie auf dem Deckblatt |
 | `unterlagen[]` | ja, 0 bis 50 | Die Unterlagen dieser Person, in der Reihenfolge der Mappe |
 
 **Unterlage**
@@ -186,16 +188,28 @@ Schema offen (Kennungen aus `^[a-z][a-z0-9_]*$`). Leser zeigen Unbekanntes neutr
   wird sie nicht, weil es keine feste Form gibt (L78-1).
 - `schritt`: nicht gezeigt, nicht gebunden; die Mappe wird trotzdem gezeigt (L78-4).
 
-**`rolle` und Rollenwort (V9).** Auf dem Deckblatt steht hinter jedem Namen ein Rollenwort. Ein Leser prüft den
-Anfang des Worts; der Rest darf sich nach der Person richten (Abschnitt 7, keine Anrede im Format).
+**`rolle` und Überschrift (V9, Fassung 2).** Auf dem Deckblatt steht jede Person unter ihrer Überschrift. Ein
+Rollenwort steht nicht mehr dahinter: Unter „Im Mietvertrag“ folgt dem Namen nur die Tätigkeit, unter „Bürgt“ steht nur
+der Name.
 
-| Kennung | Bedeutung | Überschrift | Rollenwort beginnt mit | Formen auf dem Deckblatt |
-| --- | --- | --- | --- | --- |
-| `hauptmieter` | steht im Mietvertrag, als erste Person des Haushalts | Im Mietvertrag | `Hauptmiet` | Hauptmieter, Hauptmieterin, Hauptmietpartei |
-| `mitmieter` | steht ebenfalls im Mietvertrag | Im Mietvertrag | `Mitmiet` | Mitmieter, Mitmieterin, Mitmietpartei |
-| `buerge` | bürgt für den Haushalt, steht nicht im Mietvertrag; Abschnitt 12 | Bürgt | `Bürg` | Bürge, Bürgin, Bürgschaft |
+| Kennung | Bedeutung | Überschrift |
+| --- | --- | --- |
+| `vertrag` | steht im Mietvertrag | Im Mietvertrag |
+| `buerge` | bürgt für den Haushalt, steht nicht im Mietvertrag; Abschnitt 12 | Bürgt |
 
-Nach dem Rollenwort darf ein Komma und die Tätigkeit folgen („Hauptmieter, Elektroniker“).
+**Fassung 1 lesen (2.0 bis 2.1).** Fassung 1 kannte statt `vertrag` die Kennungen `hauptmieter` (die erste Person,
+genau eine) und `mitmieter`, statt `ansprech` das Feld `kontakt`, und auf dem Deckblatt stand hinter jedem Namen ein
+Rollenwort. Ein Leser zeigt beide Fassungen gleich, ohne „Hauptmieter“:
+
+| Fassung 1 | gelesen als | Rollenwort auf dem Deckblatt beginnt mit |
+| --- | --- | --- |
+| `hauptmieter` | im Mietvertrag | `Hauptmiet` (Hauptmieter, Hauptmieterin, Hauptmietpartei) |
+| `mitmieter` | im Mietvertrag | `Mitmiet` (Mitmieter, Mitmieterin, Mitmietpartei) |
+| `buerge` | bürgt | `Bürg` (Bürge, Bürgin, Bürgschaft) |
+| `kontakt: true` | die Person unter „Kontakt“ | |
+
+In Fassung 1 darf nach dem Rollenwort ein Komma und die Tätigkeit folgen („Hauptmieter, Elektroniker“). In Fassung 2
+gilt `kontakt` nicht mehr: Telefon und Mail stehen nur bei `ansprech`.
 
 **`mitziehende[].art` und die feste Form (V22)**
 
@@ -276,8 +290,8 @@ Hefta 2.0 bietet keine Auswahl nach Schritt an. Es schreibt darum weder `schritt
 
 ## 8. Kontakt und Telefon
 
-- **Wo:** Kontaktdaten stehen bei der Person mit `kontakt: true` und nur so, wie sie auf dem Deckblatt stehen. Was
-  dort fehlt, fehlt hier.
+- **Wo:** Kontaktdaten stehen bei der Ansprechperson (`ansprech: true`; in Fassung 1 `kontakt: true`) und nur so,
+  wie sie auf dem Deckblatt stehen. Was dort fehlt, fehlt hier.
 - **Telefon mit Land (E222):** Jede Telefonnummer in Hefta hat ihr Land. Der Schreiber kennt es und schreibt die
   Nummer immer zweimal: `telefon` in der Form vom Deckblatt und `telefon_e164` international. Das eine gibt es nicht
   ohne das andere (L78-2). **Leser rechnen nie selbst um.**
@@ -352,9 +366,10 @@ gelesen wurde (Abschnitt 13) und alles Folgende stimmt, sonst gar nicht, auch ni
    `monate` ist streng aufsteigend und ohne Doppel.
 3. und 4. gehen in Punkt 7 auf: Namen, Straße, Telefon und Mail sind dort an ihre Stelle auf dem Papier gebunden.
 5. `name` ist gleich `vorname`, ein Leerzeichen, `nachname`; ist `nachname` leer, gleich `vorname`. Verglichen in NFC.
-6. Höchstens eine Person hat `kontakt`. **Genau eine** hat `rolle: hauptmieter`, und sie steht zuerst (E216).
-   Bürginnen und Bürgen stehen nach allen im Mietvertrag. Jede bekannte Art der Mitziehenden steht höchstens einmal,
-   ihr `text` ist die feste Form (V22).
+6. Höchstens eine Person hat `ansprech`; wenn, dann steht sie zuerst und im Mietvertrag (E366). Bürginnen und Bürgen
+   stehen nach allen im Mietvertrag. Jede bekannte Art der Mitziehenden steht höchstens einmal, ihr `text` ist die
+   feste Form (V22). *Fassung 1:* höchstens eine Person hat `kontakt`, **genau eine** hat `rolle: hauptmieter`, und
+   sie steht zuerst (E216).
 7. **Bindung an das Papier (E223).** Was ein Leser zeigt, steht auf dem Papier. Die Regeln dazu folgen.
 
 **Welches Papier (V1, V2).** Deckblatt und Verzeichnis sind die Seiten vor der kleinsten `seiten_mappe.von`; ohne
@@ -388,7 +403,7 @@ Unterlagen ist es Seite 1. Gelesen wird der Text in der Reihenfolge des Inhalts,
 | Wohnung | `strasse` und `rest` als ganze Wörter auf dem Deckblatt; `teile` nachgerechnet (V19) |
 | Einzug, Portal | „Einzug möglich ab 1. Januar 2027“, „Inserat auf ImmoScout24“ |
 | Satz zum Schritt | Seite 1, vor der ersten Zeile, die mit einer festen Überschrift beginnt (L78-3) |
-| Personen | ganzer Name unter „Im Mietvertrag“ oder „Bürgt“, dahinter das passende Rollenwort (V9) |
+| Personen | ganzer Name unter „Im Mietvertrag“ oder „Bürgt“ (V9); in Fassung 1 dahinter das passende Rollenwort |
 | Kontakt | Name unter „Kontakt“, dazu Telefon und Mail (Leerzeichen zählen nicht) |
 | Unterlagen | Zeile im Verzeichnis im Block der Person: Wortlaut, Zusatz, Seiten (V6); unbekannte Art nur die Seiten (V10) |
 | Vermerke | Wortlaut im Verzeichnis |
@@ -417,8 +432,8 @@ der ersten Überschrift. Steht irgendwo auf dem Papier ein Satz zu einem anderen
 
 **Das Deckblatt von Hefta**, von oben: „Bewerbung um die Wohnung“; Straße und Rest; „Zu Ihrem Inserat auf …“ und
 „Einzug möglich ab …“, wenn es sie gibt; der Satz zum Haushalt; der Satz zum Schritt, wenn es ihn gibt; ein freier
-Satz; „Im Mietvertrag“ mit Namen und Rollenwort; „Ziehen mit ein“; „Bürgt“; „Kontakt“; „Was beiliegt“ mit den Zeilen
-je Person; im Fuß „Fassung n vom …“, die Bitte zum Löschen, „Erstellt mit Hefta“ und „Seite 1 von N“. Das Aussehen
+Satz; „Im Mietvertrag“ mit Namen und Tätigkeit; „Ziehen mit ein“; „Bürgt“ mit Namen; „Kontakt“; „Was beiliegt“ mit den
+Zeilen je Person; im Fuß „Fassung n vom …“, die Bitte zum Löschen, „Erstellt mit Hefta“ und „Seite 1 von N“. Das Aussehen
 darf sich ändern; die Wörter der Überschriften, die Rollenwörter, die Form der Verzeichniszeile und die Sätze zum
 Schritt nicht.
 

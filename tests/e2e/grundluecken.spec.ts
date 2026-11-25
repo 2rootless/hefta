@@ -300,7 +300,7 @@ test('G3a, G3c: Neu im Job, Abrechnung ab dem Anfang und Arbeitsvertrag, dann Vo
   page,
 }) => {
   await haushaltMitMax(page);
-  await page.getByRole('link', { name: /^Max Hauptmieter$/ }).click();
+  await page.getByRole('link', { name: /^Max Im Mietvertrag$/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Max' })).toBeVisible();
   await page.getByRole('link', { name: /^Gehalts.?nachweise/ }).click();
   await expect(page.getByText('Seit wann bist du dort?')).toBeVisible();
@@ -353,7 +353,7 @@ test('G4a, G4b: Noch keine SCHUFA, Grund freiwillig, zählt nicht, später doch 
   page,
 }) => {
   await haushaltMitMax(page);
-  await page.getByRole('link', { name: /^Max Hauptmieter$/ }).click();
+  await page.getByRole('link', { name: /^Max Im Mietvertrag$/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Max' })).toBeVisible();
   const zaehler = page.locator('.zahl');
   const vorher = await zaehler.textContent();

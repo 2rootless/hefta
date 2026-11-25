@@ -60,15 +60,16 @@ test('Fehler 3: „Heft anlegen“ in der letzten Kontrolle deckt am Ende nichts
   await knopfFrei(page, 'Heft anlegen');
 });
 
-test('DP35 G2: In „Person hinzufügen“ bleibt die gewählte Rolle gewählt und steht in Tinte', async ({
+// W57: Die Form (Bürge, Bürgin, neutral) gibt es nur noch für Bürgen; dort bleibt sie gewählt und steht in Tinte.
+test('DP35 G2: In „Person hinzufügen“ bleibt die gewählte Form gewählt und steht in Tinte', async ({
   page,
 }) => {
   await haushaltMitMax(page);
-  await page.goto('/#/person-neu/mitmieter');
+  await page.goto('/#/person-neu/buerge');
   await page.reload();
   await page.getByLabel('Vorname', { exact: true }).fill('Олена');
   await page.getByLabel('Nachname', { exact: true }).fill('Коваленко');
-  const rolle = page.getByRole('radio', { name: 'Mitmieterin' });
+  const rolle = page.getByRole('radio', { name: 'Bürgin', exact: true });
   await rolle.click();
   await expect(rolle).toHaveAttribute('aria-checked', 'true');
   const farben = await rolle.evaluate((e) => {
@@ -84,8 +85,8 @@ test('DP35 G2: In „Person hinzufügen“ bleibt die gewählte Rolle gewählt u
   });
   expect(farben.grund).toBe(farben.soll.grund);
   expect(farben.schrift).toBe(farben.soll.schrift);
-  // Die anderen Rollen sind nicht gewählt und sehen anders aus.
-  const andere = page.getByRole('radio', { name: 'Mitmieter', exact: true });
+  // Die anderen Formen sind nicht gewählt und sehen anders aus.
+  const andere = page.getByRole('radio', { name: 'Bürge', exact: true });
   await expect(andere).toHaveAttribute('aria-checked', 'false');
   expect(await andere.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(farben.grund);
 });

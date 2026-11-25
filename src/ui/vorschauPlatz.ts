@@ -8,11 +8,11 @@ const SCHLUESSEL = 'hefta-vorschau-verhaeltnis';
 
 /**
  * Beim ersten Mal: gemessen bei 390 px mit dem Musterhaushalt (Max, Lea, Petra), Aussehen „Farben der Personen“. Bei 320 px
- * ist die Vorschau verhältnismäßig höher (0,7188). PC187: Dazwischen geht das erste Verhältnis mit der Breite des
- * Fensters; vorher galt 0,6732 überall, und bei 320 px rückte es einmal um 15 px (unter Linux 29 px).
+ * ist die Vorschau verhältnismäßig höher (0,7361). W57: neu gemessen, das Deckblatt ohne Rollenwort (vorher 0,6732 und 0,7188). PC187: Dazwischen geht das erste Verhältnis mit der Breite des
+ * Fensters; davor galt ein Wert überall, und bei 320 px rückte es einmal um 15 px (unter Linux 29 px).
  */
-export const ERSTES_VERHAELTNIS = 0.6732;
-const ERSTES_SCHMAL = 0.7188;
+export const ERSTES_VERHAELTNIS = 0.6899;
+const ERSTES_SCHMAL = 0.7361;
 
 export function erstesVerhaeltnis(fensterBreite: number): number {
   const anteil = Math.min(1, Math.max(0, (390 - fensterBreite) / (390 - 320)));

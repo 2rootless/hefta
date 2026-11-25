@@ -10,8 +10,7 @@ Unter dem Namen auf dem Deckblatt (D), in der Kopfzeile als „Name · Rolle“ 
 
 | Kennung | Männlich oder ohne Angabe | Weiblich | Neutral | Stelle im Regelkatalog |
 | --- | --- | --- | --- | --- |
-| `hauptmieter` | Hauptmieter | Hauptmieterin | Hauptmietpartei | `rollen.hauptmieter.text`, `textWeiblich`, `textNeutral` |
-| `mitmieter` | Mitmieter | Mitmieterin | Mitmietpartei | `rollen.mitmieter.text`, `textWeiblich`, `textNeutral` |
+| `vertrag` | Im Mietvertrag | Im Mietvertrag | Im Mietvertrag | `rollen.vertrag.text`, `textWeiblich`, `textNeutral` |
 | `buerge` | Bürge | Bürgin | bürgt | `rollen.buerge.text`, `textWeiblich`, `textNeutral` |
 
 Nicht gedruckt werden `rollen.kind` („Kind“, „Kinder“) und `rollen.weitere_erwachsene` („Weitere Erwachsene“). Auf dem Deckblatt stehen stattdessen die Zählungen unten („Ein Kind“, „Eine weitere Person“).

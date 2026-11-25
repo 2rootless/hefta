@@ -100,10 +100,12 @@ test('Mappe erstellen: Vorschau, Modi, Bürgin abwählen, Adresse, Download', as
   const inhalt = await (await dok.getPage(2)).getTextContent();
   const text = inhalt.items.map((i) => ('str' in i ? i.str : '')).join(' ');
   expect(text).toContain('Max Mustermann');
-  expect(text).toContain('Hauptmieter');
+  // W57: kein Rollenwort mehr, „Im Mietvertrag“.
+  expect(text).toContain('Im Mietvertrag');
+  expect(text).not.toMatch(/Hauptmiet|Mitmiet/);
   expect(text).toContain(`Seite 2 von ${marktSeiten}`);
   const lesezeichen = (await dok.getOutline()) ?? [];
-  expect(lesezeichen.map((l) => l.title)).toContain('Max Mustermann (Hauptmieter)');
+  expect(lesezeichen.map((l) => l.title)).toContain('Max Mustermann');
 
   // Bürgin für diese Bewerbung abwählen (X4): weniger Seiten.
   await page.getByRole('checkbox', { name: /Petra/ }).click();

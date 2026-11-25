@@ -1,0 +1,111 @@
+{
+  "hefta": 1,
+  "erstellt": "2026-11-18T10:00:00+01:00",
+  "fassung": 1,
+  "seitenzahl": 6,
+  "bewerbung": {
+    "kennung": "0e7b5d93-41a2-4c6f-8d3e-a1f9b27c6e58",
+    "wohnung": {
+      "strasse": "Beispielstraße 1",
+      "rest": "12345 Musterstadt",
+      "teile": {
+        "strasse": "Beispielstraße",
+        "hausnummer": "1",
+        "plz": "12345",
+        "ort": "Musterstadt",
+        "lage": "",
+        "land": "DE"
+      }
+    }
+  },
+  "haushalt": {
+    "personen": [
+      {
+        "name": "Anna Maria von Muster-Beispiel",
+        "vorname": "Anna Maria",
+        "nachname": "von Muster-Beispiel",
+        "rolle": "hauptmieter",
+        "kontakt": true,
+        "telefon": "0171 3920006",
+        "telefon_e164": "+491713920006",
+        "unterlagen": [
+          {
+            "typ": "selbstauskunft",
+            "seiten_mappe": {
+              "von": 2,
+              "bis": 2
+            }
+          }
+        ]
+      },
+      {
+        "name": "Aylin",
+        "vorname": "Aylin",
+        "nachname": "",
+        "rolle": "mitmieter",
+        "unterlagen": [
+          {
+            "typ": "selbstauskunft",
+            "seiten_mappe": {
+              "von": 3,
+              "bis": 3
+            }
+          }
+        ]
+      },
+      {
+        "name": "Sergej Ivanov",
+        "vorname": "Sergej",
+        "nachname": "Ivanov",
+        "rolle": "mitmieter",
+        "unterlagen": [
+          {
+            "typ": "selbstauskunft",
+            "seiten_mappe": {
+              "von": 4,
+              "bis": 4
+            }
+          }
+        ]
+      },
+      {
+        "name": "Thị Mai Nguyễn",
+        "vorname": "Thị Mai",
+        "nachname": "Nguyễn",
+        "rolle": "mitmieter",
+        "unterlagen": [
+          {
+            "typ": "selbstauskunft",
+            "seiten_mappe": {
+              "von": 5,
+              "bis": 5
+            }
+          }
+        ]
+      },
+      {
+        "name": "Dr. Maximiliane-Charlotte Henriette Beispielsdorf-Mustermann",
+        "vorname": "Dr. Maximiliane-Charlotte Henriette",
+        "nachname": "Beispielsdorf-Mustermann",
+        "rolle": "buerge",
+        "unterlagen": [
+          {
+            "typ": "selbstauskunft",
+            "seiten_mappe": {
+              "von": 6,
+              "bis": 6
+            }
+          }
+        ]
+      }
+    ],
+    "mitziehende": [
+      {
+        "text": "Eine weitere Person",
+        "anzahl": 1,
+        "art": "erwachsen"
+      }
+    ]
+  },
+  "x_beispielprogramm_status": "eingegangen"
+}

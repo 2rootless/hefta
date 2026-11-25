@@ -11,9 +11,15 @@ const lesehilfe = (datei: string) =>
 
 describe('Export als CSV', () => {
   it('ergibt aus Beispiel 2 genau die Beispieldatei: BOM, Semikolon, CRLF, eine Zeile je Person', () => {
+    // W57: Die Beispieldatei gehört zu Beispiel 2 in Fassung 1 (gegen sie prüft auch leser78). Fassung 2 ergibt
+    // dieselbe Datei, nur mit der Rolle „vertrag“; die Spalte „kontakt“ kommt dann aus `ansprech`.
     const soll = readFileSync('tests/fixtures/export/2-paar-kind-buergin.csv', 'utf8');
+    expect(csvText([lesehilfe('fassung-1/2-paar-kind-buergin.json')])).toBe(soll);
     const ist = csvText([lesehilfe('2-paar-kind-buergin.json')]);
-    expect(ist).toBe(soll);
+    expect(ist).toBe(
+      soll.replace(/;1;hauptmieter;/g, ';1;vertrag;').replace(/;2;mitmieter;/g, ';2;vertrag;'),
+    );
+    expect(ist).not.toMatch(/hauptmieter|mitmieter/);
     expect(ist.charCodeAt(0)).toBe(0xfeff);
     const zeilen = ist.slice(1).split('\r\n').filter(Boolean);
     expect(zeilen).toHaveLength(4);
