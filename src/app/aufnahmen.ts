@@ -117,9 +117,10 @@ export async function aufnahmenStarten(): Promise<void> {
     await bereit('07');
 
     // 08 Die Mappe als Grund für die Mitteilung (W48); die Mitteilung selbst setzt Design dazu (siehe CP).
-    // PC209 (DP138, W10): mit der Uhr am 18. November. Dann ist Selins Bonitätsnachweis „bald zu alt“, wie die
-    // Mitteilung sagt, nicht schon „zu alt“. Die Uhr bleibt danach gestellt; 09 hängt nicht vom Tag ab.
-    uhrStellen(new Date(2026, 10, 18, 10, 0));
+    // PC209, DP140 (W10, W48): mit der Uhr am 11. November, 10 Uhr. Hefta schickt die Mitteilung „bald zu alt“ 14 Tage
+    // vorher, für Selins Bonitätsnachweis (zu alt ab 25. November) also am 11. So passen Uhr und Mitteilung zusammen.
+    // Die Uhr bleibt danach gestellt; 09 hängt nicht vom Tag ab.
+    uhrStellen(new Date(2026, 10, 11, 10, 0));
     await neuLaden();
     gehe('/wohnungen');
     await warte(300);

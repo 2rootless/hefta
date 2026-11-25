@@ -223,10 +223,12 @@
         <div class="kasten">
           <label class="eingabe">
             {t('buergschaft.name')}
+            <!-- DP140: Der Satz gilt für Name und Anschrift; beide Felder sind an ihn gebunden. -->
             <input
               bind:value={a.buerge.name}
               placeholder={t('buergschaft.platzName')}
               autocomplete="off"
+              aria-describedby="b-wer"
             />
           </label>
           <label class="eingabe">
@@ -269,6 +271,7 @@
                   bind:value={a.mieter[i]}
                   placeholder={t('buergschaft.platzName')}
                   autocomplete="off"
+                  aria-describedby="b-fuer-wen"
                 />
               </label>
             {/each}
@@ -279,7 +282,7 @@
               ><Symbol name="plus" groesse={16} />{t('buergschaft.weitere')}</button
             >
           </div>
-          <p class="satz w30" data-w30="feld">{t('buergschaft.fuerWenSatzOhne')}</p>
+          <p class="satz w30" id="b-fuer-wen" data-w30="feld">{t('buergschaft.fuerWenSatzOhne')}</p>
         {/if}
       </section>
 

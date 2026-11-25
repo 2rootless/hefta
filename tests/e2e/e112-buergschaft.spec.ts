@@ -236,6 +236,24 @@ test('E1: ohne Heft alles leer, „Es fehlt noch“, „+ Weitere Person“; E10
   );
   await page.getByRole('button', { name: 'Weitere Person' }).click();
   await expect(page.getByLabel('Mieter 2')).toBeVisible();
+  // DP140: Name und Anschrift sind an „Name und Anschrift stehen so in der Erklärung.“ gebunden, jedes Feld „Mieter“ an
+  // „Alle, die in den Mietvertrag gehen.“ (W30, aria-describedby). Gegenprobe: der Betrag hat einen anderen Satz.
+  const satzVon = (feld: ReturnType<typeof page.getByLabel>) =>
+    feld.evaluate((e) =>
+      (e.getAttribute('aria-describedby') ?? '')
+        .split(' ')
+        .map((id) => document.getElementById(id)?.textContent?.trim() ?? '')
+        .join(' '),
+    );
+  const wer = 'Name und Anschrift stehen so in der Erklärung.';
+  // „Name“ und „Anschrift“ gibt es zweimal; die ersten gehören zu „Wer bürgt“, die zweiten zum Vermieter.
+  expect(await satzVon(page.getByLabel('Name', { exact: true }).first())).toBe(wer);
+  expect(await satzVon(page.getByLabel('Anschrift', { exact: true }).first())).toBe(wer);
+  expect(await satzVon(page.getByLabel('Name', { exact: true }).nth(1))).not.toBe(wer);
+  const fuerWen = 'Alle, die in den Mietvertrag gehen.';
+  expect(await satzVon(page.getByLabel('Mieter', { exact: true }))).toBe(fuerWen);
+  expect(await satzVon(page.getByLabel('Mieter 2'))).toBe(fuerWen);
+  expect(await satzVon(page.locator('.betrag-feld input'))).not.toBe(fuerWen);
 
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.setViewportSize({ width: 246, height: 437 });
