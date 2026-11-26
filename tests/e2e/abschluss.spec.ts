@@ -238,7 +238,12 @@ test('Der freiwillige Satz steht bei „Mappe erstellen“ und kommt aufs Deckbl
     .waitFor({ timeout: 30_000 });
   // Seit B23 steht der Satz auf der großen Ansicht des Deckblatts zum Ändern bereit.
   await page.evaluate(() => (location.hash = '#/mappe/deckblatt'));
-  await page.getByRole('button', { name: 'Satz ändern' }).click();
+  // Den Knopf gibt es auch auf der Seite davor: Während die Seite wechselt, kann der Klick dort verpuffen (WebKit unter
+  // Last, in GitHub zweimal). Darum Klick und Blick wiederholen, bis das Blatt offen ist.
+  await expect(async () => {
+    await page.getByRole('button', { name: 'Satz ändern' }).last().click();
+    await expect(blatt.getByRole('textbox')).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
   await expect(blatt.getByRole('textbox')).toHaveValue(SATZ);
   await blatt.getByRole('button', { name: 'Übernehmen' }).click();
   await expect(blatt).toBeHidden();
