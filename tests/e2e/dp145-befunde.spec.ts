@@ -9,6 +9,9 @@ const STRICH = /rgb\(\d+, \d+, \d+\) 0px 3px 0px 0px/;
 /** Der Schatten des Felds im Fokus und ohne. Seit DP148, K3 steht der Strich sofort; `poll` wartet nur aufs Zeichnen. */
 async function schattenPruefen(page: Page, feld: ReturnType<Page['locator']>, linie: boolean) {
   const schatten = () => feld.evaluate((e) => getComputedStyle(e).boxShadow);
+  // Der Strich gilt dem Tastaturfokus (:focus-visible). WebKit unter Linux wertet einen Fokus per Skript nach einem
+  // Mausklick nicht so; ein Tastendruck vorher macht die Tastatur zur letzten Eingabe, wie beim echten Tab.
+  await page.keyboard.press('Shift');
   await feld.focus();
   await expect.poll(schatten).toMatch(STRICH);
   if (linie) expect(await schatten()).toMatch(/inset/);
