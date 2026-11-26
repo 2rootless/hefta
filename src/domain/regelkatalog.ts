@@ -97,6 +97,13 @@ export interface Dokumenttyp {
   spaeter?: boolean;
   reihenfolge: number;
   hinweis?: string;
+  /**
+   * PC207, 1 (E379, E380): Kommt nie in eine Mappe und wird nicht mehr angeboten (Ausweiskopie, SCHUFA-Datenkopie). Was
+   * schon abgelegt ist, bleibt beim Nutzer; die Unterlage sagt mit `nieInMappeSatz`, warum.
+   */
+  nieInMappe?: boolean;
+  nieInMappeSatz?: string;
+  nieInMappeSatzDu?: string;
   /** Inhalt des „Warum?“-Blatts (design/unterlage-warum-haushalt.md, WB1 bis WB3). */
   warumErlaubt?: string;
   warumUeblich?: string;
@@ -215,10 +222,18 @@ export function hilfeFuer(
   return typ.hilfeBuerge.replace('{buerge}', name);
 }
 
+/**
+ * PC208 (CP121, 2): Für Bürgen gibt es keine Wahl der Form mehr; alle Sätze nehmen den Namen wie bei „neutral“.
+ * Die frühere Wahl bleibt in den Daten, wirkt aber nirgends mehr.
+ */
+export function formImText(rolle: Rolle, bezeichnung: Bezeichnung): Bezeichnung {
+  return rolle === 'buerge' ? 'neutral' : bezeichnung;
+}
+
 /** Rollenbezeichnung in der gewünschten Form, z. B. „Mitmieterin“. */
 /**
  * PC202 (H1, E363): Die Rolle, wie die App sie unter einem Namen zeigt: „Im Mietvertrag“ oder „Bürgt“, ohne Form
- * nach Geschlecht (W57). Die gewählte Form (Bürgin, Bürge) bleibt den PDFs vorbehalten.
+ * nach Geschlecht (W57, PC208).
  */
 export function rollenAnzeige(rolle: Rolle): string {
   const r = katalog.rollen[rolle]!;
@@ -226,8 +241,9 @@ export function rollenAnzeige(rolle: Rolle): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-export function rollenText(rolle: Rolle, bezeichnung: Bezeichnung): string {
+export function rollenText(rolle: Rolle, gewaehlt: Bezeichnung): string {
   const r = katalog.rollen[rolle]!;
+  const bezeichnung = formImText(rolle, gewaehlt);
   if (bezeichnung === 'weiblich') return r.textWeiblich ?? r.text;
   if (bezeichnung === 'neutral') return r.textNeutral ?? r.text;
   return r.text;
@@ -505,8 +521,14 @@ export function personStand(
   /** Haustiere und Ort des Haushalts (Selbstauskunft); ohne Angabe aus älteren Daten der Person. */
   hh?: HaushaltsAngaben,
 ): PersonStand {
-  const { rolle, farbe, bezeichnung } =
-    typeof platz === 'string' ? { rolle: platz, farbe: 1, bezeichnung: 'neutral' as const } : platz;
+  const {
+    rolle,
+    farbe,
+    bezeichnung: gewaehlt,
+  } = typeof platz === 'string'
+    ? { rolle: platz, farbe: 1, bezeichnung: 'neutral' as const }
+    : platz;
+  const bezeichnung = formImText(rolle, gewaehlt);
   const mehrereLagen = wirksameLagen(person).length > 1;
   const liste = unterlagenFuerPerson(rolle, person);
   const unterlagen = liste

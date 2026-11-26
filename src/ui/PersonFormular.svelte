@@ -29,17 +29,12 @@
 
 <script lang="ts">
   // Felder einer Person (design/einrichtung-rutsch-navigation.md, Schritt 1 und Formulare):
-  // Vor- und Nachname, „Wir nennen dich Max. Ändern“, Bezeichnung als drei Knöpfe,
+  // Vor- und Nachname, „Wir nennen dich Max. Ändern“,
   // Einkommen als Auswahl, vorbelegt mit „Angestellt“. Kann das PDF den Namen nicht schreiben, fragt
   // es nach dem Namen in lateinischen Buchstaben (design/person-und-haushalt.md, K8).
   import { rufnameAus, rufnameFolgt, type Rolle } from '../domain/modell';
   import { imPdfSchreibbar } from '../domain/namen';
-  import {
-    einkommenWechsel,
-    rollenText,
-    situationOptionen,
-    situationText,
-  } from '../domain/regelkatalog';
+  import { einkommenWechsel, situationOptionen, situationText } from '../domain/regelkatalog';
   import { t } from '../i18n';
   import Notiz from './Notiz.svelte';
   import Sheet from './Sheet.svelte';
@@ -78,11 +73,10 @@
   const optionen = situationOptionen();
   let rufnameOffen = $state(!!werte.rufname && werte.rufname !== rufnameAus(werte.vorname));
   const rufname = $derived(werte.rufname.trim() || rufnameAus(werte.vorname));
-  const bezeichnungen: Bezeichnung[] = ['maennlich', 'weiblich', 'neutral'];
-  // W57 (Übergang bis zur neuen Bedienung, PD171): Im Vertrag gibt es kein Rollenwort mehr, also auch keine Form zu
-  // wählen; es gilt „neutral“. Die Wahl steht nur für Bürgen („Bürge“, „Bürgin“, „Neutral“).
+  // W57 und PC208 (CP121, 2): Es gibt keine Form mehr zu wählen, auch nicht für Bürgen; neu gilt „neutral“. Eine
+  // früher gewählte Form bleibt in den Daten.
   $effect(() => {
-    if (rolle !== 'buerge' && !werte.bezeichnung) werte.bezeichnung = 'neutral';
+    if (!werte.bezeichnung) werte.bezeichnung = 'neutral';
   });
   const id = $props.id();
   const wechsel = $derived(
@@ -298,24 +292,6 @@
   {#if teil !== 'person'}
     {@render rollenWahl?.()}
   {/if}
-  {#if teil !== 'person' && rolle === 'buerge'}
-    <fieldset class="feld">
-      <!-- W57: Die Wahl betrifft nur die Form für Bürgen; die Rolle selbst wechselt man über die Ziele. -->
-      <legend>{t('personSeite.bezeichnung')}</legend>
-      <div class="segmente" role="radiogroup">
-        {#each bezeichnungen as b (b)}
-          <button
-            type="button"
-            class="chip"
-            role="radio"
-            aria-checked={werte.bezeichnung === b}
-            onclick={() => (werte.bezeichnung = b)}
-            >{b === 'neutral' ? t('personSeite.neutral') : rollenText(rolle, b)}</button
-          >
-        {/each}
-      </div>
-    </fieldset>
-  {/if}
   {#if teil !== 'person'}
     <p class="hinweis w30" data-w30="feld">{t('angabeSatz.rolle')}</p>
   {/if}
@@ -449,33 +425,6 @@
 
   .rufname .textlink {
     font-size: calc(14 * var(--px));
-  }
-
-  .feld {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    /* DP119 (2.1.1): wie .rollen in PersonSeite; ein Fieldset wächst sonst mit seinem Inhalt. */
-    min-width: 0;
-  }
-
-  legend {
-    margin-bottom: var(--space-2);
-    padding: 0;
-    font-size: calc(14 * var(--px));
-    font-weight: 700;
-  }
-
-  /* PC79 (C33): Chips mit 8 px Abstand, nicht 6. */
-  .segmente {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .segmente .chip {
-    padding: 0 14px;
-    font-size: calc(15 * var(--px));
   }
 
   .auswahl {

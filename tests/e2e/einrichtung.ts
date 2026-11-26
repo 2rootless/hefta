@@ -14,9 +14,7 @@ export interface NeuePerson {
 async function personAusfuellen(page: Page, p: NeuePerson) {
   await page.getByLabel('Vorname').fill(p.vorname);
   await page.getByLabel('Nachname', { exact: true }).fill(p.nachname ?? 'Mustermann');
-  // W57: Die Form wählt man nur noch für Bürgen; im Vertrag gibt es kein Rollenwort mehr.
-  if (/^(Bürge|Bürgin|Neutral)$/.test(p.bezeichnung))
-    await page.getByRole('radio', { name: p.bezeichnung, exact: true }).click();
+  // W57 und PC208: Eine Form wählt man nicht mehr, auch nicht für Bürgen; `bezeichnung` ist nur noch Beschreibung.
   if (p.einkommen) await page.getByLabel(/Einkommen\?$/).selectOption({ label: p.einkommen });
 }
 

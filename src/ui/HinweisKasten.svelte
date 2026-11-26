@@ -4,12 +4,27 @@
   // Kasten unter der Begrüßung (G2, G3, G5): schiebt den Inhalt nach unten, liegt nie darüber und
   // geht nicht von selbst weg. Immer nur einer: Fehler, Speicher, neue Version. Auf anderen
   // Bildschirmen zeigt die App nur den Fehler; „Neue Version“ stört dort nie (Formular, Rutsch).
+  import { daten, db, neuLaden } from '../app/daten.svelte';
   import { hinweise } from '../app/hinweise.svelte';
+  import { dokumenttyp } from '../domain/regelkatalog';
+  import { einstellungenAendern } from '../storage/speicher';
   import { aktualisieren, update } from '../app/update.svelte';
   import { t } from '../i18n';
 
   let { nurFehler = false }: { nurFehler?: boolean } = $props();
 
+  // PC207, 1: Nach dem Update sagt die Mappe einmal, dass abgelegte Ausweiskopien und Datenkopien gespeichert bleiben,
+  // aber nicht mehr in eine Mappe kommen. Nur, wenn es solche gibt.
+  const nieInMappe = $derived(
+    !nurFehler &&
+      !!daten.einstellungen &&
+      !daten.einstellungen.nieInMappeGezeigt &&
+      (daten.ansicht?.dokumente ?? []).some(
+        (d) =>
+          dokumenttyp(d.typ)?.nieInMappe &&
+          (daten.ansicht?.versionen ?? []).some((v) => v.dokumentId === d.id),
+      ),
+  );
   const art = $derived(
     hinweise.fehler
       ? 'fehler'
@@ -19,15 +34,25 @@
           ? 'speicher'
           : update.verfuegbar && !hinweise.versionWeg
             ? 'version'
-            : null,
+            : nieInMappe
+              ? 'nieInMappe'
+              : null,
   );
+
+  async function nieInMappeGelesen() {
+    await einstellungenAendern(await db(), { nieInMappeGezeigt: true });
+    await neuLaden();
+  }
 </script>
 
 {#if art}
-  <div class="kasten" class:stark={art !== 'version'} role="status">
+  <div class="kasten" class:stark={art === 'fehler' || art === 'speicher'} role="status">
     <!-- DP63c F1: Fehler und voller Speicher mit dem Warnzeichen in Bernstein; die neue Version mit „info“. -->
     <span class="ic" aria-hidden="true"
-      >{#if art === 'version'}<Symbol name="info" groesse={20} />{:else}<Warnzeichen />{/if}</span
+      >{#if art === 'version' || art === 'nieInMappe'}<Symbol
+          name="info"
+          groesse={20}
+        />{:else}<Warnzeichen />{/if}</span
     >
     <div class="tx">
       {#if art !== 'speicher'}
@@ -37,6 +62,7 @@
           aria-label={t('stoerung.schliessen')}
           onclick={() => {
             if (art === 'fehler') hinweise.fehler = false;
+            else if (art === 'nieInMappe') void nieInMappeGelesen();
             else hinweise.versionWeg = true;
           }}><Symbol name="schliessen" groesse={20} /></button
         >
@@ -46,6 +72,8 @@
         <button type="button" class="textlink" onclick={() => window.location.reload()}
           >{t('stoerung.nochmal')}</button
         >
+      {:else if art === 'nieInMappe'}
+        <p><b>{t('stoerung.nieInMappeTitel')}</b> {t('stoerung.nieInMappeText')}</p>
       {:else if art === 'speicher'}
         <p><b>{t('stoerung.knappTitel')}</b> {t('stoerung.knappText')}</p>
         <a class="textlink" href="#/einstellungen">{t('stoerung.speicherAnsehen')}</a>

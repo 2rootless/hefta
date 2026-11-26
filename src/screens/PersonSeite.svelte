@@ -293,9 +293,10 @@
       <section class="teil">
         {@render abschnitt(t('personSeite.inEuremHaushalt'), t('personSeite.giltNurHier'))}
         <div class="kasten">
-          <PersonFormular bind:werte {rolle} teil="haushalt" fokus={false} />
-          <!-- W57/W54 (PC199, Punkt 9): dieselben Ziele wie im Haushalt, sofort wirksam, mit „Rückgängig“. -->
+          <!-- W57/W54 (PC199, Punkt 9): dieselben Ziele wie im Haushalt, sofort wirksam, mit „Rückgängig“. PC208: Ohne
+               Wahl der Form bleibt hier nur der Satz zur Rolle (W30); er steht unter den Zielen, zu denen er gehört. -->
           <PersonZiele zugehoerigkeitId={mitglied.zugehoerigkeit.id} />
+          <p class="satz rollen-satz w30" data-w30="feld">{t('angabeSatz.rolle')}</p>
         </div>
       </section>
       <section class="teil">
@@ -537,6 +538,11 @@
 
   .teil > .satz {
     margin: 10px var(--space-1) 0;
+  }
+
+  /* W30-Regel: Satz zu einer einzelnen Wahl 8 px darunter (Abstand im Kasten 12 px). */
+  .rollen-satz {
+    margin-top: -4px;
   }
 
   .links {

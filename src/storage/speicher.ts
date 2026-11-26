@@ -100,6 +100,8 @@ export interface PersonEntwurf {
   ausbildungArt?: AusbildungArt | null;
   /** DP47 G5: weitere Lebenslagen in Reihenfolge. */
   weitereLagen?: Lebenslage[];
+  /** DP145, B5: Farbe aus dem Bogen im Browser; gilt, wenn sie im Haushalt frei ist. */
+  farbe?: number;
 }
 
 export interface HaushaltEntwurf {
@@ -168,7 +170,14 @@ export async function haushaltAnlegen(db: HeftaDb, entwurf: HaushaltEntwurf): Pr
       personId: person.id,
       rolle: p.rolle,
       bezeichnung: p.bezeichnung,
-      farbe: farbeImHaushalt(person.id, haushalt.id, alle),
+      // DP145, B5: Eine mitgegebene Farbe (aus dem Bogen im Browser) gilt, wenn sie im Haushalt frei ist.
+      farbe:
+        p.farbe !== undefined &&
+        !alle.some(
+          (z) => z.haushaltId === haushalt.id && !z.herausgenommenAm && z.farbe === p.farbe,
+        )
+          ? p.farbe
+          : farbeImHaushalt(person.id, haushalt.id, alle),
       reihenfolge: i,
       herausgenommenAm: null,
     };

@@ -53,24 +53,26 @@ test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(HEUTE);
 });
 
-test('„Kann helfen“ und „Meist unnötig“ klappen auf und wieder zu', async ({ page }) => {
+test('„Kann helfen“ klappt auf und wieder zu; Ausweiskopie und Datenkopie bietet Hefta nicht mehr an (PC207, 1)', async ({
+  page,
+}) => {
   await laden(page, '01-standard', '/person/p-01-standard-1');
-  for (const titel of [/^Kann helfen \d/, /^Meist unnötig \d/]) {
-    const kopf = page.getByRole('button', { name: titel });
-    await expect(kopf).toHaveAttribute('aria-expanded', 'false');
-    await kopf.click();
-    await expect(kopf).toHaveAttribute('aria-expanded', 'true');
-  }
+  const kopf = page.getByRole('button', { name: /^Kann helfen \d/ });
+  await expect(kopf).toHaveAttribute('aria-expanded', 'false');
+  await kopf.click();
+  await expect(kopf).toHaveAttribute('aria-expanded', 'true');
   await expect(page.getByRole('link', { name: /^Empfehlung/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Ausweis/ })).toBeVisible();
-  await page.getByRole('button', { name: /^Meist unnötig \d/ }).click();
+  await kopf.click();
+  await expect(page.getByRole('link', { name: /^Empfehlung/ })).toHaveCount(0);
+  // Nichts abgelegt: kein Abschnitt „Meist unnötig“, keine Ausweiskopie.
+  await expect(page.getByRole('button', { name: /^Meist unnötig/ })).toHaveCount(0);
   await expect(page.getByRole('link', { name: /^Ausweis/ })).toHaveCount(0);
 
-  // In „Eigene Auswahl“ steht derselbe Knopf.
+  // Auch in „Eigene Auswahl“ nicht.
   await laden(page, '04-fertig', '/mappe');
   await page.getByRole('button', { name: /^Eigene Auswahl/ }).click();
-  await page.getByRole('button', { name: /^Weitere Unterlagen/ }).click();
-  await expect(page.getByRole('switch', { name: /^Ausweis/ }).first()).toBeVisible();
+  await expect(page.getByRole('switch', { name: /^Ausweis/ })).toHaveCount(0);
+  await expect(page.getByRole('switch', { name: /Datenkopie/ })).toHaveCount(0);
 });
 
 test('Rutsch: Register und Haarlinie, Springen; nichts geht verloren (DP39)', async ({ page }) => {
@@ -369,7 +371,10 @@ test('Serie, zu alt, „Meist unnötig“: Satz und Hauptaktion passen (UL2, UL5
   await expect(page.getByRole('button', { name: 'Version hinzufügen' })).toBeVisible();
 
   await laden(page, '25-unterlage-seiten', '/unterlage/p-25-unterlage-seiten-0/ausweiskopie');
-  await expect(page.getByText('Gespeichert. Kommt nicht in die Mappe.')).toBeVisible();
+  // PC207, 1: Abgelegtes bleibt, mit dem Grund, warum es nie in die Mappe kommt.
+  await expect(
+    page.getByText(/^Eine Ausweiskopie darf ein Vermieter nicht verlangen\./),
+  ).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: 'Gespeichert' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Ändern' })).toHaveCount(0);
   // Nichts zu tun: Unten steht nur der Weg zurück.
@@ -397,13 +402,12 @@ test('Rolle wechseln auf der Personenseite: wirkt sofort, mit Zeile danach, nich
   await laden(page, '25-unterlage-seiten', '/person-aendern/p-25-unterlage-seiten-2');
   const ziele = page.locator('.person-ziele');
   await expect(ziele.locator('.platz b')).toHaveText('Bürgt');
-  await expect(page.getByRole('radio', { name: 'Bürgin' })).toBeVisible();
+  // PC208: Eine Form (Bürge, Bürgin, neutral) gibt es nicht mehr, auch nicht für Bürgen.
+  await expect(page.getByRole('radio', { name: 'Bürgin' })).toHaveCount(0);
   // W54: Das Ziel wirkt sofort, ohne „Speichern“; „Rückgängig“ holt den Stand davor.
   await ziele.locator('[data-z="vertrag"]').click();
   await expect(ziele.locator('.folge')).toContainText('steht jetzt im Mietvertrag.');
   await expect(ziele.locator('.platz b')).toHaveText('Im Mietvertrag');
-  // Die Form (Bürge, Bürgin, neutral) gibt es nur für Bürgen.
-  await expect(page.getByRole('radio', { name: 'Bürgin' })).toHaveCount(0);
   await ziele.locator('.rueck').click();
   await expect(ziele.locator('.platz b')).toHaveText('Bürgt');
   await ziele.locator('[data-z="vertrag"]').click();

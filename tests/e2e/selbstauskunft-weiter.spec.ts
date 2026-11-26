@@ -20,11 +20,18 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   await page.getByRole('textbox', { name: /^Telefon/ }).press('Enter');
   await expect(page.getByRole('textbox', { name: /^E-Mail/ })).toBeFocused();
   await page.getByRole('textbox', { name: /^E-Mail/ }).press('Enter');
+  // W60 (2.3): Danach kommt die freiwillige Anschrift in drei Feldern; erst „Ort“ ist das letzte Feld.
+  await expect(page.getByRole('textbox', { name: 'Straße und Hausnummer' })).toBeFocused();
+  await page.getByRole('textbox', { name: 'Straße und Hausnummer' }).press('Enter');
+  await expect(page.getByRole('textbox', { name: 'PLZ' })).toBeFocused();
+  await page.getByRole('textbox', { name: 'PLZ' }).press('Enter');
+  await expect(page.getByRole('textbox', { name: 'Ort', exact: true })).toBeFocused();
+  await page.getByRole('textbox', { name: 'Ort', exact: true }).press('Enter');
   await expect(page.getByRole('textbox', { name: 'Netto im Monat' })).toBeFocused();
   await expect(page.getByRole('button', { name: /^Kontakt .*Ändern/ })).toBeVisible();
 
   // Einkommen offen lassen und zu den Fragen: Der gedämpfte Knopf führt zurück zum ersten fehlenden Teil.
-  await page.getByRole('button', { name: /^Drei Fragen aus dem Musterbogen/ }).click();
+  await page.getByRole('button', { name: /^Fragen aus dem Musterbogen/ }).click();
   await expect(page.getByRole('textbox', { name: 'Netto im Monat' })).toHaveCount(0);
   const weiter = page.getByRole('button', { name: 'Speichern und weiter' });
   await expect(weiter).toHaveAttribute('aria-disabled', 'true');
@@ -34,7 +41,7 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   await page.getByRole('radio', { name: 'Mindestens' }).click();
 
   // Ein Ja als letzte Antwort lässt den Teil offen, die Erklärung darunter ist freiwillig (A3).
-  const fragen = page.getByRole('button', { name: /^Drei Fragen aus dem Musterbogen/ });
+  const fragen = page.getByRole('button', { name: /^Fragen aus dem Musterbogen/ });
   await fragen.click();
   const antwort = (frage: string, wert: string) =>
     page
@@ -57,13 +64,15 @@ test('Akkordeon: Taste Weiter, letzte Antwort und gedämpfter Knopf führen zum 
   // Bleibt der Teil nur wegen der Erklärung offen, führt ein Textlink weiter (A6).
   await page.getByRole('button', { name: /^Weiter: / }).click();
   await expect(page.getByRole('radiogroup', { name: /Haustiere/ })).toBeVisible();
-  await expect(page.getByRole('radiogroup', { name: /Mietrückstände/ })).toHaveCount(0);
+  await expect(page.getByRole('radiogroup', { name: /letztes? Mietverhältnis/ })).toHaveCount(0);
 
-  // Alle drei Fragen beantwortet: Erst dann geht der nächste Teil von selbst auf.
-  await page.getByRole('button', { name: /^Drei Fragen aus dem Musterbogen/ }).click();
+  // Alle Fragen beantwortet (PC207, 2: B.7, B.8 und C.4 bis C.6): Erst dann geht der nächste Teil von selbst auf.
+  await page.getByRole('button', { name: /^Fragen aus dem Musterbogen/ }).click();
   await antwort('Räumungstitel', 'Nein');
-  await expect(page.getByRole('radiogroup', { name: /Mietrückstände/ })).toBeVisible();
-  await antwort('Mietrückstände', 'Nein');
+  await antwort('nacheinander mehr als eine Monatsmiete', 'Nein');
+  await antwort('mindestens zwei Monatsmieten', 'Nein');
+  await expect(page.getByRole('radiogroup', { name: /letztes? Mietverhältnis/ })).toBeVisible();
+  await antwort('letztes? Mietverhältnis', 'Nein');
   await expect(page.getByRole('radiogroup', { name: /Haustiere/ })).toBeVisible();
 
   // „Weiter: Einkommen“ mit dem Fokus noch im Feld: ein Tipp genügt, der Fokus steht danach in

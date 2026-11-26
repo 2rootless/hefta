@@ -19,8 +19,8 @@
   "fragenKopf": "Bitte beantworten Sie außerdem die drei Fragen des Musterbogens für diesen Schritt:",
   "fragen": [
     "ob Sie im bestehenden Mietverhältnis für zwei aufeinanderfolgende Monate mit mehr als einer Monatsmiete im Rückstand waren,",
-    "ob Sie innerhalb von mehr als zwei Monaten mit mindestens zwei Monatsmieten im Rückstand waren,",
-    "ob Ihr letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags rechtswirksam gekündigt oder eine solche Pflichtverletzung rechtskräftig festgestellt wurde."
+    "ob Sie im bestehenden Mietverhältnis innerhalb von mehr als zwei Monaten mit mindestens zwei Monatsmieten im Rückstand waren,",
+    "ob Ihr letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags gekündigt wurde und die Kündigung rechtswirksam ist oder rechtskräftig festgestellt wurde."
   ],
   "frageZeile": "– {frage}",
   "fragenApp": "Wenn Sie Ihre Mappe mit {app} erstellt haben, ergänzen Sie die Antworten in der Selbstauskunft und schicken die Mappe neu.",

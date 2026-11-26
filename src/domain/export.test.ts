@@ -13,6 +13,8 @@ import {
   strassenteil,
   ohneUnterlagen,
   type ExportEinstellungen,
+  BITTE_MAX,
+  BITTE_VORSCHLAG,
 } from './export';
 import type { DateiVersion, Dokument, Person } from './modell';
 import { personStand } from './regelkatalog';
@@ -45,6 +47,9 @@ function person(id: string, teil: Partial<Person> = {}): Person {
       insolvenz: 'nein',
       raeumungstitel: 'nein',
       mietrueckstaende: 'nein',
+      rueckstandMonate: 'nein',
+      rueckstandMieten: 'nein',
+      kuendigung: 'nein',
       haustiere: 'nein',
       ort: 'Hamburg',
     },
@@ -244,7 +249,7 @@ describe('Hinweise', () => {
             ...s,
             person: {
               ...s.person,
-              selbstauskunft: { ...s.person.selbstauskunft!, mietrueckstaende: null },
+              selbstauskunft: { ...s.person.selbstauskunft!, kuendigung: null },
             },
           }
         : s,
@@ -380,5 +385,49 @@ describe('PC126 K5: „Diesmal weglassen“ (DP83 a)', () => {
     expect(n['Petra']).toEqual(v['Petra']);
     // Gegenprobe: ohne etwas wegzulassen bleibt die Auswahl unverändert.
     expect(ohneUnterlagen(vorher, haushalt(), [])).toBe(vorher);
+  });
+});
+
+// PC207, Abschnitt 3: Die Löschbitte nennt die Regel (Art. 17 Abs. 1 DSGVO, Orientierungshilfe D), bleibt freundlich und
+// passt in zwei Zeilen auf dem Deckblatt.
+describe('PC207: Löschbitte mit Art. 17', () => {
+  it('Vorschlag mit Regel, ohne geschützte Leerzeichen (Regel 1), höchstens BITTE_MAX Zeichen', () => {
+    expect(BITTE_VORSCHLAG).toContain('sobald Sie sie nicht mehr brauchen (Art. 17 Abs. 1 DSGVO)');
+    expect(BITTE_VORSCHLAG).not.toContain(String.fromCharCode(0xa0));
+    expect(BITTE_VORSCHLAG).toMatch(/^Bitte löschen Sie/);
+    expect(BITTE_VORSCHLAG.length).toBeLessThanOrEqual(BITTE_MAX);
+  });
+  it('Gegenprobe: der alte Vorschlag hätte die Regel nicht', () => {
+    expect(
+      'Falls die Wohnung an jemand anderen geht, löschen Sie diese Unterlagen bitte. Vielen Dank.',
+    ).not.toMatch(/Art\.\s17/);
+  });
+});
+
+describe('PC207, 1: Ausweiskopie und Datenkopie nie in der Mappe', () => {
+  it('auch nicht abgelegt und in „Eigene Auswahl“ ausdrücklich gewählt', () => {
+    const teile = [
+      mit('Max', 'ausweiskopie', [{ ausstellungsdatum: '2026-10-01' }]),
+      mit('Max', 'schufa_datenkopie', [{ ausstellungsdatum: '2026-10-01' }]),
+      mit('Max', 'bonitaet', [{ ausstellungsdatum: '2026-10-20' }]),
+    ];
+    const stand = personStand(
+      person('Max'),
+      { rolle: 'vertrag', farbe: 1, bezeichnung: 'neutral' },
+      teile.map((x) => x.d),
+      teile.flatMap((x) => x.v),
+      HEUTE,
+    );
+    for (const modus of ['marktueblich', 'alles', 'eigene_auswahl'] as const) {
+      const e = E({
+        modus,
+        auswahl: { 'Max:ausweiskopie': true, 'Max:schufa_datenkopie': true, 'Max:bonitaet': true },
+      });
+      const typen = bloecke([stand], e).flatMap((b) => b.teile.map((t) => t.stand.typ.id));
+      expect(typen, modus).not.toContain('ausweiskopie');
+      expect(typen, modus).not.toContain('schufa_datenkopie');
+      // Gegenprobe: Die Bonitätsauskunft kommt mit.
+      expect(typen, modus).toContain('bonitaet');
+    }
   });
 });

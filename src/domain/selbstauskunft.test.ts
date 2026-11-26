@@ -46,6 +46,9 @@ const ALLES_NEIN: Selbstauskunft = {
   insolvenz: 'nein',
   raeumungstitel: 'nein',
   mietrueckstaende: 'nein',
+  rueckstandMonate: 'nein',
+  rueckstandMieten: 'nein',
+  kuendigung: 'nein',
   ort: 'Hamburg',
 };
 
@@ -70,7 +73,9 @@ describe('Felder der Selbstauskunft (Abnahme M4)', () => {
       'haustiere',
       'insolvenz',
       'raeumungstitel',
-      'mietrueckstaende',
+      'rueckstand_monate',
+      'rueckstand_mieten',
+      'kuendigung',
     ]);
     for (const id of NIE_ABFRAGEN) {
       expect(SELBSTAUSKUNFT_FELDER.map((f) => f.id)).not.toContain(id);
@@ -124,7 +129,13 @@ describe('Vollständigkeit', () => {
   it('Die Frage nach der Zusage fehlt nie: Sie kommt erst, wenn der Vermieter sich entschieden hat', () => {
     const ohne: Person = {
       ...AUSGEFUELLT,
-      selbstauskunft: { ...AUSGEFUELLT.selbstauskunft!, mietrueckstaende: null },
+      selbstauskunft: {
+        ...AUSGEFUELLT.selbstauskunft!,
+        mietrueckstaende: null,
+        rueckstandMonate: null,
+        rueckstandMieten: null,
+        kuendigung: null,
+      },
     };
     expect(vollstaendig(ohne, 'vertrag')).toBe(true);
   });
@@ -198,7 +209,7 @@ describe('Festes Formular fürs PDF', () => {
 
   it('„Ich will die Wohnung“: Mietrückstände noch nicht, sonst alles', () => {
     const l = zeilen(AUSGEFUELLT, 'will_wohnung');
-    expect(zeile(l, 'mietrueckstaende')).toMatchObject({
+    expect(zeile(l, 'rueckstand_monate')).toMatchObject({
       art: 'hinweis',
       wert: 'Wird erst bei der Zusage gefragt und dann ergänzt',
     });
@@ -207,7 +218,12 @@ describe('Festes Formular fürs PDF', () => {
       wert: '3 (2 Erwachsene, 1 Kind)',
     });
     expect(zeile(l, 'nettoeinkommen')).toMatchObject({ wert: '2.800 €' });
-    expect(zeile(l, 'haustiere')).toMatchObject({ wert: 'Eine Katze' });
+    // PC207, 2: Haustiere (B.6) als Frage mit Ja oder Nein, die Tiere als Erläuterung.
+    expect(zeile(l, 'haustiere')).toMatchObject({
+      art: 'janein',
+      antwort: 'ja',
+      erklaerung: 'Eine Katze',
+    });
   });
 
   it('„Besichtigung“: nur Name und Kontakt, der Rest sagt, wann er kommt (Musterbogen A)', () => {
@@ -239,17 +255,25 @@ describe('Festes Formular fürs PDF', () => {
       erklaerung: 'Abgeschlossen im März.',
     });
     expect(zeile(l, 'raeumungstitel')).toMatchObject({ antwort: 'ja', erklaerung: '' });
-    expect(zeile(l, 'mietrueckstaende')).toMatchObject({ antwort: 'nein', erklaerung: '' });
+    expect(zeile(l, 'rueckstand_monate')).toMatchObject({ antwort: 'nein', erklaerung: '' });
+    // PC207, 2: C.7 (Gründe) steht nur nach einem Ja in C.4 bis C.6.
+    expect(zeile(l, 'gruende')).toBeUndefined();
   });
 
   describe('Antworten nach der Zusage (mappe-feinschliff.md, § 1)', () => {
     const zeileVon = (p: Person, schritt: Schritt, antwortenImmer?: boolean) =>
       selbstauskunftBloecke(p, 'vertrag', WER, HH, schritt, { antwortenImmer })
         .flatMap((b) => b.zeilen)
-        .find((z) => z.id === 'mietrueckstaende');
+        .find((z) => z.id === 'rueckstand_monate');
     const ohne: Person = {
       ...AUSGEFUELLT,
-      selbstauskunft: { ...AUSGEFUELLT.selbstauskunft!, mietrueckstaende: null },
+      selbstauskunft: {
+        ...AUSGEFUELLT.selbstauskunft!,
+        mietrueckstaende: null,
+        rueckstandMonate: null,
+        rueckstandMieten: null,
+        kuendigung: null,
+      },
     };
     const SATZ = 'Wird erst bei der Zusage gefragt und dann ergänzt';
 
@@ -341,7 +365,7 @@ describe('E49: Mietrückstände erst nach der Zusage', () => {
       zusageText,
     })
       .flatMap((b) => b.zeilen)
-      .find((z) => z.id === 'mietrueckstaende');
+      .find((z) => z.id === 'rueckstand_monate');
 
   it('mit dem Schalter steht der Satz aus B17a statt der Antwort', () => {
     expect(zeile(nachZusageSatz(false))).toMatchObject({
@@ -400,14 +424,14 @@ describe('Einkommen je Quelle im Bogen (DP47 G5, DP47b K1, PC60 K5)', () => {
         { id: 'l2', situation: 'selbststaendig', beruf: 'Elektroarbeiten', nettoeinkommen: 400 },
       ],
     });
+    // PC207, 2: Reihenfolge des Musterbogens (B.3 Arbeitgeber, B.4 Beruf, B.5 Einkommen), ohne Lebenslage.
     expect(einkommen(max)).toEqual([
-      'Lebenslage: Angestellt, dazu selbstständig oder freiberuflich',
+      'Arbeitgeber: Musterwerk GmbH',
+      'Beruf: Elektroniker',
       'Einkommen im Monat, netto: 3.250 €',
-      'Angestellt, Elektroniker bei Musterwerk GmbH: 2.850 €',
-      'Selbstständig oder freiberuflich, Elektroarbeiten: 400 €',
+      'Elektroniker bei Musterwerk GmbH: 2.850 €',
+      'Elektroarbeiten: 400 €',
     ]);
-    // Unter „Zur Person“ bleiben Beruf und Arbeitgeber der ersten Lage.
-    expect(alles(max)).toContain('"wert":"Musterwerk GmbH"');
   });
 
   it('L14: eine Quelle ohne Betrag: keine Summe, nur die Teile; und es fehlt noch etwas', () => {
@@ -441,23 +465,28 @@ describe('Einkommen je Quelle im Bogen (DP47 G5, DP47b K1, PC60 K5)', () => {
 
   it('L6, L16 (K5): Amt, Schalter aus: nur „Leistungen vom Amt“, kein Wort zur zweiten Lage', () => {
     const zeilen = einkommen(amt(false));
-    expect(zeilen[0]).toBe('Lebenslage: Miete zahlt eine öffentliche Stelle');
+    expect(zeilen).toContain(
+      'Einkommen: Die Miete übernimmt vollständig eine öffentliche Stelle. Nach dem Musterbogen (B.5) entfallen Fragen zum Einkommen dann.',
+    );
     expect(alles(amt(false))).not.toMatch(/angestellt|Aushilfe|Supermarkt|520/i);
     expect(fehlendeAngaben(amt(false), 'vertrag', HH)).not.toContain('nettoeinkommen');
   });
 
-  it('L16 Gegenprobe: „dazu angestellt“ im Druck wäre ein Fehler', () => {
-    const falsch = einkommen(amt(true))[0]!;
-    expect(falsch).toMatch(/dazu angestellt/);
-    expect(einkommen(amt(false))[0]).not.toMatch(/dazu angestellt/);
+  it('PC207, 2: keine Lebenslage im Bogen, in keinem Fall; Gegenprobe', () => {
+    const lebenslage = (p: Person) => /Lebenslage|dazu angestellt/.test(alles(p));
+    expect(lebenslage(amt(false))).toBe(false);
+    expect(lebenslage(amt(true))).toBe(false);
+    expect(lebenslage(AUSGEFUELLT)).toBe(false);
+    expect(/Lebenslage/.test('{"etikett":"Lebenslage","wert":"Angestellt"}')).toBe(true);
   });
 
   it('L13: Schalter an: Teile ohne Summe, das Amt ohne Betrag', () => {
     const zeilen = einkommen(amt(true));
     expect(zeilen).toEqual([
-      'Lebenslage: Miete zahlt eine öffentliche Stelle, dazu angestellt',
-      'Miete zahlt eine öffentliche Stelle: Die Miete übernimmt das Amt.',
-      'Angestellt, Aushilfe bei Supermarkt Musterstadt: 520 €',
+      'Arbeitgeber: ',
+      'Beruf: ',
+      'Miete: Die Miete übernimmt das Amt.',
+      'Aushilfe bei Supermarkt Musterstadt: 520 €',
     ]);
   });
 
@@ -470,6 +499,6 @@ describe('Einkommen je Quelle im Bogen (DP47 G5, DP47b K1, PC60 K5)', () => {
       weitereLagen: [{ id: 'l2', situation: 'leistungsbezug' }],
     });
     expect(alles(umgekehrt)).not.toMatch(/Aushilfe|Supermarkt|520/);
-    expect(einkommen(umgekehrt)[0]).toBe('Lebenslage: Miete zahlt eine öffentliche Stelle');
+    expect(einkommen(umgekehrt).at(-1)).toMatch(/^Einkommen: Die Miete übernimmt vollständig/);
   });
 });

@@ -239,7 +239,8 @@
     min-height: 48px;
     padding: 0 var(--space-4);
     border: 0;
-    border-radius: 14px;
+    /* DP135 U3: 16 wie alle Felder (--radius-slot); 14 liegt nicht im Raster. */
+    border-radius: var(--radius-slot);
     background: var(--weich);
     font-size: calc(17 * var(--px));
   }

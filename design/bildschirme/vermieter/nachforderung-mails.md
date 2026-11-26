@@ -14,8 +14,8 @@ Dafür brauchen wir noch:
 
 Bitte beantworten Sie außerdem die drei Fragen des Musterbogens für diesen Schritt:
 – ob Sie im bestehenden Mietverhältnis für zwei aufeinanderfolgende Monate mit mehr als einer Monatsmiete im Rückstand waren,
-– ob Sie innerhalb von mehr als zwei Monaten mit mindestens zwei Monatsmieten im Rückstand waren,
-– ob Ihr letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags rechtswirksam gekündigt oder eine solche Pflichtverletzung rechtskräftig festgestellt wurde.
+– ob Sie im bestehenden Mietverhältnis innerhalb von mehr als zwei Monaten mit mindestens zwei Monatsmieten im Rückstand waren,
+– ob Ihr letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags gekündigt wurde und die Kündigung rechtswirksam ist oder rechtskräftig festgestellt wurde.
 Wenn Sie Ihre Mappe mit Hefta erstellt haben, ergänzen Sie die Antworten in der Selbstauskunft und schicken die Mappe neu.
 
 Die Bürgschaftserklärung von Petra Mustermann brauchen wir im Original mit Unterschrift, spätestens zur Vertragsunterzeichnung.
@@ -38,8 +38,8 @@ Die üblichen Unterlagen für den Vertrag liegen Ihrer Mappe schon bei.
 
 Bitte beantworten Sie außerdem die drei Fragen des Musterbogens für diesen Schritt:
 – ob Sie im bestehenden Mietverhältnis für zwei aufeinanderfolgende Monate mit mehr als einer Monatsmiete im Rückstand waren,
-– ob Sie innerhalb von mehr als zwei Monaten mit mindestens zwei Monatsmieten im Rückstand waren,
-– ob Ihr letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags rechtswirksam gekündigt oder eine solche Pflichtverletzung rechtskräftig festgestellt wurde.
+– ob Sie im bestehenden Mietverhältnis innerhalb von mehr als zwei Monaten mit mindestens zwei Monatsmieten im Rückstand waren,
+– ob Ihr letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags gekündigt wurde und die Kündigung rechtswirksam ist oder rechtskräftig festgestellt wurde.
 Wenn Sie Ihre Mappe mit Hefta erstellt haben, ergänzen Sie die Antworten in der Selbstauskunft und schicken die Mappe neu.
 
 Nicht nötig sind eine Ausweiskopie, die SCHUFA-Datenkopie und eine Bescheinigung über Mietschuldenfreiheit.
@@ -65,8 +65,8 @@ Auf Einkommensnachweisen dürfen nicht erforderliche Angaben geschwärzt werden.
 
 Bitte beantworten Sie außerdem die drei Fragen des Musterbogens für diesen Schritt:
 – ob Sie im bestehenden Mietverhältnis für zwei aufeinanderfolgende Monate mit mehr als einer Monatsmiete im Rückstand waren,
-– ob Sie innerhalb von mehr als zwei Monaten mit mindestens zwei Monatsmieten im Rückstand waren,
-– ob Ihr letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags rechtswirksam gekündigt oder eine solche Pflichtverletzung rechtskräftig festgestellt wurde.
+– ob Sie im bestehenden Mietverhältnis innerhalb von mehr als zwei Monaten mit mindestens zwei Monatsmieten im Rückstand waren,
+– ob Ihr letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags gekündigt wurde und die Kündigung rechtswirksam ist oder rechtskräftig festgestellt wurde.
 Wenn Sie Ihre Mappe mit Hefta erstellt haben, ergänzen Sie die Antworten in der Selbstauskunft und schicken die Mappe neu.
 
 Nicht nötig sind eine Ausweiskopie, die SCHUFA-Datenkopie und eine Bescheinigung über Mietschuldenfreiheit.
@@ -111,8 +111,8 @@ Auf Einkommensnachweisen dürfen nicht erforderliche Angaben geschwärzt werden.
 
 Bitte beantworten Sie außerdem die drei Fragen des Musterbogens für diesen Schritt:
 – ob Sie im bestehenden Mietverhältnis für zwei aufeinanderfolgende Monate mit mehr als einer Monatsmiete im Rückstand waren,
-– ob Sie innerhalb von mehr als zwei Monaten mit mindestens zwei Monatsmieten im Rückstand waren,
-– ob Ihr letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags rechtswirksam gekündigt oder eine solche Pflichtverletzung rechtskräftig festgestellt wurde.
+– ob Sie im bestehenden Mietverhältnis innerhalb von mehr als zwei Monaten mit mindestens zwei Monatsmieten im Rückstand waren,
+– ob Ihr letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags gekündigt wurde und die Kündigung rechtswirksam ist oder rechtskräftig festgestellt wurde.
 Wenn Sie Ihre Mappe mit Hefta erstellt haben, ergänzen Sie die Antworten in der Selbstauskunft und schicken die Mappe neu.
 
 Die Bürgschaftserklärung von Anna-Katharina Josephine von Hohenstein brauchen wir im Original mit Unterschrift, spätestens zur Vertragsunterzeichnung.
@@ -137,8 +137,8 @@ Dafür brauchen wir noch:
 
 Bitte beantworten Sie außerdem die drei Fragen des Musterbogens für diesen Schritt:
 – ob Sie im bestehenden Mietverhältnis für zwei aufeinanderfolgende Monate mit mehr als einer Monatsmiete im Rückstand waren,
-– ob Sie innerhalb von mehr als zwei Monaten mit mindestens zwei Monatsmieten im Rückstand waren,
-– ob Ihr letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags rechtswirksam gekündigt oder eine solche Pflichtverletzung rechtskräftig festgestellt wurde.
+– ob Sie im bestehenden Mietverhältnis innerhalb von mehr als zwei Monaten mit mindestens zwei Monatsmieten im Rückstand waren,
+– ob Ihr letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags gekündigt wurde und die Kündigung rechtswirksam ist oder rechtskräftig festgestellt wurde.
 Wenn Sie Ihre Mappe mit Hefta erstellt haben, ergänzen Sie die Antworten in der Selbstauskunft und schicken die Mappe neu.
 
 Nicht nötig sind eine Ausweiskopie, die SCHUFA-Datenkopie und eine Bescheinigung über Mietschuldenfreiheit.

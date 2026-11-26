@@ -94,7 +94,8 @@ const EINSTIEGE: Einstieg[] = [
   {
     name: 'Heft',
     pfad: '/heft/zusage',
-    zurueck: 'Zurück',
+    // DP135, U11: Aus dem Heft heißt der Weg zurück „Heft“.
+    zurueck: 'Heft',
     oeffnen: async (page) => {
       // Nach der Zusage fragt Hefta zuerst, ob es geholfen hat; danach steht die offene Frage da.
       const nein = page.getByRole('button', { name: 'Nein danke' });

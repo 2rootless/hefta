@@ -61,9 +61,22 @@ describe('Bürgschaftserklärung als PDF (E112)', () => {
     expect(eins).not.toMatch(/2026/);
     expect(zwei).toContain('Nur für Petra Mustermann');
     expect(zwei).toContain('Bevor Sie unterschreiben');
-    // PC79: Die Regel zur gewöhnlichen Bürgschaft mit ihrer echten Quelle, dem Gesetz (W32).
-    expect(zwei).toMatch(/Nach dem Gesetz der Regelfall \(§.771 BGB\)/);
-    expect(zwei).not.toContain('MieterGemeinschaft der Regelfall');
+    // PC209/PC210: Text der Planung, jede Aussage mit Gesetz oder Urteil; die Arten mit den Worten von Blatt 1.
+    expect(zwei).toMatch(/Einrede der Vorausklage, §.771 BGB/);
+    expect(zwei).toMatch(/sofort an Sie wenden \(§.773 Abs..1 Nr..1 BGB\)/);
+    expect(zwei).toMatch(/§.767 Abs..2 BGB/);
+    expect(zwei).toMatch(/mit eigenhändiger Unterschrift \(§.126 BGB\)/);
+    expect(zwei).toMatch(/IX.ZR.16\/90/);
+    expect(zwei).toContain('Die Pflicht zur Bürgschaft ist unwirksam, die Kaution bleibt');
+    expect(zwei).not.toMatch(/nichtig/);
+    // PC209: kein Verein als Quelle; als Rat unter „Beratung“ darf der Mieterverein stehen.
+    expect(zwei).not.toMatch(/MieterGemeinschaft/);
+    const quellen = zwei!.slice(zwei!.indexOf('Quellen:'));
+    expect(quellen).not.toMatch(/Mieterverein|MieterGemeinschaft/);
+    expect(zwei!.match(/Mieterverein/g)).toHaveLength(1);
+    expect(zwei).toMatch(
+      /Beratung: Was das für Ihren Fall heißt, klären Sie im Zweifel mit einem Mieterverein/,
+    );
     expect(zwei).toContain(
       'Dieses Blatt bleibt bei Ihnen. Es geht nicht an den Vermieter und nicht in die Mappe.',
     );

@@ -262,6 +262,10 @@ Die Zahlen zwei bis zwölf stehen als Wort, groß geschrieben am Satzanfang, ab 
 | `ausweiskopie` | Ausweiskopie | Ausweiskopie |
 | `schufa_datenkopie` | SCHUFA-Datenkopie | Auskunft der SCHUFA an die Person selbst |
 
+`ausweiskopie` und `schufa_datenkopie` stehen nur in älteren Mappen. Seit Hefta 2.2 kommen beide nie mehr in eine Mappe:
+Ein Vermieter darf sie nicht verlangen (Orientierungshilfe der Datenschutzkonferenz, A.1 und C.3). Neue Mappen
+schreiben die Kennungen nicht mehr; ein Leser liest sie in älteren Mappen weiter.
+
 **`pruefweg`:** `pruefcode`. Die Unterlage trägt einen Code, mit dem der Vermieter sie beim Aussteller prüfen kann.
 Der Prüfweg ist nicht an das Papier gebunden. Ein Leser zeigt ihn darum nie als geprüfte Angabe, höchstens als
 allgemeinen Hinweis, wie man eine solche Unterlage beim Aussteller prüfen kann; den Code selbst liest er aus der

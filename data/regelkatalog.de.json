@@ -345,7 +345,7 @@
       "id": "ausweiskopie",
       "warumErlaubt": "Eine Kopie gar nicht. Den Ausweis zeigst du vor, etwa bei der Unterschrift unter den Vertrag.", "warumErlaubtIhr": "Eine Kopie gar nicht. Den Ausweis zeigt ihr vor, etwa bei der Unterschrift unter den Vertrag.",
       "warumUeblich": "Manche Portale fragen trotzdem danach. Ob du sie schickst, entscheidest du.", "warumUeblichIhr": "Manche Portale fragen trotzdem danach. Ob ihr sie schickt, entscheidet ihr.",
-      "warumGutZuWissen": ["{app} speichert die Kopie, schickt sie aber nicht mit. In „Eigene Auswahl“ kannst du sie dazunehmen."], "warumGutZuWissenIhr": ["{app} speichert die Kopie, schickt sie aber nicht mit. In „Eigene Auswahl“ könnt ihr sie dazunehmen."],
+      "warumGutZuWissen": ["{app} bewahrt eine abgelegte Kopie auf, sie kommt aber nie in eine Mappe."], "warumGutZuWissenIhr": ["{app} bewahrt eine abgelegte Kopie auf, sie kommt aber nie in eine Mappe."],
       "hilfe": "Meist erst bei der Unterschrift zum Ansehen. Eine Kopie braucht es vorher selten.", "hilfeAndere": "Vorzeigen genügt meist.",
       "kurz": "Vorzeigen genügt",
       "text": "Ausweis­kopie",
@@ -353,6 +353,9 @@
       "etikett": "meist_unnoetig",
       "rollen": ["vertrag", "buerge"],
       "hinweis": "Den Ausweis zeigst du am besten nur vor. Eine Kopie muss nicht in die Mappe.",
+      "nieInMappe": true,
+      "nieInMappeSatz": "Eine Ausweiskopie darf ein Vermieter nicht verlangen. Den Ausweis zeigt ihr bei der Unterschrift vor.",
+      "nieInMappeSatzDu": "Eine Ausweiskopie darf ein Vermieter nicht verlangen. Den Ausweis zeigst du bei der Unterschrift vor.",
       "reihenfolge": 90
     },
     {
@@ -367,6 +370,9 @@
       "etikett": "meist_unnoetig",
       "rollen": ["vertrag", "buerge"],
       "hinweis": "Die kostenlose Datenkopie ist nicht der Nachweis für Vermieter. Gebraucht wird die Auskunft für Vermieter.",
+      "nieInMappe": true,
+      "nieInMappeSatz": "Diese Datenkopie enthält mehr, als ein Vermieter wissen darf. Für die Bonität reicht eine Bonitätsauskunft.",
+      "nieInMappeSatzDu": "Diese Datenkopie enthält mehr, als ein Vermieter wissen darf. Für die Bonität reicht eine Bonitätsauskunft.",
       "reihenfolge": 91
     }
   ],
@@ -382,7 +388,9 @@
     {"id": "haustiere", "text": "Haustiere (ohne Kleintiere in Käfigen)", "schritt": "will_wohnung", "pdfText": "Haustiere", "nichtFuer": ["buerge"]},
     {"id": "insolvenz", "text": "Laufendes Insolvenzverfahren", "schritt": "will_wohnung", "pdfText": "Laufendes Insolvenzverfahren"},
     {"id": "raeumungstitel", "text": "Räumungstitel in den letzten 5 Jahren", "schritt": "will_wohnung", "pdfText": "Räumungstitel in den letzten fünf Jahren"},
-    {"id": "mietrueckstaende", "text": "Größere Mietrückstände oder Kündigung wegen einer Vertragsverletzung, mit Möglichkeit zur Stellungnahme", "schritt": "zusage", "pdfText": "Mietrückstände in zwei aufeinanderfolgenden Monaten von mehr als einer Monatsmiete oder über mehr als zwei Monate von insgesamt zwei Monatsmieten; Kündigung wegen einer erheblichen Verletzung des Mietvertrags"}
+    {"id": "rueckstand_monate", "text": "Mietrückstand im jetzigen Mietverhältnis: zwei Monate nacheinander mehr als eine Monatsmiete (Musterbogen C.4)", "schritt": "zusage", "pdfText": "Mietzahlungspflicht im bestehenden Mietverhältnis für zwei aufeinanderfolgende Monate in Höhe von mehr als einer Monatsmiete verletzt"},
+    {"id": "rueckstand_mieten", "text": "Mietrückstand im jetzigen Mietverhältnis: in mehr als zwei Monaten mindestens zwei Monatsmieten (Musterbogen C.5)", "schritt": "zusage", "pdfText": "Mietzahlungspflicht im bestehenden Mietverhältnis innerhalb von mehr als zwei Monaten in Höhe von mindestens zwei Monatsmieten verletzt"},
+    {"id": "kuendigung", "text": "Kündigung des letzten Mietverhältnisses wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags, rechtswirksam oder rechtskräftig festgestellt, mit Möglichkeit, Gründe zu nennen (Musterbogen C.6, C.7)", "schritt": "zusage", "pdfText": "Letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags gekündigt, die Kündigung rechtswirksam oder rechtskräftig festgestellt"}
   ],
 
   "nieAbfragen": [

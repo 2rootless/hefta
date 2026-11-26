@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import katalog from '../../data/regelkatalog.de.json';
 import de from '../i18n/de.json';
-import { rollenAnzeige, rollenText } from './regelkatalog';
+import { formImText, rollenAnzeige, rollenText } from './regelkatalog';
 
 // PC202: H1 (E363) – unter einem Namen zeigt die App nur „Im Mietvertrag“ oder „Bürgt“, nie „Bürgin“ oder „Bürge“.
 // H2 (W32) – kein „Pflicht“ in der Oberfläche. Jede Prüfung mit Gegenprobe.
@@ -46,8 +46,11 @@ describe('PC202: Rolle unter dem Namen und kein „Pflicht“', () => {
   it('H1: „Im Mietvertrag“ und „Bürgt“, ohne Form nach Geschlecht', () => {
     expect(rollenAnzeige('vertrag')).toBe('Im Mietvertrag');
     expect(rollenAnzeige('buerge')).toBe('Bürgt');
-    // Die Form für die PDFs bleibt.
-    expect(rollenText('buerge', 'weiblich')).toBe('Bürgin');
+    // PC208 (CP121, 2): Auch in den PDFs gibt es keine Form mehr; eine früher gewählte bleibt ohne Wirkung.
+    expect(rollenText('buerge', 'weiblich')).toBe('bürgt');
+    expect(rollenText('buerge', 'maennlich')).toBe('bürgt');
+    expect(formImText('buerge', 'weiblich')).toBe('neutral');
+    expect(formImText('vertrag', 'weiblich')).toBe('weiblich');
   });
 
   it('H1: keine Beschriftung in der App nimmt die Form nach Geschlecht; Gegenprobe', () => {

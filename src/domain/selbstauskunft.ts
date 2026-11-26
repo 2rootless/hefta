@@ -1,8 +1,10 @@
 import katalogDaten from '../../data/regelkatalog.de.json' with { type: 'json' };
 import { telefonFuerMappe } from './telefon';
 import type { AusbildungArt, Haushalt, Lebenssituation, Person, Rolle } from './modell';
-import { lagenVon, wirksameLagen, type LageAngabe } from './lagen';
+import { wirksameLagen, type LageAngabe } from './lagen';
 import { nameImPdf, nameText } from './namen';
+import { anschriftText } from '../formblatt/anschrift';
+import { fehlendeFelder, teilStand, type FormFeld, type Formular } from '../formblatt/formblatt';
 
 // Selbstauskunft (docs/04-regeln-und-hinweise.md, DSK-Muster; Meilenstein M4). Gefragt wird nur, was
 // der Regelkatalog unter „selbstauskunftFelder“ führt; „nieAbfragen“ gibt es hier nicht.
@@ -19,13 +21,26 @@ export interface Selbstauskunft {
   haustiereText: string;
   insolvenz: JaNein;
   raeumungstitel: JaNein;
+  /**
+   * Bis 2.2 eine Frage für Musterbogen C.4 bis C.6 zusammen. Seit 2.3 (PC207, 2) stehen die drei getrennt darunter;
+   * hier steht dann ihre Zusammenfassung (Ja, sobald eine Ja ist; Nein, wenn alle Nein sind; sonst offen), damit
+   * ältere Leser und Stellen wie „Frage offen nach der Zusage“ weiter stimmen.
+   */
   mietrueckstaende: JaNein;
+  /** C.4: zwei aufeinanderfolgende Monate mehr als eine Monatsmiete. */
+  rueckstandMonate?: JaNein;
+  /** C.5: in mehr als zwei Monaten mindestens zwei Monatsmieten. */
+  rueckstandMieten?: JaNein;
+  /** C.6: letztes Mietverhältnis wegen erheblicher Pflichtverletzung gekündigt. */
+  kuendigung?: JaNein;
+  /** C.6, „Wenn ja, um welche Pflichtverletzung handelte es sich?“ */
+  kuendigungWelche?: string;
   /**
    * PC65: „Nach der Zusage beantworten“ gewählt. Gleichrangig mit Ja und Nein, keine Wahl ist vorgegeben.
    * In der Mappe steht dann wie bei einer unbeantworteten Frage „Beantworte ich nach der Zusage“.
    */
   mietrueckstaendeSpaeter?: boolean;
-  /** Freiwillige Erklärung zu einem Ja bei den Mietrückständen. */
+  /** C.7: freiwillige Gründe, warum es nicht erneut zu erwarten ist, wenn eine Frage aus C.4 bis C.6 Ja ist. */
   stellungnahme: string;
   /** Dasselbe bei Insolvenz und Räumungstitel (Entwurf A3); fehlt in älteren Daten. */
   erklaerungInsolvenz?: string;
@@ -41,12 +56,43 @@ export interface Selbstauskunft {
 export const ERLAEUTERUNG_MAX = 600;
 export const ERLAEUTERUNG_ZAEHLER_AB = 500;
 
-/** Die drei Ja/Nein-Fragen und wo die Erklärung zu ihrem Ja steht. */
+/** Die zwei Ja/Nein-Fragen aus Teil B des Musterbogens und wo die Erklärung zu ihrem Ja steht. */
 export const ERKLAERUNG = {
   insolvenz: 'erklaerungInsolvenz',
   raeumungstitel: 'erklaerungRaeumungstitel',
-  mietrueckstaende: 'stellungnahme',
 } as const;
+
+/** Gespeichert fehlen die Felder aus PC207, 2 bei Daten bis 2.2; gelesen über selbstauskunftVon sind sie immer da. */
+export type SelbstauskunftVoll = Selbstauskunft &
+  Required<
+    Pick<
+      Selbstauskunft,
+      'rueckstandMonate' | 'rueckstandMieten' | 'kuendigung' | 'kuendigungWelche'
+    >
+  >;
+
+/** Die drei Fragen aus Teil C (C.4 bis C.6), erst kurz vor dem Vertrag (PC207, 2); C.7 ist `stellungnahme`. */
+export const ZUSAGE_FRAGEN = ['rueckstandMonate', 'rueckstandMieten', 'kuendigung'] as const;
+export type ZusageFrage = (typeof ZUSAGE_FRAGEN)[number];
+/** Die Felder im Regelkatalog zu ZUSAGE_FRAGEN. */
+export const ZUSAGE_KATALOG: Record<ZusageFrage, string> = {
+  rueckstandMonate: 'rueckstand_monate',
+  rueckstandMieten: 'rueckstand_mieten',
+  kuendigung: 'kuendigung',
+};
+
+/** Zusammenfassung von C.4 bis C.6: Ja, sobald eine Ja ist; Nein, wenn alle Nein sind; sonst offen. */
+export function zusageZusammen(sa: Pick<SelbstauskunftVoll, ZusageFrage>): JaNein {
+  const werte = ZUSAGE_FRAGEN.map((f) => sa[f]);
+  if (werte.includes('ja')) return 'ja';
+  return werte.every((w) => w === 'nein') ? 'nein' : null;
+}
+
+/** Ist eine der Fragen aus Teil C noch offen? (Auch „Nach der Zusage beantworten“.) */
+export function zusageOffen(person: Pick<Person, 'selbstauskunft'>): boolean {
+  const sa = selbstauskunftVon(person);
+  return ZUSAGE_FRAGEN.some((f) => sa[f] === null);
+}
 
 export interface SelbstauskunftFeld {
   id: string;
@@ -67,7 +113,7 @@ export const SELBSTAUSKUNFT_FELDER = katalog.selbstauskunftFelder;
 export const NIE_ABFRAGEN = katalog.nieAbfragen;
 const SCHRITTE: Schritt[] = ['besichtigung', 'will_wohnung', 'zusage'];
 
-export function leereSelbstauskunft(): Selbstauskunft {
+export function leereSelbstauskunft(): SelbstauskunftVoll {
   return {
     einkommenArt: 'betrag',
     haustiere: null,
@@ -75,6 +121,10 @@ export function leereSelbstauskunft(): Selbstauskunft {
     insolvenz: null,
     raeumungstitel: null,
     mietrueckstaende: null,
+    rueckstandMonate: null,
+    rueckstandMieten: null,
+    kuendigung: null,
+    kuendigungWelche: '',
     stellungnahme: '',
     erklaerungInsolvenz: '',
     erklaerungRaeumungstitel: '',
@@ -82,8 +132,24 @@ export function leereSelbstauskunft(): Selbstauskunft {
   };
 }
 
-export function selbstauskunftVon(person: Pick<Person, 'selbstauskunft'>): Selbstauskunft {
-  return { ...leereSelbstauskunft(), ...person.selbstauskunft };
+/**
+ * Die Selbstauskunft einer Person, mit allen Feldern. PC207, 2: Daten bis 2.2 haben C.4 bis C.6 nur als eine Antwort
+ * (`mietrueckstaende`). Ein Nein dort galt für alle drei; es wird hier gelesen, nicht verschoben. Ein Ja lässt sich nicht
+ * aufteilen: Dann sind die drei offen, und die Person beantwortet sie neu. Ihre Erklärung (`stellungnahme`) bleibt als
+ * Gründe (C.7) stehen. Gelöscht wird nichts.
+ */
+export function selbstauskunftVon(person: Pick<Person, 'selbstauskunft'>): SelbstauskunftVoll {
+  const gespeichert: Partial<Selbstauskunft> = person.selbstauskunft ?? {};
+  const alt = gespeichert.rueckstandMonate === undefined && gespeichert.mietrueckstaende === 'nein';
+  const sa = { ...leereSelbstauskunft(), ...gespeichert };
+  for (const f of ZUSAGE_FRAGEN) if (gespeichert[f] === undefined) sa[f] = alt ? 'nein' : null;
+  return sa;
+}
+
+/** Nur Daten bis 2.2 mit Ja in der früheren einen Frage: Die drei Fragen sind neu zu beantworten. */
+export function zusageNeuFragen(person: Pick<Person, 'selbstauskunft'>): boolean {
+  const g: Partial<Selbstauskunft> = person.selbstauskunft ?? {};
+  return g.rueckstandMonate === undefined && g.mietrueckstaende === 'ja';
 }
 
 /**
@@ -110,6 +176,8 @@ export interface HaushaltsAngaben {
   haustiere: JaNein;
   haustiereText: string;
   ort: string;
+  /** W28, E376: Wohnberechtigungsschein, freiwillig. Fehlt das Feld, gibt es keine Antwort. */
+  wbs?: JaNein;
 }
 
 /**
@@ -117,7 +185,7 @@ export interface HaushaltsAngaben {
  * die sie beantwortet hat (gelesen, nicht verschoben: nichts geht verloren).
  */
 export function haushaltsAngaben(
-  haushalt: Partial<Pick<Haushalt, 'haustiere' | 'haustiereText' | 'ort'>> | null,
+  haushalt: Partial<Pick<Haushalt, 'haustiere' | 'haustiereText' | 'ort' | 'wbsAngabe'>> | null,
   personen: Pick<Person, 'selbstauskunft'>[] = [],
 ): HaushaltsAngaben {
   const alt = personen.map((p) => p.selbstauskunft).filter((x) => !!x);
@@ -130,6 +198,8 @@ export function haushaltsAngaben(
         ? (haushalt.haustiereText ?? '')
         : (mitTieren?.haustiereText ?? ''),
     ort: haushalt?.ort ?? mitOrt?.ort ?? '',
+    // Ohne Antwort fehlt das Feld, wie in älteren Daten.
+    ...(haushalt?.wbsAngabe != null ? { wbs: haushalt.wbsAngabe } : {}),
   };
 }
 
@@ -210,49 +280,124 @@ export interface Teil {
   offen: number;
 }
 
-export function teile(person: PersonFuerAuskunft, rolle: Rolle, hh: HaushaltsAngaben): Teil[] {
-  const fehlt = fehlendeAngaben(person, rolle, hh);
-  const fragen = ['insolvenz', 'raeumungstitel'].filter((f) => fehlt.includes(f)).length;
-  const liste: Teil[] = [
-    { id: 'kontakt', fertig: !fehlt.includes('kontakt'), offen: 0 },
-    { id: 'einkommen', fertig: !fehlt.includes('nettoeinkommen'), offen: 0 },
-    { id: 'fragen', fertig: fragen === 0, offen: fragen },
-  ];
-  if (rolle !== 'buerge')
-    liste.push({
-      id: 'haushalt',
-      fertig: !fehlt.includes('haustiere') && !fehlt.includes('ort'),
-      offen: 0,
+/** Werte, mit denen das Formular der Selbstauskunft rechnet. */
+export interface SelbstauskunftWerte {
+  person: PersonFuerAuskunft;
+  rolle: Rolle;
+  hh: HaushaltsAngaben;
+}
+
+/** In welchem Teil ein Feld des Regelkatalogs steht; „name“ kommt aus dem Haushalt und steht in keinem Teil. */
+const TEIL_VON: Record<string, TeilId> = {
+  kontakt: 'kontakt',
+  anschrift: 'kontakt',
+  beruf: 'einkommen',
+  arbeitgeber: 'einkommen',
+  nettoeinkommen: 'einkommen',
+  insolvenz: 'fragen',
+  raeumungstitel: 'fragen',
+  rueckstand_monate: 'fragen',
+  rueckstand_mieten: 'fragen',
+  kuendigung: 'fragen',
+  personenzahl: 'haushalt',
+  haustiere: 'haushalt',
+  ort: 'haushalt',
+};
+
+const TEILE: readonly TeilId[] = ['kontakt', 'einkommen', 'fragen', 'haushalt'];
+
+/** Wann ein Feld des Regelkatalogs nötig ist und als ausgefüllt gilt. Nicht genannte sind freiwillig. */
+const PRUEFUNG: Record<string, Pick<FormFeld<SelbstauskunftWerte>, 'noetig' | 'gefuellt'>> = {
+  // E222 (DP77, Abschnitt 5): „Eine Angabe reicht“. Eine Nummer, die sich nicht umsetzen lässt, zählt dabei nicht;
+  // sie ist ein eigener offener Punkt im Überblick, und nur sie fehlt in der Mappe, nicht die Selbstauskunft.
+  kontakt: {
+    noetig: true,
+    gefuellt: ({ person }) => !!telefonFuerMappe(person.kontakt) || !!person.kontakt.email.trim(),
+  },
+  nettoeinkommen: { noetig: true, gefuellt: ({ person }) => !nettoFehlt(person) },
+  haustiere: { noetig: true, gefuellt: ({ hh }) => hh.haustiere !== null },
+  insolvenz: {
+    noetig: true,
+    gefuellt: ({ person }) => selbstauskunftVon(person).insolvenz !== null,
+  },
+  raeumungstitel: {
+    noetig: true,
+    gefuellt: ({ person }) => selbstauskunftVon(person).raeumungstitel !== null,
+  },
+  // C.4 bis C.6 fehlen nie: Die Fragen kommen erst, wenn der Vermieter sich entschieden hat.
+};
+const FREIWILLIG: Pick<FormFeld<SelbstauskunftWerte>, 'noetig' | 'gefuellt'> = {
+  noetig: false,
+  gefuellt: () => true,
+};
+
+/**
+ * Das Formular der Selbstauskunft auf dem Formblatt (PC208, Schritt 1). Welche Felder gefragt werden, sagt wie bisher
+ * der Regelkatalog (`felderFuer`); dazu kommen die freiwillige Anschrift (W60, DP135 U6) und der Ort, die nur Hefta
+ * kennt. Haustiere und Ort sind Sache des Haushalts und werden bei Bürgen nicht gefragt (sie ziehen nicht ein).
+ */
+export function selbstauskunftFormular(
+  rolle: Rolle,
+  person: Pick<Person, 'lebenssituation'> & Partial<Pick<Person, 'weitereLagen'>>,
+): Formular<SelbstauskunftWerte> {
+  const ausKatalog = felderFuer(rolle, person.lebenssituation).filter((f) => f.id in TEIL_VON);
+  const felder: FormFeld<SelbstauskunftWerte>[] = [];
+  for (const f of ausKatalog) {
+    felder.push({
+      id: f.id,
+      teil: TEIL_VON[f.id]!,
+      art: f.id === 'kontakt' ? 'telefon' : JA_NEIN_FELD.has(f.id) ? 'janein' : 'text',
+      ...(PRUEFUNG[f.id] ?? FREIWILLIG),
     });
-  return liste;
+    if (f.id === 'kontakt')
+      felder.push({ id: 'anschrift', teil: 'kontakt', art: 'anschrift', ...FREIWILLIG });
+  }
+  // DP47 G5: Entfällt das Netto mit der ersten Lage (Leistungen vom Amt), braucht eine weitere Lage trotzdem eins.
+  if (!ausKatalog.some((f) => f.id === 'nettoeinkommen') && person.weitereLagen?.length)
+    felder.push({
+      id: 'nettoeinkommen',
+      teil: 'einkommen',
+      art: 'betrag',
+      ...PRUEFUNG.nettoeinkommen!,
+    });
+  if (rolle !== 'buerge')
+    felder.push({
+      id: 'ort',
+      teil: 'haushalt',
+      art: 'text',
+      noetig: true,
+      gefuellt: ({ hh }) => !!hh.ort.trim(),
+    });
+  return { id: 'selbstauskunft', teile: TEILE, felder };
+}
+
+const JA_NEIN_FELD = new Set<string>([
+  ...Object.keys(ERKLAERUNG),
+  ...Object.values(ZUSAGE_KATALOG),
+]);
+
+export function teile(person: PersonFuerAuskunft, rolle: Rolle, hh: HaushaltsAngaben): Teil[] {
+  const form = selbstauskunftFormular(rolle, person);
+  // Die Zahl der offenen Angaben zeigt nur der Teil „Fragen“ („2 offen“).
+  return teilStand(form, { person, rolle, hh }).map((s) => ({
+    id: s.id as TeilId,
+    fertig: s.fertig,
+    offen: s.id === 'fragen' ? s.offen : 0,
+  }));
 }
 
 /**
- * IDs der Angaben, die noch fehlen. Beruf und Arbeitgeber sind freiwillig. Haustiere und Ort sind
- * Sache des Haushalts und werden bei Bürgen nicht gefragt (sie ziehen nicht ein).
+ * IDs der Angaben, die noch fehlen, aus dem Formular der Selbstauskunft. Beruf, Arbeitgeber und Anschrift sind
+ * freiwillig.
  */
 export function fehlendeAngaben(
   person: PersonFuerAuskunft,
   rolle: Rolle,
   hh: HaushaltsAngaben = haushaltsAngaben(null, [person]),
 ): string[] {
-  const sa = selbstauskunftVon(person);
-  const fehlt: string[] = [];
-  for (const f of felderFuer(rolle, person.lebenssituation)) {
-    // E222 (DP77, Abschnitt 5): „Eine Angabe reicht“. Eine Nummer, die sich nicht umsetzen lässt, zählt dabei nicht;
-    // sie ist ein eigener offener Punkt im Überblick, und nur sie fehlt in der Mappe, nicht die Selbstauskunft.
-    if (f.id === 'kontakt' && !telefonFuerMappe(person.kontakt) && !person.kontakt.email.trim())
-      fehlt.push(f.id);
-    if (f.id === 'nettoeinkommen' && nettoFehlt(person)) fehlt.push(f.id);
-    if (f.id === 'haustiere' && hh.haustiere === null) fehlt.push(f.id);
-    if (f.id === 'insolvenz' && sa.insolvenz === null) fehlt.push(f.id);
-    if (f.id === 'raeumungstitel' && sa.raeumungstitel === null) fehlt.push(f.id);
-    // Mietrückstände fehlen nie: Die Frage kommt erst, wenn der Vermieter sich entschieden hat.
-  }
-  if (!fehlt.includes('nettoeinkommen') && person.weitereLagen?.length && nettoFehlt(person))
-    fehlt.push('nettoeinkommen');
-  if (rolle !== 'buerge' && !hh.ort.trim()) fehlt.push('ort');
-  return fehlt;
+  return fehlendeFelder(selbstauskunftFormular(rolle, person), { person, rolle, hh }).map(
+    (f) => f.id,
+  );
 }
 
 export function vollstaendig(
@@ -333,6 +478,7 @@ export function selbstauskunftBloecke(
     antwortenImmer = false,
     buergschaftDabei = false,
     zusageText,
+    wbsZeile = false,
   }: {
     /**
      * Beantwortete Fragen drucken, auch wenn sie erst später dran wären (mappe-feinschliff.md, § 1). Nicht bei
@@ -346,6 +492,11 @@ export function selbstauskunftBloecke(
      * Mietrückstände an ist: „Beantworten wir nach der Zusage“ bzw. „Beantworte ich nach der Zusage“.
      */
     zusageText?: string;
+    /**
+     * W28 (DP134, Abschnitt 1): Mappe für eine Sozialwohnung. Dann steht unter HAUSHALT der Wohnberechtigungsschein,
+     * nur mit Antwort; sonst nie.
+     */
+    wbsZeile?: boolean;
   },
 ): FormBlock[] {
   const sa = selbstauskunftVon(person);
@@ -367,15 +518,39 @@ export function selbstauskunftBloecke(
     return { id, etikett, art: 'janein', antwort: sa[id], erklaerung };
   };
 
+  // PC207, 2: Musterbogen C.4 bis C.6 je eine Zeile, die Pflichtverletzung zu C.6 als Erklärung. C.7 (Gründe) nur,
+  // wenn eine gedruckte Antwort Ja ist; der Musterbogen fragt sie nur dann.
+  const zusageZeilen = (): FormZeile[] => {
+    const zeilen = ZUSAGE_FRAGEN.map((f): FormZeile => {
+      const id = ZUSAGE_KATALOG[f];
+      const etikett = feld(id).pdfText;
+      const gedruckt = antwortenImmer && sa[f] !== null;
+      if (spaeter(id) && !gedruckt) return { id, etikett, art: 'hinweis', wert: spaeter(id) };
+      const erklaerung =
+        f === 'kuendigung' && sa.kuendigung === 'ja' ? sa.kuendigungWelche.trim() : '';
+      return { id, etikett, art: 'janein', antwort: sa[f], erklaerung };
+    });
+    const ja = zeilen.some((z) => z.art === 'janein' && z.antwort === 'ja');
+    if (ja)
+      zeilen.push({
+        id: 'gruende',
+        etikett: 'Gründe, warum das nicht erneut zu erwarten ist',
+        art: 'text',
+        wert: sa.stellungnahme.trim(),
+      });
+    return zeilen;
+  };
+
   const namen = berufBezeichnungen(person);
-  const art = artVon(person);
-  const taetigkeit = art ? katalogDaten.lebenssituationen.studierend_azubi.arten[art].text : '';
   // DP47b K1/K5: Ist eine Lage „Leistungen vom Amt“ und der Schalter aus, steht nur das Amt im Bogen. Beruf
   // und Arbeitgeber einer anderen ersten Lage folgen dem Schalter und bleiben dann weg.
-  const alleLagen = lagenVon(person);
   const lagen = wirksameLagen(person);
-  const ersteWirkt = lagen.some((l) => l.lageId === null);
+  // Ohne Lebenslage (etwa aus dem Bogen im Browser, E111) gilt, was in Beruf und Arbeitgeber steht, wie im Regelkatalog.
+  const ersteWirkt = !lagen.length || lagen.some((l) => l.lageId === null);
   const beruf = ersteWirkt ? person.beruf.trim() : '';
+  // PC207, 2: Reihenfolge wie im Musterbogen (MUSTERBOGEN_REIHENFOLGE, Test in selbstauskunft-musterbogen.test.ts):
+  // A Name und Kontakt; B.1 Personen, B.3 Arbeitgeber, B.4 Beruf, B.5 Einkommen, B.6 Haustiere, B.7 Insolvenz,
+  // B.8 Räumungstitel; C.4 bis C.7. Die Lebenslage steht nicht im Bogen; sie bleibt nur Eingabe in der App.
   const bloecke: FormBlock[] = [
     {
       id: 'person',
@@ -387,6 +562,16 @@ export function selbstauskunftBloecke(
         ...(rolle === 'buerge'
           ? [{ id: 'rolle', etikett: 'Rolle', art: 'text' as const, wert: 'Bürgt' }]
           : []),
+        // W60 (DP135 U6): Anschrift freiwillig; fehlt sie, „keine Angabe“ an ihrem Platz (P27). Ältere Daten haben sie
+        // nur als Zeile.
+        {
+          id: 'anschrift',
+          etikett: 'Anschrift',
+          art: 'text',
+          wert: person.kontakt.anschriftTeile
+            ? anschriftText(person.kontakt.anschriftTeile)
+            : (person.kontakt.anschrift ?? '').trim(),
+        },
         text(
           'kontakt',
           feld('kontakt').pdfText,
@@ -394,10 +579,6 @@ export function selbstauskunftBloecke(
             .filter(Boolean)
             .join(' · '),
         ),
-        beruf || !taetigkeit
-          ? text('beruf', namen.beruf, beruf)
-          : text('beruf', 'Tätigkeit', taetigkeit),
-        text('arbeitgeber', namen.arbeitgeber, ersteWirkt ? person.arbeitgeber.trim() : ''),
       ],
     },
   ];
@@ -424,21 +605,21 @@ export function selbstauskunftBloecke(
       ],
     });
   } else {
-    const tiere =
-      hh.haustiere === 'ja'
-        ? (() => {
-            const t = hh.haustiereText.trim();
-            return t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Ja';
-          })()
-        : hh.haustiere === 'nein'
-          ? 'Keine'
-          : '';
     bloecke.push({
       id: 'haushalt',
       titel: 'Haushalt',
       zeilen: [
         text('personenzahl', feld('personenzahl').pdfText, einziehendText(wer)),
-        text('haustiere', feld('haustiere').pdfText, tiere),
+        ...(wbsZeile && hh.wbs
+          ? [
+              {
+                id: 'wbs',
+                etikett: 'Wohnberechtigungsschein',
+                art: 'text' as const,
+                wert: hh.wbs === 'ja' ? 'Ja' : 'Nein',
+              },
+            ]
+          : []),
       ],
     });
   }
@@ -446,55 +627,83 @@ export function selbstauskunftBloecke(
   bloecke.push({
     id: 'einkommen',
     titel: 'Einkommen',
-    zeilen: einkommenZeilen(person, lagen, alleLagen, text, feld('nettoeinkommen').pdfText),
+    zeilen: [
+      text('arbeitgeber', namen.arbeitgeber, ersteWirkt ? person.arbeitgeber.trim() : ''),
+      text('beruf', namen.beruf, beruf),
+      ...einkommenZeilen(person, lagen, text, feld('nettoeinkommen').pdfText),
+    ],
   });
+
+  // B.6 Haustiere als Frage mit Ja oder Nein, die Tiere als Erläuterung; nur für Personen, die einziehen.
+  const haustiere = (): FormZeile[] => {
+    if (rolle === 'buerge') return [];
+    const id = 'haustiere';
+    const etikett = feld(id).pdfText;
+    if (spaeter(id)) return [{ id, etikett, art: 'hinweis', wert: spaeter(id) }];
+    const tiere = hh.haustiere === 'ja' ? hh.haustiereText.trim() : '';
+    return [
+      {
+        id,
+        etikett,
+        art: 'janein',
+        antwort: hh.haustiere,
+        erklaerung: tiere ? tiere.charAt(0).toUpperCase() + tiere.slice(1) : '',
+      },
+    ];
+  };
   bloecke.push({
     id: 'fragen',
     titel: 'Fragen nach dem Musterbogen',
-    zeilen: [frage('insolvenz'), frage('raeumungstitel'), frage('mietrueckstaende')],
+    zeilen: [...haustiere(), frage('insolvenz'), frage('raeumungstitel'), ...zusageZeilen()],
   });
   return bloecke;
 }
 
+/**
+ * PC207, 2: Die Angaben im Bogen in der Reihenfolge des Musterbogens (Anlage der Orientierungshilfe, Januar 2026).
+ * Steht etwas anderes im Bogen oder in anderer Reihenfolge, stimmt der Satz „Fragen und Reihenfolge folgen dem
+ * Musterbogen“ nicht mehr; der Test dazu schlägt dann an.
+ */
+export const MUSTERBOGEN_REIHENFOLGE = [
+  'name', // A
+  'anschrift', // A
+  'kontakt', // A
+  'personenzahl', // B.1
+  'arbeitgeber', // B.3
+  'beruf', // B.4
+  'nettoeinkommen', // B.5
+  'haustiere', // B.6
+  'insolvenz', // B.7
+  'raeumungstitel', // B.8
+  'rueckstand_monate', // C.4
+  'rueckstand_mieten', // C.5
+  'kuendigung', // C.6
+  'gruende', // C.7
+] as const;
+
 const AMT_SATZ =
   'Die Miete übernimmt vollständig eine öffentliche Stelle. Nach dem Musterbogen (B.5) entfallen Fragen zum Einkommen dann.';
 
-/** Name einer Lage im Bogen; nach „dazu“ klein, außer was mit einem Hauptwort beginnt (wie in der App). */
-function lageName(l: LageAngabe, klein = false): string {
-  const t =
-    l.situation === 'studierend_azubi' && l.art
-      ? katalogDaten.lebenssituationen.studierend_azubi.arten[l.art].text
-      : katalogDaten.lebenssituationen[l.situation].text;
-  return klein && l.situation !== 'leistungsbezug' ? t.charAt(0).toLowerCase() + t.slice(1) : t;
-}
-
 /**
- * Teil „Einkommen“ im Bogen.
- * - Eine Lage: wie bisher.
- * - Nur „Leistungen vom Amt“ wirkt (Schalter aus, K5): „Lebenslage“ nennt nur das Amt, kein Wort zur
- *   zweiten Lage, dazu der Satz aus Version 1.
- * - Mehrere Lagen (DP47 G5): „Lebenslage: Angestellt, dazu …“, die Summe nur, wenn jede Quelle einen
- *   Betrag hat (DP47b, L14), darunter je Quelle eine Zeile mit Beruf und Arbeitgeber.
+ * Teil „Einkommen“ im Bogen, ohne Lebenslage (PC207, 2).
+ * - Eine Quelle: das Netto im Monat (bei Rente „Rente im Monat, netto“).
+ * - Nur „Leistungen vom Amt“ wirkt (Schalter aus, K5): der Satz aus Version 1 statt eines Betrags.
+ * - Mehrere Quellen (DP47 G5): die Summe, wenn jede Quelle einen Betrag hat (DP47b, L14), darunter je Quelle eine
+ *   Zeile mit Beruf und Arbeitgeber. Hat eine Quelle beides nicht, heißt sie „Weitere Einkünfte“.
  */
 function einkommenZeilen(
   person: Person,
   lagen: LageAngabe[],
-  alleLagen: LageAngabe[],
   text: (id: string, etikett: string, wert: string) => FormZeile,
   nettoEtikett: string,
 ): FormZeile[] {
   const euro0 = (n: number) => `${euro.format(n)} €`;
   if (lagen.length <= 1) {
-    const einzige = lagen[0] ?? alleLagen[0] ?? null;
-    const name = einzige ? lageName(einzige) : '';
+    const einzige = lagen[0] ?? null;
     if (einzige?.situation === 'leistungsbezug')
-      return [
-        text('nettoeinkommen', 'Lebenslage', name),
-        { id: 'nettoeinkommen', etikett: 'Einkommen', art: 'hinweis', wert: AMT_SATZ },
-      ];
+      return [{ id: 'nettoeinkommen', etikett: 'Einkommen', art: 'hinweis', wert: AMT_SATZ }];
     const netto = einzige ? nettoVon(person, einzige) : person.nettoeinkommen;
     return [
-      text('nettoeinkommen', 'Lebenslage', name),
       text(
         'nettoeinkommen',
         einzige?.situation === 'rente' ? 'Rente im Monat, netto' : nettoEtikett,
@@ -502,17 +711,10 @@ function einkommenZeilen(
       ),
     ];
   }
-  const [erste, ...weitere] = lagen;
-  const zeilen: FormZeile[] = [
-    text(
-      'nettoeinkommen',
-      'Lebenslage',
-      `${lageName(erste!)}, dazu ${weitere.map((l) => lageName(l, true)).join(' und ')}`,
-    ),
-  ];
   const betraege = lagen.map((l) =>
     l.situation === 'leistungsbezug' ? null : nettoVon(person, l),
   );
+  const zeilen: FormZeile[] = [];
   if (betraege.every((b) => b && b > 0))
     zeilen.push(
       text(
@@ -525,15 +727,17 @@ function einkommenZeilen(
     const angaben = l.lageId ? person.weitereLagen?.find((x) => x.id === l.lageId) : person;
     const berufTeil = (angaben?.beruf ?? '').trim();
     const arbeitgeberTeil = (angaben?.arbeitgeber ?? '').trim();
-    const etikett = [
-      lageName(l),
-      [berufTeil, arbeitgeberTeil ? `bei ${arbeitgeberTeil}` : ''].filter(Boolean).join(' '),
-    ]
-      .filter(Boolean)
-      .join(', ');
+    const etikett =
+      [berufTeil, arbeitgeberTeil ? `bei ${arbeitgeberTeil}` : ''].filter(Boolean).join(' ') ||
+      'Weitere Einkünfte';
     zeilen.push(
       l.situation === 'leistungsbezug'
-        ? { id: `quelle-${i}`, etikett, art: 'hinweis', wert: 'Die Miete übernimmt das Amt.' }
+        ? {
+            id: `quelle-${i}`,
+            etikett: 'Miete',
+            art: 'hinweis',
+            wert: 'Die Miete übernimmt das Amt.',
+          }
         : // Gleiche Regel wie das Netto (wann es dran ist), eigene Kennung je Quelle.
           {
             ...text('nettoeinkommen', etikett, betraege[i] ? euro0(betraege[i]!) : ''),

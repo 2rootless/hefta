@@ -751,7 +751,7 @@ const BILDER: Bild[] = [
     szenario: '02-neustart',
     pfad: '/selbstauskunft/p-02-neustart-0',
     vorher: async (page) => {
-      await page.getByRole('button', { name: /^Drei Fragen aus dem Musterbogen/ }).click();
+      await page.getByRole('button', { name: /^Fragen aus dem Musterbogen/ }).click();
     },
   },
   {
@@ -1560,7 +1560,7 @@ const BILDER: Bild[] = [
     pfad: '/rutsch/p-02-neustart-0',
     vorher: async (page) => {
       await los(page);
-      await page.getByRole('button', { name: /^Drei Fragen aus dem Musterbogen/ }).click();
+      await page.getByRole('button', { name: /^Fragen aus dem Musterbogen/ }).click();
       for (const [frage, wert] of [
         ['Insolvenz', 'Nein'],
         ['Räumungstitel', 'Ja'],

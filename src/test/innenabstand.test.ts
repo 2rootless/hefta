@@ -7,8 +7,8 @@ import { describe, expect, it } from 'vitest';
 
 /** Datei, Selektor, erwarteter Wert von `padding`. */
 const STELLEN: [string, string, string][] = [
-  ['src/screens/BuergschaftSeite.svelte', '.kasten', '16px'],
-  ['src/screens/BuergschaftSeite.svelte', '.baut', '16px'],
+  ['src/screens/SelbstauskunftBogen.svelte', '.karte', '16px'],
+  ['src/screens/SelbstauskunftBogen.svelte', '.kasten', '16px'],
   ['src/screens/MappeErstellen.svelte', '.karte', '16px'],
   ['src/screens/MappeStart.svelte', '.sk', '16px'],
   ['src/screens/PersonLoeschen.svelte', '.info', '16px'],

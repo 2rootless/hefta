@@ -76,7 +76,7 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
   await page.getByRole('textbox', { name: 'Netto im Monat' }).fill('2800');
   await page.getByRole('radio', { name: 'Mindestens' }).click();
   await page
-    .getByRole('button', { name: /^Drei Fragen aus dem Musterbogen Insolvenz, Räumung/ })
+    .getByRole('button', { name: /^Fragen aus dem Musterbogen Insolvenz, Räumung/ })
     .click();
   for (const frage of ['Insolvenzverfahren', 'Räumungstitel']) {
     await page
@@ -84,9 +84,12 @@ test('Einrichtung in zwei Schritten, Rutsch mit Pause, Übersicht und Person', a
       .getByRole('radio', { name: 'Nein' })
       .click();
   }
-  // Zwei Antworten reichen für „fertig“, aber der Teil bleibt offen: Die Frage nach der Zusage steht
-  // noch darunter. Weiter geht es über den Knopf; von selbst erst, wenn alle drei beantwortet sind.
-  await expect(page.getByRole('radiogroup', { name: /Mietrückstände/ })).toBeVisible();
+  // Zwei Antworten reichen für „fertig“, aber der Teil bleibt offen: Die Fragen nach der Zusage stehen
+  // noch darunter (PC207, 2: drei wie im Musterbogen). Weiter geht es über den Knopf; von selbst erst, wenn alle
+  // beantwortet sind.
+  await expect(
+    page.getByRole('radiogroup', { name: /nacheinander mehr als eine Monatsmiete/ }),
+  ).toBeVisible();
   await page.getByRole('button', { name: /^Weiter: / }).click();
   await expect(page.getByRole('radiogroup', { name: /Haustiere/ })).toBeVisible();
   await page

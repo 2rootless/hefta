@@ -338,7 +338,7 @@ test('Bitte zum Löschen: aus als Standard, Satz auf eigener Seite, auf dem Deck
   // Beim Einschalten steht der Vorschlag da, gesiezt und ganz.
   await schalter.click();
   await expect(
-    page.getByText(/^„Falls die Wohnung an jemand anderen geht, löschen Sie/),
+    page.getByText(/^„Bitte löschen Sie diese Unterlagen, sobald Sie sie nicht mehr brauchen/),
   ).toBeVisible();
   await page.getByRole('link', { name: 'Satz ändern' }).click();
   await page.getByRole('heading', { name: 'Bitte an den Vermieter' }).waitFor();
@@ -351,7 +351,7 @@ test('Bitte zum Löschen: aus als Standard, Satz auf eigener Seite, auf dem Deck
   await feld.fill('x'.repeat(200));
   await expect(page.getByText('120 von 120 Zeichen')).toBeVisible();
   await page.getByRole('button', { name: 'Vorschlag wieder einsetzen' }).click();
-  await expect(feld).toHaveValue(/^Falls die Wohnung/);
+  await expect(feld).toHaveValue(/^Bitte löschen Sie diese Unterlagen/);
 
   // Ganz leer schaltet sie aus; eingeschaltet steht wieder der Vorschlag da.
   await feld.fill('');
@@ -360,7 +360,7 @@ test('Bitte zum Löschen: aus als Standard, Satz auf eigener Seite, auf dem Deck
   await expect(schalter).toHaveAttribute('aria-checked', 'false');
   await schalter.click();
   await expect(
-    page.getByText(/^„Falls die Wohnung an jemand anderen geht, löschen Sie/),
+    page.getByText(/^„Bitte löschen Sie diese Unterlagen, sobald Sie sie nicht mehr brauchen/),
   ).toBeVisible();
 
   // Ohne Deckblatt gesperrt, die Wahl bleibt.
@@ -387,8 +387,9 @@ test('Bitte zum Löschen: aus als Standard, Satz auf eigener Seite, auf dem Deck
     .map((i) => ('str' in i ? i.str : ''))
     .join(' ')
     .replace(/\s+/g, ' ');
+  // PC207, Abschnitt 3: der Vorschlag mit der Regel (Art. 17 Abs. 1 DSGVO), zeichengleich in der Lesehilfe.
   const SATZ =
-    'Falls die Wohnung an jemand anderen geht, löschen Sie diese Unterlagen bitte. Vielen Dank.';
+    'Bitte löschen Sie diese Unterlagen, sobald Sie sie nicht mehr brauchen (Art. 17 Abs. 1 DSGVO). Vielen Dank.';
   expect(text).toContain(SATZ);
   const anhaenge = await dok.getAttachments();
   const [id] = [...anhaenge!.entries()].find(([, a]) => a.filename === 'hefta.json')!;

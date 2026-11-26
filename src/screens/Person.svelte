@@ -57,7 +57,15 @@
   const buerge = $derived(stand?.rolle === 'buerge');
   // Auf dem Weg: übliche und vorhandene freiwillige Unterlagen. Der Rest unter „Kann helfen“ und „Meist unnötig“.
   const weitere = $derived(
-    stand ? stand.unterlagen.filter((u) => !stand.pfad.includes(u) && !u.typ.jeWohnung) : [],
+    stand
+      ? stand.unterlagen.filter(
+          (u) =>
+            !stand.pfad.includes(u) &&
+            !u.typ.jeWohnung &&
+            // PC207, 1: Ausweiskopie und Datenkopie bietet Hefta nicht mehr an; Abgelegtes bleibt sichtbar.
+            (!u.typ.nieInMappe || u.versionen.length > 0),
+        )
+      : [],
   );
   // DP49 Punkt 5: Was je Wohnung gilt (Bürgschaftserklärung), steht in einem eigenen Abschnitt, freiwillig.
   const jeWohnung = $derived(stand ? stand.unterlagen.filter((u) => u.typ.jeWohnung) : []);

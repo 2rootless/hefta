@@ -1,18 +1,25 @@
 import { expect, test, type Page } from '@playwright/test';
 import { szenarioLaden } from './szenario-laden';
 
-// PC65, Abschnitt 3: Die Frage nach Mietrückständen ohne Anweisung, mit gleichrangiger Wahl „Nach der
-// Zusage beantworten“. Nach einer Zusage steht sie offen im Heft, auf der Personenseite und im Reiter
+// PC65, Abschnitt 3: Die Fragen nach Mietrückständen ohne Anweisung, mit gleichrangiger Wahl „Nach der
+// Zusage beantworten“. PC207, 2: Es sind drei Fragen wie im Musterbogen (C.4 bis C.6), jede mit eigener Gruppe. Nach einer Zusage steht sie offen im Heft, auf der Personenseite und im Reiter
 // „Mappe“, nie in Rot; nach der Antwort ist sie überall weg. Gegenprobe: Vorher erschien sie nach der
 // Zusage nirgends (die Zeile im Heft hing am Schalter in „Eigene Auswahl“, die anderen gab es nicht).
 
 const PERSONEN = ['p-04-fertig-0', 'p-04-fertig-1'];
 
+/** Die drei Gruppen aus Teil C, in der Reihenfolge des Musterbogens. */
+const C_FRAGEN = [
+  /nacheinander mehr als eine Monatsmiete/,
+  /mindestens zwei Monatsmieten/,
+  /letztes? Mietverhältnis/,
+];
+
 async function frageOeffnen(page: Page, person: string) {
   await page.evaluate((p) => (location.hash = `#/selbstauskunft/${p}`), person);
-  const gruppe = page.getByRole('radiogroup', { name: /Mietrückstände/ });
+  const gruppe = page.getByRole('radiogroup', { name: C_FRAGEN[0] });
   const zu = page.getByRole('button', {
-    name: /^Drei Fragen aus dem Musterbogen/,
+    name: /^Fragen aus dem Musterbogen/,
     expanded: false,
   });
   // Erst warten, bis die Seite steht: Ein zu früher Blick sah den Teil noch nicht und klappte ihn dann
@@ -100,23 +107,24 @@ test('Mietrückstände: „Nach der Zusage“, nach der Zusage überall offen, n
   for (const person of PERSONEN) {
     let gruppe = await frageOeffnen(page, person);
     // Im Muster ist sie schon beantwortet: erst die Antwort entfernen, gespeichert, dann neu öffnen.
-    const entfernen = page.getByRole('button', { name: 'Antwort entfernen' });
+    const entfernen = page.getByRole('button', { name: 'Antworten entfernen' });
     if (await entfernen.isVisible().catch(() => false)) {
       await entfernen.click();
       await page.waitForTimeout(900);
       gruppe = await frageOeffnen(page, person);
     }
-    // Drei gleichrangige Wahlen, keine vorgewählt.
-    const wahlen = gruppe.getByRole('radio');
-    await expect(wahlen).toHaveText(['Ja', 'Nein', 'Nach der Zusage']);
-    for (const w of await wahlen.all()) await expect(w).toHaveAttribute('aria-checked', 'false');
-    // Hinweis nach der Orientierungshilfe statt einer Anweisung (W32).
+    // Drei Fragen, je drei gleichrangige Wahlen, keine vorgewählt.
+    for (const name of C_FRAGEN) {
+      const wahlen = page.getByRole('radiogroup', { name }).getByRole('radio');
+      await expect(wahlen).toHaveText(['Ja', 'Nein', 'Nach der Zusage']);
+      for (const w of await wahlen.all()) await expect(w).toHaveAttribute('aria-checked', 'false');
+    }
+    // Ein Satz zur Gruppe statt einer Anweisung (W32, DP145 F1).
     await expect(
       page.getByText(
-        /^Nach der Orientierungshilfe der Datenschutzkonferenz darf der Vermieter das erst kurz vor dem Vertrag fragen\./,
+        /^Danach darf ein Vermieter erst kurz vor dem Vertrag fragen\. Freiwillig könnt ihr es schon jetzt beantworten\./,
       ),
     ).toBeVisible();
-    await expect(page.getByText(/^Gemeint ist: zwei Monate nacheinander/)).toBeVisible();
     await expect(page.getByText(/^Erst beantworten/)).toHaveCount(0);
     await gruppe.getByRole('radio', { name: 'Nach der Zusage' }).click();
     await expect(gruppe.getByRole('radio', { name: 'Nach der Zusage' })).toHaveAttribute(
@@ -141,8 +149,10 @@ test('Mietrückstände: „Nach der Zusage“, nach der Zusage überall offen, n
       'aria-checked',
       'true',
     );
-    // Mit der Antwort ist der Teil fertig und schließt sich von selbst.
-    await gruppe.getByRole('radio', { name: 'Nein' }).click();
+    // Mit der letzten der drei Antworten ist der Teil fertig und schließt sich von selbst.
+    for (const name of C_FRAGEN)
+      await page.getByRole('radiogroup', { name }).getByRole('radio', { name: 'Nein' }).click();
+    await expect(gruppe).toBeHidden();
     await page.waitForTimeout(900);
   }
   await offenAnAllenStellen(page, false);

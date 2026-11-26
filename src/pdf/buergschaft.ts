@@ -367,7 +367,10 @@ function blattEins(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
   return { unten: unterschrift - 2 - 8, grenze: 12 * MM + 2 * MM + 7.5 + 4 * MM };
 }
 
-/** Blatt 2: nur für die Person, die bürgt, nie in der Mappe. Sätze aus Ratgeber-Beitrag 4, auf „Sie“ gesetzt. */
+/**
+ * Blatt 2: nur für die Person, die bürgt, nie in der Mappe. Text nach Planung, PC209 (an Gesetz und Urteil
+ * geprüft, E356, E377), die Sätze zu den zwei Arten nach PC210, Abschnitt 3 mit den Worten von Blatt 1.
+ */
 function blattZwei(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
   const seite = pdf.addPage([A4.breite, A4.hoehe]);
   const x0 = BOGEN_SEITE;
@@ -413,7 +416,7 @@ function blattZwei(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
   y = text(
     [
       {
-        text: `Wer bürgt, steht dafür ein, wenn die Mieter nicht zahlen (§${NB}765 BGB). Bei einer Mietbürgschaft betrifft das nach der Berliner MieterGemeinschaft Mietschulden und Schadensersatz, und regelmäßig auch die Kosten für Gericht, Anwalt und Vollstreckung. Sie rät: Die Zusage sei „keine Formalität“.`,
+        text: `Wer bürgt, steht gegenüber dem Vermieter dafür ein, dass die Mieter ihre Pflichten aus dem Mietvertrag erfüllen (§${NB}765 BGB). Es zählt, was die Mieter jeweils schulden, auch wenn es durch Verzug mehr wird (§${NB}767 Abs.${NB}1 BGB). Dazu kommen die Kosten der Kündigung und der Rechtsverfolgung, etwa für Gericht und Anwalt, wenn die Mieter sie dem Vermieter ersetzen müssen (§${NB}767 Abs.${NB}2 BGB). Vorher frei werden Sie nur, wenn der Vermieter zustimmt (§${NB}397 BGB).`,
       },
     ],
     y,
@@ -422,7 +425,7 @@ function blattZwei(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
     [
       { text: 'Auf Blatt 1 steht als Höchstbetrag ' },
       { text: a.hoechstbetrag ? `${betragText(a.hoechstbetrag)}${NB}Euro` : '', fett: true },
-      { text: '.' },
+      { text: '. Er begrenzt, wofür Sie höchstens einstehen.' },
     ],
     y - ZL - 1 * MM,
   ).y;
@@ -434,13 +437,12 @@ function blattZwei(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
     {
       id: 'ausfall' as const,
       name: 'Gewöhnliche Bürgschaft',
-      // PC79: Die Regel steht im Gesetz (Einrede der Vorausklage), nicht beim Verein.
-      satz: `Nach dem Gesetz der Regelfall (§${NB}771 BGB). Der Vermieter muss zuerst erfolglos gegen die Mieter vorgehen, bevor er sich an Sie wenden kann.`,
+      satz: `So gilt sie, wenn nichts anderes vereinbart ist. Der Vermieter kann sich erst an Sie wenden, wenn eine Zwangsvollstreckung gegen die Mieter erfolglos war (Einrede der Vorausklage, §${NB}771 BGB).`,
     },
     {
       id: 'selbstschuldnerisch' as const,
       name: 'Selbstschuldnerische Bürgschaft',
-      satz: `Sie muss eigens vereinbart werden. Dann kann der Vermieter sich sofort an Sie wenden (§${NB}773 BGB).`,
+      satz: `Sie muss eigens vereinbart werden. Dann fällt diese Einrede weg, und der Vermieter kann sich sofort an Sie wenden (§${NB}773 Abs.${NB}1 Nr.${NB}1 BGB).`,
     },
   ];
   let tief = y;
@@ -472,7 +474,7 @@ function blattZwei(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
   y = text(
     [
       {
-        text: `Eine Bürgschaft wird nur wirksam, wenn sie schriftlich erklärt und dem Vermieter übergeben wird (§${NB}766 BGB). Eine Mail oder ein Haken in einem Formular reicht nicht. Darum unterschreiben Sie Blatt 1 von Hand.`,
+        text: `Eine Bürgschaft gilt nur, wenn Sie die Erklärung schriftlich erteilen; in elektronischer Form ist sie ausgeschlossen (§${NB}766 BGB). Schriftlich heißt: mit eigenhändiger Unterschrift (§${NB}126 BGB). Eine Mail, ein PDF ohne Unterschrift oder ein Haken in einem Formular reichen nicht. Darum unterschreiben Sie Blatt 1 von Hand und geben es dem Vermieter.`,
       },
     ],
     y,
@@ -482,7 +484,7 @@ function blattZwei(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
   y = text(
     [
       {
-        text: `Eine Mietsicherheit darf nach §${NB}551 BGB höchstens drei Monatsmieten ohne Nebenkosten betragen. Für Bürgschaften haben Gerichte das so ausgelegt:`,
+        text: `Eine Mietsicherheit darf höchstens drei Monatsmieten ohne Nebenkosten betragen (§${NB}551 Abs.${NB}1 BGB). Für Bürgschaften hat der Bundesgerichtshof entschieden:`,
       },
     ],
     y,
@@ -505,27 +507,27 @@ function blattZwei(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
         { text: 'und', fett: true },
         { text: ' Bürgschaft' },
       ],
-      [{ text: 'Beides zusammen nicht mehr als drei Monatsmieten' }],
-      [{ text: `BGH, Urteil vom 20.04.1989 (BGHZ${NB}107, 210)` }],
+      [{ text: 'Über drei Monatsmieten hinaus müssen Sie nicht zahlen' }],
+      [{ text: `BGH, 20.04.1989, IX${NB}ZR${NB}212/88, BGHZ${NB}107, 210` }],
     ],
     [
       [{ text: 'Volle Kaution, Bürgschaft zusätzlich verlangt' }],
-      [{ text: 'Die Bürgschaft ist nichtig, die Kaution bleibt' }],
+      [{ text: 'Die Pflicht zur Bürgschaft ist unwirksam, die Kaution bleibt' }],
+      [{ text: `BGH, 30.06.2004, VIII${NB}ZR${NB}243/03, Rn.${NB}25 bis 28` }],
+    ],
+    [
+      [{ text: 'Bürgschaft von sich aus angeboten, damit der Mietvertrag zustande kommt' }],
+      [{ text: 'Die Grenze von drei Monatsmieten gilt nicht' }],
       [
         {
-          text: `BGH, Urteil vom 30.06.2004, VIII${NB}ZR${NB}243/03, nach der Berliner MieterGemeinschaft`,
+          text: `BGH, 07.06.1990, IX${NB}ZR${NB}16/90, BGHZ${NB}111, 361; bestätigt 2004, Rn.${NB}25`,
         },
       ],
     ],
     [
-      [{ text: 'Bürgschaft freiwillig und unaufgefordert angeboten' }],
-      [{ text: 'Sie bleibt neben der Kaution wirksam' }],
-      [{ text: 'nach der Berliner MieterGemeinschaft' }],
-    ],
-    [
-      [{ text: 'Bürgschaft, damit der Vermieter wegen Rückständen nicht kündigt' }],
-      [{ text: 'Keine Grenze von drei Monatsmieten' }],
-      [{ text: `BGH, Urteil vom 10.04.2013, VIII${NB}ZR${NB}379/12` }],
+      [{ text: 'Bürgschaft, damit der Vermieter wegen Mietrückständen nicht kündigt' }],
+      [{ text: 'Die Grenze von drei Monatsmieten gilt nicht' }],
+      [{ text: `BGH, 10.04.2013, VIII${NB}ZR${NB}379/12, Rn.${NB}13 bis 15` }],
     ],
   ];
   for (const reihe of reihen) {
@@ -554,7 +556,7 @@ function blattZwei(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
     [
       { text: 'Beratung:', fett: true },
       {
-        text: ' Was Sie daraus ableiten, klären Sie im Zweifel mit einem Mieterverein. Die Urteile betreffen ihren Einzelfall.',
+        text: ' Was das für Ihren Fall heißt, klären Sie im Zweifel mit einem Mieterverein. Die Urteile betreffen jeweils einen Einzelfall.',
       },
     ],
     y - 4 * MM - G,
@@ -578,7 +580,7 @@ function blattZwei(pdf: PDFDocument, a: BuergschaftAngaben, s: S): BlattMass {
     seite,
     [
       {
-        text: `Quellen: §§${NB}551, 765, 766, 771, 773 BGB; Berliner MieterGemeinschaft, „Bürgschaft“; BGH, Urteile vom 20.04.1989, 30.06.2004 und 10.04.2013. Zusammengefasst von ${APP_NAME} im November 2026.`,
+        text: `Quellen: §§${NB}126, 397, 551, 765, 766, 767, 771, 773 BGB; Bundesgerichtshof, Urteile vom 20.04.1989 (IX${NB}ZR${NB}212/88), 07.06.1990 (IX${NB}ZR${NB}16/90), 30.06.2004 (VIII${NB}ZR${NB}243/03) und 10.04.2013 (VIII${NB}ZR${NB}379/12). Zusammengefasst von ${APP_NAME} im November 2026.`,
       },
     ],
     s,

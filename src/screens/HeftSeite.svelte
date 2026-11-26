@@ -3,6 +3,7 @@
   // Name, Adresse, Eckdaten mit „warm“ und zwei leise Links; der Stand mit Weg und Marke; darunter weiche
   // Flächen ohne Rahmen: „Was hinausging“ (ab „Beworben“), „Zu euren Wünschen“, Notizen und die übrigen
   // Abschnitte. Den Stand ändert nur noch die Frage im Stand.
+  import { zusageOffen } from '../domain/selbstauskunft';
   import { onMount, tick, untrack } from 'svelte';
   import { route } from '../app/router.svelte';
   import { rueckgaengigAnbieten } from '../app/rueckgaengig.svelte';
@@ -328,7 +329,7 @@
       (x) =>
         x.zugehoerigkeit.rolle !== 'buerge' &&
         !x.zugehoerigkeit.herausgenommenAm &&
-        x.person.selbstauskunft?.mietrueckstaende == null,
+        zusageOffen(x.person),
     );
     return m ? `#/selbstauskunft/${m.person.id}` : null;
   });

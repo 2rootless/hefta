@@ -56,8 +56,13 @@ test('TL1, TL2, TL7, TL3: feste Form beim Verlassen, „Wird zu …“, Fehler m
   await expect(feld(page)).toHaveAttribute('aria-invalid', 'true');
   await expect(feld(page)).toHaveValue('0171 3920001-12');
   await expect(page.locator('.telefon .warnzeichen')).toBeVisible();
-  // Kein Tintenrand: Der bedeutet nach W33 „Hefta fragt nach“.
-  expect(await feld(page).evaluate((e) => getComputedStyle(e).boxShadow)).toBe('none');
+  // Kein Tintenrand: Der bedeutet nach W33 „Hefta fragt nach“. Es bleibt die Feldlinie unten (H3, --ink-quiet); im
+  // Fokus kommt außen der Strich darunter dazu (DP145, B3), nie ein zweiter Schatten innen.
+  const teile = (await feld(page).evaluate((e) => getComputedStyle(e).boxShadow)).split(
+    /,(?![^(]*\))/,
+  );
+  expect(teile[0]).toMatch(/^rgb\(113, 103, 93\) 0px -1px 0px 0px inset$/);
+  expect(teile.slice(1).filter((t) => t.includes('inset'))).toEqual([]);
   // Der Fehler ist für VoiceOver mit dem Feld verbunden und beginnt mit „Fehler:“.
   const beschreibung = await feld(page).evaluate(
     (e) => document.getElementById(e.getAttribute('aria-describedby')!)!.textContent,
@@ -210,8 +215,8 @@ test('K1: mit Fehler im Telefon schließt „Fertig“ den Teil „Kontakt“ ni
     await expect(feld(page), nr).toHaveAttribute('aria-invalid', 'true');
     await expect(kontaktKopf(page), nr).toHaveText('Telefonnummer bitte prüfen');
     await expect(page.locator('.bogen b'), nr).toHaveText('Noch nicht fertig');
-    // Die Taste „Weiter“ im letzten Feld schließt auch nicht.
-    await page.getByLabel('E-Mail').press('Enter');
+    // Die Taste „Weiter“ im letzten Feld schließt auch nicht (seit W60 ist das „Ort“ der Anschrift).
+    await page.getByRole('textbox', { name: 'Ort', exact: true }).press('Enter');
     await expect(feld(page), nr).toBeFocused();
     await expect(kontaktKopf(page), nr).not.toContainText('Fertig');
   }

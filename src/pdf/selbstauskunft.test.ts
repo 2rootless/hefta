@@ -41,11 +41,13 @@ const ETIKETTEN = [
   'Beruf',
   'Arbeitgeber',
   'Einkommen',
-  'Lebenslage',
   'Fragen nach dem Musterbogen',
   'Laufendes Insolvenzverfahren',
   'Räumungstitel in den letzten fünf Jahren',
-  'Mietrückstände',
+  // PC207, 2: Musterbogen C.4 bis C.6 je eine Zeile.
+  'Mietzahlungspflicht im bestehenden Mietverhältnis für zwei aufeinanderfolgende Monate',
+  'innerhalb von mehr als zwei Monaten in Höhe von mindestens zwei Monatsmieten',
+  'Letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags gekündigt',
   'Ort, Datum',
 ];
 
@@ -107,8 +109,13 @@ describe('Selbstauskunft als festes Formular', () => {
 
   it('P19: Bürgen haben statt des Haushalts die Bürgschaft', async () => {
     const t = await text(await bauen(MAX, 'buerge', 'Bürgin'));
-    for (const etikett of ETIKETTEN)
+    // PC207, 2: Der Musterbogen kennt keine Bürgen; weder Untertitel noch Fußnote nennen ihn, nur „Angaben der Person,
+    // die bürgt.“
+    for (const etikett of ETIKETTEN.filter((e) => !e.startsWith('Nach dem Musterbogen')))
       expect(t.toLowerCase(), etikett).toContain(etikett.toLowerCase());
+    expect(t).not.toContain('Nach dem Musterbogen der Datenschutzkonferenz, Stand');
+    expect(t).not.toContain('folgen dem Musterbogen');
+    expect(t).toContain('Angaben der Person, die bürgt.');
     expect(t).toContain('Bürgschaft');
     // PC205 (E363): „Bürgt, zieht nicht ein.“ statt der gewählten Form.
     expect(t).toContain('Bürgt, zieht nicht ein.');
@@ -123,8 +130,14 @@ describe('Selbstauskunft als festes Formular', () => {
 
   it('vor der Zusage: Die Frage steht da, mit dem Satz, wann sie kommt', async () => {
     const t = await text(await bauen(MAX, 'vertrag', 'Hauptmieter', { schritt: 'will_wohnung' }));
-    expect(t).toContain('Mietrückstände');
+    expect(t).toContain('Mietzahlungspflicht im bestehenden Mietverhältnis');
     expect(t).toContain('Wird erst bei der Zusage gefragt und dann ergänzt');
+  });
+
+  it('PC207, 2: Wer im Mietvertrag steht, behält den Satz zum Musterbogen (Gegenprobe zu P19)', async () => {
+    const t = await text(await bauen());
+    expect(t).toContain('Fragen und Reihenfolge folgen dem Musterbogen');
+    expect(t).not.toContain('Angaben der Person, die bürgt.');
   });
 
   it('Der Dienst steht nur in der Fußnote, wenn der Hinweis an ist', async () => {
@@ -139,7 +152,9 @@ describe('Selbstauskunft als festes Formular', () => {
       ...MAX,
       selbstauskunft: {
         ...MAX.selbstauskunft,
-        mietrueckstaende: 'ja',
+        rueckstandMonate: 'ja',
+        rueckstandMieten: 'nein',
+        kuendigung: 'nein',
         stellungnahme: 'Zwei Monate im Jahr 2023, inzwischen vollständig beglichen. '.repeat(40),
       },
     } as Person;

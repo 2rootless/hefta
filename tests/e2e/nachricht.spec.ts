@@ -88,16 +88,16 @@ test.describe('Feinschliff', () => {
     page,
   }) => {
     await laden(page, '04-fertig', '/selbstauskunft/p-04-fertig-0');
-    const teil = page.getByRole('button', { name: /^Drei Fragen aus dem Musterbogen/ });
+    const teil = page.getByRole('button', { name: /^Fragen aus dem Musterbogen/ });
     await teil.click();
     await expect(page.getByRole('heading', { name: 'Nach der Zusage' })).toBeVisible();
     await expect(page.getByText(/^Die Antwort steht ab jetzt in der Mappe/)).toBeVisible();
-    await page.getByRole('button', { name: 'Antwort entfernen' }).click();
+    await page.getByRole('button', { name: 'Antworten entfernen' }).click();
     // PC65: keine Anweisung mehr, sondern was gilt, und die Wahl.
     await expect(
-      page.getByText(/^Nach der Orientierungshilfe der Datenschutzkonferenz/),
+      page.getByText(/^Danach darf ein Vermieter erst kurz vor dem Vertrag fragen\. Freiwillig/),
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Antwort entfernen' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Antworten entfernen' })).toBeHidden();
   });
 
   test('Zum Übertragen: alle Angaben einzeln, ohne Aufforderung (A6)', async ({ page }) => {

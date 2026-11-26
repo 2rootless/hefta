@@ -6,19 +6,22 @@
     "name": "Wie im Ausweis. Steht schon bei der Besichtigung dabei.",
     "rolle": "Wer unterschreibt, ist Mieter und haftet für die Miete. Bürgen ziehen nicht ein.",
     "beruf": "Daran sieht der Vermieter, woher das Einkommen kommt.",
+    "anschrift": "Kommt in die Selbstauskunft, wenn ausgefüllt. Für den Kontakt reichen Telefon oder E-Mail.",
     "lebenslage": "Woher das Einkommen kommt. Danach richten sich die passenden Nachweise.",
     "einkommen": "Gehört zu fast jeder Bewerbung. Viele Vermieter rechnen grob: Die Warmmiete sollte nicht mehr als ein Drittel davon sein.",
-    "einziehen": "Wer mit einzieht, auch Kinder. Danach darf der Vermieter fragen.",
-    "haustiere": {
-      "ihr": "Tiere, für die es eine Erlaubnis braucht, etwa Hund oder Katze. Kleintiere wie Fische oder Hamster braucht ihr nicht zu nennen.",
-      "du": "Tiere, für die es eine Erlaubnis braucht, etwa Hund oder Katze. Kleintiere wie Fische oder Hamster brauchst du nicht zu nennen."
+    "einziehen": "Alle, die einziehen, auch Kinder. Nach dem Familienstand fragt der Bogen nicht.",
+    "haustiere": "Nur Tiere, für die es eine Erlaubnis braucht. Kleintiere wie Hamster oder Zierfische zählen nicht.",
+    "insolvenz": "Eine Frage aus dem Musterbogen. Ja oder Nein.",
+    "raeumungstitel": "Eine Frage aus dem Musterbogen. Ja oder Nein.",
+    "mietrueckstaende": {
+      "ihr": "Danach darf ein Vermieter erst kurz vor dem Vertrag fragen. Freiwillig könnt ihr es schon jetzt beantworten.",
+      "du": "Danach darf ein Vermieter erst kurz vor dem Vertrag fragen. Freiwillig kannst du es schon jetzt beantworten."
     },
-    "insolvenz": "Eine der drei Fragen aus dem Musterbogen. Ja oder Nein.",
-    "raeumungstitel": "Eine der drei Fragen aus dem Musterbogen. Ja oder Nein.",
-    "mietrueckstaende": "Eine der drei Fragen aus dem Musterbogen. Viele Vermieter fragen erst vor dem Vertrag danach."
+    "wbs": "Nur für eine Sozialwohnung. Sonst frei lassen."
   },
   "allgemein": {
     "versuchtUm": "Zuletzt versucht um {uhrzeit} Uhr.",
+    "heft": "Heft",
     "rueckgaengigFehler": {
       "ihr": "Das hat nicht geklappt. Versucht es noch einmal.",
       "du": "Das hat nicht geklappt. Versuch es noch einmal."
@@ -931,7 +934,6 @@
     "rufnameSatzAndere": "{app} nennt sie {name}.",
     "rufnameAendern": "Ändern",
     "rufname": "Rufname",
-    "bezeichnung": "So steht es auf der Karte",
     "einkommen": "Woher kommt das Einkommen?",
     "einkommenDu": "Woher kommt dein Einkommen?",
     "einkommenHinweis": "Davon hängt ab, welcher Einkommensnachweis auf die Liste kommt.",
@@ -961,7 +963,6 @@
     "speichern": "Speichern",
     "abbrechen": "Abbrechen",
     "nichtGefunden": "Diese Person gibt es nicht mehr.",
-    "neutral": "Neutral",
     "grundName": {
       "ihr": "Tragt den Vornamen ein.",
       "du": "Trag den Vornamen ein."
@@ -1142,15 +1143,25 @@
     "insolvenz": "Läuft bei {name} gerade ein Insolvenzverfahren?",
     "raeumungstitelDu": "Gab es gegen dich in den letzten fünf Jahren einen Räumungstitel?",
     "raeumungstitel": "Gab es gegen {name} in den letzten fünf Jahren einen Räumungstitel?",
-    "mietrueckstaendeDu": "Gab es bei dir größere Mietrückstände oder eine Kündigung wegen einer Vertragsverletzung?",
-    "mietrueckstaende": "Gab es bei {name} größere Mietrückstände oder eine Kündigung wegen einer Vertragsverletzung?",
-    "mietGemeint": "Gemeint ist: zwei Monate nacheinander mehr als eine Monatsmiete offen, oder über mehr als zwei Monate zusammen zwei Monatsmieten.",
+    "rueckstandMonateDu": "Hast du im jetzigen Mietverhältnis zwei Monate nacheinander mehr als eine Monatsmiete nicht gezahlt?",
+    "rueckstandMonate": "Hat {name} im jetzigen Mietverhältnis zwei Monate nacheinander mehr als eine Monatsmiete nicht gezahlt?",
+    "rueckstandMietenDu": "Hast du im jetzigen Mietverhältnis über mehr als zwei Monate zusammen mindestens zwei Monatsmieten nicht gezahlt?",
+    "rueckstandMieten": "Hat {name} im jetzigen Mietverhältnis über mehr als zwei Monate zusammen mindestens zwei Monatsmieten nicht gezahlt?",
+    "kuendigungDu": "Wurde dein letztes Mietverhältnis wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags gekündigt, und ist die Kündigung rechtswirksam oder rechtskräftig festgestellt?",
+    "kuendigung": "Wurde das letzte Mietverhältnis von {name} wegen einer tatsächlich vorliegenden, erheblichen Verletzung des Mietvertrags gekündigt, und ist die Kündigung rechtswirksam oder rechtskräftig festgestellt?",
+    "kuendigungWelche": "Um welche Verletzung des Mietvertrags ging es?",
+    "gruende": "Gründe, warum das nicht wieder vorkommt (freiwillig)",
+    "gruendeBeispiel": "Etwa ein höheres Nettoeinkommen.",
+    "zusageNeu": "Bisher war das eine Frage, jetzt sind es wie im Musterbogen drei. Bitte beantworte sie neu.",
+    "antwortenEntfernen": "Antworten entfernen",
     "nachZusage": "Nach der Zusage",
-    "zusageHinweisDu": "Nach der Orientierungshilfe der Datenschutzkonferenz darf der Vermieter das erst kurz vor dem Vertrag fragen. Freiwillig kannst du es schon jetzt beantworten.",
-    "zusageHinweisIhr": "Nach der Orientierungshilfe der Datenschutzkonferenz darf der Vermieter das erst kurz vor dem Vertrag fragen. Freiwillig könnt ihr es schon jetzt beantworten.",
     "zusageBeantwortet": "Die Antwort steht ab jetzt in der Mappe. Nur eine Mappe für die Zeit vor der Zusage lässt sie weg.",
-    "zusageOffen": "Eine Frage folgt nach der Zusage",
-    "antwortEntfernen": "Antwort entfernen",
+    "zusageOffen": {
+      "eins": "Eine Frage erst nach der Zusage",
+      "zwei": "Zwei Fragen erst nach der Zusage",
+      "drei": "Drei Fragen erst nach der Zusage"
+    },
+    "kuendigungSatz": "Nur das letzte Mietverhältnis, und nur eine Kündigung, die rechtswirksam ist oder rechtskräftig festgestellt wurde.",
     "speichern": "Speichern",
     "grund": "Es fehlt noch: {liste}.",
     "grundZahl": {
@@ -1168,7 +1179,7 @@
     "teilKurz": {
       "kontakt": "Kontakt",
       "einkommen": "Einkommen",
-      "fragen": "Drei Fragen",
+      "fragen": "Fragen",
       "haushalt": "Haushalt"
     },
     "pdfAnsehen": "Als PDF ansehen",
@@ -1182,8 +1193,8 @@
       "kontaktOffen": "Eine Angabe reicht, Telefon oder E-Mail",
       "einkommen": "Einkommen",
       "einkommenOffen": "Gehört zu fast jeder Bewerbung, netto im Monat",
-      "fragen": "Drei Fragen aus dem Musterbogen",
-      "fragenOffen": "Insolvenz, Räumung, Mietrückstände, je Ja oder Nein",
+      "fragen": "Fragen aus dem Musterbogen",
+      "fragenOffen": "Insolvenz, Räumung, Mietrückstände, Kündigung, je Ja oder Nein",
       "haushalt": {
         "ihr": "Für euren ganzen Haushalt",
         "du": "Für deinen ganzen Haushalt"
@@ -1202,7 +1213,8 @@
     "einkommenSumme": "{betrag} netto",
     "einkommenBei": "{beruf} bei {arbeitgeber}",
     "erklaeren": "Kurz erklären? (freiwillig)",
-    "fragenNein": "Dreimal Nein",
+    "fragenNein": "Fünfmal Nein",
+    "fragenNeinZahl": "{anzahl}× Nein",
     "fragenNeinZwei": "Zweimal Nein",
     "fragenMal": "{ja}× Ja, {nein}× Nein",
     "haushaltHinweis": "Gilt für alle Bögen. Die anderen müssen das nicht noch einmal eintragen.",
@@ -1213,6 +1225,8 @@
     "haustiereIhr": "Habt ihr Haustiere?",
     "haustiereDu": "Hast du Haustiere?",
     "haustiereHinweis": "Kleintiere in Käfigen zählen nicht.",
+    "wbs": "Wohnberechtigungsschein (freiwillig)",
+    "wbsGruppe": "Wohnberechtigungsschein",
     "haustiereWelche": "Welche? (freiwillig)",
     "ortUnterschrift": "Ort für die Unterschrift",
     "ortBeispiel": "z. B. Hamburg",
@@ -1229,6 +1243,7 @@
     "fertigKnopf": "Fertig",
     "nettoArt": "So steht es im Bogen",
     "freiwillig": "{feld} (freiwillig)",
+    "anschrift": "Anschrift",
     "nettoRente": "Rente im Monat, netto",
     "einkommenSummeRente": "{betrag} Rente, netto",
     "erklaerenBeispiel": "z. B. wann und warum, und dass es erledigt ist",
@@ -1403,7 +1418,7 @@
     "allesDu": "Alles, was du gesammelt hast.",
     "allesIhr": "Alles, was ihr gesammelt habt.",
     "eigeneZeile": "Eigene Auswahl",
-    "eigeneZeileUnter": "Unterlage für Unterlage, auch Ausweiskopie",
+    "eigeneZeileUnter": "Unterlage für Unterlage",
     "eigeneGewaehlt": "Eigene Auswahl, gewählt",
     "eigeneGewaehltUnter": {
       "ihr": "Ihr entscheidet Unterlage für Unterlage",
@@ -1510,6 +1525,7 @@
     "feldSatz": "Satz fürs Deckblatt",
     "feldTelefon": "Telefon",
     "feldEmail": "E-Mail",
+    "feldAnschrift": "Anschrift",
     "feldErklaerung": "Erklärung",
     "feldHaustiere": "Haustiere",
     "feldOrt": "Ort",
@@ -1811,6 +1827,11 @@
     "fehlerCode": "Fehler: {code}",
     "kopieren": "Fehler kopieren",
     "kopiert": "Kopiert",
+    "nieInMappeTitel": "Ausweiskopie und Datenkopie bleiben draußen.",
+    "nieInMappeText": {
+      "ihr": "Sie kommen in keine Mappe mehr. Was ihr abgelegt habt, bleibt gespeichert; an der Unterlage steht, warum.",
+      "du": "Sie kommen in keine Mappe mehr. Was du abgelegt hast, bleibt gespeichert; an der Unterlage steht, warum."
+    },
     "fehlerTitel": "Das hat nicht geklappt.",
     "fehlerText": {
       "ihr": "Euer letzter Schritt ist vielleicht nicht gespeichert.",
@@ -2785,6 +2806,12 @@
       "zurueck": "‹ Doch noch offen"
     }
   },
+  "formblatt": {
+    "strasse": "Straße und Hausnummer",
+    "plz": "PLZ",
+    "ort": "Ort",
+    "plzNachfrage": "Eine Postleitzahl in Deutschland hat fünf Ziffern. Stimmt sie so?"
+  },
   "nachfrage": {
     "satz": "Sieht ungewöhnlich aus. Stimmt sie?"
   },
@@ -2917,17 +2944,44 @@
     "blatt1SatzOhne": "Für den Vermieter. Wer bürgt, unterschreibt es und gibt es ihm.",
     "blatt2": "Blatt 2: Für {name}",
     "blatt2Ohne": "Blatt 2: Für die Person, die bürgt",
-    "blatt2Satz": {
-      "weiblich": "Was sie verspricht. Bleibt bei ihr, nicht in der Mappe.",
-      "maennlich": "Was er verspricht. Bleibt bei ihm, nicht in der Mappe.",
-      "neutral": "Was {name} verspricht. Bleibt bei {name}, nicht in der Mappe."
-    },
+    "blatt2Satz": "Was die Erklärung bedeutet. Kommt nicht in die Mappe.",
     "vorschau": "Vorschau von Blatt {nummer}, antippen zeigt das PDF",
     "danach": "Danach",
     "hinzufuegen": "Unterschriebenes Blatt hinzufügen",
     "hinzufuegenSatz": "Ein Scan von Blatt 1 kommt zu {name} in die Mappe.",
     "aendern": "Angaben ändern",
-    "teilen": "Drucken oder teilen"
+    "teilen": "Drucken oder teilen",
+    "leadSeite": "{name} unterschreibt die Erklärung von Hand; per Mail gilt eine Bürgschaft nicht. Änderungen werden sofort gespeichert.",
+    "pdfFertig": "Fertig, 2 Blätter",
+    "freiwilligStand": "Freiwillig. Was leer bleibt, kommt von Hand aufs Blatt.",
+    "teil": {
+      "wer": "Wer bürgt",
+      "fuerWen": "Für wen und Vermieter",
+      "wohnung": "Wohnung und Mietvertrag",
+      "betrag": "Höchstbetrag und Art"
+    },
+    "teilKurz": {
+      "wer": "Wer bürgt",
+      "fuerWen": "Für wen",
+      "wohnung": "Wohnung",
+      "betrag": "Höchstbetrag"
+    },
+    "vermieterAnschrift": "Anschrift des Vermieters",
+    "vermieterAnschriftSatz": "Steht so in der Erklärung. Frei lassen geht auch.",
+    "wohnungAnschrift": "Anschrift der Wohnung",
+    "wohnungAnschriftSatz": "Wie im Inserat.",
+    "lage": "Lage (freiwillig)",
+    "lageSatz": "Etwa „2. OG links“, wenn es im Haus mehrere Wohnungen gibt.",
+    "platzLage": "2. OG links",
+    "vertragSatz": "Steht so in der Erklärung. Frei lassen, wenn er noch nicht unterschrieben ist.",
+    "erklaerungVon": "Bürgschaftserklärung von",
+    "plusWeitere": "+ Weitere Person",
+    "platzLageEtwa": "etwa 2. OG links",
+    "hoechstbetragEuro": "Höchstbetrag in Euro",
+    "unterschrift": "Unterschrift",
+    "zweiBlaetter": "Zwei Blätter zum Ausdrucken",
+    "alsPdfSatz": "Ein Blatt zum Ausdrucken, dazu ein Blatt „Bevor Sie unterschreiben“.",
+    "bleibt": "Was du einträgst, bleibt in diesem Browser, bis du es löschst."
   },
   "heftMappe": {
     "titel": "In der Mappe für diese Wohnung",
@@ -2973,6 +3027,10 @@
     "wbsLeer": {
       "ihr": "Nur für Sozialwohnungen. Habt ihr einen, legt ihn hier einmal ab.",
       "du": "Nur für Sozialwohnungen. Hast du einen, leg ihn hier einmal ab."
+    },
+    "wbsJa": {
+      "ihr": "Ihr habt einen. Noch nicht abgelegt.",
+      "du": "Du hast einen. Noch nicht abgelegt."
     },
     "wbsGueltig": "Gültig bis {datum}",
     "wbsAbgelaufen": "Abgelaufen am {datum}",
@@ -3227,5 +3285,90 @@
     "dochNicht": "Doch nicht",
     "neuePerson": "Vorname einer neuen Person",
     "dazu": "Dazu"
+  },
+  "bogen": {
+    "ratgeber": "Ratgeber",
+    "subDu": "Für eine Wohnungsbewerbung, nach dem Musterbogen der Datenschutzkonferenz. Was du einträgst, bleibt in diesem Browser.",
+    "subIhr": "Ein Bogen je Person im Mietvertrag. Was ihr eintragt, bleibt in diesem Browser.",
+    "selbstauskunftVon": "Selbstauskunft von",
+    "satzName": "Name und Vorname gehören immer dazu.",
+    "blattName": "Bogen {name}",
+    "neu": "neu",
+    "neuePerson": "Neue Person",
+    "boegen": "Bögen",
+    "plusPerson": "+ Person",
+    "zurPerson": "Zur Person",
+    "satzKontakt": "Für den Kontakt reicht eine Angabe: Anschrift, Telefon oder E-Mail.",
+    "berufEinkommen": "Beruf und Einkommen",
+    "beruf": "Beruf",
+    "arbeitgeber": "Arbeitgeber (freiwillig)",
+    "satzBeruf": "Beruf und Arbeitgeber reichen. Wie lange schon, gehört nicht dazu.",
+    "netto": "Netto im Monat, in Euro",
+    "satzNetto": "Eine genaue Zahl braucht es nicht, eine Grenze reicht, etwa „mindestens 2.000“. Wofür das Geld ausgegeben wird, gehört nicht hierher.",
+    "fragen": "Fragen nach dem Musterbogen",
+    "frage1": "1. Läuft bei dir gerade ein Insolvenzverfahren?",
+    "frage1Name": "1. Läuft bei {name} gerade ein Insolvenzverfahren?",
+    "frage1Ohne": "1. Läuft bei dieser Person gerade ein Insolvenzverfahren?",
+    "frage1Gruppe": "Frage 1: Insolvenzverfahren",
+    "frage2": "2. Gab es gegen dich in den letzten fünf Jahren einen Räumungstitel?",
+    "frage2Name": "2. Gab es gegen {name} in den letzten fünf Jahren einen Räumungstitel?",
+    "frage2Ohne": "2. Gab es gegen diese Person in den letzten fünf Jahren einen Räumungstitel?",
+    "frage2Gruppe": "Frage 2: Räumungstitel",
+    "satzInsolvenz": "Nach einer Insolvenz, die schon abgeschlossen ist, fragt der Bogen nicht.",
+    "frage3": "3. Mietrückstände oder Kündigung. Danach darf ein Vermieter erst kurz vor dem Vertrag fragen. Bleibt bis dahin frei.",
+    "haushalt": "Haushalt",
+    "gleich": "in allen Bögen gleich",
+    "werEinzieht": "Wer einzieht",
+    "erwachsene": "Erwachsene",
+    "kinder": "Kinder",
+    "haustiereDu": "Hast du Haustiere?",
+    "haustiereIhr": "Habt ihr Haustiere?",
+    "haustiere": "Haustiere",
+    "wbs": "Wohnberechtigungsschein (freiwillig)",
+    "wbsGruppe": "Wohnberechtigungsschein",
+    "satzWbs": "Nur für eine Sozialwohnung. Sonst frei lassen.",
+    "ortUnterschrift": "Ort für die Unterschrift",
+    "ort": "Ort",
+    "ortDatum": "Ort, Datum",
+    "bogenWeg": "Bogen von {name} entfernen",
+    "bogenWegOhne": "Diesen Bogen entfernen",
+    "alsPdf": "Als PDF",
+    "alsPdfName": "Als PDF",
+    "eine": "Alle in einer PDF",
+    "eineSatz": "{anzahl} Bögen, {anzahl} Seiten, eine Datei",
+    "je": "Je Person eine PDF",
+    "jeSatz": "{anzahl} Dateien, eine je Person",
+    "boegenKopf": "Bögen",
+    "bogenKopf": "Bogen",
+    "ohneNamen": "Noch ohne Namen",
+    "offen": "{anzahl} offen",
+    "fertigSeite": "fertig, 1 Seite",
+    "ganzeBewerbungen": "Für ganze Bewerbungen",
+    "uebernehmenTitel": "In einen Haushalt übernehmen",
+    "uebernehmenSatz": "Für Bewerbungen mit Mappe, Heften und Unterlagen, hier in diesem Browser.",
+    "wennIhr": "Wenn ihr übernehmt",
+    "wennDu": "Wenn du übernimmst",
+    "imVertragMehr": "{namen} stehen im Mietvertrag. {erste} ist Ansprechperson.",
+    "imVertragEine": "{name} steht im Mietvertrag und ist Ansprechperson.",
+    "kinderZiehen": {
+      "one": "Ein Kind zieht mit ein.",
+      "other": "{anzahl} Kinder ziehen mit ein."
+    },
+    "wbsKommt": "Der Wohnberechtigungsschein gehört dann zum Haushalt: in der Mappe unter „Für den ganzen Haushalt“. Dort legt ihr den Schein einmal ab.",
+    "gehenMitMehr": "Die Bögen gehen mit, mit allen Angaben. Hier bleibt danach nichts doppelt.",
+    "gehtMit": "Der Bogen geht mit, mit allen Angaben. Hier bleibt danach nichts doppelt.",
+    "neuerHaushaltIhr": "Dafür entsteht ein neuer Haushalt. Euer bisheriger bleibt, wie er ist.",
+    "neuerHaushaltDu": "Dafür entsteht ein neuer Haushalt. Dein bisheriger bleibt, wie er ist.",
+    "uebernehmen": "Übernehmen",
+    "haushaltAnlegen": "Haushalt anlegen",
+    "bleibtDu": "Sonst bleibt der Bogen in diesem Browser, bis du ihn löschst.",
+    "bleibtIhr": "Sonst bleiben die Bögen in diesem Browser, bis ihr sie löscht.",
+    "loeschenFrage": "Alle Angaben in diesem Browser löschen? Das lässt sich nicht rückgängig machen.",
+    "allesLoeschen": "Alle Angaben löschen",
+    "eineSeite": "1 Seite",
+    "eineDatei": "{anzahl} Bögen in einer Datei",
+    "jeDatei": "{anzahl} Dateien",
+    "weiterePerson": "+ Weitere Person hinzufügen",
+    "weiterePersonSatz": "Wer den Mietvertrag mit unterschreibt, bekommt einen eigenen Bogen."
   }
 }

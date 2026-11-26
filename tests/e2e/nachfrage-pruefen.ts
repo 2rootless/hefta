@@ -30,7 +30,11 @@ export async function tintenrandImFokus(page: Page, selektor: string): Promise<b
       const feld = document.querySelector<HTMLElement>(selektor)!;
       if (document.activeElement !== feld) throw new Error(`${selektor} hat keinen Fokus`);
       const s = getComputedStyle(feld);
-      const schatten = s.boxShadow.includes(tinte) && s.boxShadow.includes('inset');
+      // Der Tintenrand ist ein Schatten innen in Tinte. Der Fokusstrich unter dem Feld (DP145, B3: 3 px, außen) und die
+      // Feldlinie in --ink-quiet sind keiner; darum jeden Schatten einzeln ansehen.
+      const schatten = s.boxShadow
+        .split(/,(?![^(]*\))/)
+        .some((teil) => teil.includes(tinte) && teil.includes('inset'));
       const linie =
         s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0 && s.outlineColor === tinte;
       return schatten || linie;

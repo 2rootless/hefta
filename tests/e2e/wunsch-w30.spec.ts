@@ -33,7 +33,7 @@ for (const [breite, text] of [
     };
     await zoomen();
     const gesehen: W30Lage[] = [];
-    for (const name of [/Einkommen/, /Drei Fragen/, /Haushalt/]) {
+    for (const name of [/Einkommen/, /Fragen aus dem Musterbogen/, /Haushalt/]) {
       await teilOeffnen(page, name);
       gesehen.push(...(await lagen(page)));
     }

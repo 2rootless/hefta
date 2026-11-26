@@ -1,477 +1,437 @@
 <script lang="ts">
-  // Bürgschaftserklärung (E112, DP41 Abschnitt 6): Formular im Stil von „Person ändern“ (DP39). Aus dem Heft
-  // kommt, was schon da ist (Bürgin, Mieter, Wohnung, Vermieter); ohne Heft ist alles leer. Pflicht sind
-  // Höchstbetrag und Art (PC47 §3), keine Art ist vorgewählt. Danach: zwei Blätter zum Ausdrucken; Blatt 2
-  // bleibt beim Bürgen und kommt nie in die Mappe. Ein Scan von Blatt 1 kommt als Unterlage zur Person, für
-  // dieses Heft (DP49 Punkt 5).
-  import { onDestroy, tick, untrack } from 'svelte';
-  import { daten } from '../app/daten.svelte';
+  // Bürgschaftserklärung in der App (W63; PC205, Abschnitt 3; DP135, Abschnitt 2): vier Teile auf dem Formblatt wie
+  // die Selbstauskunft, 1 Wer bürgt, 2 Für wen und Vermieter, 3 Wohnung und Mietvertrag, 4 Höchstbetrag und Art.
+  // Oben der Stand mit „Als PDF ansehen“, unten „Weiter“ mit dem nächsten Teil (K9). Änderungen werden sofort am
+  // Heft gespeichert (U11); „Zurück“ und „Fertig“ führen dorthin, woher man kam (W39). Namen kommen aus dem Haushalt
+  // (U7). Nötig sind nur Höchstbetrag und Art (E112); Ort, Datum und Unterschrift bleiben für die Hand (U10). Das PDF
+  // hat zwei Blätter; Blatt 2 bleibt bei der Person, die bürgt, und kommt nie in die Mappe. Ein Scan von Blatt 1 kommt
+  // als Unterlage zur Person, für dieses Heft (DP49 Punkt 5).
+  import { tick, untrack } from 'svelte';
+  import { daten, db, neuLaden } from '../app/daten.svelte';
   import { pdfZeigen } from '../app/pdfFenster.svelte';
-  import { gehe } from '../app/router.svelte';
+  import { einstieg, gehe, route, zumEinstieg } from '../app/router.svelte';
   import { adresseZeilen } from '../domain/adresse';
+  import { betragAus, betragText, type BuergschaftsArt } from '../domain/buergschaft';
   import {
-    betragAus,
-    betragText,
-    leereAngaben,
-    pflichtFehlt,
-    type BuergschaftAngaben,
-    type BuergschaftsArt,
-  } from '../domain/buergschaft';
+    angabenAusEingabe,
+    BUERGSCHAFT_FORMULAR,
+    buergschaftKnopf,
+    buergschaftStand,
+    eingabeFuer,
+    entwurfAus,
+    teilZusammenfassung,
+    type BuergschaftEingabe,
+    type BuergschaftTeil,
+  } from '../domain/buergschaftEingabe';
   import { namensteil } from '../domain/dateiname';
   import { nameImPdf, nameText } from '../domain/namen';
   import { rollenAnzeige } from '../domain/regelkatalog';
-  import { t, tIn } from '../i18n';
+  import AnschriftFelder from '../formblatt/AnschriftFelder.svelte';
+  import FormFeld from '../formblatt/FormFeld.svelte';
+  import FormTeil from '../formblatt/FormTeil.svelte';
+  import { aufzaehlung, fehlendeFelder } from '../formblatt/formblatt';
+  import { t, tagZusammen, tIn } from '../i18n';
+  import { heftAendern } from '../storage/speicher';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
+  import { einstiegText } from '../ui/einstieg';
   import { erklaerungHeft } from '../ui/erklaerungHeft.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
 
-  let { personId = null, heftId = null }: { personId?: string | null; heftId?: string | null } =
-    $props();
+  let { personId, heftId }: { personId: string; heftId: string } = $props();
 
+  const id = $props.id();
   const mitglied = $derived(
-    personId ? (daten.ansicht?.mitglieder.find((m) => m.person.id === personId) ?? null) : null,
+    daten.ansicht?.mitglieder.find((m) => m.person.id === personId) ?? null,
   );
-  const heft = $derived(heftId ? (daten.hefte.find((h) => h.id === heftId) ?? null) : null);
+  const heft = $derived(daten.hefte.find((h) => h.id === heftId) ?? null);
   const vertrag = $derived(
     (daten.ansicht?.mitglieder ?? []).filter(
       (m) => m.zugehoerigkeit.rolle !== 'buerge' && !m.zugehoerigkeit.herausgenommenAm,
     ),
   );
-  const ausHeft = $derived(!!mitglied);
   const rufname = $derived(mitglied ? mitglied.person.rufname || mitglied.person.vorname : '');
   const an = $derived(vertrag.length > 1 ? 'ihr' : 'du');
+  const name = $derived(mitglied ? nameText(nameImPdf(mitglied.person)) : '');
+  const mieter = $derived(vertrag.map((v) => nameText(nameImPdf(v.person))));
 
-  function start(): BuergschaftAngaben {
-    const a = leereAngaben();
-    const m = untrack(() => mitglied);
-    const h = untrack(() => heft);
-    if (!m) return a;
-    return {
-      ...a,
-      buerge: { name: nameText(nameImPdf(m.person)), anschrift: m.person.kontakt.anschrift ?? '' },
-      mieter: untrack(() => vertrag).map((v) => nameText(nameImPdf(v.person))),
-      vermieter: { name: h?.angaben?.anbieter?.trim() ?? '', anschrift: '' },
-      wohnung: h ? adresseZeilen(h.adresse).join(', ') : '',
-      vertragTag: /^\d{4}-\d{2}-\d{2}$/.test(h?.einzug ?? '') ? h!.einzug! : '',
-      bezeichnung: m.zugehoerigkeit.bezeichnung,
-    };
+  let eingabe = $state<BuergschaftEingabe>(
+    untrack(() =>
+      eingabeFuer(heft?.buergschaften?.[personId], {
+        anschrift: mitglied?.person.kontakt.anschriftTeile ?? null,
+        anschriftText: mitglied?.person.kontakt.anschrift ?? null,
+        vermieterName: heft?.angaben?.anbieter ?? null,
+        wohnungZeilen: heft ? adresseZeilen(heft.adresse) : [],
+        einzug: heft?.einzug ?? null,
+      }),
+    ),
+  );
+  let betragEingabe = $state(untrack(() => betragText(eingabe.hoechstbetrag)));
+
+  const werte = $derived({ e: eingabe, name, mieter });
+  const stand = $derived(buergschaftStand(werte));
+  const fertig = $derived(stand.every((s) => s.fertig));
+  // Beim ersten Öffnen ist der erste Teil auf, der noch nicht ganz ausgefüllt ist; mit gespeichertem Entwurf sind alle
+  // zu, wie auf der Seite der Selbstauskunft.
+  let offen = $state<BuergschaftTeil | null>(
+    untrack(() =>
+      heft?.buergschaften?.[personId]
+        ? null
+        : (buergschaftStand({ e: eingabe, name, mieter }).find((s) => !s.fertig || !s.voll)?.id ??
+          null),
+    ),
+  );
+  const knopf = $derived(buergschaftKnopf(stand, offen));
+  const fehltNamen = $derived(
+    fehlendeFelder(BUERGSCHAFT_FORMULAR, werte).map((f) =>
+      t(f.id === 'art' ? 'buergschaft.fehltArt' : 'buergschaft.fehltBetrag'),
+    ),
+  );
+
+  let wurzel = $state<HTMLDivElement>();
+
+  async function oeffnen(teil: BuergschaftTeil | null) {
+    offen = teil;
+    await tick();
+    const neu = wurzel?.querySelector<HTMLElement>('section.offen');
+    neu?.scrollIntoView({ block: 'nearest' });
+    return neu;
   }
 
-  let a = $state<BuergschaftAngaben>(start());
-  let betragEingabe = $state(betragText(a.hoechstbetrag));
-  let versucht = $state(false);
-  let zustand = $state<'formular' | 'fertig'>('formular');
-  let baut = $state(false);
-  let bauFehler = $state(false);
-  let datei = $state.raw<File | null>(null);
-  let bilder = $state<string[]>([]);
+  /** Fokus ins erste leere Feld des Teils, sonst ins erste Feld oder den ersten Knopf (K9, DP96). */
+  function erstesLeeres(teil: HTMLElement | null | undefined) {
+    if (!teil) return;
+    const felder = [...teil.querySelectorAll<HTMLInputElement>('input')];
+    (
+      felder.find((f) => !f.value.trim()) ??
+      felder[0] ??
+      teil.querySelector<HTMLElement>('[role="radio"]')
+    )?.focus();
+  }
 
-  const fehlt = $derived(pflichtFehlt(a));
-  // DP136, Abschnitt 4: Der gesperrte Knopf nennt, was fehlt, mit ganzen Namen (K9).
-  const fehltListe = $derived(
-    [
-      fehlt.betrag ? t('buergschaft.fehltBetrag') : '',
-      fehlt.art ? t('buergschaft.fehltArt') : '',
-    ].filter(Boolean),
-  );
-  const zeigeFehler = $derived(versucht ? fehlt : { betrag: false, art: false });
-
-  let titelEl = $state<HTMLElement | null>(null);
-  let betragEl = $state<HTMLInputElement | null>(null);
-  let artEl = $state<HTMLElement | null>(null);
-
-  const ARTEN: BuergschaftsArt[] = ['ausfall', 'selbstschuldnerisch'];
-  function artSatz(art: BuergschaftsArt): string {
-    if (!ausHeft)
-      return t(art === 'ausfall' ? 'buergschaft.ausfallSatzOhne' : 'buergschaft.selbstSatzOhne');
-    return tIn(an, art === 'ausfall' ? 'buergschaft.ausfallSatz' : 'buergschaft.selbstSatz', {
-      name: rufname,
+  function fehlendenOeffnen() {
+    const ziel = stand.find((s) => !s.fertig)?.id ?? null;
+    void oeffnen(ziel).then((teil) => {
+      if (eingabe.hoechstbetrag) teil?.querySelector<HTMLElement>('[role="radio"]')?.focus();
+      else erstesLeeres(teil);
     });
   }
 
-  function dateiname(): string {
-    const teil = namensteil(a.buerge.name);
-    return `${['Buergschaftserklaerung', teil].filter(Boolean).join('_')}.pdf`;
+  // ---------- Sofort speichern (U11), wie die Selbstauskunft ----------
+  let letzter = untrack(() => JSON.stringify(eingabe));
+  let zeitgeber: ReturnType<typeof setTimeout> | undefined;
+  async function speichern() {
+    const jetzt = JSON.stringify(eingabe);
+    if (jetzt === letzter || !mitglied) return;
+    letzter = jetzt;
+    const verbindung = await db();
+    const alt = (await verbindung.get('hefte', heftId))?.buergschaften ?? {};
+    await heftAendern(verbindung, heftId, {
+      buergschaften: { ...alt, [personId]: entwurfAus(eingabe, new Date().toISOString()) },
+    });
+    await neuLaden();
   }
+  $effect(() => {
+    void JSON.stringify(eingabe);
+    clearTimeout(zeitgeber);
+    zeitgeber = setTimeout(() => void speichern(), 400);
+    return () => clearTimeout(zeitgeber);
+  });
 
-  function bilderFrei() {
-    for (const b of bilder) URL.revokeObjectURL(b);
-    bilder = [];
-  }
-  onDestroy(bilderFrei);
+  // ---------- W39: zurück dorthin, woher man kam ----------
+  const ablauf = $derived(`/buergschaft/${personId}/${heftId}`);
+  const sonst = $derived(`/heft/${heftId}`);
+  const einstiegPfad = $derived((void route.pfad, einstieg(ablauf)));
+  const zurueckText = $derived(einstiegText(einstiegPfad ?? sonst, daten.ansicht));
 
-  async function erstellen() {
-    versucht = true;
-    bauFehler = false;
-    if (fehlt.betrag || fehlt.art) {
-      await tick();
-      if (fehlt.betrag) betragEl?.focus();
-      else artEl?.querySelector<HTMLElement>('[role="radio"]')?.focus();
-      return;
-    }
+  // ---------- PDF ----------
+  let baut = $state(false);
+  let bauFehler = $state(false);
+  let datei = $state.raw<{ schluessel: string; datei: File } | null>(null);
+
+  async function pdfDatei(): Promise<File | null> {
+    await speichern();
+    const angaben = angabenAusEingabe($state.snapshot(werte) as typeof werte);
+    const schluessel = JSON.stringify(angaben);
+    if (datei?.schluessel === schluessel) return datei.datei;
     baut = true;
+    bauFehler = false;
     try {
       const [{ buergschaftBauen }, { pdfSchriftenLaden }] = await Promise.all([
         import('../pdf/buergschaft'),
         import('../pdf/schriften'),
       ]);
       const erg = await buergschaftBauen(
-        $state.snapshot(a) as BuergschaftAngaben,
+        angaben,
         await pdfSchriftenLaden(daten.ansicht?.haushalt.mappeAussehen?.schrift),
       );
-      datei = new File([erg.bytes.slice()], dateiname(), { type: 'application/pdf' });
-      bilderFrei();
-      zustand = 'fertig';
-      window.scrollTo(0, 0);
-      await tick();
-      titelEl?.focus();
-      void vorschauBauen(erg.bytes);
+      const teil = namensteil(angaben.buerge.name);
+      const neu = new File(
+        [erg.bytes.slice()],
+        `${['Buergschaftserklaerung', teil].filter(Boolean).join('_')}.pdf`,
+        { type: 'application/pdf' },
+      );
+      datei = { schluessel, datei: neu };
+      return neu;
     } catch {
       bauFehler = true;
+      return null;
     } finally {
       baut = false;
     }
   }
 
-  async function vorschauBauen(bytes: Uint8Array) {
-    try {
-      const { miniatur, pdfOeffnen, pdfSchliessen } = await import('../pdf/pdfjs');
-      const dok = await pdfOeffnen(bytes.slice());
-      const neu = [await miniatur(dok, 1, 160), await miniatur(dok, 2, 160)];
-      await pdfSchliessen(dok);
-      if (zustand !== 'fertig') return neu.forEach((b) => URL.revokeObjectURL(b));
-      bilder = neu;
-    } catch {
-      // Ohne Vorschau stehen die Blätter als Fläche da; das PDF selbst ist fertig.
-    }
+  async function ansehen() {
+    const d = await pdfDatei();
+    if (d) pdfZeigen(d);
   }
 
   async function teilenKlick() {
-    if (!datei) return;
+    const d = await pdfDatei();
+    if (!d) return;
     const { teilen } = await import('../ui/mappeErstellen');
-    await teilen([datei]);
+    await teilen([d]);
   }
 
-  function hinzufuegen() {
-    if (!personId) return;
+  async function hinzufuegen() {
+    await speichern();
     erklaerungHeft.personId = personId;
     erklaerungHeft.heftId = heftId;
     gehe(`/unterlage/${personId}/buergschaftserklaerung`);
   }
 
-  async function aendern() {
-    zustand = 'formular';
-    window.scrollTo(0, 0);
-    await tick();
-    titelEl?.focus();
+  // ---------- Texte ----------
+  const TAG = new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+  function tagText(iso: string): string {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+    return m ? TAG.format(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))) : iso;
+  }
+  const ARTEN: BuergschaftsArt[] = ['ausfall', 'selbstschuldnerisch'];
+  const artName = (art: BuergschaftsArt) =>
+    t(art === 'ausfall' ? 'buergschaft.ausfall' : 'buergschaft.selbst');
+  function artSatz(art: BuergschaftsArt): string {
+    return tIn(an, art === 'ausfall' ? 'buergschaft.ausfallSatz' : 'buergschaft.selbstSatz', {
+      name: rufname,
+    });
+  }
+  function standText(s: { fertig: boolean; voll: boolean }): string {
+    if (!s.fertig) return t('buergschaft.esFehlt', { liste: aufzaehlung(fehltNamen) });
+    return s.voll ? '' : t('buergschaft.freiwilligStand');
+  }
+  function zusammenfassung(s: { id: BuergschaftTeil; fertig: boolean; voll: boolean }): string {
+    const text = teilZusammenfassung(
+      s.id,
+      werte,
+      { ausfall: artName('ausfall'), selbstschuldnerisch: artName('selbstschuldnerisch') },
+      tagText,
+    );
+    if (!s.fertig) return standText(s);
+    return text || standText(s);
   }
 
-  const zurueckZiel = $derived(
-    heftId ? `#/heft/${heftId}` : personId ? `#/person/${personId}` : '#/',
+  const geaendert = $derived.by(() => {
+    const iso = heft?.buergschaften?.[personId]?.geaendert;
+    return iso
+      ? tagZusammen(
+          new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long' }).format(new Date(iso)),
+        )
+      : '';
+  });
+  const zielName = $derived(
+    knopf.art === 'weiter' ? t(`buergschaft.teil.${knopf.ziel}`) : undefined,
   );
-  const blatt2Satz = $derived(
-    !ausHeft
-      ? t('buergschaft.blatt2Satz.maennlich')
-      : t(`buergschaft.blatt2Satz.${a.bezeichnung}`, { name: rufname }),
+  const zielKurz = $derived(
+    knopf.art === 'weiter' ? t(`buergschaft.teilKurz.${knopf.ziel}`) : undefined,
   );
 </script>
 
-{#snippet kopf(titel: string, rechts: string)}
-  <div class="abschnitt-kopf">
-    <h2>{titel}</h2>
-    {#if rechts}<small>{rechts}</small>{/if}
+{#snippet jaNeinVertrag()}
+  <div class="frage">
+    <b id="{id}-vertrag">{t('buergschaft.mietvertrag')}</b>
+    <div class="segmente" role="radiogroup" aria-labelledby="{id}-vertrag">
+      {#each ['unterschrieben', 'nochNicht'] as const as wert (wert)}
+        <button
+          type="button"
+          class="chip"
+          role="radio"
+          aria-checked={eingabe.vertrag === wert}
+          onclick={() => (eingabe.vertrag = wert)}
+          >{t(
+            wert === 'unterschrieben' ? 'buergschaft.schonUnterschrieben' : 'buergschaft.nochNicht',
+          )}</button
+        >
+      {/each}
+    </div>
   </div>
-{/snippet}
-
-{#snippet fehler(text: string, id: string)}
-  <p class="fehler" {id}>
-    <span class="warnzeichen" aria-hidden="true">!</span><span>{text}</span>
-  </p>
 {/snippet}
 
 <main class="seite">
   <div class="kopf">
-    {#if zustand === 'fertig' && ausHeft}
-      <Zurueck href="#/person/{personId}" text={rufname} />
-    {:else}
-      <Zurueck href={zurueckZiel} text={t('buergschaft.abbrechen')} />
-    {/if}
-  </div>
-  <div class="titelblock">
-    <h1 class="display frage" tabindex="-1" bind:this={titelEl}>{t('buergschaft.titel')}</h1>
-    <p class="lead">
-      {#if zustand === 'fertig'}
-        {ausHeft ? t('buergschaft.fertigSatz', { name: rufname }) : t('buergschaft.fertigSatzOhne')}
-      {:else}
-        {ausHeft ? t('buergschaft.satz', { name: rufname }) : t('buergschaft.satzOhne')}
-      {/if}
-    </p>
-  </div>
-
-  {#if zustand === 'formular'}
-    <form
-      class="formular"
-      novalidate
-      onsubmit={(e) => {
-        e.preventDefault();
-        void erstellen();
+    <Zurueck
+      href="#{einstiegPfad ?? sonst}"
+      text={zurueckText}
+      onclick={() => {
+        void speichern();
+        zumEinstieg(ablauf, sonst);
       }}
-    >
-      <section class="teil">
-        {@render kopf(t('buergschaft.werBuergt'), ausHeft ? t('buergschaft.ausHeft') : '')}
-        <div class="kasten">
-          <label class="eingabe">
-            {t('buergschaft.name')}
-            <!-- DP140: Der Satz gilt für Name und Anschrift; beide Felder sind an ihn gebunden. -->
-            <input
-              bind:value={a.buerge.name}
-              placeholder={t('buergschaft.platzName')}
-              autocomplete="off"
-              aria-describedby="b-wer"
-            />
-          </label>
-          <label class="eingabe">
-            {t('buergschaft.anschrift')}
-            <input
-              bind:value={a.buerge.anschrift}
-              placeholder={t('buergschaft.platzAnschrift')}
-              autocomplete="off"
-              aria-describedby="b-wer"
-            />
-          </label>
-        </div>
-        <!-- DP136, Abschnitt 2 (W30): ein Satz je Angabe. -->
-        <p class="satz w30" id="b-wer" data-w30="feld">{t('buergschaft.werSatz')}</p>
-      </section>
-
-      <section class="teil">
-        {@render kopf(t('buergschaft.fuerWen'), ausHeft ? t('buergschaft.ausHeft') : '')}
-        {#if ausHeft}
-          <ul class="kasten mieter">
-            {#each vertrag as m (m.person.id)}
-              <li>
-                <span
-                  class="zeichen"
-                  style:background="var(--person-{m.zugehoerigkeit.farbe})"
-                  aria-hidden="true"
-                ></span>
-                <b>{nameText(nameImPdf(m.person))}</b>
-                <small>{rollenAnzeige(m.zugehoerigkeit.rolle)}</small>
-              </li>
-            {/each}
-          </ul>
-          <p class="satz">{t('buergschaft.alleImVertrag')}</p>
-        {:else}
-          <div class="kasten">
-            {#each a.mieter.keys() as i (i)}
-              <label class="eingabe">
-                {i === 0 ? t('buergschaft.mieter') : t('buergschaft.mieterNr', { nummer: i + 1 })}
-                <input
-                  bind:value={a.mieter[i]}
-                  placeholder={t('buergschaft.platzName')}
-                  autocomplete="off"
-                  aria-describedby="b-fuer-wen"
-                />
-              </label>
-            {/each}
-            <button
-              type="button"
-              class="textlink weitere"
-              onclick={() => (a.mieter = [...a.mieter, ''])}
-              ><Symbol name="plus" groesse={16} />{t('buergschaft.weitere')}</button
-            >
-          </div>
-          <p class="satz w30" id="b-fuer-wen" data-w30="feld">{t('buergschaft.fuerWenSatzOhne')}</p>
-        {/if}
-      </section>
-
-      <section class="teil">
-        {@render kopf(t('buergschaft.vermieter'), '')}
-        <div class="kasten">
-          <label class="eingabe">
-            {t('buergschaft.name')}
-            <input
-              bind:value={a.vermieter.name}
-              placeholder={t('buergschaft.platzFirma')}
-              autocomplete="off"
-            />
-          </label>
-          <label class="eingabe">
-            {t('buergschaft.anschrift')}
-            <input
-              bind:value={a.vermieter.anschrift}
-              placeholder={t('buergschaft.platzAnschrift')}
-              autocomplete="off"
-              aria-describedby="b-vermieter"
-            />
-          </label>
-        </div>
-        <p class="satz w30" id="b-vermieter" data-w30="feld">{t('buergschaft.vermieterSatz')}</p>
-      </section>
-
-      <section class="teil">
-        {@render kopf(t('buergschaft.wohnung'), heft ? t('buergschaft.ausHeft') : '')}
-        <div class="kasten">
-          <label class="eingabe">
-            {t('buergschaft.wohnungLage')}
-            <input
-              bind:value={a.wohnung}
-              placeholder={t('buergschaft.platzWohnung')}
-              autocomplete="off"
-              aria-describedby="b-wohnung"
-            />
-          </label>
-          <p class="satz w30" id="b-wohnung" data-w30="feld">{t('buergschaft.wohnungSatz')}</p>
-          <fieldset class="feld">
-            <legend>{t('buergschaft.mietvertrag')}</legend>
-            <div class="segmente" role="radiogroup" aria-label={t('buergschaft.mietvertrag')}>
-              {#each ['unterschrieben', 'nochNicht'] as const as wert (wert)}
-                <button
-                  type="button"
-                  class="chip"
-                  role="radio"
-                  aria-checked={a.vertrag === wert}
-                  onclick={() => (a.vertrag = wert)}
-                  >{t(
-                    wert === 'unterschrieben'
-                      ? 'buergschaft.schonUnterschrieben'
-                      : 'buergschaft.nochNicht',
-                  )}</button
-                >
-              {/each}
-            </div>
-          </fieldset>
-          <label class="eingabe">
-            {a.vertrag === 'unterschrieben'
-              ? t('buergschaft.vertragVom')
-              : t('buergschaft.einzugZum')}
-            <input
-              type="date"
-              bind:value={a.vertragTag}
-              aria-describedby={a.vertrag === 'unterschrieben' ? undefined : 'b-einzug'}
-            />
-          </label>
-          {#if a.vertrag !== 'unterschrieben'}
-            <p class="satz w30" id="b-einzug" data-w30="feld">{t('buergschaft.einzugSatz')}</p>
-          {/if}
-        </div>
-      </section>
-
-      <section class="teil">
-        {@render kopf(t('buergschaft.hoechstbetrag'), '')}
-        <div class="kasten">
-          <label class="eingabe betrag">
-            <span class="visually-hidden">{t('buergschaft.hoechstbetrag')}</span>
-            <span class="betrag-feld">
-              <input
-                bind:this={betragEl}
-                inputmode="numeric"
-                autocomplete="off"
-                placeholder={t('buergschaft.betrag')}
-                aria-invalid={zeigeFehler.betrag}
-                aria-describedby={zeigeFehler.betrag ? 'b-fehler-betrag' : 'b-bis'}
-                bind:value={betragEingabe}
-                oninput={() => (a.hoechstbetrag = betragAus(betragEingabe))}
-                onblur={() => (betragEingabe = betragText(a.hoechstbetrag))}
-              />
-              <span class="euro" aria-hidden="true">{t('buergschaft.euro')}</span>
-            </span>
-          </label>
-          {#if zeigeFehler.betrag}
-            {@render fehler(t('buergschaft.fehlerBetrag'), 'b-fehler-betrag')}
-          {:else}
-            <p class="satz" id="b-bis">
-              {ausHeft ? t('buergschaft.bisZu', { name: rufname }) : t('buergschaft.bisZuOhne')}
-            </p>
-          {/if}
-        </div>
-      </section>
-
-      <section class="teil">
-        {@render kopf(t('buergschaft.art'), '')}
-        <div
-          class="kasten arten"
-          role="radiogroup"
-          aria-label={t('buergschaft.art')}
-          aria-invalid={zeigeFehler.art}
-          aria-describedby={zeigeFehler.art ? 'b-fehler-art' : undefined}
-          bind:this={artEl}
-        >
-          {#each ARTEN as art (art)}
-            <button
-              type="button"
-              class="art"
-              role="radio"
-              aria-checked={a.art === art}
-              onclick={() => (a.art = art)}
-            >
-              <span class="kreis" aria-hidden="true"></span>
-              <span class="tx">
-                <b>{t(art === 'ausfall' ? 'buergschaft.ausfall' : 'buergschaft.selbst')}</b>
-                <small>{artSatz(art)}</small>
-              </span>
-            </button>
-          {/each}
-        </div>
-        {#if zeigeFehler.art}
-          <div class="art-fehler">{@render fehler(t('buergschaft.fehlerArt'), 'b-fehler-art')}</div>
-        {/if}
-        <!-- DP136, Abschnitt 3: Was nicht ins Formular gehört, kommt von Hand aufs Papier. -->
-        <p class="satz">{t('buergschaft.unterschriftSatz')}</p>
-      </section>
-      <!-- DP112 B1: Bernstein nur mit Warnzeichen und Satz, wie bei .fehler (AK5). -->
-      {#if bauFehler}<p class="fehler fehler-bau" role="alert">
-          <span class="warnzeichen" aria-hidden="true">!</span><span
-            >{t('buergschaft.fehlerBau')}</span
-          >
-        </p>{/if}
-    </form>
+    />
+  </div>
+  {#if !mitglied || !heft}
+    <p>{t('personSeite.nichtGefunden')}</p>
   {:else}
-    <section class="teil">
-      {@render kopf(t('buergschaft.imPdf'), '')}
-      <ul class="kasten blaetter">
-        {#each [1, 2] as nummer (nummer)}
-          <li>
-            <button
-              type="button"
-              class="blatt"
-              onclick={() => datei && pdfZeigen(datei)}
-              aria-label="{nummer === 1
-                ? t('buergschaft.blatt1')
-                : ausHeft
-                  ? t('buergschaft.blatt2', { name: rufname })
-                  : t('buergschaft.blatt2Ohne')}. {t('buergschaft.vorschau', { nummer })}"
-            >
-              <span class="miniatur" aria-hidden="true">
-                {#if bilder[nummer - 1]}<img src={bilder[nummer - 1]} alt="" />{/if}
+    <div class="titelblock">
+      <h1 class="display">{t('buergschaft.titel')}</h1>
+      <p class="lead">{t('buergschaft.leadSeite', { name: rufname })}</p>
+    </div>
+
+    <!-- Stand oben wie in der Selbstauskunft (U1, U12): Blatt, Stand, „Als PDF ansehen“. -->
+    <div class="bogen">
+      <span class="blatt" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+      <div class="tx">
+        <b>{fertig ? t('buergschaft.pdfFertig') : t('selbstauskunft.pdfOffen')}</b>
+        {#if geaendert}<small>{t('selbstauskunft.zuletzt', { datum: geaendert })}</small>{/if}
+        {#if fertig}
+          <button type="button" class="textlink" onclick={() => void ansehen()}
+            >{t('selbstauskunft.pdfAnsehen')}</button
+          >
+          <button type="button" class="textlink" onclick={() => void teilenKlick()}
+            >{t('buergschaft.teilen')}</button
+          >
+        {/if}
+      </div>
+    </div>
+    {#if baut}<p class="hinweis" role="status">{t('selbstauskunft.pdfLaedt')}</p>{/if}
+    {#if bauFehler}<p class="fehler" role="alert">
+        <span class="warnzeichen" aria-hidden="true">!</span><span
+          >{t('buergschaft.fehlerBau')}</span
+        >
+      </p>{/if}
+
+    <div class="akkordeon formblatt" bind:this={wurzel}>
+      {#each stand as s, i (s.id)}
+        <FormTeil
+          nummer={i + 1}
+          titel={t(`buergschaft.teil.${s.id}`)}
+          offen={offen === s.id}
+          fertig={s.fertig && s.voll}
+          kopfId="{id}-{s.id}"
+          stand={standText(s)}
+          zusammenfassung={zusammenfassung(s)}
+          oeffnen={() => void oeffnen(s.id)}
+        >
+          {#if s.id === 'wer'}
+            <!-- U7: der Name aus dem Haushalt; ändern lässt er sich auf der Seite der Person. -->
+            <p class="name-zeile">
+              <b>{name}</b> <small>{rollenAnzeige('buerge')}</small>
+            </p>
+            <AnschriftFelder
+              bind:anschrift={eingabe.anschrift}
+              titel={t('buergschaft.anschrift')}
+              satz={t('buergschaft.werSatz')}
+              datenFeld="buerge-anschrift"
+            />
+          {:else if s.id === 'fuerWen'}
+            <ul class="mieter">
+              {#each vertrag as m (m.person.id)}
+                <li>
+                  <span
+                    class="zeichen"
+                    style:background="var(--person-{m.zugehoerigkeit.farbe})"
+                    aria-hidden="true"
+                  ></span>
+                  <b>{nameText(nameImPdf(m.person))}</b>
+                  <small>{rollenAnzeige(m.zugehoerigkeit.rolle)}</small>
+                </li>
+              {/each}
+            </ul>
+            <p class="satz w30" data-w30="feld">{t('buergschaft.alleImVertrag')}</p>
+            <FormFeld
+              etikett={t('buergschaft.vermieter')}
+              bind:wert={eingabe.vermieterName}
+              satz={t('buergschaft.vermieterSatz')}
+              feld={{ placeholder: t('buergschaft.platzFirma'), autocomplete: 'off' }}
+            />
+            <AnschriftFelder
+              bind:anschrift={eingabe.vermieterAnschrift}
+              titel={t('buergschaft.vermieterAnschrift')}
+              satz={t('buergschaft.vermieterAnschriftSatz')}
+              datenFeld="vermieter-anschrift"
+            />
+          {:else if s.id === 'wohnung'}
+            <AnschriftFelder
+              bind:anschrift={eingabe.wohnung}
+              titel={t('buergschaft.wohnungAnschrift')}
+              satz={t('buergschaft.wohnungAnschriftSatz')}
+              datenFeld="wohnung"
+            />
+            <FormFeld
+              etikett={t('buergschaft.lage')}
+              bind:wert={eingabe.lage}
+              satz={t('buergschaft.lageSatz')}
+              feld={{ placeholder: t('buergschaft.platzLage'), autocomplete: 'off' }}
+            />
+            {@render jaNeinVertrag()}
+            <FormFeld
+              etikett={eingabe.vertrag === 'unterschrieben'
+                ? t('buergschaft.vertragVom')
+                : t('buergschaft.einzugZum')}
+              bind:wert={eingabe.vertragTag}
+              satz={eingabe.vertrag === 'unterschrieben'
+                ? t('buergschaft.vertragSatz')
+                : t('buergschaft.einzugSatz')}
+              feld={{ type: 'date' }}
+            />
+          {:else}
+            <label class="eingabe betrag">
+              {t('buergschaft.hoechstbetrag')}
+              <span class="betrag-feld">
+                <input
+                  inputmode="numeric"
+                  autocomplete="off"
+                  data-feld="hoechstbetrag"
+                  aria-describedby="{id}-bis"
+                  bind:value={betragEingabe}
+                  oninput={() => (eingabe.hoechstbetrag = betragAus(betragEingabe))}
+                  onblur={() => (betragEingabe = betragText(eingabe.hoechstbetrag))}
+                />
+                <span class="euro" aria-hidden="true">{t('buergschaft.euro')}</span>
               </span>
-              <span class="tx">
-                <b
-                  >{nummer === 1
-                    ? t('buergschaft.blatt1')
-                    : ausHeft
-                      ? t('buergschaft.blatt2', { name: rufname })
-                      : t('buergschaft.blatt2Ohne')}</b
-                >
-                <small
-                  >{nummer === 1
-                    ? ausHeft
-                      ? t('buergschaft.blatt1Satz', { name: rufname })
-                      : t('buergschaft.blatt1SatzOhne')
-                    : blatt2Satz}</small
-                >
-              </span>
-            </button>
-          </li>
-        {/each}
-      </ul>
-    </section>
-    {#if ausHeft}
-      <section class="teil">
-        {@render kopf(t('buergschaft.danach'), '')}
-        <div class="kasten danach">
-          <button type="button" class="zeile" onclick={hinzufuegen}>
+            </label>
+            <p class="satz w30" id="{id}-bis" data-w30="feld">
+              {t('buergschaft.bisZu', { name: rufname })}
+            </p>
+            <div class="frage">
+              <b id="{id}-art">{t('buergschaft.art')}</b>
+              <div class="arten" role="radiogroup" aria-labelledby="{id}-art">
+                {#each ARTEN as art (art)}
+                  <button
+                    type="button"
+                    class="art"
+                    role="radio"
+                    aria-checked={eingabe.art === art}
+                    onclick={() => (eingabe.art = art)}
+                  >
+                    <span class="kreis" aria-hidden="true"></span>
+                    <span class="tx">
+                      <b>{artName(art)}</b>
+                      <small>{artSatz(art)}</small>
+                    </span>
+                  </button>
+                {/each}
+              </div>
+            </div>
+            <!-- DP136, Abschnitt 3; U10: Was nicht ins Formular gehört, kommt von Hand aufs Papier. -->
+            <p class="satz">{t('buergschaft.unterschriftSatz')}</p>
+          {/if}
+        </FormTeil>
+      {/each}
+    </div>
+
+    {#if fertig}
+      <section class="danach">
+        <h2>{t('buergschaft.danach')}</h2>
+        <div class="zeilen">
+          <button type="button" class="zeile" onclick={() => void hinzufuegen()}>
             <span class="sym" aria-hidden="true"><Symbol name="buergschaft" groesse={20} /></span>
             <span class="tx">
               <b>{t('buergschaft.hinzufuegen')}</b>
@@ -482,31 +442,33 @@
         </div>
       </section>
     {/if}
-    <button type="button" class="textlink aendern" onclick={() => void aendern()}
-      >{t('buergschaft.aendern')}</button
-    >
   {/if}
 </main>
-
-{#if zustand === 'formular'}
-  {#if baut}
-    <Aktionsleiste text={t('buergschaft.erstellen')}>
-      {#snippet statt()}
-        <p class="baut" role="status">{t('buergschaft.baut')}</p>
-      {/snippet}
-    </Aktionsleiste>
-  {:else}
-    <Aktionsleiste
-      text={t('buergschaft.erstellen')}
-      grund={fehltListe.length
-        ? t('buergschaft.esFehlt', { liste: fehltListe.join(', ') })
-        : undefined}
-      beiGrund={() => void erstellen()}
-      onclick={() => void erstellen()}
-    />
-  {/if}
-{:else}
-  <Aktionsleiste text={t('buergschaft.teilen')} onclick={() => void teilenKlick()} />
+{#if mitglied && heft}
+  <!-- Eine Leiste für alle Fälle wie in der Selbstauskunft: Nur Text und Ziel wechseln (W8). -->
+  <Aktionsleiste
+    text={knopf.art === 'weiter'
+      ? t('selbstauskunft.weiterKnopf')
+      : t('selbstauskunft.fertigKnopf')}
+    unterzeile={knopf.art === 'weiter' ? zielKurz : undefined}
+    ansage={knopf.art === 'weiter'
+      ? t('selbstauskunft.weiterAnsage', { teil: zielName ?? '' })
+      : undefined}
+    grund={knopf.art === 'blass'
+      ? t('buergschaft.esFehlt', { liste: aufzaehlung(fehltNamen) })
+      : undefined}
+    grundOben
+    fokusHalten={knopf.art === 'weiter'}
+    beiGrund={fehlendenOeffnen}
+    onclick={async () => {
+      if (knopf.art === 'weiter') {
+        void oeffnen(knopf.ziel).then(erstesLeeres);
+        return;
+      }
+      await speichern();
+      zumEinstieg(ablauf, sonst);
+    }}
+  />
 {/if}
 
 <style>
@@ -514,7 +476,7 @@
     max-width: var(--content-width);
     min-height: 100dvh;
     margin: 0 auto;
-    padding: calc(20px + env(safe-area-inset-top)) var(--space-4)
+    padding: calc(40px + env(safe-area-inset-top)) var(--space-4)
       max(calc(140px + env(safe-area-inset-bottom)), calc(var(--leiste-hoehe, 0px) + 16px));
   }
 
@@ -526,69 +488,102 @@
     padding: 6px var(--space-1) 0;
   }
 
-  .frage {
-    margin-top: 10px;
-    outline: none;
-  }
-
   .lead {
     margin: 8px 0 0;
     color: var(--ink-muted);
   }
 
-  .teil {
-    margin-top: var(--space-5);
-  }
-
-  .abschnitt-kopf {
+  .bogen {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 8px;
-    margin: 0 var(--space-1) 8px;
-  }
-
-  .abschnitt-kopf h2 {
-    margin: 0;
-    font-size: calc(15 * var(--px));
-    line-height: calc(20 * var(--px));
-    font-weight: 650;
-  }
-
-  .abschnitt-kopf small {
-    font-size: calc(13 * var(--px));
-    color: var(--ink-muted);
-  }
-
-  .kasten {
-    display: grid;
-    gap: var(--space-3);
-    margin: 0;
+    align-items: center;
+    gap: 14px;
+    margin-top: var(--space-5);
     padding: 16px;
     border-radius: 20px;
     background: var(--surface);
-    list-style: none;
-    --weich: var(--weich-karte);
   }
 
-  .eingabe input {
-    min-height: 48px;
+  .blatt {
+    display: grid;
+    align-content: start;
+    gap: 5px;
+    flex-shrink: 0;
+    width: 54px;
+    height: 76px;
+    padding: 9px 7px;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgb(25 26 44 / 0.15);
   }
 
-  .satz {
-    margin: 0;
+  .blatt i {
+    display: block;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--track);
+  }
+
+  .blatt i:first-child {
+    width: 70%;
+    height: 4px;
+    background: #26221e;
+  }
+
+  .tx {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+    justify-items: start;
+  }
+
+  .tx b {
+    font-size: calc(16 * var(--px));
+    line-height: calc(21 * var(--px));
+  }
+
+  .tx small {
     font-size: calc(13 * var(--px));
     line-height: calc(18 * var(--px));
     color: var(--ink-muted);
   }
 
-  .teil > .satz {
-    margin: 10px var(--space-1) 0;
+  .hinweis {
+    margin: 8px 0 0;
+    font-size: calc(14 * var(--px));
+    color: var(--ink-muted);
+  }
+
+  .akkordeon {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .name-zeile {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 8px;
+    margin: 0;
+  }
+
+  .name-zeile b,
+  .mieter b {
+    font-size: calc(15 * var(--px));
+    font-weight: 650;
+  }
+
+  .name-zeile small,
+  .mieter small {
+    color: var(--ink-muted);
+    font-size: calc(13 * var(--px));
   }
 
   .mieter {
-    gap: 0;
-    padding: 4px 14px;
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
   .mieter li {
@@ -611,41 +606,27 @@
     border-radius: 2px;
   }
 
-  .mieter b {
-    font-size: calc(15 * var(--px));
-    font-weight: 650;
-  }
-
-  .mieter small {
-    color: var(--ink-muted);
+  .satz {
+    margin: -4px 0 0;
     font-size: calc(13 * var(--px));
+    line-height: calc(17 * var(--px));
+    color: var(--ink-muted);
   }
 
-  .weitere {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    justify-self: start;
-    min-height: var(--tap-target);
+  .frage {
+    display: grid;
+    gap: 8px;
   }
 
-  .feld {
-    margin: 0;
-    padding: 0;
-    border: 0;
-  }
-
-  legend {
-    margin-bottom: var(--space-2);
-    padding: 0;
-    font-size: calc(14 * var(--px));
-    font-weight: 700;
+  .frage > b {
+    font-size: calc(15 * var(--px));
+    line-height: calc(20 * var(--px));
   }
 
   .segmente {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
   }
 
   .segmente .chip {
@@ -665,11 +646,6 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .betrag-feld input::placeholder {
-    font-size: calc(17 * var(--px));
-    font-weight: 400;
-  }
-
   .euro {
     position: absolute;
     top: 50%;
@@ -681,39 +657,8 @@
     pointer-events: none;
   }
 
-  .fehler {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    margin: 0;
-    color: var(--fehler);
-    font-size: calc(13 * var(--px));
-    line-height: calc(18 * var(--px));
-    font-weight: 600;
-  }
-
-  .art-fehler {
-    margin: 10px var(--space-1) 0;
-  }
-
-  .warnzeichen {
-    display: grid;
-    flex: none;
-    place-items: center;
-    width: 16px;
-    height: 16px;
-    margin-top: 1px;
-    border-radius: 8px;
-    background: var(--fehler);
-    color: var(--surface);
-    font-size: calc(11 * var(--px));
-    font-weight: 800;
-    line-height: 1;
-  }
-
   .arten {
-    gap: 0;
-    padding: 4px 14px;
+    display: grid;
   }
 
   .art {
@@ -751,71 +696,56 @@
       inset 0 0 0 11px var(--ink);
   }
 
-  .tx {
-    display: grid;
+  .art .tx {
     gap: 2px;
-    min-width: 0;
   }
 
-  .tx b {
+  .art .tx b {
     font-size: calc(15 * var(--px));
     font-weight: 650;
   }
 
-  .tx small {
-    color: var(--ink-muted);
+  .fehler {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 8px var(--space-1) 0;
+    color: var(--fehler);
     font-size: calc(13 * var(--px));
     line-height: calc(18 * var(--px));
-  }
-
-  .fehler-bau {
-    margin: var(--space-4) var(--space-1) 0;
-    color: var(--fehler);
     font-weight: 600;
   }
 
-  .blaetter {
-    gap: 0;
-    padding: 4px 14px;
-  }
-
-  .blaetter li + li {
-    border-top: 1px solid var(--track);
-  }
-
-  .blatt {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    width: 100%;
-    padding: 12px 0;
-    border: 0;
-    background: none;
-    color: var(--ink);
-    text-align: left;
-    font: inherit;
-    cursor: pointer;
-  }
-
-  .miniatur {
+  .warnzeichen {
+    display: grid;
     flex: none;
-    width: 48px;
-    height: 68px;
-    overflow: hidden;
-    border-radius: 3px;
-    background: #fff;
-    box-shadow: 0 0 0 1px var(--track);
-  }
-
-  .miniatur img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+    border-radius: 8px;
+    background: var(--fehler);
+    color: var(--surface);
+    font-size: calc(11 * var(--px));
+    font-weight: 800;
+    line-height: 1;
   }
 
   .danach {
+    margin-top: var(--space-5);
+  }
+
+  .danach h2 {
+    margin: 0 var(--space-1) 8px;
+    font-size: calc(15 * var(--px));
+    line-height: calc(20 * var(--px));
+    font-weight: 650;
+  }
+
+  .zeilen {
     padding: 4px 14px;
+    border-radius: 20px;
+    background: var(--surface);
   }
 
   .zeile {
@@ -833,10 +763,6 @@
     cursor: pointer;
   }
 
-  .zeile .tx {
-    flex: 1;
-  }
-
   .sym,
   .pfeil {
     display: inline-flex;
@@ -845,21 +771,6 @@
   }
 
   .pfeil {
-    color: var(--ink-muted);
-  }
-
-  .aendern {
-    display: flex;
-    align-items: center;
-    width: max-content;
-    min-height: var(--tap-target);
-    margin: var(--space-4) auto 0;
-  }
-
-  .baut {
-    margin: 0;
-    padding: 16px;
-    text-align: center;
     color: var(--ink-muted);
   }
 </style>

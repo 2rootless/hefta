@@ -19,6 +19,8 @@ export interface SelbstauskunftInhalt {
   farbe: string | null;
   /** Bürgen als Umriss, in allen Arten. */
   buerge?: boolean;
+  /** E111 (DP134, Abschnitt 4): Der lose Bogen im Browser kennt keine Rolle; unter dem Titel nur der Musterbogen. */
+  ohneRolle?: boolean;
   bloecke: FormBlock[];
   /** z. B. „Hamburg, 6. November 2026“. */
   ortDatum: string;
@@ -101,8 +103,13 @@ const INK = hex('#26221e');
 const FRAGEN_LINIE = hex('#d6cec4');
 const AUS = hex('#9a9086');
 const OHNE = 'keine Angabe';
+/**
+ * Gilt nur, solange die Zeilen dem Musterbogen folgen (MUSTERBOGEN_REIHENFOLGE in domain/selbstauskunft.ts; PC207, 2).
+ */
 const FUSSNOTE =
   'Angaben der Person selbst. Fragen und Reihenfolge folgen dem Musterbogen der Datenschutzkonferenz';
+/** PC207, 2: Der Musterbogen kennt keine Bürgen; für sie nur dieser Satz. */
+export const FUSSNOTE_BUERGE = 'Angaben der Person, die bürgt.';
 /** Felder, die immer die ganze Breite nehmen (B14: Kontakt, die Sätze zur Bürgschaft). */
 const WEIT = new Set(['kontakt', 'einzug', 'erklaerung']);
 
@@ -224,12 +231,18 @@ export function selbstauskunftZeichnen(
       const frage = inSpalte(s.ersetzen(`${i + 1}. ${z.etikett}`), s.regular, 10.5, textBreite);
       const spaeter =
         z.art === 'hinweis' ? inSpalte(s.ersetzen(z.wert), s.regular, 8.5, antBreite) : [];
+      // PC207, 2: Eine Textzeile (C.7, „Gründe“) hat keine Antwort Ja oder Nein; ihr Text steht darunter wie eine
+      // Erläuterung, ohne das Wort davor. Leer steht „keine Angabe“ (P27).
       const erkl =
         z.art === 'janein' && z.erklaerung.trim()
           ? inSpalte(s.ersetzen(z.erklaerung.trim()), s.regular, 9.5, textBreite)
-          : [];
+          : z.art === 'text'
+            ? inSpalte(s.ersetzen(z.wert.trim() || OHNE), s.regular, 9.5, textBreite)
+            : [];
       const kern = Math.max(frage.length * 10.5 * 1.3, spaeter.length * 8.5 * 1.3);
-      const erklH = erkl.length ? 2 * MM + 8 * 1.3 + erkl.length * 9.5 * 1.35 : 0;
+      const erklH = erkl.length
+        ? 2 * MM + (z.art === 'text' ? 0 : 8 * 1.3) + erkl.length * 9.5 * 1.35
+        : 0;
       return { z, frage, spaeter, erkl, kern, hoehe: 4 + kern + erklH + 4 };
     });
     return {
@@ -291,10 +304,12 @@ export function selbstauskunftZeichnen(
               );
           }
           if (r.erkl.length) {
-            const eo = grund - (r.frage.length - 1) * 10.5 * 1.3 - 2 * MM - 8;
-            zeichnen(seite, 'Erläuterung', x0 + EINZUG, eo, 8, s.regular, INK);
+            const mitWort = r.z.art !== 'text';
+            const eo = grund - (r.frage.length - 1) * 10.5 * 1.3 - 2 * MM - (mitWort ? 8 : 0);
+            if (mitWort) zeichnen(seite, 'Erläuterung', x0 + EINZUG, eo, 8, s.regular, INK);
+            const erste = mitWort ? eo - 8 * 0.3 - 9.5 : eo - 9.5;
             r.erkl.forEach((t, j) =>
-              zeichnen(seite, t, x0 + EINZUG, eo - 8 * 0.3 - 9.5 - j * 9.5 * 1.35, 9.5, s.regular),
+              zeichnen(seite, t, x0 + EINZUG, erste - j * 9.5 * 1.35, 9.5, s.regular),
             );
           }
           o -= r.hoehe;
@@ -311,8 +326,10 @@ export function selbstauskunftZeichnen(
     ? // PC205 (E363): wie „Rolle: Bürgt“, ohne die Form nach Geschlecht.
       'Bürgt, zieht nicht ein.'
     : 'Im Mietvertrag.';
+  // PC207, 2: Der Musterbogen kennt keine Bürgen. Bei ihnen steht er darum weder hier noch in der Fußnote.
+  const musterbogen = 'Nach dem Musterbogen der Datenschutzkonferenz, Stand Januar 2026.';
   const unter = s.ersetzen(
-    `${rolle} Nach dem Musterbogen der Datenschutzkonferenz, Stand Januar 2026.`,
+    a.buerge ? rolle : a.ohneRolle ? musterbogen : `${rolle} ${musterbogen}`,
   );
   const titelZeichnen = (seite: PDFPage, oben: number): number => {
     let y = oben - 10 * MM - titelGroesse;
@@ -344,9 +361,11 @@ export function selbstauskunftZeichnen(
   };
 
   // ---------- Ort, Datum (fester Platz unten) ----------
-  const fussnote = a.mitHinweis
-    ? `${FUSSNOTE}; was dort nicht steht, fragt ${APP_NAME} nicht.`
-    : `${FUSSNOTE}.`;
+  const fussnote = a.buerge
+    ? FUSSNOTE_BUERGE
+    : a.mitHinweis
+      ? `${FUSSNOTE}; was dort nicht steht, fragt ${APP_NAME} nicht.`
+      : `${FUSSNOTE}.`;
   const fussZeilen = inSpalte(s.ersetzen(fussnote), s.regular, 8, Math.min(breite, 150 * MM));
   const untHoehe = 10.5 * 1.35 + 2 + 2 + 8 * 1.3 + 8 + fussZeilen.length * 8 * 1.35;
   const untZeichnen = (seite: PDFPage) => {

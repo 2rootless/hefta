@@ -123,11 +123,12 @@ describe('Regelkatalog: wer braucht was', () => {
   });
 
   it('nennt Rollen in der gewünschten Form', () => {
-    // W57: im Vertrag ohne Rollenwort nach Person; „Im Mietvertrag“ in jeder Form. Bürgen bleiben, wie sie waren.
+    // W57: im Vertrag ohne Rollenwort nach Person; „Im Mietvertrag“ in jeder Form. PC208 (CP121, 2): Bürgen auch
+    // mit einer früher gewählten Form immer „bürgt“.
     expect(rollenText('vertrag', 'weiblich')).toBe('Im Mietvertrag');
     expect(rollenText('vertrag', 'maennlich')).toBe('Im Mietvertrag');
-    expect(rollenText('buerge', 'maennlich')).toBe('Bürge');
-    expect(rollenText('buerge', 'weiblich')).toBe('Bürgin');
+    expect(rollenText('buerge', 'maennlich')).toBe('bürgt');
+    expect(rollenText('buerge', 'weiblich')).toBe('bürgt');
     expect(rollenText('vertrag', 'neutral')).toBe('Im Mietvertrag');
     expect(rollenText('buerge', 'neutral')).toBe('bürgt');
   });

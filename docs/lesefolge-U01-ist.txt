@@ -12,15 +12,15 @@ Zugänglichkeitsbaum aus Chromium (Szenario 01-standard). Das ist NICHT VoiceOve
   - paragraph: Zwei im Mietvertrag, ein Kind zieht mit ein. Eine Person bürgt.
   - 'link "Haushalt bearbeiten: Zwei im Mietvertrag, ein Kind zieht mit ein. Eine Person bürgt."':
     - /url: "#/haushalt"
-  - region "Noch zwei Dinge, dann seid ihr startklar.":
-    - heading "Noch zwei Dinge, dann seid ihr startklar." [level=2]
+  - region "Zwei Dinge fehlen noch, dann seid ihr startklar.":
+    - heading "Zwei Dinge fehlen noch, dann seid ihr startklar." [level=2]
     - list:
       - listitem:
         - button "Gehaltsnachweis September für Max · kann jetzt da sein"
       - listitem:
         - button "Bonitätsnachweis für Petra"
-  - heading "Max Hauptmieter" [level=2]:
-    - link "Max Hauptmieter":
+  - heading "Max Im Mietvertrag" [level=2]:
+    - link "Max Im Mietvertrag":
       - /url: "#/person/p-01-standard-0"
   - list:
     - listitem:
@@ -32,8 +32,8 @@ Zugänglichkeitsbaum aus Chromium (Szenario 01-standard). Das ist NICHT VoiceOve
     - listitem:
       - link "Bonitätsnachweis vom 20. Oktober da":
         - /url: "#/unterlage/p-01-standard-0/bonitaet"
-  - heading "Lea Mitmieterin" [level=2]:
-    - link "Lea Mitmieterin":
+  - heading "Lea Im Mietvertrag" [level=2]:
+    - link "Lea Im Mietvertrag":
       - /url: "#/person/p-01-standard-1"
   - list:
     - listitem:
@@ -51,8 +51,8 @@ Zugänglichkeitsbaum aus Chromium (Szenario 01-standard). Das ist NICHT VoiceOve
   - link "Ein Kind zieht mit ein . Braucht keine Unterlagen . Haushalt bearbeiten":
     - /url: "#/haushalt"
   - paragraph: Zusätzlich, falls der Vermieter fragt
-  - heading "Petra Bürgin" [level=2]:
-    - link "Petra Bürgin":
+  - heading "Petra Bürgt" [level=2]:
+    - link "Petra Bürgt":
       - /url: "#/person/p-01-standard-2"
   - list:
     - listitem:

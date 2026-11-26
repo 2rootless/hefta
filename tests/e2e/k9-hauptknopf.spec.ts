@@ -47,14 +47,14 @@ for (const breite of [390, 320])
       .getByRole('button', { name: /Einkommen/ })
       .first()
       .click();
-    await expect(knopf(page)).toHaveAccessibleName('Weiter zu Drei Fragen aus dem Musterbogen');
+    await expect(knopf(page)).toHaveAccessibleName('Weiter zu Fragen aus dem Musterbogen');
     expect(await pruefe(page)).toEqual([]);
     // Es gibt keinen Knopf „Weiter: …“ mehr im Teil.
     await expect(page.locator('section.teil.offen .teil-weiter')).toHaveCount(0);
     // „Weiter“ öffnet den nächsten offenen Teil.
     await knopf(page).click();
     await expect(
-      page.locator('section.teil.offen h3').filter({ hasText: 'Drei Fragen aus dem Musterbogen' }),
+      page.locator('section.teil.offen h3').filter({ hasText: 'Fragen aus dem Musterbogen' }),
     ).toHaveCount(1);
     await expect
       .poll(() => page.evaluate(() => !!document.activeElement?.closest('section.teil.offen')))
@@ -169,8 +169,8 @@ test('DP116: Kurzform in der zweiten Zeile, höchstens 12 Zeichen; vorgelesen wi
     .getByRole('button', { name: /Einkommen/ })
     .first()
     .click();
-  await expect(knopf(page).locator('small.unter')).toHaveText('Drei Fragen');
-  await expect(knopf(page)).toHaveAccessibleName('Weiter zu Drei Fragen aus dem Musterbogen');
+  await expect(knopf(page).locator('small.unter')).toHaveText('Fragen');
+  await expect(knopf(page)).toHaveAccessibleName('Weiter zu Fragen aus dem Musterbogen');
   const kurz = JSON.parse(readFileSync('src/i18n/de.json', 'utf8')).selbstauskunft
     .teilKurz as Record<string, string>;
   expect(Object.keys(kurz).sort()).toEqual(['einkommen', 'fragen', 'haushalt', 'kontakt']);

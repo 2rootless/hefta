@@ -1,3 +1,4 @@
+import type { Anschrift } from '../formblatt/anschrift';
 // Datenmodell nach docs/03-datenmodell.md. Bindend sind die Beziehungen:
 // Personen und Dokumente pflegt man einmal; Haushalte und Bewerbungen verweisen darauf.
 // Alles, was „später“ ist, hat hier schon Felder, aber noch keine Oberfläche.
@@ -51,7 +52,8 @@ export interface Person extends Basis {
   /** Name in lateinischen Buchstaben, wie im Pass, wenn das PDF den eingetragenen nicht schreiben kann (K8). */
   nameMappe?: { vorname: string; nachname: string } | null;
   /**
-   * `anschrift`: freiwillig, nur für die Nachricht ans Inserat, wenn es danach fragt.
+   * `anschrift`: freiwillig, für die Nachricht ans Inserat, wenn es danach fragt. Seit W60 (2.3) wird sie in drei
+   * Feldern eingegeben (`anschriftTeile`); `anschrift` ist dann der Text daraus, für alles, was eine Zeile braucht.
    * E222 (DP77): `telefon` steht in fester Form, dazu sein Land (ISO 3166-1) und die internationale Nummer. Fehlt
    * `telefonE164`, ließ sich die Nummer nicht umsetzen; dann steht sie nicht in der Mappe (DP77, Abschnitt 5).
    */
@@ -59,6 +61,7 @@ export interface Person extends Basis {
     telefon: string;
     email: string;
     anschrift?: string;
+    anschriftTeile?: Anschrift;
     telefonLand?: string;
     telefonE164?: string;
   };
@@ -124,6 +127,11 @@ export interface Haushalt extends Basis {
   haustiereText?: string;
   /** Ort für „Ort, Datum“ in jedem Bogen. */
   ort?: string;
+  /**
+   * W28, E376 (PC208, Schritt 5): Hat der Haushalt einen Wohnberechtigungsschein? Freiwillig, Ja oder Nein. Ein Ja zeigt
+   * unter „Mappe“, „Für den ganzen Haushalt“: „Ihr habt einen. Noch nicht abgelegt.“, solange der Schein fehlt.
+   */
+  wbsAngabe?: import('./selbstauskunft').JaNein;
   /**
    * B26 (E93): Der Haushalt ist angefangen, aber nicht fertig angelegt. Gesetzt mit der ersten Person,
    * gelöscht mit „Haushalt anlegen“ oder „Niemand weiter“. Fehlt das Feld, gilt er als fertig (ältere Daten).
@@ -383,6 +391,11 @@ export interface Heft extends Basis {
   /** Fragen für die Besichtigung (E52): Häkchen, Antworten und eigene Fragen dieses Hefts. */
   fragen?: import('./besichtigungsFragen').HeftFragen;
   /**
+   * W63 (U11): Angaben der Bürgschaftserklärung für dieses Heft, je Person, die bürgt (Kennung der Person). Sofort
+   * gespeichert, wie die Selbstauskunft. Fehlt das Feld, gibt es noch keine; IndexedDB braucht dafür kein neues Schema.
+   */
+  buergschaften?: Record<Id, import('./buergschaftEingabe').BuergschaftEntwurf>;
+  /**
    * DP45 G1 (W28): Sozialwohnung, also Wohnberechtigungsschein nötig. Dann kommt der Schein des Haushalts
    * in die Mappe dieses Hefts; das Heft wählt ihn nur aus, hochgeladen wird er beim Haushalt.
    */
@@ -477,6 +490,8 @@ export interface Einstellungen {
   /** G4b: „Später“ gesagt; Hefta fragt höchstens noch einmal, wenn der Haushalt angelegt ist. */
   homescreenSpaeter?: boolean;
   ohnePasswortHinweisGezeigt: boolean;
+  /** PC207, 1: einmal gesagt, dass Ausweiskopie und Datenkopie nicht mehr in die Mappe kommen. */
+  nieInMappeGezeigt?: boolean;
   sprache: 'de';
   fristen: Record<string, { hinweisTage?: number; warnungTage?: number }>;
   /** Laufender oder pausierter Rutsch („Weitermachen · 2 von 5“); null, wenn keiner läuft. */
@@ -495,6 +510,11 @@ export interface Einstellungen {
   rueckmeldungAntworten?: number;
   /** Eigene Fragen für die Besichtigung (E52): gehören zum Gerät, nicht zum Haushalt (Planung 10i). */
   eigeneFragen?: string[];
+  /**
+   * E111 und W63: die Bögen im Browser (Selbstauskunft, Bürgschaft) ohne Haushalt. Bleiben in diesem Browser, bis man
+   * sie löscht oder übernimmt; IndexedDB braucht dafür kein neues Schema.
+   */
+  boegen?: import('./bogen').Boegen;
   /**
    * Ausgeblendete Fragen von Hefta (E92, vorbereitet, noch ohne Oberfläche): fehlen in allen Heften, außer
    * dort schon beantwortet.

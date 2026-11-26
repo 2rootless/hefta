@@ -60,33 +60,16 @@ test('Fehler 3: „Heft anlegen“ in der letzten Kontrolle deckt am Ende nichts
   await knopfFrei(page, 'Heft anlegen');
 });
 
-// W57: Die Form (Bürge, Bürgin, neutral) gibt es nur noch für Bürgen; dort bleibt sie gewählt und steht in Tinte.
-test('DP35 G2: In „Person hinzufügen“ bleibt die gewählte Form gewählt und steht in Tinte', async ({
-  page,
-}) => {
+// PC208 (CP121, 2): Auch für Bürgen gibt es keine Form mehr zu wählen; überall steht der Name.
+test('PC208: „Person hinzufügen“ für Bürgen ohne Wahl der Form', async ({ page }) => {
   await haushaltMitMax(page);
   await page.goto('/#/person-neu/buerge');
   await page.reload();
   await page.getByLabel('Vorname', { exact: true }).fill('Олена');
   await page.getByLabel('Nachname', { exact: true }).fill('Коваленко');
-  const rolle = page.getByRole('radio', { name: 'Bürgin', exact: true });
-  await rolle.click();
-  await expect(rolle).toHaveAttribute('aria-checked', 'true');
-  const farben = await rolle.evaluate((e) => {
-    const s = getComputedStyle(e);
-    const probe = document.createElement('span');
-    probe.style.color = 'var(--action)';
-    probe.style.backgroundColor = 'var(--on-action)';
-    document.body.append(probe);
-    const p = getComputedStyle(probe);
-    const soll = { grund: p.color, schrift: p.backgroundColor };
-    probe.remove();
-    return { grund: s.backgroundColor, schrift: s.color, soll };
-  });
-  expect(farben.grund).toBe(farben.soll.grund);
-  expect(farben.schrift).toBe(farben.soll.schrift);
-  // Die anderen Formen sind nicht gewählt und sehen anders aus.
-  const andere = page.getByRole('radio', { name: 'Bürge', exact: true });
-  await expect(andere).toHaveAttribute('aria-checked', 'false');
-  expect(await andere.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(farben.grund);
+  for (const form of ['Bürgin', 'Bürge', 'Neutral'])
+    await expect(page.getByRole('radio', { name: form, exact: true })).toHaveCount(0);
+  await expect(page.getByText('So steht es auf der Karte')).toHaveCount(0);
+  // Gegenprobe: Die Felder der Person stehen weiter da.
+  await expect(page.getByLabel(/Einkommen\?$/)).toBeVisible();
 });

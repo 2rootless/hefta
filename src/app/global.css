@@ -272,6 +272,28 @@ textarea {
   box-shadow: inset 0 0 0 1.5px var(--ink);
 }
 
+/* H3 (DP135 U3, PC205 Abschnitt 3; PC208 Schritt 1): Felder auf dem Formblatt (Selbstauskunft, ab W63 die
+   Bürgschaft) haben unten eine Linie in --ink-quiet. Die Fläche allein grenzt sich nur mit etwa 1,2 : 1 ab; die Linie
+   hat mindestens 3 : 1 (WCAG 1.4.11, Test in src/formblatt/feldlinie.test.ts). Der Prüfzustand einer Nachfrage
+   ersetzt sie durch den Rand in Tinte. DP145, B3 (W33): Im Fokus kommt unter der Linie der Strich dazu, 3 px in Tinte,
+   wie im Bogen. */
+.formblatt .eingabe input,
+.formblatt .telefon input[type='tel'] {
+  box-shadow: inset 0 -1px 0 var(--ink-quiet);
+}
+
+.formblatt .eingabe input:focus-visible,
+.formblatt .telefon input[type='tel']:focus-visible {
+  box-shadow:
+    inset 0 -1px 0 var(--ink-quiet),
+    0 3px 0 0 var(--ink);
+}
+
+.formblatt .eingabe input.pruefzustand,
+.formblatt .telefon input[type='tel'].pruefzustand {
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+
 /* Die weiche Fläche: auf dem Grund der Seite die Fläche der Karten (Weiß). In einer weißen Karte der Ton
    des Felds „Notizen“ im Heft, `#f1ebe1` (DP35 G1); der Grund der Seite wäre dort zu hell. */
 :root {

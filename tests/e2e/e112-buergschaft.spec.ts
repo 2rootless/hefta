@@ -5,8 +5,8 @@ import { hefteAnlegen } from './hefte-hilfen';
 import { pdfMit, szenarioLaden } from './szenario-laden';
 
 // E112, Bürgschaftserklärung (DP41 Abschnitt 6, Prüfkatalog E1 bis E10) und DP49 Punkt 5 (B1, B2): Die
-// Erklärung gilt je Wohnung und ist freiwillig. Im Heft steht sie an der Bürgin; „Erklärung vorbereiten“
-// führt zum Formular, das PDF hat zwei Blätter, ein Scan von Blatt 1 kommt für dieses Heft zur Bürgin.
+// Erklärung gilt je Wohnung und ist freiwillig. Im Heft steht sie an der Person, die bürgt; „Erklärung vorbereiten“
+// führt zu den vier Teilen (W63), das PDF hat zwei Blätter, ein Scan von Blatt 1 kommt für dieses Heft zu ihr.
 
 const ALT = new Date(Date.now() - 2 * 3600_000).toISOString();
 const leer = {
@@ -48,6 +48,14 @@ async function mitHeften(page: Page, szenario = '02-neustart', pfad = '/heft/h8'
 }
 
 const mappeImHeft = (page: Page) => page.locator('section.heft-mappe');
+
+/** W63: einen Teil der Bürgschaft öffnen (zugeklappt: die Zeile antippen). */
+async function teil(page: Page, name: string) {
+  await page.locator('.akkordeon.formblatt > .teil').first().waitFor();
+  const zu = page.locator('button.teil.zu', { hasText: name });
+  if (await zu.count()) await zu.click();
+  await expect(page.locator('section.teil.offen h3')).toContainText(name);
+}
 
 /** Versionen der Bürgschaftserklärung in der Datenbank, mit ihrem Heft. */
 function erklaerungen(page: Page) {
@@ -113,58 +121,80 @@ test('B1: Im Heft steht der Hinweis an der Bürgin, ruhig; „Erklärung vorbere
   await petra.getByRole('link', { name: 'Erklärung vorbereiten' }).click();
   await expect(page).toHaveURL(new RegExp(`#/buergschaft/${PETRA}/h8$`));
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Bürgschafts.?erklärung/);
-  await expect(page.getByText('Petra unterschreibt es von Hand', { exact: false })).toBeVisible();
-  // Aus dem Heft: Bürgin, Mieter, Wohnung, Vermieter, Einzug.
-  await expect(page.getByLabel('Name').first()).toHaveValue('Petra Mustermann');
+  await expect(
+    page.getByText('Petra unterschreibt die Erklärung von Hand', { exact: false }),
+  ).toBeVisible();
+  // W63 (U11): Gespeichert wird sofort, mit demselben Satz wie in der Selbstauskunft; zurück geht es zum Heft (W39).
+  await expect(
+    page.getByText('Änderungen werden sofort gespeichert.', { exact: false }),
+  ).toBeVisible();
+  await expect(page.locator('.kopf a.zurueck')).toHaveText(/Heft/);
+  await expect(page.getByRole('link', { name: 'Abbrechen' })).toHaveCount(0);
+  // U1: vier Teile auf dem Formblatt, wie die Selbstauskunft.
+  await expect(page.locator('.akkordeon.formblatt > .teil')).toHaveCount(4);
+
+  // Aus dem Heft: Name aus dem Haushalt (U7), Mieter, Wohnung in drei Feldern (W60), Vermieter, Einzug.
+  await teil(page, 'Wer bürgt');
+  await expect(page.locator('.name-zeile')).toContainText('Petra Mustermann');
+  await expect(page.getByLabel('Name', { exact: true })).toHaveCount(0);
+  await teil(page, 'Für wen und Vermieter');
   await expect(page.locator('.mieter li')).toHaveText([
     /Max .*Im Mietvertrag/,
     /Lea .*Im Mietvertrag/,
   ]);
-  await expect(page.getByLabel('Anschrift und Lage')).toHaveValue('Lindenring 8, 20259 Hamburg');
-  await expect(page.getByLabel('Name').nth(1)).toHaveValue('Hausverwaltung Beispiel GmbH');
-  await expect(page.getByLabel('Einzug zum')).toHaveValue('2027-01-01');
-  // DP136, Abschnitt 4: Der gesperrte Knopf nennt, was fehlt, statt zu zählen.
-  await expect(page.locator('.leiste')).toContainText(
-    /Es fehlt noch: Höchstbetrag, Art.der.Bürgschaft\./,
+  await expect(page.getByLabel('Vermieter', { exact: true })).toHaveValue(
+    'Hausverwaltung Beispiel GmbH',
   );
+  await teil(page, 'Wohnung und Mietvertrag');
+  await expect(page.getByLabel('Straße und Hausnummer')).toHaveValue('Lindenring 8');
+  await expect(page.getByLabel('PLZ')).toHaveValue('20259');
+  await expect(page.getByLabel('Ort', { exact: true })).toHaveValue('Hamburg');
+  await expect(page.getByLabel('Einzug zum')).toHaveValue('2027-01-01');
+  // U5: Was fehlt, steht als „Es fehlt noch: …“ mit Namen, kein Zähler, kein „Pflicht“.
+  await teil(page, 'Höchstbetrag und Art');
+  await expect(page.locator('.leiste')).toContainText(
+    /Es fehlt noch: Höchstbetrag und Art.der.Bürgschaft\./,
+  );
+  await expect(page.locator('main')).not.toContainText('Pflicht');
   await expect(page.locator('.leiste')).not.toContainText('offen');
   // Keine Art ist vorgewählt.
   await expect(page.getByRole('radio', { checked: true, name: /bürgschaft/i })).toHaveCount(0);
 });
 
-test('E3: Ohne Höchstbetrag und Art zwei Fehler mit Warnzeichen, kein PDF; E4 und E9: danach zwei Blätter, Scan für dieses Heft', async ({
+test('W63: sofort gespeichert, „Fertig“ zurück zum Heft; E4 und E9: zwei Blätter, Scan für dieses Heft', async ({
   page,
 }) => {
-  await mitHeften(page, '02-neustart', `/buergschaft/${PETRA}/h8`);
+  await mitHeften(page);
+  await mappeImHeft(page)
+    .locator('li.buerge')
+    .getByRole('link', { name: 'Erklärung vorbereiten' })
+    .click();
   const vorher = await erklaerungen(page);
-  // DP136, Abschnitt 4: Der Knopf ist gesperrt (aria-disabled); ein Tipp darauf zeigt, was fehlt.
-  await page.getByRole('button', { name: /^PDF erstellen/ }).click({ force: true });
-  await expect(page.getByText('Ohne Höchstbetrag erstellt Hefta kein PDF.')).toBeVisible();
-  await expect(page.getByText('Bitte eine Art wählen.')).toBeVisible();
-  await expect(page.locator('.fehler .warnzeichen')).toHaveCount(2);
-  await expect(page.getByRole('heading', { name: 'Im PDF' })).toHaveCount(0);
-  // Der Fokus springt zum ersten fehlenden Feld.
-  await expect(page.locator('.betrag-feld input')).toBeFocused();
-
-  await page.locator('.betrag-feld input').fill('3600');
+  await teil(page, 'Höchstbetrag und Art');
+  // Der blasse Knopf führt ins erste fehlende Feld.
+  await page.getByRole('button', { name: /^Fertig/ }).click({ force: true });
+  await expect(page.locator('[data-feld="hoechstbetrag"]')).toBeFocused();
+  await page.locator('[data-feld="hoechstbetrag"]').fill('3600');
+  await expect(page.locator('.leiste')).toContainText(/Es fehlt noch: Art.der.Bürgschaft\./);
   await page.getByRole('radio', { name: /^Gewöhnliche Bürgschaft/ }).click();
-  await expect(page.getByText('Ohne Höchstbetrag', { exact: false })).toHaveCount(0);
-  await page.getByLabel('Anschrift').first().fill('Musterweg 7, 12345 Musterstadt');
-  await page
-    .getByLabel('Anschrift', { exact: true })
-    .nth(1)
-    .fill('Beispielstraße 1, 12345 Musterstadt');
-  // E4: Alles da, unter dem Knopf fehlt nichts mehr.
-  const knopf = page.getByRole('button', { name: /^PDF erstellen/ });
   await expect(page.locator('.leiste')).not.toContainText('Es fehlt noch');
-  await knopf.click();
+  await expect(page.getByText('Fertig, 2 Blätter')).toBeVisible();
 
-  await expect(page.getByRole('heading', { name: 'Im PDF' })).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText('Blatt 1: Erklärung')).toBeVisible();
-  await expect(page.getByText('Blatt 2: Für Petra')).toBeVisible();
-  await expect(
-    page.getByText('Was sie verspricht. Bleibt bei ihr, nicht in der Mappe.'),
-  ).toBeVisible();
+  // „Fertig“ führt zurück ins Heft; die Angaben sind gespeichert und beim nächsten Öffnen wieder da (U11).
+  await page.getByRole('button', { name: /^Fertig/ }).click();
+  await expect(page).toHaveURL(/#\/heft\/h8$/);
+  await mappeImHeft(page)
+    .locator('li.buerge')
+    .getByRole('link', { name: 'Erklärung vorbereiten' })
+    .click();
+  await expect(page.locator('button.teil.zu', { hasText: 'Höchstbetrag und Art' })).toContainText(
+    '3.600 Euro, Gewöhnliche Bürgschaft',
+  );
+  // Gegenprobe: im anderen Heft nichts davon.
+  await page.goto(`/#/buergschaft/${PETRA}/h3`);
+  await teil(page, 'Höchstbetrag und Art');
+  await expect(page.locator('[data-feld="hoechstbetrag"]')).toHaveValue('');
+  await page.goto(`/#/buergschaft/${PETRA}/h8`);
   // E9: Hefta legt das PDF nicht selbst ab, schon gar nicht Blatt 2.
   expect(await erklaerungen(page)).toEqual(vorher);
 
@@ -224,20 +254,26 @@ test('Erklärung von vor DP49 (ohne Wohnung): im Heft genannt und mit „Erklär
   await expect(petra.getByRole('link', { name: 'Erklärung vorbereiten' })).toBeVisible();
 });
 
-test('E1: ohne Heft alles leer, „Es fehlt noch“, „+ Weitere Person“; E10: 320 px bei 130 %, dunkel, kein Überlauf', async ({
+test('E1: ohne Heft der Bogen im Stil von R1 (DP135), „Es fehlt noch“, „+ Weitere Person“; E10: 320 px bei 130 %, dunkel, kein Überlauf', async ({
   page,
 }) => {
   await mitHeften(page, '02-neustart', '/buergschaft');
   await expect(
     page.getByText('Wer bürgt, unterschreibt es von Hand', { exact: false }),
   ).toBeVisible();
+  // W63 (DP135, U11): im Browser zurück zum Ratgeber; der Bogen wie E111, ohne „Pflicht“ und ohne Zähler (U5).
+  await expect(page.getByRole('link', { name: 'Ratgeber' })).toHaveAttribute('href', '/ratgeber/');
+  await expect(page.locator('section.blatt')).toHaveCount(1);
   await expect(page.locator('.leiste')).toContainText(
-    /Es fehlt noch: Höchstbetrag, Art.der.Bürgschaft\./,
+    /Es fehlt noch: Höchstbetrag, Art.der.Bürgschaft/,
   );
-  await page.getByRole('button', { name: 'Weitere Person' }).click();
-  await expect(page.getByLabel('Mieter 2')).toBeVisible();
-  // DP140: Name und Anschrift sind an „Name und Anschrift stehen so in der Erklärung.“ gebunden, jedes Feld „Mieter“ an
-  // „Alle, die in den Mietvertrag gehen.“ (W30, aria-describedby). Gegenprobe: der Betrag hat einen anderen Satz.
+  await expect(page.locator('main')).not.toContainText('Pflicht');
+  // W60 dreifach: Wer bürgt, Vermieter, Wohnung je in drei Feldern.
+  await expect(page.getByRole('textbox', { name: 'Straße und Hausnummer' })).toHaveCount(3);
+  await page.getByRole('button', { name: '+ Weitere Person' }).click();
+  await expect(page.getByRole('group', { name: 'Mieter 2' })).toBeVisible();
+  // DP140: Der Satz unter dem Namen ist an Vor- und Nachname gebunden, „Alle, die in den Mietvertrag gehen.“ an die
+  // Felder unter „Für wen“ (W30, aria-describedby). Gegenprobe: der Betrag hat einen anderen Satz.
   const satzVon = (feld: ReturnType<typeof page.getByLabel>) =>
     feld.evaluate((e) =>
       (e.getAttribute('aria-describedby') ?? '')
@@ -246,14 +282,13 @@ test('E1: ohne Heft alles leer, „Es fehlt noch“, „+ Weitere Person“; E10
         .join(' '),
     );
   const wer = 'Name und Anschrift stehen so in der Erklärung.';
-  // „Name“ und „Anschrift“ gibt es zweimal; die ersten gehören zu „Wer bürgt“, die zweiten zum Vermieter.
-  expect(await satzVon(page.getByLabel('Name', { exact: true }).first())).toBe(wer);
-  expect(await satzVon(page.getByLabel('Anschrift', { exact: true }).first())).toBe(wer);
-  expect(await satzVon(page.getByLabel('Name', { exact: true }).nth(1))).not.toBe(wer);
+  const blatt = page.locator('section.blatt');
+  expect(await satzVon(blatt.getByRole('textbox', { name: 'Vorname' }).first())).toBe(wer);
+  expect(await satzVon(blatt.getByRole('textbox', { name: 'Nachname' }).first())).toBe(wer);
   const fuerWen = 'Alle, die in den Mietvertrag gehen.';
-  expect(await satzVon(page.getByLabel('Mieter', { exact: true }))).toBe(fuerWen);
-  expect(await satzVon(page.getByLabel('Mieter 2'))).toBe(fuerWen);
-  expect(await satzVon(page.locator('.betrag-feld input'))).not.toBe(fuerWen);
+  const mieter2 = page.getByRole('group', { name: 'Mieter 2' });
+  expect(await satzVon(mieter2.getByRole('textbox', { name: 'Vorname' }))).toBe(fuerWen);
+  expect(await satzVon(page.locator('[data-feld="hoechstbetrag"]'))).not.toBe(fuerWen);
 
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.setViewportSize({ width: 246, height: 437 });
@@ -262,12 +297,16 @@ test('E1: ohne Heft alles leer, „Es fehlt noch“, „+ Weitere Person“; E10
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
   expect(await ueberlauf()).toBe(0);
-  await page.locator('.betrag-feld input').fill('2400');
+  await page.locator('[data-feld="hoechstbetrag"]').fill('2400');
   await page.getByRole('radio', { name: /^Selbstschuldnerische/ }).click();
+  await expect(page.locator('.leiste')).not.toContainText('Es fehlt noch');
+  // Bleibt in diesem Browser.
+  await page.waitForTimeout(600);
+  await page.reload();
+  await expect(page.locator('[data-feld="hoechstbetrag"]')).toHaveValue('2.400');
+  const download = page.waitForEvent('download');
   await page.getByRole('button', { name: /^PDF erstellen/ }).click();
-  await expect(page.getByRole('heading', { name: 'Im PDF' })).toBeVisible({ timeout: 20_000 });
+  const datei = await download;
+  expect((await PDFDocument.load(readFileSync((await datei.path())!))).getPageCount()).toBe(2);
   expect(await ueberlauf()).toBe(0);
-  // Ohne Person gibt es kein „Danach“: Der Scan hätte keine Person.
-  await expect(page.getByRole('heading', { name: 'Danach' })).toHaveCount(0);
-  await expect(page.getByText('Blatt 2: Für die Person, die bürgt')).toBeVisible();
 });

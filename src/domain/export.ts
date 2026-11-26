@@ -1,7 +1,7 @@
 import { namensteil } from './dateiname';
 import type { Rolle } from './modell';
 import type { PersonStand, UnterlagenStand } from './regelkatalog';
-import type { Schritt } from './selbstauskunft';
+import { zusageOffen, type Schritt } from './selbstauskunft';
 
 // Was in die Mappe kommt (docs/06-export.md, design/mappe-erstellen-einstellungen.md, X1–X9).
 // Rein rechnend: aus dem Stand der Personen und den Einstellungen der Bewerbung entsteht die Liste
@@ -71,9 +71,14 @@ export function einstellungenNachLaden(
   return { ...start, ...gespeichert, ...getippt };
 }
 
-/** Der Vermieter liest den Satz, darum gesiezt (T9). Gemeint sind die, die die Wohnung nicht bekommen. */
+/**
+ * Der Vermieter liest den Satz, darum gesiezt (T9). PC207, Abschnitt 3: freundlich, mit der Regel dazu (Art. 17 Abs. 1
+ * DSGVO, Orientierungshilfe D). Er gilt für alle Bewerbungen, auch die, die zum Vertrag führt. Ohne geschützte
+ * Leerzeichen: Die Lesehilfe übernimmt den Satz zeichengleich (`loeschwunsch`, Regel 1), und ein fremder Leser
+ * vergleicht ihn mit dem Text des Deckblatts. Höchstens zwei Zeilen auf dem Deckblatt (BITTE_MAX).
+ */
 export const BITTE_VORSCHLAG =
-  'Falls die Wohnung an jemand anderen geht, löschen Sie diese Unterlagen bitte. Vielen Dank.';
+  'Bitte löschen Sie diese Unterlagen, sobald Sie sie nicht mehr brauchen (Art. 17 Abs. 1 DSGVO). Vielen Dank.';
 /** Das sind auf dem Deckblatt höchstens zwei Zeilen. */
 export const BITTE_MAX = 120;
 
@@ -117,6 +122,8 @@ function zumSchritt(u: UnterlagenStand, schritt: Schritt): boolean {
 }
 
 export function gewaehlt(u: UnterlagenStand, personId: string, e: ExportEinstellungen): boolean {
+  // PC207, 1: Ausweiskopie und Datenkopie kommen nie in eine Mappe, in keiner Art.
+  if (u.typ.nieInMappe) return false;
   // „Datensparsam“ bleibt beim Kern: Verlangen kann die Mietschuldenfreiheit kein Vermieter.
   if (e.modus === 'datensparsam') return zumSchritt(u, e.schritt) && ueblich(u);
   if (e.modus === 'alles') return allesAusser(u);
@@ -219,7 +226,7 @@ export function hinweise(staende: PersonStand[], e: ExportEinstellungen): Hinwei
   if (e.modus === 'datensparsam' && e.schritt === 'zusage') {
     const namen = staende
       .filter((s) => s.rolle !== 'buerge' || !e.ohne.includes(s.person.id))
-      .filter((s) => (s.person.selbstauskunft?.mietrueckstaende ?? null) === null)
+      .filter((s) => zusageOffen(s.person))
       .map((s) => s.person.rufname || s.person.vorname);
     if (namen.length) liste.push({ art: 'zusageOffen', namen });
   }

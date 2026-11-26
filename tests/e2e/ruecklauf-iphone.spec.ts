@@ -273,10 +273,10 @@ test('Selbstauskunft: Nachfrage zum Format nach „Weiter“, Knopf „Stimmt“
   await page.getByRole('button', { name: 'Stimmt', exact: true }).click();
   await expect(email).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Kontakt/ })).toContainText('E-Mail bitte prüfen');
-  // Mit der Eingabetaste im letzten Feld genauso.
+  // Mit der Eingabetaste im letzten Feld genauso (seit W60 ist das „Ort“ der Anschrift).
   await page.getByRole('button', { name: /^Kontakt/ }).click();
   await email.fill('max@beispiel');
-  await email.press('Enter');
+  await page.getByRole('textbox', { name: 'Ort', exact: true }).press('Enter');
   await expect(nachfrage).toHaveCount(1);
   // Beide zweifelhaft: ein Satz für beide (Planung 12r).
   await telefon.fill(SONDER);

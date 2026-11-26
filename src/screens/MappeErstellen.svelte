@@ -111,7 +111,7 @@
   const unnoetige = $derived(
     dabei.flatMap((s) =>
       s.unterlagen
-        .filter((u) => u.typ.etikett === 'meist_unnoetig')
+        .filter((u) => u.typ.etikett === 'meist_unnoetig' && !u.typ.nieInMappe)
         .map((u) => [s, u] as [PersonStand, UnterlagenStand]),
     ),
   );

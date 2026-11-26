@@ -11,6 +11,8 @@ export function einstiegText(pfad: string, ansicht: HaushaltAnsicht | null | und
   if (pfad === '/wohnungen') return t('tabs.wohnungen');
   if (pfad === '/selbstauskuenfte') return t('selbstauskuenfte.titel');
   if (pfad === '/haushalt') return t('einrichtung.haushalt.titelBearbeiten');
+  // DP135, U11: Aus dem Heft heißt der Weg zurück „Heft“.
+  if (pfad.startsWith('/heft/')) return t('allgemein.heft');
   const id = pfad.startsWith('/person/') ? pfad.split('/')[2] : undefined;
   const person = ansicht?.mitglieder.find((m) => m.person.id === id)?.person;
   return person ? person.rufname || person.vorname : t('allgemein.zurueck');

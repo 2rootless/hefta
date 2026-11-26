@@ -70,9 +70,16 @@ export function zeichenFunde(
     if (telefonOffen(s.person.kontakt))
       funde.push({ feld: bei(t('mappe.feldTelefon')), ziel: `${ziel}/telefon` });
     pruefen(s.person.kontakt.email, bei(t('mappe.feldEmail')), `${ziel}/email`);
+    // W60: Die freiwillige Anschrift steht im PDF; Zeichen, die die Schrift nicht kennt, fallen hier auf wie überall.
+    pruefen(s.person.kontakt.anschrift ?? '', bei(t('mappe.feldAnschrift')), `${ziel}/anschrift`);
     pruefen(s.person.beruf, bei(namen.beruf), `${ziel}/beruf`);
     pruefen(s.person.arbeitgeber, bei(namen.arbeitgeber), `${ziel}/arbeitgeber`);
-    for (const text of [sa.erklaerungInsolvenz, sa.erklaerungRaeumungstitel, sa.stellungnahme])
+    for (const text of [
+      sa.erklaerungInsolvenz,
+      sa.erklaerungRaeumungstitel,
+      sa.kuendigungWelche,
+      sa.stellungnahme,
+    ])
       pruefen(text, bei(t('mappe.feldErklaerung')), `${ziel}/erklaerung`);
   }
   const erste = dabei.find((s) => s.rolle !== 'buerge');

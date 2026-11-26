@@ -3,6 +3,7 @@ import { faelligAb, monatPlus } from '../domain/fristen';
 import type { BonitaetAngabe, Bezeichnung, Person } from '../domain/modell';
 import { eintragenText, situationText, type UnterlagenStand } from '../domain/regelkatalog';
 import { monatName, t, tagText, tagZusammen, zahlwort } from '../i18n';
+import { anrede } from '../i18n/anrede.svelte';
 
 // Texte zum Stand einer Unterlage, gemeinsam für Übersicht und Personenansicht.
 
@@ -168,6 +169,8 @@ export function unterlageSatz(
 ): string {
   const da = u.versionen.length > 0;
   if (nichtMehrNoetig) return t('unterlage.satzNichtMehr');
+  if (u.typ.nieInMappe)
+    return (anrede.wert === 'du' ? u.typ.nieInMappeSatzDu : u.typ.nieInMappeSatz) ?? '';
   if (u.typ.etikett === 'meist_unnoetig')
     return da ? t('unterlage.satzGespeichert') : t('unterlage.satzNichtDrin');
   if (!da) return u.status === 'fehlt' ? t('unterlage.satzFehlt') : t('unterlage.satzFreiwillig');

@@ -67,21 +67,24 @@ test('Bilder E112', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Erklärung vorbereiten' }).click();
   await page.locator('main h1').waitFor();
-  await ganz(page, '2-formular-aus-dem-heft');
-  await page.getByRole('button', { name: /^PDF erstellen/ }).click();
-  await ganz(page, '3-formular-fehlt');
-  await page.locator('.betrag-feld input').fill('3600');
-  await page.locator('.betrag-feld input').blur();
+  // W63: vier Teile; zuerst offen ist der erste, der noch nicht ganz ausgefüllt ist.
+  await ganz(page, '2-teile-aus-dem-heft');
+  const teil = async (name: string) => {
+    const zu = page.locator('button.teil.zu', { hasText: name });
+    if (await zu.count()) await zu.click();
+  };
+  await teil('Wohnung und Mietvertrag');
+  await ganz(page, '3-wohnung');
+  await teil('Höchstbetrag und Art');
+  await ganz(page, '4-fehlt');
+  await page.locator('[data-feld="hoechstbetrag"]').fill('3600');
+  await page.locator('[data-feld="hoechstbetrag"]').blur();
   await page.getByRole('radio', { name: /^Gewöhnliche Bürgschaft/ }).click();
-  await ganz(page, '4-formular-bereit');
-  await page.getByRole('button', { name: /^PDF erstellen/ }).click();
-  await page.getByRole('heading', { name: 'Im PDF' }).waitFor();
-  await page.locator('.miniatur img').nth(1).waitFor();
-  await ganz(page, '5-pdf-erstellt');
+  await ganz(page, '5-fertig');
 
   // Die Blätter groß, in der Seitenansicht von Hefta.
   await page.setViewportSize({ width: 900, height: 1270 });
-  await page.getByRole('button', { name: /^Blatt 1: Erklärung/ }).click();
+  await page.getByRole('button', { name: 'Als PDF ansehen' }).click();
   await page.waitForTimeout(1500);
   await page.screenshot({ path: `${ORDNER}/6-blatt-1.png` });
   await page.getByRole('button', { name: 'Nächste Seite' }).click();

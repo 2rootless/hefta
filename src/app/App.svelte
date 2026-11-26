@@ -59,6 +59,8 @@
     uebertragen: () => import('../screens/Uebertragen.svelte'),
     eingang: () => import('../screens/Eingang.svelte'),
     buergschaft: () => import('../screens/BuergschaftSeite.svelte'),
+    buergschaftVorlage: () => import('../screens/BuergschaftVorlage.svelte'),
+    selbstauskunftBogen: () => import('../screens/SelbstauskunftBogen.svelte'),
   };
   const pdfAnsicht = () => import('../ui/PdfFenster.svelte');
 
@@ -325,11 +327,23 @@
       {#await seiten.heftMail() then m}
         <m.default id={heftUnter[1]!} art={heftUnter[2]} />
       {/await}
+    {:else if route.pfad === '/selbstauskunft'}
+      <!-- E111: die Selbstauskunft im Browser, ohne Haushalt (DP134). -->
+      {#await seiten.selbstauskunftBogen() then m}
+        <m.default />
+      {/await}
     {:else if buergschaft}
       {#key route.pfad}
-        {#await seiten.buergschaft() then m}
-          <m.default personId={buergschaft[1] ?? null} heftId={buergschaft[2] ?? null} />
-        {/await}
+        <!-- W63: In der App in vier Teilen (mit Person und Heft); ohne beide die leere Vorlage. -->
+        {#if buergschaft[1] && buergschaft[2]}
+          {#await seiten.buergschaft() then m}
+            <m.default personId={buergschaft[1]} heftId={buergschaft[2]} />
+          {/await}
+        {:else}
+          {#await seiten.buergschaftVorlage() then m}
+            <m.default />
+          {/await}
+        {/if}
       {/key}
     {:else if merkmalId}
       {#await seiten.merkmal() then m}

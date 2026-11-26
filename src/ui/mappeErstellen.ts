@@ -211,6 +211,7 @@ export async function mappeErstellen(
                 zusageText: nachZusageSatz(
                   ansicht.mitglieder.filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length <= 1,
                 ),
+                wbsZeile: !!bewerbung?.sozialwohnung,
                 buergschaftDabei: block.teile.some(
                   (x) => x.stand.typ.id === 'buergschaftserklaerung',
                 ),

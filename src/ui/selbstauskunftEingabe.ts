@@ -1,3 +1,11 @@
+import {
+  anschriftAusText,
+  anschriftGetrimmt,
+  anschriftLeer,
+  anschriftText,
+  leereAnschrift,
+  type Anschrift,
+} from '../formblatt/anschrift';
 import { DEUTSCHLAND, telefonPruefen, telefonSpeichern, type Land } from '../domain/telefon';
 import {
   ERKLAERUNG,
@@ -5,8 +13,15 @@ import {
   haushaltsAngaben,
   selbstauskunftVon,
   teile as teileDerAuskunft,
+  ZUSAGE_FRAGEN,
+  zusageZusammen,
+  type ZusageFrage,
 } from '../domain/selbstauskunft';
-import type { HaushaltsAngaben, Selbstauskunft } from '../domain/selbstauskunft';
+import type {
+  HaushaltsAngaben,
+  Selbstauskunft,
+  SelbstauskunftVoll,
+} from '../domain/selbstauskunft';
 import type { AusbildungArt, Haushalt, Lebenssituation, Person, Rolle } from '../domain/modell';
 import { t } from '../i18n';
 import type { HaushaltAnsicht } from '../storage/speicher';
@@ -19,8 +34,8 @@ export interface SelbstauskunftEingabe {
   /** E222: Land der Nummer, ISO 3166-1; vorgewählt ist Deutschland. */
   telefonLand: string;
   email: string;
-  /** Wird hier nicht bearbeitet, bleibt aber erhalten. */
-  anschrift?: string;
+  /** W60: freiwillig, in drei Feldern (DP135 U6). */
+  anschrift: Anschrift;
   beruf: string;
   arbeitgeber: string;
   /** Als Text, damit ein leeres Feld leer bleibt. */
@@ -29,7 +44,7 @@ export interface SelbstauskunftEingabe {
   lagen: LageEingabe[];
   /** DP47b K1: „Einkommen trotzdem angeben“ bei „Leistungen vom Amt“. */
   einkommenTrotzdem: boolean;
-  sa: Selbstauskunft;
+  sa: SelbstauskunftVoll;
   /** Haustiere und Ort: gehören dem Haushalt, gelten in jedem Bogen. */
   hh: HaushaltsAngaben;
 }
@@ -69,7 +84,10 @@ export function eingabeAus(person: Person, hh: HaushaltsAngaben): Selbstauskunft
     telefon: person.kontakt.telefon,
     telefonLand: person.kontakt.telefonLand ?? DEUTSCHLAND,
     email: person.kontakt.email,
-    ...(person.kontakt.anschrift ? { anschrift: person.kontakt.anschrift } : {}),
+    // Ältere Daten haben die Anschrift als eine Zeile; sie wird hier aufgeteilt, gespeichert erst mit einer Änderung.
+    anschrift: person.kontakt.anschriftTeile
+      ? { ...leereAnschrift(), ...person.kontakt.anschriftTeile }
+      : anschriftAusText(person.kontakt.anschrift),
     beruf: person.beruf,
     arbeitgeber: person.arbeitgeber,
     netto: person.nettoeinkommen ? String(person.nettoeinkommen) : '',
@@ -100,7 +118,12 @@ export function angabenAus(e: SelbstauskunftEingabe): Partial<Person> {
     kontakt: {
       ...telefonSpeichern(e.telefon, e.telefonLand as Land),
       email: e.email.trim(),
-      ...(e.anschrift ? { anschrift: e.anschrift } : {}),
+      ...(anschriftLeer(e.anschrift)
+        ? {}
+        : {
+            anschrift: anschriftText(e.anschrift),
+            anschriftTeile: anschriftGetrimmt(e.anschrift),
+          }),
     },
     beruf: e.beruf.trim(),
     arbeitgeber: e.arbeitgeber.trim(),
@@ -120,13 +143,40 @@ export function angabenAus(e: SelbstauskunftEingabe): Partial<Person> {
       haustiereText: '',
       insolvenz: e.sa.insolvenz,
       raeumungstitel: e.sa.raeumungstitel,
-      mietrueckstaende: e.sa.mietrueckstaende,
-      mietrueckstaendeSpaeter: e.sa.mietrueckstaende === null && !!e.sa.mietrueckstaendeSpaeter,
-      stellungnahme: erklaerung('mietrueckstaende'),
+      ...zusageAus(e.sa),
       erklaerungInsolvenz: erklaerung('insolvenz'),
       erklaerungRaeumungstitel: erklaerung('raeumungstitel'),
       ort: '',
     },
+  };
+}
+
+/**
+ * PC207, 2: Musterbogen C.4 bis C.7 zum Speichern. Solange bei Daten bis 2.2 mit einem Ja in der früheren einen Frage
+ * keine der drei neuen beantwortet ist, bleiben die alte Antwort und ihre Erklärung, wie sie sind: Nichts geht
+ * verloren, und Hefta fragt weiter nach den drei. Danach steht in `mietrueckstaende` die Zusammenfassung.
+ */
+function zusageAus(
+  sa: SelbstauskunftVoll,
+): Pick<Selbstauskunft, 'mietrueckstaende' | 'mietrueckstaendeSpaeter' | 'stellungnahme'> &
+  Partial<Pick<Selbstauskunft, ZusageFrage | 'kuendigungWelche'>> {
+  const keine = ZUSAGE_FRAGEN.every((f) => sa[f] === null);
+  if (keine && sa.mietrueckstaende === 'ja')
+    return {
+      mietrueckstaende: 'ja',
+      mietrueckstaendeSpaeter: false,
+      stellungnahme: sa.stellungnahme.trim(),
+    };
+  const zusammen = zusageZusammen(sa);
+  return {
+    mietrueckstaende: zusammen,
+    rueckstandMonate: sa.rueckstandMonate,
+    rueckstandMieten: sa.rueckstandMieten,
+    kuendigung: sa.kuendigung,
+    kuendigungWelche: sa.kuendigung === 'ja' ? sa.kuendigungWelche.trim() : '',
+    mietrueckstaendeSpaeter: keine && !!sa.mietrueckstaendeSpaeter,
+    // C.7 gilt nur nach einem Ja. Sind alle drei Nein, fällt der Text weg wie bisher die Erklärung zu einem Nein.
+    stellungnahme: zusammen === 'nein' ? '' : sa.stellungnahme.trim(),
   };
 }
 
@@ -140,11 +190,13 @@ export function haushaltAus(
     haustiere: e.hh.haustiere,
     haustiereText: e.hh.haustiere === 'ja' ? e.hh.haustiereText.trim() : '',
     ort: e.hh.ort.trim(),
+    wbsAngabe: e.hh.wbs ?? null,
   };
   const gleich =
     neu.haustiere === vorher.haustiere &&
     neu.haustiereText === vorher.haustiereText.trim() &&
-    neu.ort === vorher.ort.trim();
+    neu.ort === vorher.ort.trim() &&
+    neu.wbsAngabe === (vorher.wbs ?? null);
   return gleich ? null : { ...neu, angabenVon: personId };
 }
 

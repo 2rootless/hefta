@@ -16,8 +16,11 @@
     emailSiehtGutAus,
     felderFuer,
     teile,
+    ZUSAGE_FRAGEN,
+    zusageNeuFragen,
     type JaNein,
     type TeilId,
+    type ZusageFrage,
   } from '../domain/selbstauskunft';
   import { personenZiehenEin } from '../domain/mappeWoerter';
   import { t } from '../i18n';
@@ -26,10 +29,11 @@
     type SelbstauskunftEingabe,
     telefonEingabeFehler,
   } from './selbstauskunftEingabe';
-  import Symbol from './Symbol.svelte';
   import Nachfrage from './Nachfrage.svelte';
   import NachfrageZeichen from './NachfrageZeichen.svelte';
   import EinkommenQuellen from './EinkommenQuellen.svelte';
+  import AnschriftFelder from '../formblatt/AnschriftFelder.svelte';
+  import FormTeil from '../formblatt/FormTeil.svelte';
   import { lagenVon, wirksameLagen } from '../domain/lagen';
   import { situationText } from '../domain/regelkatalog';
 
@@ -86,6 +90,7 @@
   const FELD_IN_TEIL: Record<string, TeilId> = {
     telefon: 'kontakt',
     email: 'kontakt',
+    anschrift: 'kontakt',
     beruf: 'einkommen',
     arbeitgeber: 'einkommen',
     erklaerung: 'fragen',
@@ -271,14 +276,24 @@
     if (!vorher && fertig() && !erklaeren()) void weiterNach(teil);
   }
 
-  const FRAGEN = ['insolvenz', 'raeumungstitel', 'mietrueckstaende'] as const;
-  // Mietrückstände gehören zum Schritt nach der Zusage: sichtbar, aber nicht Pflicht (mappe-feinschliff.md, § 1).
+  // Teil B des Musterbogens (B.7, B.8). Teil C (C.4 bis C.6) gehört zum Schritt nach der Zusage: sichtbar, aber nicht
+  // Pflicht (mappe-feinschliff.md, § 1; PC207, 2).
   const FRAGEN_JETZT = ['insolvenz', 'raeumungstitel'] as const;
+  const FRAGEN = [...FRAGEN_JETZT, ...ZUSAGE_FRAGEN] as const;
+  const zusageJa = $derived(ZUSAGE_FRAGEN.some((f) => eingabe.sa[f] === 'ja'));
+  const zusageBeantwortet = $derived(ZUSAGE_FRAGEN.some((f) => eingabe.sa[f] !== null));
+  // Daten bis 2.2 mit einem Ja in der früheren einen Frage: einmal sagen, dass es jetzt drei sind.
+  const neuFragen = $derived(
+    !zusageBeantwortet &&
+      zusageNeuFragen({ selbstauskunft: { ...eingabe.sa, rueckstandMonate: undefined } }),
+  );
 
   function zusageAntwortEntfernen() {
+    for (const f of ZUSAGE_FRAGEN) eingabe.sa[f] = null;
     eingabe.sa.mietrueckstaende = null;
     eingabe.sa.mietrueckstaendeSpaeter = false;
-    eingabe.sa[ERKLAERUNG.mietrueckstaende] = '';
+    eingabe.sa.kuendigungWelche = '';
+    eingabe.sa.stellungnahme = '';
   }
 
   // „Angaben löschen“: statt dass etwas Falsches stehen bleibt. Ja und Nein lassen sich sonst nicht
@@ -290,7 +305,7 @@
     if (teil === 'einkommen')
       return !!(eingabe.netto.trim() || eingabe.beruf.trim() || eingabe.arbeitgeber.trim());
     if (teil === 'fragen') return FRAGEN.some((f) => eingabe.sa[f] !== null);
-    return eingabe.hh.haustiere !== null || !!eingabe.hh.ort.trim();
+    return eingabe.hh.haustiere !== null || !!eingabe.hh.ort.trim() || !!eingabe.hh.wbs;
   }
 
   function leeren(teil: TeilId) {
@@ -303,19 +318,21 @@
       eingabe.beruf = '';
       eingabe.arbeitgeber = '';
     } else if (teil === 'fragen') {
-      for (const f of FRAGEN) {
+      for (const f of FRAGEN_JETZT) {
         eingabe.sa[f] = null;
         eingabe.sa[ERKLAERUNG[f]] = '';
       }
+      zusageAntwortEntfernen();
     } else {
       eingabe.hh.haustiere = null;
       eingabe.hh.haustiereText = '';
+      eingabe.hh.wbs = null;
       eingabe.hh.ort = '';
     }
     loeschenFrage = null;
   }
 
-  const frage = (f: 'insolvenz' | 'raeumungstitel' | 'mietrueckstaende') =>
+  const frage = (f: (typeof FRAGEN)[number]) =>
     du ? t(`selbstauskunft.${f}Du`) : t(`selbstauskunft.${f}`, { name });
 
   function zusammenfassung(teil: TeilId): string {
@@ -346,10 +363,13 @@
         ? t('selbstauskunft.fragenMal', { ja, nein: werte.length - ja })
         : werte.length === FRAGEN.length
           ? t('selbstauskunft.fragenNein')
-          : t('selbstauskunft.fragenNeinZwei');
-      return eingabe.sa.mietrueckstaende === null
-        ? `${satz} · ${t('selbstauskunft.zusageOffen')}`
-        : satz;
+          : werte.length === 2
+            ? t('selbstauskunft.fragenNeinZwei')
+            : t('selbstauskunft.fragenNeinZahl', { anzahl: werte.length });
+      const offen = ZUSAGE_FRAGEN.filter((f) => eingabe.sa[f] === null).length;
+      // DP142: in Worten, wie „Dreimal Nein“.
+      const wort = (['eins', 'zwei', 'drei'] as const)[offen - 1] ?? 'drei';
+      return offen ? `${satz} · ${t(`selbstauskunft.zusageOffen.${wort}`)}` : satz;
     }
     const tiere =
       eingabe.hh.haustiere === 'ja'
@@ -394,7 +414,7 @@
   wert: JaNein,
   setzen: (w: JaNein) => void,
   beschriftung: string,
-  mitSpaeter = false,
+  spaeterFuer?: ZusageFrage,
 )}
   <div class="jn" role="radiogroup" aria-label={beschriftung}>
     {#each ['ja', 'nein'] as const as w (w)}
@@ -406,16 +426,17 @@
         onclick={() => setzen(w)}>{t(`selbstauskunft.${w}`)}</button
       >
     {/each}
-    {#if mitSpaeter}
-      <!-- PC65: gleichrangig mit Ja und Nein, nichts vorgewählt. -->
+    {#if spaeterFuer}
+      <!-- PC65: gleichrangig mit Ja und Nein, nichts vorgewählt. PC207, 2: je Frage aus Teil C; die Wahl gilt für die
+           Frage, an der sie steht, und merkt sich „später“ für alle noch offenen. -->
       <button
         type="button"
         class="chip"
         role="radio"
         aria-checked={wert === null && !!eingabe.sa.mietrueckstaendeSpaeter}
         onclick={() => {
-          eingabe.sa.mietrueckstaende = null;
-          eingabe.sa[ERKLAERUNG.mietrueckstaende] = '';
+          eingabe.sa[spaeterFuer] = null;
+          if (spaeterFuer === 'kuendigung') eingabe.sa.kuendigungWelche = '';
           eingabe.sa.mietrueckstaendeSpaeter = true;
         }}>{t('selbstauskunft.nachZusage')}</button
       >
@@ -423,62 +444,115 @@
   </div>
 {/snippet}
 
-{#snippet einzelFrage(teilId: TeilId, f: (typeof FRAGEN)[number])}
+{#snippet einzelFrage(teilId: TeilId, f: (typeof FRAGEN_JETZT)[number])}
   <div class="frage">
     <b>{frage(f)}</b>
     <!-- DP49 Punkt 8 (W30): Satz je Angabe. -->
     <small class="w30" data-w30="frage">{t(`angabeSatz.${f}`)}</small>
-    {#if f === 'mietrueckstaende'}
-      <!-- PC65: Hefta sagt, was gilt, und lässt die Wahl (W32, W25); kein „Erst beantworten …“. -->
-      <small>{t('selbstauskunft.mietGemeint')}</small>
-      <small>
-        {#if eingabe.sa.mietrueckstaende !== null}
-          {t('selbstauskunft.zusageBeantwortet')}
-        {:else if du}
-          {t('selbstauskunft.zusageHinweisDu')}
-        {:else}
-          {t('selbstauskunft.zusageHinweisIhr')}
-        {/if}
-      </small>
-    {/if}
     {@render jaNein(
       eingabe.sa[f],
       (w) =>
         antworten(
           teilId,
-          () => {
-            eingabe.sa[f] = w;
-            if (f === 'mietrueckstaende') eingabe.sa.mietrueckstaendeSpaeter = false;
-          },
+          () => (eingabe.sa[f] = w),
           () => w === 'ja' && !eingabe.sa[ERKLAERUNG[f]]?.trim(),
         ),
       frage(f),
-      f === 'mietrueckstaende',
     )}
     {#if eingabe.sa[f] === 'ja'}
-      <label class="eingabe">
-        {t('selbstauskunft.erklaeren')}
-        <textarea
-          data-feld="erklaerung"
-          bind:value={eingabe.sa[ERKLAERUNG[f]]}
-          rows="3"
-          maxlength={ERLAEUTERUNG_MAX}
-          placeholder={t('selbstauskunft.erklaerenBeispiel')}></textarea>
-      </label>
-      {@const laenge = (eingabe.sa[ERKLAERUNG[f]] ?? '').length}
-      <!-- Nachricht 10.11. k: ruhiger Zähler ab 500, kein Hinweis im Akzent, das ist kein Fehler. -->
-      <small class="zaehler" aria-live="polite"
-        >{laenge >= ERLAEUTERUNG_ZAEHLER_AB
-          ? t('selbstauskunft.zeichen', { n: laenge, max: ERLAEUTERUNG_MAX })
-          : ''}</small
-      >
-    {/if}
-    {#if f === 'mietrueckstaende' && eingabe.sa.mietrueckstaende !== null}
-      <button type="button" class="textlink" onclick={zusageAntwortEntfernen}
-        >{t('selbstauskunft.antwortEntfernen')}</button
-      >
+      {@render erklaerFeld(
+        ERKLAERUNG[f],
+        t('selbstauskunft.erklaeren'),
+        t('selbstauskunft.erklaerenBeispiel'),
+      )}
     {/if}
   </div>
+{/snippet}
+
+{#snippet erklaerFeld(
+  feld: 'erklaerungInsolvenz' | 'erklaerungRaeumungstitel' | 'stellungnahme',
+  etikett: string,
+  beispiel: string,
+  satz?: string,
+)}
+  <label class="eingabe">
+    {etikett}
+    <textarea
+      data-feld="erklaerung"
+      bind:value={eingabe.sa[feld]}
+      rows="3"
+      maxlength={ERLAEUTERUNG_MAX}
+      placeholder={beispiel || undefined}
+      aria-describedby={satz ? `${id}-${feld}-satz` : undefined}></textarea>
+  </label>
+  {#if satz}<small class="hinweis w30" id="{id}-{feld}-satz" data-w30="feld">{satz}</small>{/if}
+  {@const laenge = (eingabe.sa[feld] ?? '').length}
+  <!-- Nachricht 10.11. k: ruhiger Zähler ab 500, kein Hinweis im Akzent, das ist kein Fehler. -->
+  <small class="zaehler" aria-live="polite"
+    >{laenge >= ERLAEUTERUNG_ZAEHLER_AB
+      ? t('selbstauskunft.zeichen', { n: laenge, max: ERLAEUTERUNG_MAX })
+      : ''}</small
+  >
+{/snippet}
+
+<!-- PC207, 2: Teil C des Musterbogens, C.4 bis C.6 je mit Ja oder Nein, zu C.6 die Pflichtverletzung, C.7 die Gründe
+     nach einem Ja. Der Satz darüber sagt, wann ein Vermieter fragen darf (PC65, W32, W25). -->
+{#snippet zusageFragen(teilId: TeilId)}
+  <!-- DP145, F1: Wann ein Vermieter fragen darf, sagt nur noch der Satz zur Gruppe. -->
+  {#if zusageBeantwortet || neuFragen}
+    <div class="frage">
+      {#if zusageBeantwortet}<small>{t('selbstauskunft.zusageBeantwortet')}</small>{/if}
+      {#if neuFragen}<small>{t('selbstauskunft.zusageNeu')}</small>{/if}
+    </div>
+  {/if}
+  <!-- W30 (Art „gruppe“): Der Satz gilt für alle drei Fragen und steht oben in der Gruppe, 12 px vor der ersten. -->
+  <div class="c-gruppe">
+    <small class="w30" data-w30="gruppe">{t('angabeSatz.mietrueckstaende')}</small>
+    {#each ZUSAGE_FRAGEN as f (f)}
+      <div class="frage">
+        <b>{frage(f)}</b>
+        <!-- PC211: Unter C.6 sagt ein Satz, welche Kündigung zählt (W30, Art „frage“). -->
+        {#if f === 'kuendigung'}<small class="w30" data-w30="frage"
+            >{t('selbstauskunft.kuendigungSatz')}</small
+          >{/if}
+        {@render jaNein(
+          eingabe.sa[f],
+          (w) =>
+            antworten(
+              teilId,
+              () => (eingabe.sa[f] = w),
+              () => w === 'ja',
+            ),
+          frage(f),
+          f,
+        )}
+        {#if f === 'kuendigung' && eingabe.sa.kuendigung === 'ja'}
+          <label class="eingabe">
+            {t('selbstauskunft.kuendigungWelche')}
+            <input
+              data-feld="kuendigung"
+              bind:value={eingabe.sa.kuendigungWelche}
+              maxlength={ERLAEUTERUNG_MAX}
+            />
+          </label>
+        {/if}
+      </div>
+    {/each}
+  </div>
+  {#if zusageJa}
+    <!-- DP143: C.7 nach dem Musterbogen; der Satz steht unter dem Feld (W30). -->
+    {@render erklaerFeld(
+      'stellungnahme',
+      t('selbstauskunft.gruende'),
+      '',
+      t('selbstauskunft.gruendeBeispiel'),
+    )}
+  {/if}
+  {#if zusageBeantwortet}
+    <button type="button" class="textlink" onclick={zusageAntwortEntfernen}
+      >{t('selbstauskunft.antwortenEntfernen')}</button
+    >
+  {/if}
 {/snippet}
 
 <!-- Ende eines offenen Teils: Angaben löschen und, sobald er fertig ist, der Knopf zum nächsten. -->
@@ -532,254 +606,259 @@
   {/if}
 {/snippet}
 
-<div class="akkordeon" bind:this={wurzel}>
+<!-- PC208, Schritt 1: Die Selbstauskunft steht auf dem Formblatt; daraus kommt die Feldlinie (H3, global.css). -->
+<div class="akkordeon formblatt" bind:this={wurzel}>
   {#each stand as teil, i (teil.id)}
     {@const titel = t(`selbstauskunft.teil.${teil.id}`)}
-    {#if offen === teil.id}
-      <section class="teil offen" aria-labelledby="{id}-{teil.id}">
-        <h3 id="{id}-{teil.id}">
-          <span class="nummer" aria-hidden="true">{i + 1}</span>
-          <span class="teilname" class:lang={titel.length > 30}>{titel}</span>
-          <!-- PC130 K7: Offen steht unter den Feldern schon „Eine Angabe reicht, die zweite ist freiwillig.“; im Kopf
-               nicht noch einmal „Eine Angabe genügt“. Zugeklappt bleibt der kurze Satz, dort fehlt der lange. -->
-          <small
-            >{#if teil.fertig}<Symbol name="haken" groesse={16} />{t(
-                'selbstauskunft.fertigMarke',
-              )}{:else if teil.id !== 'kontakt' || telefonFehler}{offenText(teil)}{/if}</small
+    <!-- W63: derselbe Teil wie in der Bürgschaft (formblatt/FormTeil.svelte). PC130 K7: Offen steht unter den Feldern
+         schon „Eine Angabe reicht, die zweite ist freiwillig.“; im Kopf nicht noch einmal „Eine Angabe genügt“.
+         Zugeklappt bleibt der kurze Satz, dort fehlt der lange. -->
+    <FormTeil
+      nummer={i + 1}
+      {titel}
+      offen={offen === teil.id}
+      fertig={teil.fertig}
+      kopfId="{id}-{teil.id}"
+      stand={teil.id !== 'kontakt' || telefonFehler ? offenText(teil) : ''}
+      zusammenfassung={teil.fertig ? zusammenfassung(teil.id) : offenText(teil)}
+      oeffnen={() => (offen = teil.id)}
+    >
+      {#snippet zusatz()}
+        {#if teil.id === 'kontakt' && zweifelKontakt}
+          <small class="zweifel"
+            ><NachfrageZeichen />{t(
+              zweifelTelefon && zweifelEmail
+                ? 'selbstauskunft.pruefenBeide'
+                : zweifelEmail
+                  ? 'selbstauskunft.pruefenEmail'
+                  : 'selbstauskunft.pruefenTelefon',
+            )}</small
           >
-        </h3>
+        {/if}
+      {/snippet}
 
-        {#if teil.id === 'kontakt'}
-          <!-- PC64, Punkt 7, und DP50: Für „fertig“ reicht eine der beiden Angaben (selbstauskunft.ts, Teil
+      {#if teil.id === 'kontakt'}
+        <!-- PC64, Punkt 7, und DP50: Für „fertig“ reicht eine der beiden Angaben (selbstauskunft.ts, Teil
                Kontakt). Der Satz steht oben im Teil, das leere zweite Feld sagt „freiwillig“. -->
-          <p class="hinweis satz">{t('selbstauskunft.kontaktSatz')}</p>
-          <!-- E222, DP77: Telefon mit Land; Fehler erst beim Verlassen. Eine Nachfrage (W33) gibt es nur noch für
+        <p class="hinweis satz">{t('selbstauskunft.kontaktSatz')}</p>
+        <!-- E222, DP77: Telefon mit Land; Fehler erst beim Verlassen. Eine Nachfrage (W33) gibt es nur noch für
                gültige Sonderrufnummern (TL26), im Tintenrand nach DP49b. -->
-          <TelefonFeld
-            bind:wert={eingabe.telefon}
-            bind:land={eingabe.telefonLand}
-            {allein}
-            gewaehlte={haushaltLaender}
-            pruefen={telefonHinweis}
-            nachfrageId="{id}-nachfrage-telefon"
-            feld={{
-              'data-feld': 'telefon',
-              onpointerdown: insFeld,
-              // DP50: Ist nur die Mail da, sagt das leere Telefonfeld „freiwillig“.
-              placeholder:
-                eingabe.email.trim() && !eingabe.telefon.trim()
-                  ? t('selbstauskunft.freiwilligPlatzhalter')
-                  : undefined,
-              ...weiterTaste(teil.id),
-            }}
-            onfocus={insFeld}
-          />
-          <Nachfrage aktiv={telefonHinweis} id="{id}-nachfrage-telefon" />
-          <label class="eingabe">
-            {t('selbstauskunft.email')}
-            <input
-              data-feld="email"
-              class:pruefzustand={emailHinweis}
-              aria-describedby={emailHinweis ? `${id}-nachfrage-email` : undefined}
-              onfocus={insFeld}
-              onpointerdown={insFeld}
-              bind:value={eingabe.email}
-              type="email"
-              autocomplete="email"
-              inputmode="email"
-              placeholder={eingabe.telefon.trim() && !eingabe.email.trim()
+        <TelefonFeld
+          bind:wert={eingabe.telefon}
+          bind:land={eingabe.telefonLand}
+          {allein}
+          gewaehlte={haushaltLaender}
+          pruefen={telefonHinweis}
+          nachfrageId="{id}-nachfrage-telefon"
+          feld={{
+            'data-feld': 'telefon',
+            onpointerdown: insFeld,
+            // DP50: Ist nur die Mail da, sagt das leere Telefonfeld „freiwillig“.
+            placeholder:
+              eingabe.email.trim() && !eingabe.telefon.trim()
                 ? t('selbstauskunft.freiwilligPlatzhalter')
-                : undefined}
-              {...weiterTaste(teil.id)}
-            />
-          </label>
-          <Nachfrage aktiv={emailHinweis} id="{id}-nachfrage-email" />
-        {:else if teil.id === 'einkommen'}
-          <!-- DP49 Punkt 8 (W30): Satz je Angabe; mit mehreren Quellen (DP47 G5) steht stattdessen deren Satz.
+                : undefined,
+            ...weiterTaste(teil.id),
+          }}
+          onfocus={insFeld}
+        />
+        <Nachfrage aktiv={telefonHinweis} id="{id}-nachfrage-telefon" />
+        <label class="eingabe">
+          {t('selbstauskunft.email')}
+          <input
+            data-feld="email"
+            class:pruefzustand={emailHinweis}
+            aria-describedby={emailHinweis ? `${id}-nachfrage-email` : undefined}
+            onfocus={insFeld}
+            onpointerdown={insFeld}
+            bind:value={eingabe.email}
+            type="email"
+            autocomplete="email"
+            inputmode="email"
+            placeholder={eingabe.telefon.trim() && !eingabe.email.trim()
+              ? t('selbstauskunft.freiwilligPlatzhalter')
+              : undefined}
+            {...weiterTaste(teil.id)}
+          />
+        </label>
+        <Nachfrage aktiv={emailHinweis} id="{id}-nachfrage-email" />
+        <!-- W60 (DP135 U6): Anschrift freiwillig, in drei Feldern wie im Musterbogen und in E111. -->
+        <AnschriftFelder
+          bind:anschrift={eingabe.anschrift}
+          titel={t('selbstauskunft.freiwillig', { feld: t('selbstauskunft.anschrift') })}
+          satz={t('angabeSatz.anschrift')}
+          tasten={weiterTaste(teil.id)}
+        />
+      {:else if teil.id === 'einkommen'}
+        <!-- DP49 Punkt 8 (W30): Satz je Angabe; mit mehreren Quellen (DP47 G5) steht stattdessen deren Satz.
                W30-Regel: Mit einer Quelle ist das Netto ein einzelnes Feld, der Satz steht darunter. -->
-          {#if mehrere}
-            <p class="hinweis">
-              {amtDa ? t('einkommenQuellen.leadAmt') : t('einkommenQuellen.lead')}
+        {#if mehrere}
+          <p class="hinweis">
+            {amtDa ? t('einkommenQuellen.leadAmt') : t('einkommenQuellen.lead')}
+          </p>
+          {#if zeigeErste && person.lebenssituation}
+            <p class="quelle-kopf">
+              <b>{situationText(person.lebenssituation, person.ausbildungArt)}</b>
+              <span>{t('einkommenQuellen.zuerst')}</span>
             </p>
-            {#if zeigeErste && person.lebenssituation}
-              <p class="quelle-kopf">
-                <b>{situationText(person.lebenssituation, person.ausbildungArt)}</b>
-                <span>{t('einkommenQuellen.zuerst')}</span>
-              </p>
-            {/if}
           {/if}
-          {#if zeigeErste}
-            {#if felder.has('nettoeinkommen')}
-              {#if imJahr}
-                <label class="eingabe">
-                  {person.lebenssituation === 'rente'
-                    ? t('selbstauskunft.nettoRente')
-                    : t('selbstauskunft.nettoKurz')}
-                  <span class="euro">
-                    <input
-                      value={jahrEingabe}
-                      oninput={(e) => jahrGesetzt(e.currentTarget.value)}
-                      inputmode="numeric"
-                      autocomplete="off"
-                      {...weiterTaste(teil.id)}
-                    />
-                    <span aria-hidden="true">€</span>
-                  </span>
-                </label>
-                {#if eingabe.netto}<p class="hinweis">
-                    {t('selbstauskunft.nettoJahrSatz', {
-                      betrag: `${new Intl.NumberFormat('de-DE').format(Number(eingabe.netto))} €`,
-                    })}
-                  </p>{/if}
-              {:else}
-                <label class="eingabe">
-                  {person.lebenssituation === 'rente'
-                    ? t('selbstauskunft.nettoRente')
-                    : t('selbstauskunft.nettoKurz')}
-                  <span class="euro">
-                    <input
-                      bind:value={eingabe.netto}
-                      inputmode="numeric"
-                      autocomplete="off"
-                      {...weiterTaste(teil.id)}
-                    />
-                    <span aria-hidden="true">€</span>
-                  </span>
-                </label>
-              {/if}
-              {#if !mehrere}<p class="hinweis satz w30" data-w30="feld">
-                  {t('angabeSatz.einkommen')}
-                </p>{/if}
-              <!-- B28b (DP21): Netto im Monat oder im Jahr; in der Mappe steht immer der Monat. -->
-              <div class="jn" role="radiogroup" aria-label={t('selbstauskunft.nettoKurz')}>
-                {#each [false, true] as jahr (jahr)}
-                  <button
-                    type="button"
-                    class="chip"
-                    role="radio"
-                    aria-checked={imJahr === jahr}
-                    onclick={() => jahrUmschalten(jahr)}
-                    >{jahr ? t('selbstauskunft.nettoJahr') : t('selbstauskunft.nettoMonat')}</button
-                  >
-                {/each}
-              </div>
-              <div class="jn" role="radiogroup" aria-label={t('selbstauskunft.nettoArt')}>
-                {#each ['betrag', 'mindestens'] as const as art (art)}
-                  <button
-                    type="button"
-                    class="chip"
-                    role="radio"
-                    aria-checked={eingabe.sa.einkommenArt === art}
-                    onclick={() => (eingabe.sa.einkommenArt = art)}
-                    >{art === 'betrag'
-                      ? t('selbstauskunft.nettoBetrag')
-                      : t('selbstauskunft.nettoMindestens')}</button
-                  >
-                {/each}
-              </div>
-              <p class="hinweis">{t('selbstauskunft.nettoHinweis')}</p>
-            {:else}
-              <p class="hinweis">{t('selbstauskunft.amtSatz')}</p>
-              {#if !mehrere}<p class="hinweis satz w30">{t('angabeSatz.einkommen')}</p>{/if}
-            {/if}
-            <label class="eingabe">
-              {t('selbstauskunft.freiwillig', { feld: berufNamen.beruf })}
-              <input
-                data-feld="beruf"
-                bind:value={eingabe.beruf}
-                autocomplete="organization-title"
-                {...weiterTaste(teil.id)}
-              />
-            </label>
-            <label class="eingabe">
-              {t('selbstauskunft.freiwillig', { feld: berufNamen.arbeitgeber })}
-              <input
-                data-feld="arbeitgeber"
-                bind:value={eingabe.arbeitgeber}
-                autocomplete="organization"
-                {...weiterTaste(teil.id)}
-              />
-            </label>
-            <p class="hinweis w30" data-w30="feld">{t('angabeSatz.beruf')}</p>
-          {/if}
-          {#if mehrere}<EinkommenQuellen bind:eingabe {person} />{/if}
-        {:else if teil.id === 'fragen'}
-          {#each FRAGEN_JETZT as f (f)}
-            {@render einzelFrage(teil.id, f)}
-          {/each}
-          <h4 class="zwischen">{t('mappe.schritt.zusage')}</h4>
-          {@render einzelFrage(teil.id, 'mietrueckstaende')}
-        {:else}
-          <p class="hinweis">{t('selbstauskunft.haushaltHinweis')}</p>
-          {#if vonName}
-            <p class="von-wem">{t('selbstauskunft.vonWem', { name: vonName })}</p>
-          {/if}
-          <p class="einzug">{t('selbstauskunft.ziehenEin', { text: einziehendText })}</p>
-          <p class="hinweis w30" data-w30="feld">{t('angabeSatz.einziehen')}</p>
-          <div class="frage">
-            <b>{allein ? t('selbstauskunft.haustiereDu') : t('selbstauskunft.haustiereIhr')}</b>
-            <small class="w30" data-w30="frage">{t('angabeSatz.haustiere')}</small>
-            {@render jaNein(
-              eingabe.hh.haustiere,
-              (w) =>
-                antworten(
-                  teil.id,
-                  () => (eingabe.hh.haustiere = w),
-                  () => w === 'ja' && !eingabe.hh.haustiereText.trim(),
-                ),
-              allein ? t('selbstauskunft.haustiereDu') : t('selbstauskunft.haustiereIhr'),
-            )}
-            {#if eingabe.hh.haustiere === 'ja'}
+        {/if}
+        {#if zeigeErste}
+          {#if felder.has('nettoeinkommen')}
+            {#if imJahr}
               <label class="eingabe">
-                {t('selbstauskunft.haustiereWelche')}
-                <input
-                  data-feld="haustiere"
-                  bind:value={eingabe.hh.haustiereText}
-                  {...weiterTaste(teil.id)}
-                />
+                {person.lebenssituation === 'rente'
+                  ? t('selbstauskunft.nettoRente')
+                  : t('selbstauskunft.nettoKurz')}
+                <span class="euro">
+                  <input
+                    value={jahrEingabe}
+                    oninput={(e) => jahrGesetzt(e.currentTarget.value)}
+                    inputmode="numeric"
+                    autocomplete="off"
+                    {...weiterTaste(teil.id)}
+                  />
+                  <span aria-hidden="true">€</span>
+                </span>
+              </label>
+              {#if eingabe.netto}<p class="hinweis">
+                  {t('selbstauskunft.nettoJahrSatz', {
+                    betrag: `${new Intl.NumberFormat('de-DE').format(Number(eingabe.netto))} €`,
+                  })}
+                </p>{/if}
+            {:else}
+              <label class="eingabe">
+                {person.lebenssituation === 'rente'
+                  ? t('selbstauskunft.nettoRente')
+                  : t('selbstauskunft.nettoKurz')}
+                <span class="euro">
+                  <input
+                    bind:value={eingabe.netto}
+                    inputmode="numeric"
+                    autocomplete="off"
+                    {...weiterTaste(teil.id)}
+                  />
+                  <span aria-hidden="true">€</span>
+                </span>
               </label>
             {/if}
-          </div>
+            {#if !mehrere}<p class="hinweis satz w30" data-w30="feld">
+                {t('angabeSatz.einkommen')}
+              </p>{/if}
+            <!-- B28b (DP21): Netto im Monat oder im Jahr; in der Mappe steht immer der Monat. -->
+            <div class="jn" role="radiogroup" aria-label={t('selbstauskunft.nettoKurz')}>
+              {#each [false, true] as jahr (jahr)}
+                <button
+                  type="button"
+                  class="chip"
+                  role="radio"
+                  aria-checked={imJahr === jahr}
+                  onclick={() => jahrUmschalten(jahr)}
+                  >{jahr ? t('selbstauskunft.nettoJahr') : t('selbstauskunft.nettoMonat')}</button
+                >
+              {/each}
+            </div>
+            <div class="jn" role="radiogroup" aria-label={t('selbstauskunft.nettoArt')}>
+              {#each ['betrag', 'mindestens'] as const as art (art)}
+                <button
+                  type="button"
+                  class="chip"
+                  role="radio"
+                  aria-checked={eingabe.sa.einkommenArt === art}
+                  onclick={() => (eingabe.sa.einkommenArt = art)}
+                  >{art === 'betrag'
+                    ? t('selbstauskunft.nettoBetrag')
+                    : t('selbstauskunft.nettoMindestens')}</button
+                >
+              {/each}
+            </div>
+            <p class="hinweis">{t('selbstauskunft.nettoHinweis')}</p>
+          {:else}
+            <p class="hinweis">{t('selbstauskunft.amtSatz')}</p>
+            {#if !mehrere}<p class="hinweis satz w30">{t('angabeSatz.einkommen')}</p>{/if}
+          {/if}
           <label class="eingabe">
-            {t('selbstauskunft.ortUnterschrift')}
+            {t('selbstauskunft.freiwillig', { feld: berufNamen.beruf })}
             <input
-              data-feld="ort"
-              bind:value={eingabe.hh.ort}
-              placeholder={t('selbstauskunft.ortBeispiel')}
-              autocomplete="address-level2"
+              data-feld="beruf"
+              bind:value={eingabe.beruf}
+              autocomplete="organization-title"
               {...weiterTaste(teil.id)}
             />
           </label>
+          <label class="eingabe">
+            {t('selbstauskunft.freiwillig', { feld: berufNamen.arbeitgeber })}
+            <input
+              data-feld="arbeitgeber"
+              bind:value={eingabe.arbeitgeber}
+              autocomplete="organization"
+              {...weiterTaste(teil.id)}
+            />
+          </label>
+          <p class="hinweis w30" data-w30="feld">{t('angabeSatz.beruf')}</p>
         {/if}
-        {@render teilFuss(teil)}
-      </section>
-    {:else}
-      <button type="button" class="teil zu" aria-expanded="false" onclick={() => (offen = teil.id)}>
-        <span class="nummer" class:fertig={teil.fertig} aria-hidden="true"
-          >{#if teil.fertig}<Symbol name="haken" groesse={16} />{:else}{i + 1}{/if}</span
-        >
-        <span class="tx">
-          <b>{titel}</b>
-          <small>{teil.fertig ? zusammenfassung(teil.id) : offenText(teil)}</small>
-          {#if teil.id === 'kontakt' && zweifelKontakt}
-            <small class="zweifel"
-              ><NachfrageZeichen />{t(
-                zweifelTelefon && zweifelEmail
-                  ? 'selbstauskunft.pruefenBeide'
-                  : zweifelEmail
-                    ? 'selbstauskunft.pruefenEmail'
-                    : 'selbstauskunft.pruefenTelefon',
-              )}</small
-            >
+        {#if mehrere}<EinkommenQuellen bind:eingabe {person} />{/if}
+      {:else if teil.id === 'fragen'}
+        {#each FRAGEN_JETZT as f (f)}
+          {@render einzelFrage(teil.id, f)}
+        {/each}
+        <h4 class="zwischen">{t('mappe.schritt.zusage')}</h4>
+        {@render zusageFragen(teil.id)}
+      {:else}
+        <p class="hinweis">{t('selbstauskunft.haushaltHinweis')}</p>
+        {#if vonName}
+          <p class="von-wem">{t('selbstauskunft.vonWem', { name: vonName })}</p>
+        {/if}
+        <p class="einzug">{t('selbstauskunft.ziehenEin', { text: einziehendText })}</p>
+        <p class="hinweis w30" data-w30="feld">{t('angabeSatz.einziehen')}</p>
+        <div class="frage">
+          <b>{allein ? t('selbstauskunft.haustiereDu') : t('selbstauskunft.haustiereIhr')}</b>
+          <small class="w30" data-w30="frage">{t('angabeSatz.haustiere')}</small>
+          {@render jaNein(
+            eingabe.hh.haustiere,
+            (w) =>
+              antworten(
+                teil.id,
+                () => (eingabe.hh.haustiere = w),
+                () => w === 'ja' && !eingabe.hh.haustiereText.trim(),
+              ),
+            allein ? t('selbstauskunft.haustiereDu') : t('selbstauskunft.haustiereIhr'),
+          )}
+          {#if eingabe.hh.haustiere === 'ja'}
+            <label class="eingabe">
+              {t('selbstauskunft.haustiereWelche')}
+              <input
+                data-feld="haustiere"
+                bind:value={eingabe.hh.haustiereText}
+                {...weiterTaste(teil.id)}
+              />
+            </label>
           {/if}
-        </span>
-        <!-- DP35 R2: kein Wort am Rand; die ganze Zeile öffnet den Schritt, mit Pfeil. -->
-        {#if teil.fertig}<span class="visually-hidden">{t('selbstauskunft.aendern')}</span>{/if}
-        <span class="pfeil" class:fertig={teil.fertig} aria-hidden="true"
-          ><Symbol name="weiter" groesse={teil.fertig ? 16 : 20} /></span
-        >
-      </button>
-    {/if}
+        </div>
+        <!-- W28, E376 (PC208, Schritt 5): freiwillig, für den Haushalt; ein Ja zeigt sich unter „Für den ganzen
+             Haushalt“, solange der Schein fehlt. Schließt den Teil nicht. -->
+        <div class="frage">
+          <b>{t('selbstauskunft.wbs')}</b>
+          <small class="w30" data-w30="frage">{t('angabeSatz.wbs')}</small>
+          {@render jaNein(
+            eingabe.hh.wbs ?? null,
+            (w) => (eingabe.hh.wbs = w),
+            t('selbstauskunft.wbsGruppe'),
+          )}
+        </div>
+        <label class="eingabe">
+          {t('selbstauskunft.ortUnterschrift')}
+          <input
+            data-feld="ort"
+            bind:value={eingabe.hh.ort}
+            placeholder={t('selbstauskunft.ortBeispiel')}
+            autocomplete="address-level2"
+            {...weiterTaste(teil.id)}
+          />
+        </label>
+      {/if}
+      {@render teilFuss(teil)}
+    </FormTeil>
   {/each}
 </div>
 
@@ -787,102 +866,6 @@
   .akkordeon {
     display: grid;
     gap: 12px;
-  }
-
-  .teil {
-    /* In der weißen Karte der Ton von „Notizen“ (DP33 A4, DP35 G1). */
-    --weich: var(--weich-karte);
-    border-radius: 20px;
-    background: var(--surface);
-    container-type: inline-size;
-  }
-
-  .offen {
-    display: grid;
-    gap: var(--space-3);
-    padding: 16px;
-    /* DP33 A3: Der offene Schritt bleibt Karte, ohne Linie. */
-    scroll-margin: 16px 0 120px;
-  }
-
-  /* Reicht die Breite nicht, rutscht der Stand rechtsbündig unter den Titel (stil-c.md, C21). */
-  h3 {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 2px 10px;
-    margin: 0;
-    font-size: calc(18 * var(--px));
-    line-height: calc(23 * var(--px));
-    font-weight: 800;
-    font-stretch: 100%;
-    letter-spacing: 0;
-  }
-
-  h3 .teilname {
-    flex: 1 1 min(8.5em, calc(100% - 38px));
-    min-width: 0;
-  }
-
-  /* Lange Titel brauchen mehr: Sonst stünden sie auch bei 430 px in drei Zeilen neben dem Stand. */
-  h3 .teilname.lang {
-    flex-basis: min(11.5em, calc(100% - 38px));
-  }
-
-  /* DP49 und DP50: Die Unterzeile (Satz nach W30 oder „Fertig“) steht unter dem Titel, bündig mit ihm, und
-     bricht um. Sie ist seit DP49 ein ganzer Satz; rechtsbündig daneben lief sie bei 320 px über den Rand. */
-  h3 small {
-    display: inline-flex;
-    flex: 1 1 calc(100% - 38px);
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
-    margin-left: 38px;
-    font-size: calc(13 * var(--px));
-    line-height: calc(17 * var(--px));
-    font-weight: 600;
-    color: var(--ink-muted);
-    text-align: left;
-  }
-
-  .nummer {
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    width: 28px;
-    height: 28px;
-    border: 2px solid var(--ink);
-    border-radius: 50%;
-    background: var(--surface);
-    font-size: calc(14 * var(--px));
-    font-weight: 800;
-  }
-
-  .nummer.fertig {
-    background: var(--ink);
-    color: var(--surface);
-  }
-
-  /* Ebenso „Ändern“ unter dem Text (stil-c.md, „Zeilen mit Ändern“). */
-  .zu {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px 12px;
-    width: 100%;
-    min-height: 64px;
-    padding: 10px 16px;
-    border: 0;
-    color: var(--ink);
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .tx {
-    display: grid;
-    /* Nummer und Pfeil passen daneben; „Ändern“ rutscht im engsten Fall darunter. */
-    flex: 1 1 min(10em, calc(100% - 70px));
-    min-width: 0;
   }
 
   .teil-fuss {
@@ -914,10 +897,12 @@
 
   /* PC73 (W33): wie der Satz der Nachfrage, Tinte mit dem „?“ im feinen Kreis davor; nicht mehr im Ton „knapp“
      (im Dunkeln war das ein helles Gelb als Schriftfarbe). */
-  .tx .zweifel {
+  .zweifel {
     display: flex;
     gap: 8px;
     align-items: center;
+    font-size: calc(13 * var(--px));
+    line-height: calc(18 * var(--px));
     color: var(--ink);
     font-weight: 600;
   }
@@ -950,39 +935,6 @@
 
   .loeschen-frage .teil-fuss {
     justify-content: flex-start;
-  }
-
-  .tx b {
-    font-size: calc(17 * var(--px));
-    line-height: calc(22 * var(--px));
-  }
-
-  .tx small {
-    font-size: calc(13 * var(--px));
-    line-height: calc(18 * var(--px));
-    color: var(--ink-muted);
-    overflow-wrap: anywhere;
-  }
-
-  /* DP35 R2: Der Pfeil eines fertigen Schritts ist klein und grau. */
-  .pfeil.fertig {
-    color: var(--ink-quiet);
-  }
-
-  .pfeil {
-    flex-shrink: 0;
-    transform: rotate(90deg);
-  }
-
-  /* DP50: Nummer und Pfeil der geschlossenen Teile stehen an der ersten Zeile, nicht mittig (wie Ü2). */
-  .zu {
-    align-items: flex-start;
-  }
-
-  .zu .pfeil {
-    display: grid;
-    place-items: center;
-    height: 28px;
   }
 
   /* DP50, 320 px mit 130 %: der Knopf über „Angaben löschen“, in voller Breite. */
@@ -1081,6 +1033,18 @@
 
   .hinweis[data-w30='feld'] {
     margin-top: -4px;
+  }
+
+  .c-gruppe {
+    display: grid;
+    gap: 12px;
+  }
+
+  .c-gruppe > small {
+    margin: 0;
+    font-size: calc(13 * var(--px));
+    line-height: calc(17 * var(--px));
+    color: var(--ink-muted);
   }
 
   .zwischen {

@@ -13,28 +13,35 @@ function alleTexte(o: unknown, pfad = ''): [string, string][] {
   return [];
 }
 
-describe('Texte zu Mietrückständen', () => {
-  const pdf = SELBSTAUSKUNFT_FELDER.find((f) => f.id === 'mietrueckstaende')!.pdfText;
+describe('Texte zu Mietrückständen (PC207, 2: drei Fragen wie im Musterbogen C.4 bis C.6)', () => {
+  const pdf = (id: string) => SELBSTAUSKUNFT_FELDER.find((f) => f.id === id)!.pdfText;
 
-  it('PDF-Text: auch „über mehr als zwei Monate“ (die alte Fassung fehlte das)', () => {
-    expect(pdf).toContain('über mehr als zwei Monate');
-    // Gegenprobe: die alte Fassung wird rot.
-    const alt =
-      'Mietrückstände von mehr als einer Monatsmiete in zwei Monaten nacheinander oder von zwei Monatsmieten, oder Kündigung wegen Pflichtverletzung';
-    expect(alt).not.toContain('über mehr als zwei Monate');
+  it('drei Felder im Regelkatalog, die frühere eine Frage gibt es nicht mehr', () => {
+    expect(SELBSTAUSKUNFT_FELDER.map((f) => f.id)).toEqual(
+      expect.arrayContaining(['rueckstand_monate', 'rueckstand_mieten', 'kuendigung']),
+    );
+    expect(SELBSTAUSKUNFT_FELDER.some((f) => f.id === 'mietrueckstaende')).toBe(false);
   });
 
-  it('App, PDF und Vermieterseite meinen dasselbe: zwei Fälle mit denselben Grenzen', () => {
-    const app = de.selbstauskunft.mietGemeint;
-    const vermieter = nachforderung.fragen.slice(0, 2).join(' ');
-    for (const text of [app, pdf, vermieter]) {
-      // Fall 1: zwei Monate nacheinander, mehr als eine Monatsmiete
-      expect(text).toMatch(/zwei (Monate nacheinander|aufeinanderfolgenden?( Monaten| Monate))/);
+  it('App, PDF und Vermieterseite meinen dasselbe, Frage für Frage', () => {
+    const [v1, v2, v3] = nachforderung.fragen;
+    // C.4: zwei Monate nacheinander, mehr als eine Monatsmiete
+    for (const text of [de.selbstauskunft.rueckstandMonateDu, pdf('rueckstand_monate'), v1!]) {
+      expect(text).toMatch(/zwei (Monate nacheinander|aufeinanderfolgende Monate)/);
       expect(text).toMatch(/mehr als einer? Monatsmiete/);
-      // Fall 2: über mehr als zwei Monate zusammen zwei Monatsmieten
-      expect(text).toMatch(/(über|innerhalb von) mehr als zwei Monate/);
-      expect(text).toMatch(/zwei Monatsmieten/);
     }
+    // C.5: über mehr als zwei Monate mindestens zwei Monatsmieten
+    for (const text of [de.selbstauskunft.rueckstandMietenDu, pdf('rueckstand_mieten'), v2!]) {
+      expect(text).toMatch(/(über|innerhalb von) mehr als zwei Monate/);
+      expect(text).toMatch(/mindestens zwei Monatsmieten/);
+    }
+    // C.6: das letzte Mietverhältnis, erhebliche Verletzung des Mietvertrags
+    for (const text of [de.selbstauskunft.kuendigungDu, pdf('kuendigung'), v3!]) {
+      expect(text).toMatch(/letzte[ns]? Mietverhältnis/i);
+      expect(text).toMatch(/erheblichen Verletzung des Mietvertrags/);
+    }
+    // Gegenprobe: C.4 und C.5 sind verschieden.
+    expect(pdf('rueckstand_monate')).not.toMatch(/mindestens zwei Monatsmieten/);
   });
 
   it('Wortlaut: kein Satz an der Frage beginnt mit „Erst beantworten“, kein „Pflicht“ als Kennzeichen', () => {
@@ -43,29 +50,40 @@ describe('Texte zu Mietrückständen', () => {
     expect(de.selbstauskunft.teil.einkommenOffen).toBe(
       'Gehört zu fast jeder Bewerbung, netto im Monat',
     );
-    expect(de.selbstauskunft.zusageHinweisDu).toMatch(/^Nach der Orientierungshilfe/);
-    expect(de.selbstauskunft.zusageHinweisDu).toMatch(
-      /Freiwillig kannst du es schon jetzt beantworten\.$/,
-    );
-    expect(de.selbstauskunft.zusageHinweisIhr).toMatch(
-      /Freiwillig könnt ihr es schon jetzt beantworten\.$/,
-    );
+    // DP145, F1: ein Satz zur Gruppe, ohne Hinweis auf die Orientierungshilfe.
+    expect(de.angabeSatz.mietrueckstaende).toEqual({
+      ihr: 'Danach darf ein Vermieter erst kurz vor dem Vertrag fragen. Freiwillig könnt ihr es schon jetzt beantworten.',
+      du: 'Danach darf ein Vermieter erst kurz vor dem Vertrag fragen. Freiwillig kannst du es schon jetzt beantworten.',
+    });
+    expect(Object.keys(de.selbstauskunft).filter((k) => k.startsWith('zusageHinweis'))).toEqual([]);
   });
 });
 
 describe('Frage offen nach der Zusage', () => {
   const zusage = [{ ereignisse: { ergebnis: { art: 'zusage' as const, am: '2026-11-16' } } }];
   const ohne = [{ ereignisse: { ergebnis: null } }];
-  const person = (antwort: 'ja' | 'nein' | null) => ({
-    selbstauskunft: { mietrueckstaende: antwort },
+  const drei = (w: 'ja' | 'nein' | null) =>
+    ({
+      selbstauskunft: { rueckstandMonate: w, rueckstandMieten: w, kuendigung: w },
+    }) as never;
+  const alt = (w: 'ja' | 'nein' | null) => ({ selbstauskunft: { mietrueckstaende: w } }) as never;
+
+  it('erst nach einer Zusage, nur für Personen im Mietvertrag, solange eine der drei fehlt', () => {
+    expect(zusageDa(zusage as never)).toBe(true);
+    expect(mietFrageOffen(drei(null), 'vertrag', zusage as never)).toBe(true);
+    expect(mietFrageOffen(drei(null), 'vertrag', ohne as never)).toBe(false);
+    expect(mietFrageOffen(drei(null), 'buerge', zusage as never)).toBe(false);
+    expect(mietFrageOffen(drei('nein'), 'vertrag', zusage as never)).toBe(false);
+    expect(mietFrageOffen({}, 'vertrag', zusage as never)).toBe(true);
+    const eineFehlt = {
+      selbstauskunft: { rueckstandMonate: 'nein', rueckstandMieten: 'nein', kuendigung: null },
+    } as never;
+    expect(mietFrageOffen(eineFehlt, 'vertrag', zusage as never)).toBe(true);
   });
 
-  it('erst nach einer Zusage, nur für Personen im Mietvertrag, nur ohne Antwort', () => {
-    expect(zusageDa(zusage as never)).toBe(true);
-    expect(mietFrageOffen(person(null), 'vertrag', zusage as never)).toBe(true);
-    expect(mietFrageOffen(person(null), 'vertrag', ohne as never)).toBe(false);
-    expect(mietFrageOffen(person(null), 'buerge', zusage as never)).toBe(false);
-    expect(mietFrageOffen(person('nein'), 'vertrag', zusage as never)).toBe(false);
-    expect(mietFrageOffen({}, 'vertrag', zusage as never)).toBe(true);
+  it('Daten bis 2.2: ein Nein gilt für alle drei, ein Ja wird neu gefragt', () => {
+    expect(mietFrageOffen(alt('nein'), 'vertrag', zusage as never)).toBe(false);
+    expect(mietFrageOffen(alt('ja'), 'vertrag', zusage as never)).toBe(true);
+    expect(mietFrageOffen(alt(null), 'vertrag', zusage as never)).toBe(true);
   });
 });

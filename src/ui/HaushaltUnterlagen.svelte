@@ -54,7 +54,12 @@
           <span class="zeichen"><Symbol name="plus" groesse={20} /></span>
           <span class="tx">
             <b>{t('haushaltUnterlagen.wbs')}</b>
-            <small>{t('haushaltUnterlagen.wbsLeer')}</small>
+            <!-- PC208, Schritt 5 (DP134, Abschnitt 1): Hat der Haushalt einen, fehlt er aber hier, sagt die Zeile das. -->
+            <small
+              >{daten.ansicht?.haushalt.wbsAngabe === 'ja'
+                ? t('haushaltUnterlagen.wbsJa')
+                : t('haushaltUnterlagen.wbsLeer')}</small
+            >
           </span>
         {/if}
       </a>
