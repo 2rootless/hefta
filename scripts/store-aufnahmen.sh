@@ -45,6 +45,7 @@ aufnehmen() {
   # PC189: Die App rechnet in deutscher Zeit; der Simulator läuft sonst in UTC (Termin 16 statt 17 Uhr).
   SIMCTL_CHILD_TZ=Europe/Berlin xcrun simctl launch --console-pty "$UDID" "$BUNDLE" > "$LOG" 2>&1 &
   PID=$!
+  VOR=""
   for NR in 01 02 03 04 05 06 07 08 09; do
     I=0
     until grep -q "AUFNAHME BEREIT $NR" "$LOG" 2>/dev/null; do
@@ -53,6 +54,18 @@ aufnehmen() {
       sleep 0.5
     done
     xcrun simctl io "$UDID" screenshot --type=png "$ZIEL/$NR.png"
+    # DP141/DP152: In CP125 war 06 eine Byte-Kopie von 05, obwohl die App „BEREIT 06“ gemeldet hatte; die Ansicht
+    # war noch nicht neu gezeichnet. Gleicht ein Bild dem davor, wird es bis zu sechsmal nach drei Sekunden neu
+    # genommen. Bleibt es gleich, steht das in messung.txt, und das Bild ist nicht zu gebrauchen.
+    if [ -n "${VOR:-}" ]; then
+      W=0
+      while cmp -s "$ZIEL/$VOR.png" "$ZIEL/$NR.png" && [ $W -lt 6 ]; do
+        W=$((W + 1)); sleep 3
+        xcrun simctl io "$UDID" screenshot --type=png "$ZIEL/$NR.png"
+      done
+      if cmp -s "$ZIEL/$VOR.png" "$ZIEL/$NR.png"; then echo "$NR gleicht $VOR" >> "$ZIEL/gleich.txt"; fi
+    fi
+    VOR=$NR
   done
   B=$(sips -g pixelWidth "$ZIEL/01.png" 2>/dev/null | awk '/pixelWidth/ {print $2}')
   H=$(sips -g pixelHeight "$ZIEL/01.png" 2>/dev/null | awk '/pixelHeight/ {print $2}')
@@ -61,6 +74,7 @@ aufnehmen() {
     echo "Pixel: ${B:-?} x ${H:-?}"
     echo "Skala: 3"
     grep "SAFE-AREA-TOP" "$LOG" | sed 's/.*SAFE-AREA-TOP/safe-area-inset-top (pt):/' | head -n 1
+    cat "$ZIEL/gleich.txt" 2>/dev/null || echo "Keine zwei Bilder gleich"
   } | tee "$ZIEL/messung.txt"
   grep "AUFNAHME" "$LOG" || echo "Keine Meldung der App in der Konsole"
   kill "$PID" 2>/dev/null || true
