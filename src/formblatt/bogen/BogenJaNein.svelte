@@ -65,9 +65,13 @@
     font-weight: 700;
   }
 
+  /* Bei 320 px mit 130 % reichen lange Wahlen („Schon unterschrieben“, „Noch nicht“) bis an den Rand; mit anderen
+     Schriftmaßen (Linux) darüber. Dann bricht die zweite Wahl um, statt die Seite breiter zu machen (E10). */
   .janein {
     display: flex;
-    gap: 8px;
+    flex-wrap: wrap;
+    max-width: 100%;
+    gap: 0 8px;
   }
 
   button {

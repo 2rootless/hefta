@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { mkdirSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Download, type Page } from '@playwright/test';
 import { PDFDocument } from '@cantoo/pdf-lib';
 
 // E111 „Der Bogen selbst“ (DP134; PC205, Abschnitt 2; PC208, Schritt 4): die Selbstauskunft im Browser, ohne Haushalt.
@@ -13,6 +13,9 @@ async function bild(page: Page, name: string) {
   mkdirSync(BILDER, { recursive: true });
   await page.screenshot({ path: `${BILDER}/${name}.png`, fullPage: true });
 }
+
+/** Der Name des Downloads. WebKit unter Linux (GitHub) setzt für Leerzeichen Unterstriche ein; Hefta selbst nicht. */
+const name = (d: Download) => d.suggestedFilename().replace(/_/g, ' ');
 
 async function oeffnen(page: Page) {
   await page.goto('/__leer');
@@ -67,7 +70,7 @@ test('E111: ein Bogen, „Es fehlt noch“, PDF mit einer Seite, bleibt im Brows
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: /^PDF erstellen/ }).click();
   const datei = await download;
-  expect(datei.suggestedFilename()).toBe('Selbstauskunft Jarne Ostendorp.pdf');
+  expect(name(datei)).toBe('Selbstauskunft Jarne Ostendorp.pdf');
   const pdf = await PDFDocument.load(readFileSync((await datei.path())!));
   expect(pdf.getPageCount()).toBe(1);
 
@@ -114,7 +117,7 @@ test('E111: zwei Bögen mit Reitern, HAUSHALT gleich, eine Datei mit zwei Seiten
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: /^PDF erstellen/ }).click();
   const datei = await download;
-  expect(datei.suggestedFilename()).toBe('Selbstauskünfte Jarne Ostendorp und Selin Akgül.pdf');
+  expect(name(datei)).toBe('Selbstauskünfte Jarne Ostendorp und Selin Akgül.pdf');
   expect((await PDFDocument.load(readFileSync((await datei.path())!))).getPageCount()).toBe(2);
 
   // Übernehmen: der Kasten sagt, was geschieht, mit dem Schein (E15); danach gibt es den Haushalt.
