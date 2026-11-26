@@ -131,6 +131,10 @@ for (const z of ZUSTAENDE)
     for (const a of ANSICHTEN) {
       await ansichtSetzen(page, a);
       await page.waitForTimeout(150);
+      // Ab 2400 px stellt die Seite nach dem Wechsel der Breite auf zwei Bögen nebeneinander um (matchMedia). Unter
+      // Last (GitHub, WebKit) kam das erst nach der Messung; darum warten, bis die Reihe steht oder weg ist.
+      if (z.arg.mehr)
+        await expect(page.locator('main .bogen-reihe')).toHaveCount(a.breite >= 2400 ? 1 : 0);
       const arg = z.id === 'e111-uebernehmen' && a.zoom ? { ...z.arg } : z.arg;
       for (const f of await page.evaluate(bogenKatalog, arg)) funde.push(`${a.id}: ${f}`);
     }
