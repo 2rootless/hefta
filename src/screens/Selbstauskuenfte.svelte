@@ -1,6 +1,9 @@
 <script lang="ts">
   // Bereich „Selbstauskünfte“ (Entwurf A5, Wunsch des Auftraggebers): oben, was für den ganzen Haushalt
   // gilt (einmal ändern genügt), darunter je Person ihr Stand. Erreichbar über „Euer Haushalt“.
+  // PC213/PC214 (E385, Weg A): Mit `ohne` dieselbe Liste für Personen ohne Haushalt (`#/selbstauskunft` im Browser):
+  // mit „Weitere Person hinzufügen“, „Wer einzieht“ als Zähler (E-B1), PDF als eine Datei oder je Person (DP134) und
+  // „In einen Haushalt übernehmen“ (DP148). Leer gibt es die Liste nicht: Dann fragt die Seite, für wen sie ist.
   import { daten, db, gehe, neuLaden } from '../app/daten.svelte';
   import type { JaNein } from '../domain/selbstauskunft';
   import { einziehend, einziehendText, fehlendeAngaben } from '../domain/selbstauskunft';
@@ -11,8 +14,43 @@
   import { haushaltsAngabenAus } from '../ui/selbstauskunftEingabe';
   import Symbol from '../ui/Symbol.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
+  import { browserZurueck } from '../ui/browserZurueck';
+  import HaushaltZaehler from '../ui/HaushaltZaehler.svelte';
+  import PersonOhneAnlegen from '../ui/PersonOhneAnlegen.svelte';
+  import UebernehmenKasten from '../ui/UebernehmenKasten.svelte';
 
-  const ansicht = $derived(daten.ansicht);
+  let { ohne = false }: { ohne?: boolean } = $props();
+
+  const ansicht = $derived(ohne ? daten.ohne : daten.ansicht);
+  const zurueck = $derived(
+    ohne
+      ? browserZurueck()
+      : { href: '#/haushalt', text: t('einrichtung.haushalt.titelBearbeiten') },
+  );
+
+  // Nach dem Übernehmen (DP148, Schritt 5): wer jetzt zum Haushalt gehört und wer Ansprechperson ist.
+  let uebernommen = $state<{ namen: string; anzahl: number; ansprech: string | null } | null>(null);
+
+  // PDF ohne Haushalt: eine Datei für alle oder je Person eine (DP134, Abschnitt 4).
+  let pdfArt = $state<'eine' | 'je'>('eine');
+  let pdfLaeuft = $state(false);
+  let pdfFehler = $state(false);
+  async function pdfErstellen() {
+    if (!ansicht || pdfLaeuft) return;
+    pdfLaeuft = true;
+    pdfFehler = false;
+    try {
+      const [{ selbstauskuenfteDateien }, { teilen }] = await Promise.all([
+        import('../ui/selbstauskunftPdf'),
+        import('../ui/mappeErstellen'),
+      ]);
+      await teilen(await selbstauskuenfteDateien(ansicht, pdfArt));
+    } catch {
+      pdfFehler = true;
+    } finally {
+      pdfLaeuft = false;
+    }
+  }
   const hh = $derived(haushaltsAngabenAus(ansicht));
   const vertragsZahl = $derived(
     (ansicht?.mitglieder ?? []).filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length,
@@ -75,25 +113,59 @@
 
 <main class="seite">
   <div class="kopf">
-    <Zurueck href="#/haushalt" text={t('einrichtung.haushalt.titelBearbeiten')} />
+    <Zurueck href={zurueck.href} text={zurueck.text} />
   </div>
-  {#if ansicht}
+  {#if uebernommen}
+    <div class="kasten erledigt" role="status">
+      <p>
+        {t('ohneHaushalt.gehoert', { namen: uebernommen.namen, anzahl: uebernommen.anzahl })}
+        {#if uebernommen.ansprech}{t('ohneHaushalt.ansprech', { name: uebernommen.ansprech })}{/if}
+      </p>
+      <a class="textlink" href="#/haushalt">{t('ohneHaushalt.zumHaushalt')}</a>
+    </div>
+  {/if}
+  {#if ohne && !ansicht}
+    <div class="titelblock">
+      <h1 class="display frage">{t('ohneHaushalt.startTitel')}</h1>
+      <p class="lead">{t('ohneHaushalt.startLead')}</p>
+      <p class="haushalt-satz">{t('ohneHaushalt.kopf')}</p>
+    </div>
+    <section>
+      <PersonOhneAnlegen
+        knopf={t('ohneHaushalt.weiter')}
+        fertig={(personId) => gehe(`/selbstauskunft/${personId}/bereich`)}
+      />
+    </section>
+  {:else if ansicht}
     <div class="titelblock">
       <h1 class="display frage">{t('selbstauskuenfte.titel')}</h1>
       <p class="lead">
         {t('selbstauskuenfte.lead', { fertig: fertigZahl, gesamt: personen.length })}
       </p>
+      {#if ohne}<p class="haushalt-satz">{t('ohneHaushalt.kopf')}</p>{/if}
     </div>
 
     <section>
-      <h2>{t('selbstauskuenfte.haushalt')}</h2>
+      <h2>{ohne ? t('ohneHaushalt.fuerAlle') : t('selbstauskuenfte.haushalt')}</h2>
       <ul class="kasten">
-        <li class="zeile">
-          <span class="tx">
-            <b>{t('selbstauskuenfte.ziehenEin')}</b>
-            <small>{t('selbstauskuenfte.ziehenEinWert', { text: einziehendText(wer) })}</small>
-          </span>
-        </li>
+        {#if ohne}
+          <!-- E-B1: Ohne Haushalt fragt die Liste selbst, wer einzieht (Musterbogen B.1). -->
+          <li class="zaehler-zeile">
+            <HaushaltZaehler
+              haushaltId={ansicht.haushalt.id}
+              vertrag={vertragsZahl}
+              weitere={ansicht.haushalt.weitereErwachsene}
+              kinder={ansicht.haushalt.kinder}
+            />
+          </li>
+        {:else}
+          <li class="zeile">
+            <span class="tx">
+              <b>{t('selbstauskuenfte.ziehenEin')}</b>
+              <small>{t('selbstauskuenfte.ziehenEinWert', { text: einziehendText(wer) })}</small>
+            </span>
+          </li>
+        {/if}
         <li>
           {#if bearbeiten === 'haustiere'}
             <div class="bearbeiten">
@@ -189,7 +261,10 @@
               <span class="tx">
                 <b
                   >{p.m.person.vorname}
-                  <span class="rolle">{rollenAnzeige(p.m.zugehoerigkeit.rolle)}</span></b
+                  <!-- Ohne Haushalt gibt es noch keine Rolle (E-Rolle); nur wer bürgt, steht so da. -->
+                  {#if !ohne || p.m.zugehoerigkeit.rolle === 'buerge'}<span class="rolle"
+                      >{rollenAnzeige(p.m.zugehoerigkeit.rolle)}</span
+                    >{/if}</b
                 >
                 <small>{p.status}</small>
               </span>
@@ -204,10 +279,53 @@
           </li>
         {/each}
       </ul>
+      {#if ohne}
+        <details class="weitere">
+          <summary>{t('ohneHaushalt.weitere')}</summary>
+          <PersonOhneAnlegen
+            knopf={t('ohneHaushalt.weitere')}
+            fertig={(personId) => gehe(`/selbstauskunft/${personId}/bereich`)}
+          />
+        </details>
+      {/if}
     </section>
+    {#if ohne}
+      {#if personen.length > 1}
+        <section>
+          <fieldset class="pdf-art">
+            <legend>{t('ohneHaushalt.pdf')}</legend>
+            <label class="wahl">
+              <input type="radio" name="pdf-art" value="eine" bind:group={pdfArt} />
+              <span>{t('ohneHaushalt.pdfEine')}</span>
+            </label>
+            <label class="wahl">
+              <input type="radio" name="pdf-art" value="je" bind:group={pdfArt} />
+              <span>{t('ohneHaushalt.pdfJe')}</span>
+            </label>
+          </fieldset>
+        </section>
+      {/if}
+      {#if pdfLaeuft}<p class="hinweis" role="status">{t('ohneHaushalt.pdfLaedt')}</p>{/if}
+      {#if pdfFehler}<p class="hinweis" role="alert">{t('ohneHaushalt.pdfFehler')}</p>{/if}
+      <section>
+        <UebernehmenKasten ohne={ansicht} fertig={(r) => (uebernommen = r)} />
+      </section>
+    {/if}
   {/if}
 </main>
-{#if offen}
+{#if ohne && !ansicht}
+  <!-- Nichts zu tun, bis jemand angelegt ist. -->
+{:else if ohne}
+  {#if offen}
+    <Aktionsleiste
+      text={t('selbstauskuenfte.ausfuellen')}
+      zusatz={t('selbstauskuenfte.offenZusatz', { anzahl: offen })}
+      onclick={fehlendeAusfuellen}
+    />
+  {:else}
+    <Aktionsleiste text={t('ohneHaushalt.pdf')} onclick={pdfErstellen} />
+  {/if}
+{:else if offen}
   <Aktionsleiste
     text={t('selbstauskuenfte.ausfuellen')}
     zusatz={t('selbstauskuenfte.offenZusatz', { anzahl: offen })}
@@ -228,6 +346,70 @@
 
   .kopf {
     min-height: var(--tap-target);
+  }
+
+  .haushalt-satz {
+    margin: 8px 0 0;
+    color: var(--ink-muted);
+    font-size: calc(15 * var(--px));
+  }
+
+  .zaehler-zeile {
+    padding: 8px var(--space-4, 16px);
+  }
+
+  .weitere {
+    margin-top: 12px;
+  }
+
+  .weitere summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--space-1);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .pdf-art {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0 var(--space-1);
+    border: 0;
+  }
+
+  .pdf-art legend {
+    margin-bottom: 4px;
+    padding: 0;
+    font-size: calc(17 * var(--px));
+    font-weight: 800;
+  }
+
+  .wahl {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    cursor: pointer;
+  }
+
+  .wahl input {
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    accent-color: var(--ink);
+  }
+
+  .erledigt {
+    display: grid;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 16px;
+  }
+
+  .erledigt p {
+    margin: 0;
   }
 
   .titelblock {

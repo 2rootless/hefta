@@ -7,7 +7,7 @@
   // hat zwei Blätter; Blatt 2 bleibt bei der Person, die bürgt, und kommt nie in die Mappe. Ein Scan von Blatt 1 kommt
   // als Unterlage zur Person, für dieses Heft (DP49 Punkt 5).
   import { tick, untrack } from 'svelte';
-  import { daten, db, neuLaden } from '../app/daten.svelte';
+  import { ansichtVon, daten, db, neuLaden } from '../app/daten.svelte';
   import { pdfZeigen } from '../app/pdfFenster.svelte';
   import { einstieg, gehe, route, zumEinstieg } from '../app/router.svelte';
   import { adresseZeilen } from '../domain/adresse';
@@ -31,33 +31,41 @@
   import FormTeil from '../formblatt/FormTeil.svelte';
   import { aufzaehlung, fehlendeFelder } from '../formblatt/formblatt';
   import { t, tagZusammen, tIn } from '../i18n';
-  import { heftAendern } from '../storage/speicher';
+  import { heftAendern, personAendern } from '../storage/speicher';
+  import { browserZurueck } from '../ui/browserZurueck';
+  import UebernehmenKasten from '../ui/UebernehmenKasten.svelte';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
   import { einstiegText } from '../ui/einstieg';
   import { erklaerungHeft } from '../ui/erklaerungHeft.svelte';
   import Symbol from '../ui/Symbol.svelte';
   import Zurueck from '../ui/Zurueck.svelte';
 
-  let { personId, heftId }: { personId: string; heftId: string } = $props();
+  // PC213/PC214 (E385, E-Bürge): Ohne Heft gehört der Entwurf der Person (`buergschaftOhneHeft`); ohne Haushalt steht
+  // sie auf dem Sammelplatz. „Für wen“ tippt man dann von Hand, vorbelegt mit den Personen ohne Haushalt im Vertrag.
+  let { personId, heftId }: { personId: string; heftId?: string } = $props();
 
   const id = $props.id();
-  const mitglied = $derived(
-    daten.ansicht?.mitglieder.find((m) => m.person.id === personId) ?? null,
-  );
-  const heft = $derived(daten.hefte.find((h) => h.id === heftId) ?? null);
+  const ans = $derived((void daten.ansicht, void daten.ohne, ansichtVon(personId)));
+  const ohne = $derived(!!ans?.haushalt.ohneHaushalt);
+  const mitglied = $derived(ans?.mitglieder.find((m) => m.person.id === personId) ?? null);
+  const heft = $derived(heftId ? (daten.hefte.find((h) => h.id === heftId) ?? null) : null);
   const vertrag = $derived(
-    (daten.ansicht?.mitglieder ?? []).filter(
+    (ans?.mitglieder ?? []).filter(
       (m) => m.zugehoerigkeit.rolle !== 'buerge' && !m.zugehoerigkeit.herausgenommenAm,
     ),
+  );
+  /** Der gespeicherte Entwurf: am Heft, sonst an der Person (erscheint im Heft, sobald es eins gibt). */
+  const entwurf = $derived(
+    heft?.buergschaften?.[personId] ?? mitglied?.person.buergschaftOhneHeft ?? null,
   );
   const rufname = $derived(mitglied ? mitglied.person.rufname || mitglied.person.vorname : '');
   const an = $derived(vertrag.length > 1 ? 'ihr' : 'du');
   const name = $derived(mitglied ? nameText(nameImPdf(mitglied.person)) : '');
-  const mieter = $derived(vertrag.map((v) => nameText(nameImPdf(v.person))));
 
   let eingabe = $state<BuergschaftEingabe>(
     untrack(() =>
-      eingabeFuer(heft?.buergschaften?.[personId], {
+      eingabeFuer(entwurf, {
+        mieterNamen: ohne ? vertrag.map((v) => nameText(nameImPdf(v.person))) : undefined,
         anschrift: mitglied?.person.kontakt.anschriftTeile ?? null,
         anschriftText: mitglied?.person.kontakt.anschrift ?? null,
         vermieterName: heft?.angaben?.anbieter ?? null,
@@ -67,6 +75,11 @@
     ),
   );
   let betragEingabe = $state(untrack(() => betragText(eingabe.hoechstbetrag)));
+  const mieter = $derived(
+    ohne
+      ? (eingabe.mieterNamen ?? []).map((n) => n.trim()).filter(Boolean)
+      : vertrag.map((v) => nameText(nameImPdf(v.person))),
+  );
 
   const werte = $derived({ e: eingabe, name, mieter });
   const stand = $derived(buergschaftStand(werte));
@@ -75,7 +88,7 @@
   // zu, wie auf der Seite der Selbstauskunft.
   let offen = $state<BuergschaftTeil | null>(
     untrack(() =>
-      heft?.buergschaften?.[personId]
+      entwurf
         ? null
         : (buergschaftStand({ e: eingabe, name, mieter }).find((s) => !s.fertig || !s.voll)?.id ??
           null),
@@ -125,10 +138,11 @@
     if (jetzt === letzter || !mitglied) return;
     letzter = jetzt;
     const verbindung = await db();
-    const alt = (await verbindung.get('hefte', heftId))?.buergschaften ?? {};
-    await heftAendern(verbindung, heftId, {
-      buergschaften: { ...alt, [personId]: entwurfAus(eingabe, new Date().toISOString()) },
-    });
+    const neu = entwurfAus(eingabe, new Date().toISOString());
+    if (heftId) {
+      const alt = (await verbindung.get('hefte', heftId))?.buergschaften ?? {};
+      await heftAendern(verbindung, heftId, { buergschaften: { ...alt, [personId]: neu } });
+    } else await personAendern(verbindung, personId, { buergschaftOhneHeft: neu });
     await neuLaden();
   }
   $effect(() => {
@@ -139,10 +153,17 @@
   });
 
   // ---------- W39: zurück dorthin, woher man kam ----------
-  const ablauf = $derived(`/buergschaft/${personId}/${heftId}`);
-  const sonst = $derived(`/heft/${heftId}`);
+  const ablauf = $derived(
+    heftId ? `/buergschaft/${personId}/${heftId}` : `/buergschaft/${personId}`,
+  );
+  const browser = browserZurueck();
+  const sonst = $derived(
+    heftId ? `/heft/${heftId}` : ohne ? browser.href.replace(/^#/, '') : `/person/${personId}`,
+  );
   const einstiegPfad = $derived((void route.pfad, einstieg(ablauf)));
-  const zurueckText = $derived(einstiegText(einstiegPfad ?? sonst, daten.ansicht));
+  const zurueckText = $derived(
+    !heftId && ohne && !einstiegPfad ? browser.text : einstiegText(einstiegPfad ?? sonst, ans),
+  );
 
   // ---------- PDF ----------
   let baut = $state(false);
@@ -163,7 +184,7 @@
       ]);
       const erg = await buergschaftBauen(
         angaben,
-        await pdfSchriftenLaden(daten.ansicht?.haushalt.mappeAussehen?.schrift),
+        await pdfSchriftenLaden(ans?.haushalt.mappeAussehen?.schrift),
       );
       const teil = namensteil(angaben.buerge.name);
       const neu = new File(
@@ -193,7 +214,10 @@
     await teilen([d]);
   }
 
+  let uebernommen = $state<{ namen: string; anzahl: number; ansprech: string | null } | null>(null);
+
   async function hinzufuegen() {
+    if (!heftId) return;
     await speichern();
     erklaerungHeft.personId = personId;
     erklaerungHeft.heftId = heftId;
@@ -230,7 +254,7 @@
   }
 
   const geaendert = $derived.by(() => {
-    const iso = heft?.buergschaften?.[personId]?.geaendert;
+    const iso = entwurf?.geaendert;
     return iso
       ? tagZusammen(
           new Intl.DateTimeFormat('de-DE', { day: 'numeric', month: 'long' }).format(new Date(iso)),
@@ -276,12 +300,13 @@
       }}
     />
   </div>
-  {#if !mitglied || !heft}
+  {#if !mitglied || (!heft && heftId)}
     <p>{t('personSeite.nichtGefunden')}</p>
   {:else}
     <div class="titelblock">
       <h1 class="display">{t('buergschaft.titel')}</h1>
       <p class="lead">{t('buergschaft.leadSeite', { name: rufname })}</p>
+      {#if ohne}<p class="haushalt-satz">{t('ohneHaushalt.kopf')}</p>{/if}
     </div>
 
     <!-- Stand oben wie in der Selbstauskunft (U1, U12): Blatt, Stand, „Als PDF ansehen“. -->
@@ -329,6 +354,33 @@
               titel={t('buergschaft.anschrift')}
               satz={t('buergschaft.werSatz')}
               datenFeld="buerge-anschrift"
+            />
+          {:else if s.id === 'fuerWen' && ohne}
+            <!-- E-Bürge: ohne Haushalt die Namen von Hand, vorbelegt mit den Personen ohne Haushalt im Vertrag. -->
+            {#each eingabe.mieterNamen ?? [], i (i)}
+              <FormFeld
+                etikett={t('buergschaft.mieterNummer', { nummer: i + 1 })}
+                bind:wert={eingabe.mieterNamen![i]!}
+                satz={i === 0 ? t('buergschaft.alleImVertrag') : undefined}
+                feld={{ autocomplete: 'name' }}
+              />
+            {/each}
+            <button
+              type="button"
+              class="textlink"
+              onclick={() => (eingabe.mieterNamen = [...(eingabe.mieterNamen ?? []), ''])}
+              >{t('buergschaft.weitererMieter')}</button
+            >
+            <FormFeld
+              etikett={t('buergschaft.vermieter')}
+              bind:wert={eingabe.vermieterName}
+              satz={t('buergschaft.vermieterSatz')}
+            />
+            <AnschriftFelder
+              bind:anschrift={eingabe.vermieterAnschrift}
+              titel={t('buergschaft.vermieterAnschrift')}
+              satz={t('buergschaft.vermieterAnschriftSatz')}
+              datenFeld="vermieter-anschrift"
             />
           {:else if s.id === 'fuerWen'}
             <ul class="mieter">
@@ -427,7 +479,29 @@
       {/each}
     </div>
 
-    {#if fertig}
+    {#if ohne}
+      <!-- PC213: verbinden wie die Selbstauskunft; wer hier bürgt, bürgt (DP148, Schritt 3). -->
+      <section class="danach">
+        <UebernehmenKasten
+          ohne={daten.ohne}
+          fertig={(r) => {
+            uebernommen = r;
+          }}
+        />
+      </section>
+    {/if}
+    {#if uebernommen}
+      <div class="kasten erledigt" role="status">
+        <p>
+          {t('ohneHaushalt.gehoert', { namen: uebernommen.namen, anzahl: uebernommen.anzahl })}
+          {#if uebernommen.ansprech}{t('ohneHaushalt.ansprech', {
+              name: uebernommen.ansprech,
+            })}{/if}
+        </p>
+        <a class="textlink" href="#/haushalt">{t('ohneHaushalt.zumHaushalt')}</a>
+      </div>
+    {/if}
+    {#if fertig && !ohne && heftId}
       <section class="danach">
         <h2>{t('buergschaft.danach')}</h2>
         <div class="zeilen">
@@ -444,7 +518,7 @@
     {/if}
   {/if}
 </main>
-{#if mitglied && heft}
+{#if mitglied && (heft || !heftId)}
   <!-- Eine Leiste für alle Fälle wie in der Selbstauskunft: Nur Text und Ziel wechseln (W8). -->
   <Aktionsleiste
     text={knopf.art === 'weiter'
@@ -482,6 +556,23 @@
 
   .kopf {
     min-height: var(--tap-target);
+  }
+
+  .haushalt-satz {
+    margin: 8px 0 0;
+    color: var(--ink-muted);
+    font-size: calc(15 * var(--px));
+  }
+
+  .erledigt {
+    display: grid;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 16px;
+  }
+
+  .erledigt p {
+    margin: 0;
   }
 
   .titelblock {

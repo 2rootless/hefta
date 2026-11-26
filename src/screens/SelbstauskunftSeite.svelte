@@ -2,8 +2,8 @@
   // Selbstauskunft einer Person auf eigener Seite (Entwurf A4): oben der fertige Bogen als PDF, darunter
   // die vier Teile zugeklappt mit Zusammenfassung und „Ändern“. Änderungen werden sofort gespeichert.
   import { untrack } from 'svelte';
-  import { daten, db, neuLaden } from '../app/daten.svelte';
-  import { einstieg, route, zumEinstieg } from '../app/router.svelte';
+  import { ansichtVon, daten, db, neuLaden } from '../app/daten.svelte';
+  import { einstieg, gehe, route, zumEinstieg } from '../app/router.svelte';
   import {
     ERKLAERUNG,
     einziehend,
@@ -14,8 +14,9 @@
     vollstaendig,
   } from '../domain/selbstauskunft';
   import { t, tagZusammen } from '../i18n';
-  import { haushaltAendern, personAendern } from '../storage/speicher';
+  import { haushaltAendern, personAendern, personGanzLoeschen } from '../storage/speicher';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
+  import HaushaltZaehler from '../ui/HaushaltZaehler.svelte';
   import SelbstauskunftAkkordeon from '../ui/SelbstauskunftAkkordeon.svelte';
   import {
     angabenAus,
@@ -35,27 +36,28 @@
     feld,
   }: { personId: string; ausBereich?: boolean; feld?: string } = $props();
 
-  const mitglied = $derived(daten.ansicht?.mitglieder.find((m) => m.person.id === personId));
+  // PC213/PC214 (Weg A): Dieselbe Seite für Personen ohne Haushalt. Ihre Ansicht ist der Sammelplatz (`daten.ohne`).
+  const ans = $derived((void daten.ansicht, void daten.ohne, ansichtVon(personId)));
+  const ohne = $derived(!!ans?.haushalt.ohneHaushalt);
+  const mitglied = $derived(ans?.mitglieder.find((m) => m.person.id === personId));
   const start = untrack(() =>
-    mitglied && daten.ansicht
-      ? { eingabe: eingabeAus(mitglied.person, haushaltsAngabenAus(daten.ansicht)) }
-      : null,
+    mitglied && ans ? { eingabe: eingabeAus(mitglied.person, haushaltsAngabenAus(ans)) } : null,
   );
   let eingabe = $state<SelbstauskunftEingabe | null>(start?.eingabe ?? null);
-  let vorher = untrack(() => haushaltsAngabenAus(daten.ansicht));
-  const zurueckZu = $derived(ausBereich ? '/selbstauskuenfte' : `/person/${personId}`);
+  let vorher = untrack(() => haushaltsAngabenAus(ans));
+  const zurueckZu = $derived(
+    ohne ? '/selbstauskunft' : ausBereich ? '/selbstauskuenfte' : `/person/${personId}`,
+  );
   // W39 (PC130 K8): „Fertig“ und „Zurück“ führen dorthin, wo die Selbstauskunft geöffnet wurde (Mappe,
   // Personenseite, Mappe teilen …). Nur ohne Einstieg im Verlauf, etwa direkt geöffnet, wie bisher zu `zurueckZu`.
   const ablauf = $derived(`/selbstauskunft/${personId}`);
   const einstiegPfad = $derived((void route.pfad, einstieg(ablauf)));
-  const zurueckText = $derived(einstiegText(einstiegPfad ?? zurueckZu, daten.ansicht));
+  const zurueckText = $derived(einstiegText(einstiegPfad ?? zurueckZu, ans));
   const rolle = $derived(mitglied?.zugehoerigkeit.rolle ?? 'vertrag');
   const vertragsZahl = $derived(
-    (daten.ansicht?.mitglieder ?? []).filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length,
+    (ans?.mitglieder ?? []).filter((m) => m.zugehoerigkeit.rolle !== 'buerge').length,
   );
-  const wer = $derived(
-    daten.ansicht ? einziehend(vertragsZahl, daten.ansicht.haushalt) : { erwachsene: 0, kinder: 0 },
-  );
+  const wer = $derived(ans ? einziehend(vertragsZahl, ans.haushalt) : { erwachsene: 0, kinder: 0 });
   const fertig = $derived(
     !!mitglied &&
       !!eingabe &&
@@ -88,19 +90,28 @@
       ? grundFuer(mitglied.person, rolle, eingabe)
       : undefined,
   );
+  // PC213: ohne Haushalt heißt der vierte Teil „Für alle hier“.
   const zielName = $derived(
-    knopf.art === 'weiter' ? t(`selbstauskunft.teil.${knopf.ziel}`) : undefined,
+    knopf.art === 'weiter'
+      ? ohne && knopf.ziel === 'haushalt'
+        ? t('ohneHaushalt.fuerAlle')
+        : t(`selbstauskunft.teil.${knopf.ziel}`)
+      : undefined,
   );
   // DP116, Frage 1: In der zweiten Zeile steht immer die Kurzform (feste Liste); vorgelesen wird der lange Name.
   const zielKurz = $derived(
-    knopf.art === 'weiter' ? t(`selbstauskunft.teilKurz.${knopf.ziel}`) : undefined,
+    knopf.art === 'weiter'
+      ? ohne && knopf.ziel === 'haushalt'
+        ? t('ohneHaushalt.fuerAlle')
+        : t(`selbstauskunft.teilKurz.${knopf.ziel}`)
+      : undefined,
   );
 
   // Sofort speichern: kurz nach jeder Änderung, ohne Knopf (A4: „Änderungen werden sofort gespeichert.“).
   let letzter = untrack(() => JSON.stringify(eingabe));
   let zeitgeber: ReturnType<typeof setTimeout> | undefined;
   async function speichern() {
-    if (!mitglied || !eingabe || !daten.ansicht) return;
+    if (!mitglied || !eingabe || !ans) return;
     const jetzt = JSON.stringify(eingabe);
     if (jetzt === letzter) return;
     letzter = jetzt;
@@ -108,7 +119,7 @@
     await personAendern(verbindung, mitglied.person.id, angabenAus(eingabe));
     const hh = haushaltAus(eingabe, vorher, mitglied.person.id);
     if (hh && rolle !== 'buerge') {
-      await haushaltAendern(verbindung, daten.ansicht.haushalt.id, hh);
+      await haushaltAendern(verbindung, ans.haushalt.id, hh);
       vorher = { ...eingabe.hh };
     }
     await neuLaden();
@@ -124,21 +135,29 @@
 
   // Wer die Haushaltsangaben eingetragen hat, wenn es jemand anderes war.
   const angabenVon = $derived.by(() => {
-    const h = daten.ansicht?.haushalt;
+    const h = ans?.haushalt;
     if (!h?.angabenVon || h.angabenVon === personId) return '';
-    const von = daten.ansicht?.mitglieder.find((m) => m.person.id === h.angabenVon)?.person;
+    const von = ans?.mitglieder.find((m) => m.person.id === h.angabenVon)?.person;
     return von ? von.rufname || von.vorname : '';
   });
 
+  // PC213: Eine Person ohne Haushalt löscht man hier, nach einer Frage; mit ihr gehen alle Angaben.
+  let loeschenFrage = $state(false);
+  async function loeschen() {
+    await personGanzLoeschen(await db(), personId);
+    await neuLaden();
+    gehe('/selbstauskunft');
+  }
+
   let beschaeftigt = $state(false);
   async function pdfZeigen() {
-    if (beschaeftigt || !daten.ansicht) return;
+    if (beschaeftigt || !ans) return;
     beschaeftigt = true;
     try {
       await speichern();
-      const m = daten.ansicht.mitglieder.find((x) => x.person.id === personId)!;
+      const m = ans.mitglieder.find((x) => x.person.id === personId)!;
       const { dateiOeffnen, selbstauskunftDatei } = await import('../ui/selbstauskunftPdf');
-      dateiOeffnen(await selbstauskunftDatei(m.person, m.zugehoerigkeit.rolle, daten.ansicht));
+      dateiOeffnen(await selbstauskunftDatei(m.person, m.zugehoerigkeit.rolle, ans));
     } finally {
       beschaeftigt = false;
     }
@@ -173,6 +192,13 @@
           name: mitglied.person.rufname || mitglied.person.vorname,
         })}
       </p>
+      {#if ohne}
+        <p class="haushalt-satz">{t('ohneHaushalt.kopf')}</p>
+        <!-- PC213: Name und Lebenslage ändert man wie in der App auf „Person ändern“. -->
+        <a class="textlink" href="#/person-aendern/{personId}/ohne"
+          >{t('ohneHaushalt.personAendern')}</a
+        >
+      {/if}
     </div>
     <div class="bogen">
       <span class="blatt farbe-{mitglied.zugehoerigkeit.farbe}" aria-hidden="true">
@@ -203,7 +229,9 @@
         vonName={angabenVon}
         person={mitglied.person}
         {rolle}
-        du={!!mitglied && mitglied.person.id === daten.ansicht?.haushalt.ansprechpersonId}
+        du={ohne
+          ? vertragsZahl === 1
+          : !!mitglied && mitglied.person.id === ans?.haushalt.ansprechpersonId}
         allein={vertragsZahl === 1 && wer.erwachsene === 1 && !wer.kinder}
         einziehendText={einziehendText(wer)}
         gruppen={{
@@ -216,10 +244,46 @@
         bind:this={akkordeon}
         bind:offen={offenTeil}
         teilKnopf={false}
+        einziehen={ohne && ans ? einziehenOhne : undefined}
       />
     </div>
+    {#if ohne}
+      <div class="loeschen">
+        {#if loeschenFrage}
+          <p>
+            {t('ohneHaushalt.loeschenFrage', {
+              name: mitglied.person.rufname || mitglied.person.vorname,
+            })}
+          </p>
+          <div class="knoepfe">
+            <button type="button" class="weg" onclick={loeschen}
+              >{t('ohneHaushalt.loeschenJa')}</button
+            >
+            <button type="button" class="textlink" onclick={() => (loeschenFrage = false)}
+              >{t('allgemein.abbrechen')}</button
+            >
+          </div>
+        {:else}
+          <button type="button" class="textlink" onclick={() => (loeschenFrage = true)}
+            >{t('ohneHaushalt.loeschen', {
+              name: mitglied.person.rufname || mitglied.person.vorname,
+            })}</button
+          >
+        {/if}
+      </div>
+    {/if}
   {/if}
 </main>
+{#snippet einziehenOhne()}
+  {#if ans}
+    <HaushaltZaehler
+      haushaltId={ans.haushalt.id}
+      vertrag={vertragsZahl}
+      weitere={ans.haushalt.weitereErwachsene}
+      kinder={ans.haushalt.kinder}
+    />
+  {/if}
+{/snippet}
 {#if mitglied && eingabe}
   <!-- Eine Leiste für alle Fälle: Nur Text und Ziel wechseln, nichts baut sich neu auf (W8). -->
   <Aktionsleiste
@@ -256,6 +320,40 @@
 
   .kopf {
     min-height: var(--tap-target);
+  }
+
+  .loeschen {
+    margin-top: var(--space-6);
+    padding: 0 var(--space-1);
+  }
+
+  .loeschen p {
+    margin: 0 0 8px;
+  }
+
+  .knoepfe {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+  }
+
+  .weg {
+    min-height: 44px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--surface);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .haushalt-satz {
+    margin: 8px 0 0;
+    color: var(--ink-muted);
+    font-size: calc(15 * var(--px));
   }
 
   .titelblock {

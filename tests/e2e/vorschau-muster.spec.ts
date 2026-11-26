@@ -1,6 +1,7 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { pdfMit, szenarioLaden } from './szenario-laden';
+import { SZENARIEN, type Szenario } from './szenarien';
 
 // PC80 (E163), PC177 (DP110, W40): das Musterbackup für die Vorschau und die Store-Bilder, ohne Passwort. Läuft nur
 // mit VORSCHAU_MUSTER=1 (werkzeug/vorschau-2-1.sh). Haushalt A der Namensliste (Jarne, Selin, Hiltrud bürgt, ein
@@ -90,9 +91,17 @@ const HEFTE: Record<string, unknown>[] = [
   ),
 ];
 
-test('Musterbackup für die Vorschau', async ({ page, browserName }) => {
-  test.skip(browserName !== 'chromium' || !process.env.VORSCHAU_MUSTER, 'nur für die Vorschau');
-  await szenarioLaden(page, 'A-namensliste', '/');
+/**
+ * Das Musterbackup: Haushalt A mit den Heften aus DP110. `szenario` ändert Haushalt A ab (DP146), `danach` legt noch
+ * Daten nach, bevor das Backup entsteht.
+ */
+async function musterbackup(
+  page: Page,
+  ziel: string,
+  szenario: string | Szenario = 'A-namensliste',
+  danach: () => Promise<void> = async () => {},
+) {
+  await szenarioLaden(page, szenario, '/');
   const grundriss = readFileSync(
     'tests/fixtures/store/heftbild-F1b-grundriss-karton-2412x1206.png',
   ).toString('base64');
@@ -126,15 +135,95 @@ test('Musterbackup für die Vorschau', async ({ page, browserName }) => {
       }),
     { hefte: HEFTE, wuensche: WUENSCHE, grundriss, fotoId: FOTO_ALTBAU },
   );
+  await danach();
   await page.reload();
   await page.evaluate(() => (window.location.hash = '#/einstellungen/backup'));
   await page.getByRole('radio', { name: /^Ohne Passwort/ }).click();
   const laden = page.waitForEvent('download');
   await page.getByRole('button', { name: /^Backup (sichern|erstellen)/ }).click();
   const datei = await laden;
-  await datei.saveAs('test-results/hefta-muster.hefta');
+  await datei.saveAs(ziel);
   // W50 (DP106): Im Browser weiß Hefta nur, dass der Download begonnen hat.
   await expect(page.getByText(/^Download gestartet:/)).toBeVisible();
+}
+
+test('Musterbackup für die Vorschau', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium' || !process.env.VORSCHAU_MUSTER, 'nur für die Vorschau');
+  await musterbackup(page, 'test-results/hefta-muster.hefta');
+});
+
+// DP146: dasselbe Musterbackup, dazu bei Jarne eine abgelegte Ausweiskopie und bei Selin eine Datenkopie einer
+// Auskunftei, wie aus einem Stand vor 2.2. So erscheint nach dem Einspielen der einmalige Hinweis (PC207, 1; F6).
+// Die Dateien sind erfunden und so beschriftet; Namen aus der Namensliste (W7, W40).
+test('Musterbackup mit alter Ausweis- und Datenkopie (DP146)', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium' || !process.env.VORSCHAU_MUSTER, 'nur für die Vorschau');
+  const a = SZENARIEN.find((x) => x.id === 'A-namensliste')!;
+  const alt: Szenario = {
+    ...a,
+    personen: a.personen.map((p, i) =>
+      i === 0
+        ? { ...p, unterlagen: { ...p.unterlagen, ausweiskopie: 'da' } }
+        : i === 1
+          ? { ...p, unterlagen: { ...p.unterlagen, schufa_datenkopie: 'da' } }
+          : p,
+    ),
+  };
+  const dateien = {
+    ausweiskopie: (
+      await pdfMit(
+        ['Kopie des Personalausweises\nJarne Ostendorp\nErfunden – kein echtes Dokument'],
+        14,
+      )
+    ).toString('base64'),
+    schufa_datenkopie: (
+      await pdfMit(
+        ['Datenkopie einer Auskunftei\nSelin Akgül\nErfunden – kein echtes Dokument'],
+        14,
+      )
+    ).toString('base64'),
+  };
+  await musterbackup(page, 'test-results/hefta-muster-alte-kopien.hefta', alt, () =>
+    page.evaluate(
+      (dateien) =>
+        new Promise<void>((fertig) => {
+          const r = indexedDB.open('hefta');
+          r.onsuccess = () => {
+            const tx = r.result.transaction(['dokumente', 'versionen', 'dateien'], 'readwrite');
+            tx.objectStore('dokumente').getAll().onsuccess = (e) => {
+              const doks = (e.target as IDBRequest<{ id: string; typ: string }[]>).result.filter(
+                (d) => d.typ in dateien,
+              );
+              tx.objectStore('versionen').getAll().onsuccess = (f) => {
+                for (const v of (f.target as IDBRequest<{ dokumentId: string; original: string }[]>)
+                  .result) {
+                  const d = doks.find((x) => x.id === v.dokumentId);
+                  if (!d) continue;
+                  const roh = Uint8Array.from(atob(dateien[d.typ as keyof typeof dateien]), (z) =>
+                    z.charCodeAt(0),
+                  );
+                  tx.objectStore('dateien').put({
+                    id: v.original,
+                    createdAt: new Date().toISOString(),
+                    typ: 'application/pdf',
+                    groesse: roh.length,
+                    daten: roh.buffer,
+                  });
+                }
+              };
+            };
+            tx.oncomplete = () => {
+              r.result.close();
+              fertig();
+            };
+          };
+        }),
+      dateien,
+    ),
+  );
+  // Der Hinweis erscheint mit diesen Daten (Gegenprobe zum Musterbackup ohne Kopien: dort fehlt er).
+  await page.goto('/__leer');
+  await page.goto('/#/');
+  await expect(page.getByText('Ausweiskopie und Datenkopie bleiben draußen.')).toBeVisible();
 });
 
 // PC187: drei erfundene Abrechnungen für Selin (Store-Bild 09, Monate zuordnen). Firma aus Haushalt A, deutlich

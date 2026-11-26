@@ -58,7 +58,10 @@ describe('wunsch-W40: keine Muster-Namen, wo man sie sieht', () => {
 
   it('Musterbackup für Vorschau und Store-Bilder: Haushalt A, die drei Hefte aus DP110', () => {
     const q = readFileSync('tests/e2e/vorschau-muster.spec.ts', 'utf8');
-    expect(q).toContain("szenarioLaden(page, 'A-namensliste'");
+    // DP146: Beide Musterbackups bauen auf Haushalt A, das zweite mit alten Kopien.
+    expect(q).toContain("szenario: string | Szenario = 'A-namensliste'");
+    expect(q).toContain("SZENARIEN.find((x) => x.id === 'A-namensliste')");
+    expect(q).toContain('szenarioLaden(page, szenario,');
     const ohneKommentar = q.replace(/^\s*\/\/.*$/gm, '');
     expect(verstoesse(ohneKommentar)).toEqual([]);
     for (const s of ['Kranichstieg 3', 'Lotsenwisch 8', 'Rotdornbogen 21']) expect(q).toContain(s);

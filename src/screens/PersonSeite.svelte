@@ -6,7 +6,7 @@
   // (K1b); eine bekannte Person kommt nach einer Bestätigung mit allen Unterlagen dazu (K2).
   // Ändern: zwei Abschnitte, „In eurem Haushalt · gilt nur hier“ und „Über Lea · gilt überall“ (K3b).
   import { ueberTastatur } from '../ui/ueberTastatur';
-  import { daten, db, neuLaden } from '../app/daten.svelte';
+  import { ansichtVon, daten, db, neuLaden } from '../app/daten.svelte';
   import { abschliessen, zurueckGehen } from '../app/router.svelte';
   import { rufnameFolgt, type Rolle } from '../domain/modell';
   import { gleicherName, lateinFehlt, nameMappeAus } from '../domain/namen';
@@ -41,9 +41,14 @@
   } = $props();
 
   // W54: auch wer nur mit einzieht oder nicht mehr dabei ist, hat seine Seite; zurück geht es über die Ziele.
+  // PC213/PC214: Auch eine Person ohne Haushalt ändert man hier (Name, Lebenslage, Farbe), nur ohne Rolle.
+  const ans = $derived(
+    personId ? (void daten.ansicht, void daten.ohne, ansichtVon(personId)) : daten.ansicht,
+  );
+  const ohne = $derived(!!ans?.haushalt.ohneHaushalt);
   const mitglied = $derived(
     personId
-      ? [...(daten.ansicht?.mitglieder ?? []), ...(daten.ansicht?.herausgenommen ?? [])].find(
+      ? [...(ans?.mitglieder ?? []), ...(ans?.herausgenommen ?? [])].find(
           (m) => m.person.id === personId,
         )
       : undefined,
@@ -55,7 +60,7 @@
   const rolle = $derived<Rolle>(!bisher ? (neueRolle ?? 'vertrag') : bisher);
   // W57 (E366): Die Ansprechperson des Haushalts; sie steht im Vertrag.
   const istAnsprech = $derived(
-    !!mitglied && daten.ansicht?.haushalt.ansprechpersonId === mitglied.person.id,
+    !!mitglied && !ohne && ans?.haushalt.ansprechpersonId === mitglied.person.id,
   );
   const bekannte = $derived(daten.ansicht?.herausgenommen ?? []);
 
@@ -79,7 +84,7 @@
   let farbe = $state(1);
   // Wer sonst im Haushalt welche Farbe hat (PF1).
   const vergebeneFarben = $derived(
-    (daten.ansicht?.mitglieder ?? [])
+    (ans?.mitglieder ?? [])
       .filter((m) => m.person.id !== personId)
       .map((m) => ({
         farbe: m.zugehoerigkeit.farbe,
@@ -136,7 +141,7 @@
 
   /** Unterlagen, die eine Person schon hat (Dokumente mit mindestens einer Version). */
   function unterlagenVon(id: string) {
-    const ansicht = daten.ansicht;
+    const ansicht = ans;
     if (!ansicht) return [];
     return ansicht.dokumente.filter(
       (d) => d.personId === id && ansicht.versionen.some((v) => v.dokumentId === d.id),
@@ -215,7 +220,7 @@
   let speichert = $state(false);
 
   async function speichern() {
-    if (grund || speichert || !werte.bezeichnung || !daten.ansicht) return;
+    if (grund || speichert || !werte.bezeichnung || !ans) return;
     speichert = true;
     const verbindung = await db();
     if (schritt === 'bekannt' && gewaehlt) {
@@ -244,7 +249,7 @@
         });
         await farbeSetzen(verbindung, mitglied.zugehoerigkeit.id, farbe);
       } else {
-        await mitgliedHinzufuegen(verbindung, daten.ansicht.haushalt.id, {
+        await mitgliedHinzufuegen(verbindung, ans.haushalt.id, {
           ...angaben,
           bezeichnung: werte.bezeichnung,
           rolle,
@@ -289,8 +294,9 @@
     </div>
 
     {#if mitglied}
-      <!-- K3b: zwei Abschnitte -->
-      <section class="teil">
+      <!-- K3b: zwei Abschnitte; ohne Haushalt gibt es noch keine Rolle (E-Rolle), also nur den zweiten. -->
+      {#if ohne}<p class="haushalt-satz">{t('ohneHaushalt.kopf')}</p>{/if}
+      <section class="teil" hidden={ohne}>
         {@render abschnitt(t('personSeite.inEuremHaushalt'), t('personSeite.giltNurHier'))}
         <div class="kasten">
           <!-- W57/W54 (PC199, Punkt 9): dieselben Ziele wie im Haushalt, sofort wirksam, mit „Rückgängig“. PC208: Ohne
@@ -326,7 +332,7 @@
           />
         </div>
       </section>
-      {#if !istAnsprech}
+      {#if !istAnsprech && !ohne}
         <a class="textlink loeschen" href="#/person-loeschen/{mitglied.person.id}"
           >{t('personSeite.ganzLoeschenLink', { name: mitglied.person.vorname })}</a
         >
@@ -445,6 +451,12 @@
 {/if}
 
 <style>
+  .haushalt-satz {
+    margin: 8px var(--space-1) 0;
+    color: var(--ink-muted);
+    font-size: calc(15 * var(--px));
+  }
+
   .seite {
     max-width: var(--content-width);
     min-height: 100dvh;

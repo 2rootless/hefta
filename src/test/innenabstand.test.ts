@@ -1,14 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-// PC170 (W22, CP91): Der Innenabstand der Kästen ist 16 px, nicht 14 px. An allen 21 Stellen, auch oben bei den
+// PC170 (W22, CP91): Der Innenabstand der Kästen ist 16 px, nicht 14 px. An allen 19 Stellen (seit E385 ohne die zwei des Bogens im Browser), auch oben bei den
 // Kästen, die seitlich schon 16 px hatten. Geprüft wird der Stil im Quelltext: je Datei der Block des Selektors und
 // darin `padding`. Die Zeilen und Knöpfe bei 320 px mit 130 % sind einmalig gemessen (CP94): kein neuer Umbruch.
 
 /** Datei, Selektor, erwarteter Wert von `padding`. */
 const STELLEN: [string, string, string][] = [
-  ['src/screens/SelbstauskunftBogen.svelte', '.karte', '16px'],
-  ['src/screens/SelbstauskunftBogen.svelte', '.kasten', '16px'],
   ['src/screens/MappeErstellen.svelte', '.karte', '16px'],
   ['src/screens/MappeStart.svelte', '.sk', '16px'],
   ['src/screens/PersonLoeschen.svelte', '.info', '16px'],
@@ -58,8 +56,8 @@ function falsch(lesen: (datei: string) => string): string[] {
 const echt = (datei: string) => readFileSync(datei, 'utf8');
 
 describe('PC170: Innenabstand der Kästen 16 px (W22)', () => {
-  it('alle 21 Stellen haben 16 px, oben eingeschlossen', () => {
-    expect(STELLEN).toHaveLength(21);
+  it('alle 19 Stellen haben 16 px, oben eingeschlossen', () => {
+    expect(STELLEN).toHaveLength(19);
     expect(falsch(echt)).toEqual([]);
   });
 

@@ -447,3 +447,38 @@ export async function selbstauskunftBauen(
   pdf.setModificationDate(datum);
   return { bytes: await pdf.save(), seiten: gesamt };
 }
+
+/**
+ * PC213 (DP134, Abschnitt 4): mehrere Selbstauskünfte in einer Datei, wie die App sie einzeln baut. „Seite 1 von 2“
+ * zählt über die ganze Datei; im Fuß steht der Name der Person dieser Seite.
+ */
+export async function selbstauskuenfteBauen(
+  inhalte: SelbstauskunftInhalt[],
+  a: { dateiname: string; schriften: Schriften; datum?: Date },
+): Promise<{ bytes: Uint8Array; seiten: string[] }> {
+  const pdf = await PDFDocument.create({ updateMetadata: false });
+  pdf.registerFontkit(fontkit);
+  const regular = await pdf.embedFont(a.schriften.regular, { subset: true });
+  const s = {
+    regular,
+    bold: await pdf.embedFont(a.schriften.bold, { subset: true }),
+    titel: await pdf.embedFont(a.schriften.titel, { subset: true }),
+    ersetzen: zeichenErsetzer(regular),
+  };
+  const namen: string[] = [];
+  for (const inhalt of inhalte) {
+    const vorher = pdf.getPageCount();
+    selbstauskunftZeichnen(pdf, s, inhalt);
+    for (let i = vorher; i < pdf.getPageCount(); i++) namen.push(inhalt.name);
+  }
+  const gesamt = pdf.getPageCount();
+  pdf
+    .getPages()
+    .forEach((p, i) => fusszeile(p, i + 1, gesamt, s.ersetzen(namen[i] ?? ''), s.regular));
+  const datum = a.datum ?? new Date();
+  pdf.setTitle(titelAusDateiname(a.dateiname));
+  pdf.setLanguage('de-DE');
+  pdf.setCreationDate(datum);
+  pdf.setModificationDate(datum);
+  return { bytes: await pdf.save(), seiten: namen };
+}

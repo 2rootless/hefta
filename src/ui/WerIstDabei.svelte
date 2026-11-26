@@ -12,6 +12,7 @@
       kinder: bestand.kinder,
       weitere: bestand.weitere,
       buergen: bestand.buergenNamen,
+      ohne: bestand.ohneNamen ?? [],
     }),
   );
 </script>

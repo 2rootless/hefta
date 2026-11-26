@@ -36,6 +36,8 @@ export interface BuergschaftEingabe {
   vertragTag: string;
   hoechstbetrag: number | null;
   art: BuergschaftsArt | null;
+  /** PC213 (E-Bürge): ohne Haushalt die Namen derer im Mietvertrag, von Hand; im Haushalt kommen sie aus ihm. */
+  mieterNamen?: string[];
 }
 
 /** Gespeichert am Heft (`Heft.buergschaften`), je Person, die bürgt. */
@@ -167,6 +169,8 @@ export interface BuergschaftVorbelegung {
   /** Zeilen der Adresse aus dem Heft: „Lindenring 3, 2. OG“ und „20259 Hamburg“. */
   wohnungZeilen?: string[];
   einzug?: string | null;
+  /** PC213 (E-Bürge): ohne Haushalt die Namen der Personen ohne Haushalt im Vertrag; mindestens ein leeres Feld. */
+  mieterNamen?: string[];
 }
 
 /**
@@ -197,6 +201,7 @@ export function eingabeFuer(
     wohnung: { ...wohnung, strasse },
     lage: lage.join(', '),
     vertragTag: /^\d{4}-\d{2}-\d{2}$/.test(v.einzug ?? '') ? v.einzug! : '',
+    ...(v.mieterNamen ? { mieterNamen: v.mieterNamen.length ? [...v.mieterNamen] : [''] } : {}),
   };
 }
 
@@ -212,6 +217,7 @@ export function entwurfAus(e: BuergschaftEingabe, jetzt: string): BuergschaftEnt
     vertragTag: e.vertragTag,
     hoechstbetrag: e.hoechstbetrag,
     art: e.art,
+    ...(e.mieterNamen ? { mieterNamen: e.mieterNamen.map((n) => n.trim()) } : {}),
     geaendert: jetzt,
   };
 }

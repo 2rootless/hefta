@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { haushaltsAngaben, einziehend, selbstauskunftBloecke } from '../domain/selbstauskunft';
 import type { Person } from '../domain/modell';
 import { pdfSchriften, textJeSeite } from '../test/hilfen';
-import { selbstauskunftBauen } from './selbstauskunft';
+import { selbstauskuenfteBauen, selbstauskunftBauen } from './selbstauskunft';
 
 const MAX = {
   vorname: 'Max',
@@ -181,5 +181,33 @@ describe('Unterschriftszeile (X8b)', () => {
     expect(
       await text(await bauen(MAX, 'vertrag', 'Hauptmieter', { unterschrift: true })),
     ).toContain('Unterschrift');
+  });
+});
+
+describe('PC213: mehrere Selbstauskünfte in einer Datei (DP134, Abschnitt 4)', () => {
+  it('„Seite 1 von 2“ über die ganze Datei, im Fuß der Name der Person dieser Seite; Gegenprobe: je Person eine', async () => {
+    const inhalt = (name: string) => ({
+      name,
+      rolle: '',
+      buerge: false,
+      farbe: '#e9a970',
+      bloecke: selbstauskunftBloecke(MAX, 'vertrag', WER, HH, 'will_wohnung', {}),
+      ortDatum: 'Musterstadt, 26. November 2026',
+    });
+    const e = await selbstauskuenfteBauen([inhalt('Jarne Ostendorp'), inhalt('Selin Akgül')], {
+      dateiname: 'Selbstauskuenfte_Ostendorp_Jarne_und_Akguel_Selin.pdf',
+      schriften: pdfSchriften(),
+      datum: new Date(2026, 10, 26),
+    });
+    expect(e.seiten).toEqual(['Jarne Ostendorp', 'Selin Akgül']);
+    const seiten = (await textJeSeite(e.bytes)).map((s) => s.replace(/\s+/g, ' '));
+    expect(seiten[0]).toContain('Seite 1 von 2');
+    expect(seiten[1]).toContain('Seite 2 von 2');
+    expect(seiten[1]).toContain('Selin Akgül');
+    const einzeln = await selbstauskuenfteBauen([inhalt('Jarne Ostendorp')], {
+      dateiname: 'Selbstauskunft_Ostendorp_Jarne.pdf',
+      schriften: pdfSchriften(),
+    });
+    expect((await textJeSeite(einzeln.bytes)).join(' ')).not.toContain('Selin');
   });
 });

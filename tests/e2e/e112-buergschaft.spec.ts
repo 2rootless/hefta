@@ -254,26 +254,24 @@ test('Erklärung von vor DP49 (ohne Wohnung): im Heft genannt und mit „Erklär
   await expect(petra.getByRole('link', { name: 'Erklärung vorbereiten' })).toBeVisible();
 });
 
-test('E1: ohne Heft der Bogen im Stil von R1 (DP135), „Es fehlt noch“, „+ Weitere Person“; E10: 320 px bei 130 %, dunkel, kein Überlauf', async ({
+test('E1 (seit E385): ohne Heft die Bürgschaft der App für eine Person ohne Haushalt; „Für wen“ von Hand; E10: 320 px bei 130 %, dunkel, kein Überlauf', async ({
   page,
 }) => {
   await mitHeften(page, '02-neustart', '/buergschaft');
-  await expect(
-    page.getByText('Wer bürgt, unterschreibt es von Hand', { exact: false }),
-  ).toBeVisible();
-  // W63 (DP135, U11): im Browser zurück zum Ratgeber; der Bogen wie E111, ohne „Pflicht“ und ohne Zähler (U5).
+  // W63 (DP135, U11): im Browser zurück zum Ratgeber.
   await expect(page.getByRole('link', { name: 'Ratgeber' })).toHaveAttribute('href', '/ratgeber/');
-  await expect(page.locator('section.blatt')).toHaveCount(1);
-  await expect(page.locator('.leiste')).toContainText(
-    /Es fehlt noch: Höchstbetrag, Art.der.Bürgschaft/,
-  );
+  await page.getByRole('textbox', { name: 'Vorname' }).fill('Hiltrud');
+  await page.getByRole('textbox', { name: 'Nachname' }).fill('Ostendorp');
+  await page.getByRole('button', { name: 'Weiter' }).click();
+  await expect(page).toHaveURL(/#\/buergschaft\/[\w-]+$/);
   await expect(page.locator('main')).not.toContainText('Pflicht');
-  // W60 dreifach: Wer bürgt, Vermieter, Wohnung je in drei Feldern.
-  await expect(page.getByRole('textbox', { name: 'Straße und Hausnummer' })).toHaveCount(3);
+  await page
+    .getByRole('button', { name: /^Für wen/ })
+    .first()
+    .click();
   await page.getByRole('button', { name: '+ Weitere Person' }).click();
-  await expect(page.getByRole('group', { name: 'Mieter 2' })).toBeVisible();
-  // DP140: Der Satz unter dem Namen ist an Vor- und Nachname gebunden, „Alle, die in den Mietvertrag gehen.“ an die
-  // Felder unter „Für wen“ (W30, aria-describedby). Gegenprobe: der Betrag hat einen anderen Satz.
+  await expect(page.getByRole('textbox', { name: 'Im Mietvertrag: Person 2' })).toBeVisible();
+  // W30: Der Satz „Alle, die in den Mietvertrag gehen.“ ist an das erste Feld gebunden; Gegenprobe: der Betrag nicht.
   const satzVon = (feld: ReturnType<typeof page.getByLabel>) =>
     feld.evaluate((e) =>
       (e.getAttribute('aria-describedby') ?? '')
@@ -281,13 +279,14 @@ test('E1: ohne Heft der Bogen im Stil von R1 (DP135), „Es fehlt noch“, „+ 
         .map((id) => document.getElementById(id)?.textContent?.trim() ?? '')
         .join(' '),
     );
-  const wer = 'Name und Anschrift stehen so in der Erklärung.';
-  const blatt = page.locator('section.blatt');
-  expect(await satzVon(blatt.getByRole('textbox', { name: 'Vorname' }).first())).toBe(wer);
-  expect(await satzVon(blatt.getByRole('textbox', { name: 'Nachname' }).first())).toBe(wer);
   const fuerWen = 'Alle, die in den Mietvertrag gehen.';
-  const mieter2 = page.getByRole('group', { name: 'Mieter 2' });
-  expect(await satzVon(mieter2.getByRole('textbox', { name: 'Vorname' }))).toBe(fuerWen);
+  expect(await satzVon(page.getByRole('textbox', { name: 'Im Mietvertrag: Person 1' }))).toBe(
+    fuerWen,
+  );
+  await page
+    .getByRole('button', { name: /^Höchstbetrag/ })
+    .first()
+    .click();
   expect(await satzVon(page.locator('[data-feld="hoechstbetrag"]'))).not.toBe(fuerWen);
 
   await page.emulateMedia({ colorScheme: 'dark' });
@@ -299,14 +298,13 @@ test('E1: ohne Heft der Bogen im Stil von R1 (DP135), „Es fehlt noch“, „+ 
   expect(await ueberlauf()).toBe(0);
   await page.locator('[data-feld="hoechstbetrag"]').fill('2400');
   await page.getByRole('radio', { name: /^Selbstschuldnerische/ }).click();
-  await expect(page.locator('.leiste')).not.toContainText('Es fehlt noch');
-  // Bleibt in diesem Browser.
+  // Sofort gespeichert, in der Datenbank wie alles andere (auch im Backup).
   await page.waitForTimeout(600);
   await page.reload();
+  await page
+    .getByRole('button', { name: /^Höchstbetrag/ })
+    .first()
+    .click();
   await expect(page.locator('[data-feld="hoechstbetrag"]')).toHaveValue('2.400');
-  const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: /^PDF erstellen/ }).click();
-  const datei = await download;
-  expect((await PDFDocument.load(readFileSync((await datei.path())!))).getPageCount()).toBe(2);
   expect(await ueberlauf()).toBe(0);
 });

@@ -222,17 +222,29 @@ export interface Bestand {
   /** E25: Namen nach dem Mietvertrag, in der Reihenfolge des Haushalts. */
   vertragNamen: string[];
   buergenNamen: string[];
+  /** PC214 (Weg A): Personen ohne Haushalt. Sie zählen in keinem Haushalt, weder Namen noch Kinder. */
+  ohneNamen: string[];
 }
 
 /** Zählt aus den Datensätzen: Personen in Haushalten, Kinder, Unterlagen mit mindestens einer Version. */
 export function bestandZaehlen(daten: Record<string, unknown[]>): Bestand {
-  const zug = (daten.zugehoerigkeiten ?? []) as {
+  // PC214: Der Sammelplatz für Personen ohne Haushalt zählt nicht als Haushalt.
+  const sammel = new Set(
+    ((daten.haushalte ?? []) as { id: string; ohneHaushalt?: boolean }[])
+      .filter((h) => h.ohneHaushalt)
+      .map((h) => h.id),
+  );
+  const alleZug = (daten.zugehoerigkeiten ?? []) as {
     personId: string;
+    haushaltId?: string;
     herausgenommenAm?: string | null;
   }[];
+  const zug = alleZug.filter((z) => !sammel.has(z.haushaltId ?? ''));
   const versionen = (daten.versionen ?? []) as { dokumentId: string }[];
   const mitVersion = new Set(versionen.map((v) => v.dokumentId));
-  const haushalte = (daten.haushalte ?? []) as { kinder?: number; weitereErwachsene?: number }[];
+  const haushalte = (
+    (daten.haushalte ?? []) as { id: string; kinder?: number; weitereErwachsene?: number }[]
+  ).filter((h) => !sammel.has(h.id));
   const personen = new Map(
     ((daten.personen ?? []) as { id: string; vorname?: string; nachname?: string }[]).map((p) => [
       p.id,
@@ -260,7 +272,21 @@ export function bestandZaehlen(daten: Record<string, unknown[]>): Bestand {
   return {
     vertragNamen: namen(false),
     buergenNamen: namen(true),
-    personen: new Set(zug.filter((z) => !z.herausgenommenAm).map((z) => z.personId)).size,
+    ohneNamen: [
+      ...new Set(
+        alleZug
+          .filter((z) => sammel.has(z.haushaltId ?? ''))
+          .sort(
+            (a, b) =>
+              ((a as { reihenfolge?: number }).reihenfolge ?? 0) -
+              ((b as { reihenfolge?: number }).reihenfolge ?? 0),
+          )
+          .map((z) => personen.get(z.personId) ?? '')
+          .filter(Boolean),
+      ),
+    ],
+    // Personen ohne Haushalt zählen mit: Ein Einspielen „ersetzen“ nähme auch sie weg.
+    personen: new Set(alleZug.filter((z) => !z.herausgenommenAm).map((z) => z.personId)).size,
     kinder: haushalte.reduce((s, h) => s + (h.kinder ?? 0), 0),
     weitere: haushalte.reduce((s, h) => s + (h.weitereErwachsene ?? 0), 0),
     unterlagen: ((daten.dokumente ?? []) as { id: string }[]).filter((d) => mitVersion.has(d.id))

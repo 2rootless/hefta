@@ -44,6 +44,16 @@ export function selbstauskunftDateiname(person: { vorname: string; nachname: str
   return `${teile.filter(Boolean).join('_')}.pdf`;
 }
 
+/** PC213: mehrere Selbstauskünfte in einer Datei, „Selbstauskuenfte_Ostendorp_Jarne_und_Akguel_Selin.pdf“. */
+export function selbstauskuenfteDateiname(
+  personen: { vorname: string; nachname: string }[],
+): string {
+  const je = personen.map((p) =>
+    [namensteil(p.nachname), namensteil(p.vorname)].filter(Boolean).join('_'),
+  );
+  return `${['Selbstauskuenfte', je.filter(Boolean).join('_und_')].filter(Boolean).join('_')}.pdf`;
+}
+
 // Nur ganze Monatswörter und übliche Kürzel, damit „Martin“ oder „Maier“ kein Monat werden.
 const MONATSNAMEN: Record<string, number> = {};
 [

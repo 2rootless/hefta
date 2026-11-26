@@ -59,8 +59,7 @@
     uebertragen: () => import('../screens/Uebertragen.svelte'),
     eingang: () => import('../screens/Eingang.svelte'),
     buergschaft: () => import('../screens/BuergschaftSeite.svelte'),
-    buergschaftVorlage: () => import('../screens/BuergschaftVorlage.svelte'),
-    selbstauskunftBogen: () => import('../screens/SelbstauskunftBogen.svelte'),
+    buergschaftStart: () => import('../screens/BuergschaftStart.svelte'),
   };
   const pdfAnsicht = () => import('../ui/PdfFenster.svelte');
 
@@ -120,9 +119,21 @@
     };
   });
 
+  // PC214: Liste, Seite oder Bürgschaft einer Person ohne Haushalt.
+  const ohneSeite = $derived.by(() => {
+    if (route.pfad === '/selbstauskunft' || route.pfad === '/buergschaft') return true;
+    const id = route.pfad.match(/^\/(?:selbstauskunft|buergschaft)\/([\w-]+)/)?.[1];
+    return !!id && !!daten.ohne?.mitglieder.some((m) => m.person.id === id);
+  });
+
   // Ansprache der App an einer Stelle (E74, E83, B28b): Texte mit Paar „ihr“/„du“ folgen ihr.
   $effect.pre(() => {
     const m = daten.ansicht?.mitglieder;
+    // PC214: Seiten ohne Haushalt sprechen mit „du“ (E369), auch bei mehreren Personen.
+    if (ohneSeite) {
+      anrede.wert = 'du';
+      return;
+    }
     anrede.wert = anredeFuer(
       m
         ? m.filter((x) => x.zugehoerigkeit.rolle !== 'buerge' && !x.zugehoerigkeit.herausgenommenAm)
@@ -139,7 +150,7 @@
   });
   const heftId = $derived(route.pfad.match(/^\/heft\/([\w-]+)$/)?.[1]);
   // E112: Bürgschaftserklärung, aus dem Heft mit Person und Heft, sonst leer.
-  const buergschaft = $derived(route.pfad.match(/^\/buergschaft(?:\/([\w-]+)\/([\w-]+))?$/));
+  const buergschaft = $derived(route.pfad.match(/^\/buergschaft(?:\/([\w-]+)(?:\/([\w-]+))?)?$/));
   // DP45 G2: Mitgliedschaft ablegen und „Wer vermietet?“ im Heft.
   const genoId = $derived(
     route.pfad.match(/^\/haushalt-unterlage\/genossenschaft\/([\w-]+)$/)?.[1],
@@ -169,11 +180,15 @@
     route.pfad.match(/^\/person-neu\/(mitmieter|buerge)(\/einrichtung)?$/),
   );
   const personAendern = $derived(
-    route.pfad.match(/^\/person-aendern\/([\w-]+)(\/einrichtung|\/person|\/mappe|\/nachname)?$/),
+    route.pfad.match(
+      /^\/person-aendern\/([\w-]+)(\/einrichtung|\/person|\/mappe|\/nachname|\/ohne)?$/,
+    ),
   );
   function zurueckZu(zusatz: string | undefined, id?: string): string {
     if (zusatz === '/einrichtung') return '/einrichtung/2';
     if (zusatz === '/person' && id) return `/person/${id}`;
+    // PC213: ohne Haushalt zurück zur Selbstauskunft der Person.
+    if (zusatz === '/ohne' && id) return `/selbstauskunft/${id}`;
     // DP74 C3: „/nachname“ kommt vom offenen Punkt im Überblick und geht dorthin zurück.
     if (zusatz === '/mappe' || zusatz === '/nachname') return '/';
     return '/haushalt';
@@ -328,19 +343,19 @@
         <m.default id={heftUnter[1]!} art={heftUnter[2]} />
       {/await}
     {:else if route.pfad === '/selbstauskunft'}
-      <!-- E111: die Selbstauskunft im Browser, ohne Haushalt (DP134). -->
-      {#await seiten.selbstauskunftBogen() then m}
-        <m.default />
+      <!-- PC213/PC214 (E385): die Selbstauskünfte der App für Personen ohne Haushalt. -->
+      {#await seiten.auskuenfte() then m}
+        <m.default ohne />
       {/await}
     {:else if buergschaft}
       {#key route.pfad}
-        <!-- W63: In der App in vier Teilen (mit Person und Heft); ohne beide die leere Vorlage. -->
-        {#if buergschaft[1] && buergschaft[2]}
+        <!-- W63: In der App in vier Teilen, mit Heft oder ohne (PC213: auch ohne Haushalt); ohne Person der Einstieg. -->
+        {#if buergschaft[1]}
           {#await seiten.buergschaft() then m}
             <m.default personId={buergschaft[1]} heftId={buergschaft[2]} />
           {/await}
         {:else}
-          {#await seiten.buergschaftVorlage() then m}
+          {#await seiten.buergschaftStart() then m}
             <m.default />
           {/await}
         {/if}

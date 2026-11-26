@@ -110,7 +110,7 @@ export interface HaushaltEntwurf {
   personen: PersonEntwurf[];
 }
 
-function personAus(entwurf: PersonEntwurf, zeit: string): Person {
+export function personAus(entwurf: PersonEntwurf, zeit: string): Person {
   return {
     id: neueId(),
     createdAt: zeit,
@@ -224,10 +224,13 @@ export interface HaushaltAnsicht {
 export async function haushaltLaden(
   db: HeftaDb,
   haushaltId?: Id | null,
+  { sammelplatz = false }: { sammelplatz?: boolean } = {},
 ): Promise<HaushaltAnsicht | null> {
-  const haushalte = (await db.getAll('haushalte')).sort((a, b) =>
-    a.createdAt.localeCompare(b.createdAt),
-  );
+  // PC214 (Weg A): Der Sammelplatz für Personen ohne Haushalt ist kein Haushalt. Er wird nur ausdrücklich geladen
+  // (`ohneHaushaltLaden`), nie als gewählter oder erster Haushalt.
+  const haushalte = (await db.getAll('haushalte'))
+    .filter((h) => (sammelplatz ? h.id === haushaltId && h.ohneHaushalt : !h.ohneHaushalt))
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const haushalt = haushalte.find((h) => h.id === haushaltId) ?? haushalte[0];
   if (!haushalt) return null;
   // Ein Lesevorgang über alle Orte, Abfragen parallel: wird nach jeder Änderung aufgerufen.

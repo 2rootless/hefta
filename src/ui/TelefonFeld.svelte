@@ -246,10 +246,9 @@
   }
 
   /* W33 (DP49b): Der Rand in Tinte heißt nur „Hefta fragt nach“, nie Fokus; wie die übrigen Felder. */
+  /* DP148, K3: Strich und Ränder sofort, nur die Fläche blendet; bei „Bewegung reduzieren“ gar nichts (global.css). */
   input[type='tel'] {
-    transition:
-      background-color var(--bw-nachfrage) ease-in-out,
-      box-shadow var(--bw-nachfrage) ease-in-out;
+    transition: background-color var(--bw-nachfrage) ease-in-out;
   }
 
   input[type='tel']:focus-visible {

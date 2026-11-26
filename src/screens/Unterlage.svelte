@@ -125,7 +125,10 @@
   const hinweis = $derived(
     pruefcode?.art === 'laeuft'
       ? t('unterlage.pruefcodeLaeuft', { am: tagKurzAus(pruefcode.am) })
-      : u?.typ.hinweis,
+      : // DP148, K1: Ausweis- und Datenkopie sagen nur noch, was mit ihnen geschieht; „Warum?“ bleibt.
+        u?.typ.nieInMappe
+        ? t('unterlage.nieInMappe')
+        : u?.typ.hinweis,
   );
   /** Zu alt oder Prüfcode abgelaufen: Warnzeichen vor dem Satz im Kopf (DP39, A5). */
   const warnung = $derived(
@@ -385,7 +388,8 @@
           {#each aktuell as v (v.id)}
             {@render versionKarte(v, !ohneMappe, aktuell.length > 1)}
           {/each}
-          {#if ohneMappe && !nichtMehr}
+          <!-- DP148, K1: Was nie in eine Mappe kommt, lässt sich auch nicht „dazunehmen“. -->
+          {#if ohneMappe && !nichtMehr && !u.typ.nieInMappe}
             <p class="klein">{t('unterlage.brauchstDu')}</p>
           {/if}
         </section>

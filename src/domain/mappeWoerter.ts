@@ -118,6 +118,8 @@ export function mitziehendeTexte(kinder: number, weitere: number): Mitziehend[] 
 export const GRUPPE_VERTRAG = 'Im Mietvertrag';
 export const GRUPPE_MIT = 'Ziehen mit ein';
 export const GRUPPE_BUERGT = 'Bürgt';
+/** PC214: Personen ohne Haushalt (Selbstauskunft oder Bürgschaft im Browser), nur in „Wer ist dabei“ beim Backup. */
+export const GRUPPE_OHNE = 'Ohne Haushalt';
 
 export interface WerIstDabei {
   /** Namen der Personen im Mietvertrag. */
@@ -126,6 +128,8 @@ export interface WerIstDabei {
   weitere: number;
   /** Namen der Bürgen. */
   buergen: string[];
+  /** PC214: Namen der Personen ohne Haushalt. */
+  ohne?: string[];
 }
 
 const ZAHL_GROSS = (n: number) => gross(ZAHLWORT[n] || String(n));
@@ -194,6 +198,7 @@ export function werIstDabeiLang(w: WerIstDabei): { titel: string; eintraege: str
     { titel: GRUPPE_VERTRAG, eintraege: w.vertrag },
     { titel: GRUPPE_MIT, eintraege: mitziehendeTexte(w.kinder, w.weitere).map((m) => m.text) },
     { titel: GRUPPE_BUERGT, eintraege: w.buergen },
+    { titel: GRUPPE_OHNE, eintraege: w.ohne ?? [] },
   ].filter((g) => g.eintraege.length);
 }
 

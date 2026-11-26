@@ -1,7 +1,7 @@
 <script lang="ts">
   // Zum Übertragen (A6): alle Angaben als Liste mit „Kopieren“, für Portale mit eigenem Formular.
   // Nur die Zwischenablage auf dem Gerät; Hefta schickt nichts von selbst.
-  import { daten } from '../app/daten.svelte';
+  import { ansichtVon, daten } from '../app/daten.svelte';
   import { zurueckGehen } from '../app/router.svelte';
   import { rollenAnzeige } from '../domain/regelkatalog';
   import { angabenZumUebertragen, einziehend } from '../domain/selbstauskunft';
@@ -13,7 +13,8 @@
 
   let { personId }: { personId: string } = $props();
 
-  const ansicht = $derived(daten.ansicht);
+  // PC213: auch für Personen ohne Haushalt.
+  const ansicht = $derived((void daten.ansicht, void daten.ohne, ansichtVon(personId)));
   const mitglied = $derived(ansicht?.mitglieder.find((m) => m.person.id === personId));
   const zeilen = $derived.by(() => {
     if (!ansicht || !mitglied) return [];

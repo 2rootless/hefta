@@ -1,3 +1,4 @@
+import { VERGABE } from '../domain/personenfarben';
 // Version 2, mehrere Haushalte (docs/10-version-2.md, C7, C8): einen Haushalt mit allem, was zu
 // ihm gehört, herauslösen (Backup je Haushalt) und zwei Bestände zusammenführen (Einspielen
 // „hinzufügen“ statt „ersetzen“). Reine Funktionen auf den Datensätzen, wie im Backup-Manifest.
@@ -89,5 +90,38 @@ export function zusammenfuehren(bestehend: Datensaetze, neu: Datensaetze): Zusam
       }
     daten[ort] = [...liste.values()];
   }
-  return { daten, neu: anzahlNeu, aktualisiert };
+  return { daten: sammelplaetzeVereinen(daten), neu: anzahlNeu, aktualisiert };
+}
+
+/**
+ * PC214 (Weg A): Höchstens ein Sammelplatz für Personen ohne Haushalt. Bringt ein Backup „hinzufügen“ einen zweiten,
+ * kommen seine Plätze auf den älteren, hinten angereiht; eine doppelte Farbe bekommt die nächste freie. Der zweite
+ * entfällt. Nichts sonst ändert sich.
+ */
+export function sammelplaetzeVereinen(daten: Datensaetze): Datensaetze {
+  type H = { id: string; createdAt: string; ohneHaushalt?: boolean };
+  type Z = { id: string; haushaltId: string; farbe: number; reihenfolge: number };
+  const sammel = ((daten.haushalte ?? []) as H[])
+    .filter((h) => h.ohneHaushalt)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  if (sammel.length < 2) return daten;
+  const [erster, ...andere] = sammel as [H, ...H[]];
+  const weg = new Set(andere.map((h) => h.id));
+  const zugs = (daten.zugehoerigkeiten ?? []) as Z[];
+  const belegt = new Set(zugs.filter((z) => z.haushaltId === erster.id).map((z) => z.farbe));
+  let reihe = zugs
+    .filter((z) => z.haushaltId === erster.id)
+    .reduce((max, z) => Math.max(max, z.reihenfolge + 1), 0);
+  const neu = zugs.map((z) => {
+    if (!weg.has(z.haushaltId)) return z;
+    let farbe = z.farbe;
+    if (belegt.has(farbe)) farbe = VERGABE.find((f) => !belegt.has(f)) ?? farbe;
+    belegt.add(farbe);
+    return { ...z, haushaltId: erster.id, farbe, reihenfolge: reihe++ };
+  });
+  return {
+    ...daten,
+    haushalte: ((daten.haushalte ?? []) as H[]).filter((h) => !weg.has(h.id)),
+    zugehoerigkeiten: neu,
+  };
 }

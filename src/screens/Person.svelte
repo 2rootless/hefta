@@ -67,6 +67,14 @@
         )
       : [],
   );
+  /** DP148, K2: Steht die Kopie mit anderen in „Meist unnötig“, sagt ihre Zeile „· in keiner Mappe“. */
+  function nieZusatz(u: UnterlagenStand, text: string): string {
+    if (!u.typ.nieInMappe) return text;
+    const gruppe = weitere.filter((x) => x.typ.etikett === u.typ.etikett);
+    return gruppe.every((x) => x.typ.nieInMappe)
+      ? text
+      : `${text} · ${t('unterlage.inKeinerMappe')}`;
+  }
   // DP49 Punkt 5: Was je Wohnung gilt (Bürgschaftserklärung), steht in einem eigenen Abschnitt, freiwillig.
   const jeWohnung = $derived(stand ? stand.unterlagen.filter((u) => u.typ.jeWohnung) : []);
   /** „Lindenring 3: vom 20. Oktober. Lindenring 8: noch keine.“ Abgelegte Hefte bleiben weg. */
@@ -202,7 +210,7 @@
               (u.keinerMoeglich
                 ? keinerText(u.keinerMoeglich, stand!.bezeichnung, anrede.wert === 'du')
                 : null) ??
-              mitLage(u, neuImJobZeile(u) ?? standText(u))}</small
+              nieZusatz(u, mitLage(u, neuImJobZeile(u) ?? standText(u)))}</small
           >
           {#if ohneDatum(u)}<span class="datum-eintragen">{t('person.datumEintragen')}</span>{/if}
         </span>
@@ -312,7 +320,15 @@
         {#each ['kann_helfen', 'meist_unnoetig'] as const as etikett (etikett)}
           {@const liste = weitere.filter((u) => u.typ.etikett === etikett)}
           {#if liste.length}
-            {@render mehr(etikett, etikettText(etikett), liste, etikettBeschreibung(etikett))}
+            <!-- DP148, K2: Liegen dort nur Ausweis- oder Datenkopie, sagt der Satz, dass sie in keine Mappe kommen. -->
+            {@render mehr(
+              etikett,
+              etikettText(etikett),
+              liste,
+              liste.every((u) => u.typ.nieInMappe)
+                ? t('unterlage.nieInMappe')
+                : etikettBeschreibung(etikett),
+            )}
           {/if}
         {/each}
         <!-- Rolle oder Lebenslage haben sich geändert: Es bleibt gespeichert und kommt nicht in die Mappe. -->

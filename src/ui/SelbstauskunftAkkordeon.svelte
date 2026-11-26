@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   import TelefonFeld from './TelefonFeld.svelte';
   import { daten } from '../app/daten.svelte';
   import { telefonPruefen, type Land } from '../domain/telefon';
@@ -50,6 +51,7 @@
     feld,
     offen = $bindable(null),
     teilKnopf = true,
+    einziehen,
   }: {
     eingabe: SelbstauskunftEingabe;
     person: Person;
@@ -72,6 +74,8 @@
     offen?: TeilId | null;
     /** Knopf „Weiter: …“ im Teil. Auf der eigenen Seite entfällt er, dort führt der Hauptknopf (K9, DP96). */
     teilKnopf?: boolean;
+    /** PC213 (E-B1): ohne Haushalt die Zähler statt des Satzes, wer aus dem Haushalt einzieht. */
+    einziehen?: Snippet;
   } = $props();
 
   const id = $props.id();
@@ -381,6 +385,13 @@
     return vonName ? t('selbstauskunft.von', { name: vonName, text }) : text;
   }
 
+  /** PC213: Ohne Haushalt heißt der vierte Teil „Für alle hier“, wie in der Liste; es gibt keinen Haushalt. */
+  function teilTitel(id: TeilId): string {
+    return einziehen && id === 'haushalt'
+      ? t('ohneHaushalt.fuerAlle')
+      : t(`selbstauskunft.teil.${id}`);
+  }
+
   function offenText(teil: { id: TeilId; offen: number }): string {
     if (teil.id === 'fragen' && teil.offen < FRAGEN_JETZT.length)
       return t('selbstauskunft.offen', { anzahl: teil.offen });
@@ -597,7 +608,7 @@
               >{nachgefragt && teil.id === 'kontakt'
                 ? t('selbstauskunft.stimmt')
                 : naechster
-                  ? t('selbstauskunft.weiterZu', { teil: t(`selbstauskunft.teil.${naechster}`) })
+                  ? t('selbstauskunft.weiterZu', { teil: teilTitel(naechster) })
                   : t('selbstauskunft.teilZu')}</span
             >{/key}</button
         >
@@ -609,7 +620,7 @@
 <!-- PC208, Schritt 1: Die Selbstauskunft steht auf dem Formblatt; daraus kommt die Feldlinie (H3, global.css). -->
 <div class="akkordeon formblatt" bind:this={wurzel}>
   {#each stand as teil, i (teil.id)}
-    {@const titel = t(`selbstauskunft.teil.${teil.id}`)}
+    {@const titel = teilTitel(teil.id)}
     <!-- W63: derselbe Teil wie in der Bürgschaft (formblatt/FormTeil.svelte). PC130 K7: Offen steht unter den Feldern
          schon „Eine Angabe reicht, die zweite ist freiwillig.“; im Kopf nicht noch einmal „Eine Angabe genügt“.
          Zugeklappt bleibt der kurze Satz, dort fehlt der lange. -->
@@ -809,7 +820,12 @@
         {#if vonName}
           <p class="von-wem">{t('selbstauskunft.vonWem', { name: vonName })}</p>
         {/if}
-        <p class="einzug">{t('selbstauskunft.ziehenEin', { text: einziehendText })}</p>
+        <!-- PC213 (E-B1): Ohne Haushalt fragt der Teil selbst, wer einzieht (Musterbogen B.1). -->
+        {#if einziehen}
+          {@render einziehen()}
+        {:else}
+          <p class="einzug">{t('selbstauskunft.ziehenEin', { text: einziehendText })}</p>
+        {/if}
         <p class="hinweis w30" data-w30="feld">{t('angabeSatz.einziehen')}</p>
         <div class="frage">
           <b>{allein ? t('selbstauskunft.haustiereDu') : t('selbstauskunft.haustiereIhr')}</b>

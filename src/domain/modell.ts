@@ -45,6 +45,11 @@ export interface Lebenslage {
 }
 
 export interface Person extends Basis {
+  /**
+   * PC213/PC214 (E385): Bürgschaft ohne Heft, an der Person, die bürgt. Sie erscheint im Heft, sobald die Person in einem
+   * Haushalt mit Heft steht und dort noch keine eigene hat.
+   */
+  buergschaftOhneHeft?: import('./buergschaftEingabe').BuergschaftEntwurf;
   vorname: string;
   nachname: string;
   /** Wie Hefta die Person anspricht, z. B. „Maximilian“ für „Maximilian-Alexander“ (Begrüßung). */
@@ -153,6 +158,12 @@ export interface Haushalt extends Basis {
    * Reihenfolge (`ansprechperson`).
    */
   ansprechpersonId?: Id | null;
+  /**
+   * PC213/PC214 (E385, Weg A): der verborgene Sammelplatz für Personen ohne Haushalt (Selbstauskunft und Bürgschaft im
+   * Browser). Höchstens einer. Er ist kein Haushalt: nie aktiv, nie in einer Mappe, Lesehilfe, Zählung oder einem
+   * Backup je Haushalt. Leer gibt es ihn nicht sichtbar; „Übernehmen“ verschiebt seine Plätze und löscht ihn.
+   */
+  ohneHaushalt?: boolean;
 }
 
 export interface Zugehoerigkeit extends Basis {
@@ -511,10 +522,10 @@ export interface Einstellungen {
   /** Eigene Fragen für die Besichtigung (E52): gehören zum Gerät, nicht zum Haushalt (Planung 10i). */
   eigeneFragen?: string[];
   /**
-   * E111 und W63: die Bögen im Browser (Selbstauskunft, Bürgschaft) ohne Haushalt. Bleiben in diesem Browser, bis man
-   * sie löscht oder übernimmt; IndexedDB braucht dafür kein neues Schema.
+   * Bis PC213 die Bögen im Browser (E111, W63). Seit E385 (PC214) ungelesen: Sie waren nur in Vorschauen und im internen
+   * Testbau erreichbar; das Feld bleibt stehen, es wird nichts gelöscht.
    */
-  boegen?: import('./bogen').Boegen;
+  boegen?: unknown;
   /**
    * Ausgeblendete Fragen von Hefta (E92, vorbereitet, noch ohne Oberfläche): fehlen in allen Heften, außer
    * dort schon beantwortet.

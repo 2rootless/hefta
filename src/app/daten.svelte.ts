@@ -11,6 +11,7 @@ import {
   hefteAusVersion1EinordnenEinmal,
   type HaushaltAnsicht,
 } from '../storage/speicher';
+import { ohneHaushaltLaden } from '../storage/ohneHaushalt';
 
 // Geladener Stand für die Oberfläche. Nach jeder Änderung `neuLaden()` aufrufen.
 
@@ -19,12 +20,14 @@ let verbindung: Promise<HeftaDb> | null = null;
 export const daten = $state<{
   geladen: boolean;
   ansicht: HaushaltAnsicht | null;
+  /** PC214 (Weg A): Personen ohne Haushalt, wie ein Haushalt geladen; null, wenn es keine gibt. Nie aktiv. */
+  ohne: HaushaltAnsicht | null;
   einstellungen: Einstellungen | null;
   /** Hefte des Haushalts und die ohne Haushalt (Hefta 2). */
   hefte: Heft[];
   /** Speicher nicht erreichbar, oder ein anderer Tab mit neuerer Version braucht ihn. */
   fehler: 'speicher' | 'andererTab' | null;
-}>({ geladen: false, ansicht: null, einstellungen: null, hefte: [], fehler: null });
+}>({ geladen: false, ansicht: null, ohne: null, einstellungen: null, hefte: [], fehler: null });
 
 function vergessen(): void {
   const alt = verbindung;
@@ -73,11 +76,18 @@ async function lesen() {
   const einstellungen = await einstellungenLaden(verbindung);
   const ansicht = await haushaltLaden(verbindung, einstellungen.aktiverHaushalt);
   const hefte = await hefteLaden(verbindung, ansicht?.haushalt.id ?? null);
-  return { einstellungen, ansicht, hefte };
+  const ohne = await ohneHaushaltLaden(verbindung);
+  return { einstellungen, ansicht, hefte, ohne };
 }
 
-function uebernehmen({ einstellungen, ansicht, hefte }: Awaited<ReturnType<typeof lesen>>): void {
+function uebernehmen({
+  einstellungen,
+  ansicht,
+  hefte,
+  ohne,
+}: Awaited<ReturnType<typeof lesen>>): void {
   daten.ansicht = ansicht;
+  daten.ohne = ohne;
   daten.hefte = hefte;
   daten.einstellungen = einstellungen;
   daten.geladen = true;
@@ -129,6 +139,16 @@ export async function verbindungPruefen(): Promise<void> {
     vergessen();
     await neuLaden().catch(() => {});
   }
+}
+
+/**
+ * PC213/PC214 (Weg A): die Ansicht, in der eine Person steht: der gewählte Haushalt oder, ohne Haushalt, der
+ * Sammelplatz. So nehmen Seiten wie Selbstauskunft und „Übertragen“ beide Fälle mit derselben Logik.
+ */
+export function ansichtVon(personId: string): HaushaltAnsicht | null {
+  const hat = (a: HaushaltAnsicht | null) =>
+    !!a && [...a.mitglieder, ...a.herausgenommen].some((m) => m.person.id === personId);
+  return hat(daten.ansicht) ? daten.ansicht : hat(daten.ohne) ? daten.ohne : null;
 }
 
 export { gehe } from './router.svelte';

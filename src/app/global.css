@@ -103,13 +103,21 @@ textarea {
 }
 
 /* „Bewegung reduzieren“ (E58): Dauern regeln allein die Tokens in design/tokens.css. Hier nur, was
-   Tokens nicht erfassen: nichts läuft in Schleife, Scrollen springt. */
+   Tokens nicht erfassen: nichts läuft in Schleife, Scrollen springt. DP148, K3: Felder blenden ihre Fläche dann nicht
+   über (der Satz einer Nachfrage darf es weiter, NF12). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
+  }
+
+  .eingabe input,
+  .eingabe textarea,
+  .feld-weich,
+  .telefon input[type='tel'] {
+    transition: none !important;
   }
 }
 
@@ -259,9 +267,8 @@ textarea {
 .eingabe input,
 .eingabe textarea,
 .feld-weich {
-  transition:
-    background-color var(--bw-nachfrage) ease-in-out,
-    box-shadow var(--bw-nachfrage) ease-in-out;
+  /* DP148, K3 (W33): Der Fokusstrich und die Ränder (Schatten) stehen sofort; nur die Fläche blendet über. */
+  transition: background-color var(--bw-nachfrage) ease-in-out;
 }
 
 .eingabe input.pruefzustand,
