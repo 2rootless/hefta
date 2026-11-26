@@ -3291,10 +3291,10 @@
     "dazu": "Dazu"
   },
   "ohneHaushalt": {
-    "kopf": "Gehört zu keinem Haushalt und bleibt nur in diesem Browser. Mit „In einen Haushalt übernehmen“ verbindest du sie jederzeit.",
+    "kopf": "Gehört zu keinem Haushalt und ist in diesem Browser gespeichert. Mit „In einen Haushalt übernehmen“ verbindest du sie jederzeit.",
     "titel": "Selbst­auskünfte",
     "startTitel": "Selbst­auskunft",
-    "startLead": "Für wen ist sie? Alles andere trägst du danach ein, wie in der App.",
+    "startLead": "Für wen ist sie? Alles andere trägst du danach ein.",
     "vorname": "Vorname",
     "nachname": "Nachname",
     "weiter": "Weiter",
@@ -3302,9 +3302,9 @@
     "weitere": "Weitere Person hinzufügen",
     "fuerAlle": "Für alle hier",
     "erwachsene": "Erwachsene",
-    "erwachseneSatz": "Mindestens alle, die hier eine Selbstauskunft haben.",
+    "erwachseneSatz": "Mindestens alle hier, außer wer nur bürgt.",
     "kinder": "Kinder",
-    "kinderSatz": "Wie im Musterbogen: Wie viele Personen sollen einziehen?",
+    "kinderSatz": "Unter 18, ziehen mit ein.",
     "pdf": "PDF erstellen",
     "pdfEine": "Alle in einer PDF",
     "pdfJe": "Je Person eine PDF",
@@ -3329,10 +3329,6 @@
     "vorrangOrt": "Ort für die Unterschrift",
     "vorrangWbs": "Wohnberechtigungsschein",
     "los": "Übernehmen",
-    "gehoert": {
-      "one": "{namen} gehört jetzt zu eurem Haushalt.",
-      "other": "{namen} gehören jetzt zu eurem Haushalt."
-    },
     "ansprech": "{name} ist jetzt Ansprechperson.",
     "zumHaushalt": "Zum Haushalt",
     "loeschen": "{name} löschen",
@@ -3342,6 +3338,23 @@
     "fehlerPlatz": "Auf dem Gerät ist kaum noch Platz. Die Person ist noch nicht angelegt.",
     "fehlerPlatzUebernehmen": "Auf dem Gerät ist kaum noch Platz. Es wurde nichts übernommen.",
     "personAendern": "Name und Lebenslage ändern",
-    "buergeLead": "Wer bürgt? Alles andere trägst du danach ein, wie in der App."
+    "buergeLead": "Wer bürgt? Alles andere trägst du danach ein.",
+    "gehoertEuer": {
+      "one": "{namen} gehört jetzt zu eurem Haushalt.",
+      "other": "{namen} gehören jetzt zu eurem Haushalt."
+    },
+    "gehoertDein": {
+      "one": "{namen} gehört jetzt zu deinem Haushalt.",
+      "other": "{namen} gehören jetzt zu deinem Haushalt."
+    },
+    "zusammen": "Die Angaben von {name} sind übernommen.",
+    "aendertSich": "Bei {name} ändert sich: {liste}.",
+    "haustiereFrage": "Ziehen Haustiere mit ein?",
+    "ohneZeile": "Ohne Haushalt: {namen}",
+    "inEurenHaushalt": {
+      "ihr": "In euren Haushalt übernehmen",
+      "du": "In deinen Haushalt übernehmen"
+    },
+    "schonSelbstauskunft": "Für {namen} gibt es schon eine Selbstauskunft."
   }
 }

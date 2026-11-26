@@ -1,9 +1,11 @@
+import { angabenMischen } from '../domain/angabenMischen';
 import type { Fach } from '../domain/faecher';
 import {
   jetzt,
   neueId,
   type Haushalt,
   type Id,
+  type Person,
   type Rolle,
   type Zugehoerigkeit,
 } from '../domain/modell';
@@ -83,7 +85,7 @@ export interface HaushaltZurWahl {
   id: Id;
   /** Rufnamen, wie sie im Haushalt stehen: im Vertrag, dann wer bürgt. */
   namen: string[];
-  personen: { id: Id; vorname: string; nachname: string; rufname: string }[];
+  personen: { id: Id; vorname: string; nachname: string; rufname: string; person: Person }[];
   haushalt: Haushalt;
 }
 
@@ -105,6 +107,7 @@ export async function haushalteZurWahl(db: HeftaDb): Promise<HaushaltZurWahl[]> 
         vorname: p.vorname,
         nachname: p.nachname,
         rufname: p.rufname || p.vorname,
+        person: p,
       })),
       haushalt: a.haushalt,
     });
@@ -218,18 +221,8 @@ export async function ohneHaushaltUebernehmen(
       const lo = await tx.objectStore('personen').get(z.personId);
       const be = await tx.objectStore('personen').get(w.dieselbe);
       if (lo && be) {
-        // Name, Kennung und Anlagezeit bleiben die der bestehenden Person.
-        await tx.objectStore('personen').put({
-          ...be,
-          ...lo,
-          id: be.id,
-          createdAt: be.createdAt,
-          vorname: be.vorname,
-          nachname: be.nachname,
-          rufname: be.rufname,
-          nameMappe: be.nameMappe ?? null,
-          updatedAt: zeit,
-        });
+        // DP150 C1: Leeres ersetzt nie etwas; Name, Kennung und Anlagezeit bleiben die der bestehenden Person.
+        await tx.objectStore('personen').put({ ...angabenMischen(be, lo).person, updatedAt: zeit });
         await tx.objectStore('personen').delete(lo.id);
       }
       await orte.delete(z.id);

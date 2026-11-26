@@ -3,9 +3,12 @@
   // einen neuen oder bestehenden Haushalt. Je Person die Rolle ohne Vorauswahl (W54); wer bürgt, bürgt. Heißt im Haushalt
   // schon jemand so, fragt der Kasten, ob es dieselbe Person ist. Was der Haushalt schon beantwortet hat, bleibt
   // (E-Vorrang); der Kasten sagt es vorher. Verschoben wird, nicht kopiert (DP148, PC214).
-  import { db, neuLaden } from '../app/daten.svelte';
+  import { daten, db, neuLaden } from '../app/daten.svelte';
+  import { angabenMischen } from '../domain/angabenMischen';
   import type { Id } from '../domain/modell';
   import { t } from '../i18n';
+  import { anredeFuer } from '../i18n/anrede.svelte';
+  import type { Uebernommen } from './UebernommenSatz.svelte';
   import {
     gleicherName,
     haushalteZurWahl,
@@ -22,7 +25,7 @@
   }: {
     /** Kann nach dem Übernehmen kurz null sein, bevor die Seite neu zeichnet. */
     ohne: HaushaltAnsicht | null;
-    fertig: (r: { namen: string; anzahl: number; ansprech: string | null }) => void;
+    fertig: (r: Uebernommen) => void;
   } = $props();
 
   const id = $props.id();
@@ -66,6 +69,12 @@
     zielHaushalt && ohne ? vorrang(zielHaushalt.haushalt, ohne.haushalt) : [],
   );
   const VORRANG = { haustiere: 'vorrangHaustiere', ort: 'vorrangOrt', wbs: 'vorrangWbs' } as const;
+  /** DP150 C1: Was sich bei „Ja, Angaben übernehmen“ ändert, weil beide Seiten ausgefüllt und verschieden sind. */
+  function aendert(personId: Id): string[] {
+    const dort = zielHaushalt?.personen.find((p) => p.id === doppelt[personId])?.person;
+    const hier = mitglieder.find((m) => m.person.id === personId)?.person;
+    return dort && hier ? angabenMischen(dort, hier).aendert : [];
+  }
 
   const grund = $derived.by(() => {
     if (!ziel) return t('ohneHaushalt.fehltHaushalt');
@@ -91,7 +100,13 @@
         };
       }
       const verbindung = await db();
-      const namen = mitglieder.map((m) => rufname(m.person));
+      // DP150 C2: neue Personen und zusammengeführte getrennt nennen.
+      const neu = mitglieder
+        .filter((m) => !wahl[m.person.id]?.dieselbe)
+        .map((m) => rufname(m.person));
+      const zusammen = mitglieder
+        .filter((m) => wahl[m.person.id]?.dieselbe)
+        .map((m) => rufname(m.person));
       const ansprechName = (personId: Id | null) =>
         mitglieder.find((m) => m.person.id === personId)?.person;
       const r = await ohneHaushaltUebernehmen(
@@ -107,7 +122,17 @@
       await einstellungenAendern(verbindung, { aktiverHaushalt: r.haushaltId });
       await neuLaden();
       const a = ansprechName(r.ansprech);
-      fertig({ namen: liste(namen), anzahl: namen.length, ansprech: a ? rufname(a) : null });
+      // Die Anrede kommt vom Haushalt danach (DP150 C2).
+      const imVertrag = (daten.ansicht?.mitglieder ?? []).filter(
+        (m) => m.zugehoerigkeit.rolle !== 'buerge',
+      ).length;
+      fertig({
+        neu: liste(neu),
+        neuAnzahl: neu.length,
+        zusammen,
+        ansprech: a ? rufname(a) : null,
+        anrede: anredeFuer(imVertrag),
+      });
     } catch (e) {
       // Eine Transaktion: Schlägt sie fehl, ist nichts übernommen.
       fehler =
@@ -168,6 +193,11 @@
             <span>{t('ohneHaushalt.neuePerson')}</span>
           </label>
         </fieldset>
+        {#if gleich[m.person.id] === 'ja' && aendert(m.person.id).length}
+          <p class="satz">
+            {t('ohneHaushalt.aendertSich', { name, liste: liste(aendert(m.person.id)) })}
+          </p>
+        {/if}
       {/if}
       {#if gleich[m.person.id] !== 'ja'}
         {#if m.zugehoerigkeit.rolle === 'buerge'}
@@ -245,7 +275,9 @@
     cursor: pointer;
   }
 
+  /* DP150 C7: Der Kreis bleibt gleich groß, auch wenn der Text umbricht. */
   .wahl input {
+    flex: none;
     width: 22px;
     height: 22px;
     margin: 0;

@@ -18,10 +18,14 @@
   import HaushaltZaehler from '../ui/HaushaltZaehler.svelte';
   import PersonOhneAnlegen from '../ui/PersonOhneAnlegen.svelte';
   import UebernehmenKasten from '../ui/UebernehmenKasten.svelte';
+  import UebernommenSatz, { type Uebernommen } from '../ui/UebernommenSatz.svelte';
 
   let { ohne = false }: { ohne?: boolean } = $props();
 
   const ansicht = $derived(ohne ? daten.ohne : daten.ansicht);
+  const haustiereFrage = $derived(
+    ohne ? t('ohneHaushalt.haustiereFrage') : t('selbstauskunft.haustiereIhr'),
+  );
   const zurueck = $derived(
     ohne
       ? browserZurueck()
@@ -29,7 +33,7 @@
   );
 
   // Nach dem Übernehmen (DP148, Schritt 5): wer jetzt zum Haushalt gehört und wer Ansprechperson ist.
-  let uebernommen = $state<{ namen: string; anzahl: number; ansprech: string | null } | null>(null);
+  let uebernommen = $state<Uebernommen | null>(null);
 
   // PDF ohne Haushalt: eine Datei für alle oder je Person eine (DP134, Abschnitt 4).
   let pdfArt = $state<'eine' | 'je'>('eine');
@@ -116,19 +120,12 @@
     <Zurueck href={zurueck.href} text={zurueck.text} />
   </div>
   {#if uebernommen}
-    <div class="kasten erledigt" role="status">
-      <p>
-        {t('ohneHaushalt.gehoert', { namen: uebernommen.namen, anzahl: uebernommen.anzahl })}
-        {#if uebernommen.ansprech}{t('ohneHaushalt.ansprech', { name: uebernommen.ansprech })}{/if}
-      </p>
-      <a class="textlink" href="#/haushalt">{t('ohneHaushalt.zumHaushalt')}</a>
-    </div>
+    <UebernommenSatz r={uebernommen} />
   {/if}
   {#if ohne && !ansicht}
     <div class="titelblock">
       <h1 class="display frage">{t('ohneHaushalt.startTitel')}</h1>
       <p class="lead">{t('ohneHaushalt.startLead')}</p>
-      <p class="haushalt-satz">{t('ohneHaushalt.kopf')}</p>
     </div>
     <section>
       <PersonOhneAnlegen
@@ -169,9 +166,9 @@
         <li>
           {#if bearbeiten === 'haustiere'}
             <div class="bearbeiten">
-              <b>{t('selbstauskunft.haustiereIhr')}</b>
+              <b>{haustiereFrage}</b>
               <small>{t('angabeSatz.haustiere')}</small>
-              <div class="jn" role="radiogroup" aria-label={t('selbstauskunft.haustiereIhr')}>
+              <div class="jn" role="radiogroup" aria-label={haustiereFrage}>
                 {#each ['ja', 'nein'] as const as w (w)}
                   <button
                     type="button"
@@ -279,6 +276,22 @@
           </li>
         {/each}
       </ul>
+      {#if !ohne && daten.ohne?.mitglieder.length}
+        <!-- DP150 C3 (PC215): Wer ohne Haushalt eine Selbstauskunft hat, steht hier, jederzeit verbindbar. -->
+        <a class="zeile knopf ohne-zeile" href="#/selbstauskunft">
+          <span class="tx">
+            <b
+              >{t('ohneHaushalt.ohneZeile', {
+                namen: new Intl.ListFormat('de', { type: 'conjunction' }).format(
+                  daten.ohne.mitglieder.map((m) => m.person.rufname || m.person.vorname),
+                ),
+              })}</b
+            >
+            <small>{t('ohneHaushalt.inEurenHaushalt')}</small>
+          </span>
+          <Symbol name="weiter" groesse={20} />
+        </a>
+      {/if}
       {#if ohne}
         <details class="weitere">
           <summary>{t('ohneHaushalt.weitere')}</summary>
@@ -351,14 +364,21 @@
   .haushalt-satz {
     margin: 8px 0 0;
     color: var(--ink-muted);
-    font-size: calc(15 * var(--px));
+    /* DP150 C9: wie der Untertitel, 16/22. */
+    font-size: calc(16 * var(--px));
+    line-height: calc(22 * var(--px));
   }
 
+  /* DP150 C8: dieselbe Kante wie „Haustiere“ und „Ort“ in derselben Karte. */
   .zaehler-zeile {
-    padding: 8px var(--space-4, 16px);
+    padding: 8px 0;
   }
 
   .weitere {
+    margin-top: 12px;
+  }
+
+  .ohne-zeile {
     margin-top: 12px;
   }
 
@@ -395,21 +415,11 @@
   }
 
   .wahl input {
+    flex: none;
     width: 22px;
     height: 22px;
     margin: 0;
     accent-color: var(--ink);
-  }
-
-  .erledigt {
-    display: grid;
-    gap: 6px;
-    margin-top: 12px;
-    padding: 16px;
-  }
-
-  .erledigt p {
-    margin: 0;
   }
 
   .titelblock {

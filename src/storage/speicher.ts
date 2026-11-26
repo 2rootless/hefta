@@ -691,6 +691,15 @@ export async function personGanzLoeschen(db: HeftaDb, personId: Id): Promise<voi
   );
   const plaetze = await tx.objectStore('zugehoerigkeiten').index('personId').getAll(personId);
   for (const z of plaetze) await tx.objectStore('zugehoerigkeiten').delete(z.id);
+  // PC215 (H1): War sie die letzte ohne Haushalt, geht der leere Sammelplatz mit, samt Haustieren und Ort darin.
+  for (const z of plaetze) {
+    const h = await tx.objectStore('haushalte').get(z.haushaltId);
+    if (
+      h?.ohneHaushalt &&
+      !(await tx.objectStore('zugehoerigkeiten').index('haushaltId').count(h.id))
+    )
+      await tx.objectStore('haushalte').delete(h.id);
+  }
   await nachruecken(
     tx.objectStore('zugehoerigkeiten'),
     tx.objectStore('haushalte'),

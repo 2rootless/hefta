@@ -6,6 +6,7 @@
 
   import RueckgaengigZeile from '../ui/RueckgaengigZeile.svelte';
   import { onMount } from 'svelte';
+  import { satzUeberLeiste } from '../ui/satzUeberLeiste';
   import Einrichtung from '../screens/Einrichtung.svelte';
   import Haushalt from '../screens/Haushalt.svelte';
   import Uebersicht from '../screens/Uebersicht.svelte';
@@ -109,11 +110,14 @@
       if (document.visibilityState === 'visible') void verbindungPruefen();
     };
     document.addEventListener('visibilitychange', zurueck);
+    // DP150 C5: Fokus auf ein Feld im Prüfzustand zeigt auch seinen Satz über der Leiste.
+    document.addEventListener('focusin', satzUeberLeiste);
     // Ein Fehler kann an der Verbindung zum Speicher liegen: prüfen und bei Bedarf neu verbinden.
     const aufhoeren = fehlerBeobachten(() => void verbindungPruefen());
     const vorladenZeit = seitenVorladen();
     return () => {
       document.removeEventListener('visibilitychange', zurueck);
+      document.removeEventListener('focusin', satzUeberLeiste);
       aufhoeren();
       window.clearTimeout(vorladenZeit);
     };

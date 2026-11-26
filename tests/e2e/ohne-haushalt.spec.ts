@@ -5,7 +5,7 @@ import { szenarioLaden } from './szenario-laden';
 // jederzeit verbindbar. Fehlerfälle je mit Gegenprobe. Namen aus der Namensliste (W40), Nummern wie im Muster.
 
 const KOPF =
-  'Gehört zu keinem Haushalt und bleibt nur in diesem Browser. Mit „In einen Haushalt übernehmen“ verbindest du sie jederzeit.';
+  'Gehört zu keinem Haushalt und ist in diesem Browser gespeichert. Mit „In einen Haushalt übernehmen“ verbindest du sie jederzeit.';
 
 async function oeffnen(page: Page, pfad = '/selbstauskunft') {
   await page.goto('/');
@@ -74,7 +74,8 @@ test('Die Seite ist die der App: Lebenslage, Telefon mit Prüfung, C.4 bis C.7, 
   page,
 }) => {
   await oeffnen(page);
-  await expect(page.getByText(KOPF)).toBeVisible();
+  // DP150 H3: Den Satz im Kopf gibt es erst, wenn jemand angelegt ist.
+  await expect(page.getByText(KOPF)).toHaveCount(0);
   // Gegenprobe zu „leer gibt es ihn nicht sichtbar“: ohne Person keine Liste, nur das Formular der App.
   await expect(page.getByRole('heading', { name: 'Je Person' })).toHaveCount(0);
   // Wie in der App gehört die Lebenslage zum Anlegen (PersonFormular).
@@ -243,8 +244,9 @@ test('In einen bestehenden Haushalt: Wahl des Haushalts, gleicher Name, Rolle; A
   // Mit „Ja“ fragt der Kasten nicht nach der Rolle: Jarne hat seine schon.
   await expect(page.getByRole('group', { name: 'Welche Rolle hat Jarne?' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Übernehmen', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'zu eurem Haushalt' })).toContainText(
-    'Jarne gehört jetzt zu eurem Haushalt.',
+  // DP150 C2: Wer zusammengeführt wurde, „gehört“ nicht neu dazu. Nur der Name ist hier: nichts ändert sich (C1).
+  await expect(page.getByRole('status').filter({ hasText: 'übernommen' })).toHaveText(
+    /^\s*Die Angaben von Jarne sind übernommen\.\s*Zum Haushalt\s*$/,
   );
   // Jarne war schon Ansprechperson: kein Satz dazu, und es gibt ihn nur einmal.
   await expect(page.getByRole('status').filter({ hasText: 'Ansprechperson' })).toHaveCount(0);
@@ -333,7 +335,7 @@ test('Bürgschaft ohne Haushalt und ohne Heft: dieselben vier Teile, Namen von H
   page,
 }) => {
   await oeffnen(page, '/buergschaft');
-  await expect(page.getByText(KOPF)).toBeVisible();
+  await expect(page.getByText(KOPF)).toHaveCount(0);
   await anlegen(page, 'Hiltrud', 'Ostendorp');
   await expect(page).toHaveURL(/#\/buergschaft\/[\w-]+$/);
   await expect(page.getByText(KOPF)).toBeVisible();
@@ -356,8 +358,8 @@ test('Bürgschaft ohne Haushalt und ohne Heft: dieselben vier Teile, Namen von H
   await page.getByRole('button', { name: 'In einen Haushalt übernehmen' }).click();
   await expect(page.getByText('Hiltrud bürgt.')).toBeVisible();
   await page.getByRole('button', { name: 'Übernehmen', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'zu eurem Haushalt' })).toContainText(
-    'Hiltrud gehört jetzt zu eurem Haushalt.',
+  await expect(page.getByRole('status').filter({ hasText: 'zu deinem Haushalt' })).toContainText(
+    'Hiltrud gehört jetzt zu deinem Haushalt.',
   );
   // Ein Heft kommt dazu: Die Bürgschaft dort zeigt den Entwurf mit Höchstbetrag.
   const personId = (await lesen<{ id: string; vorname: string }>(page, 'personen')).find(
@@ -419,9 +421,123 @@ test('Der Sammelplatz ist nie ein Haushalt: Startseite ohne Haushalt, Backup nen
   await anlegen(page, 'Selin', 'Akgül');
   await page.goto('/#/');
   await page.locator('main h1, main h2').first().waitFor();
-  await expect(page.locator('main')).not.toContainText('Selin');
+  // Kein Haushalt: Die Startseite bietet weiter „Wer zieht ein?“ an; Selin steht nur im Satz zu C3 (DP150).
+  await expect(page.getByText('Wer zieht ein?').first()).toBeVisible();
+  await expect(
+    page.getByText('Für Selin gibt es schon eine Selbstauskunft.').first(),
+  ).toBeVisible();
+  await expect(page.locator('main')).not.toContainText('Selbstauskünfte');
   await page.goto('/#/einstellungen/backup');
   await page.locator('main h1').first().waitFor();
   await expect(page.locator('main')).toContainText('Ohne Haushalt');
   await expect(page.locator('main')).toContainText('Selin Akgül');
+});
+
+test('DP150 C3: Personen ohne Haushalt findet man wieder, auf der Startseite und in den Selbstauskünften der App', async ({
+  page,
+}) => {
+  await oeffnen(page);
+  await page.goto('/#/');
+  await page.locator('main h1').first().waitFor();
+  // Gegenprobe: ohne Personen ohne Haushalt kein Satz.
+  await expect(page.getByText(/gibt es schon eine Selbstauskunft/)).toHaveCount(0);
+  await page.goto('/#/selbstauskunft');
+  await page.locator('main h1').first().waitFor();
+  await anlegen(page, 'Ronja', 'Detlefsen');
+  await page.goto('/#/');
+  await page.locator('main h1').first().waitFor();
+  await page
+    .getByRole('link', { name: 'Für Ronja gibt es schon eine Selbstauskunft.' })
+    .first()
+    .click();
+  await expect(page).toHaveURL(/#\/selbstauskunft$/);
+  // Mit Haushalt: eine Zeile unter „Je Person“ in den Selbstauskünften der App.
+  await szenarioLaden(page, 'A-namensliste', '/');
+  await page.goto('/#/selbstauskunft');
+  await page.locator('main h1').first().waitFor();
+  await anlegen(page, 'Ronja', 'Detlefsen');
+  await page.goto('/#/selbstauskuenfte');
+  await page.locator('main h1').first().waitFor();
+  const zeile = page.getByRole('link', { name: /^Ohne Haushalt: Ronja/ });
+  await expect(zeile).toContainText('In euren Haushalt übernehmen');
+  await zeile.click();
+  await expect(page).toHaveURL(/#\/selbstauskunft$/);
+});
+
+test('DP150 C4, C5: Ein Feld im Prüfzustand zeigt im Fokus Rand und Strich, und sein Satz steht über der Leiste', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await oeffnen(page, '/buergschaft');
+  await anlegen(page, 'Hiltrud', 'Ostendorp');
+  const plz = page.getByRole('textbox', { name: 'PLZ' }).first();
+  // Beim ersten Öffnen ist „Wer bürgt“ schon auf; sonst aufklappen.
+  if (!(await plz.isVisible()))
+    await page
+      .getByRole('button', { name: /^Wer bürgt/ })
+      .first()
+      .click();
+  await plz.fill('2025');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Shift+Tab');
+  await expect(plz).toBeFocused();
+  await expect
+    .poll(() => plz.evaluate((e) => getComputedStyle(e).boxShadow))
+    .toMatch(/inset.*0px 3px 0px 0px|0px 3px 0px 0px.*inset/);
+  const satz = page
+    .getByText('Eine Postleitzahl in Deutschland hat fünf Ziffern. Stimmt sie so?')
+    .first();
+  const leiste = page.locator('.leiste').first();
+  await expect
+    .poll(async () => (await satz.boundingBox())!.y + (await satz.boundingBox())!.height)
+    .toBeLessThanOrEqual((await leiste.boundingBox())!.y);
+});
+
+test('DP150: Haustiere ohne Haushalt heißen „Ziehen Haustiere mit ein?“; das PDF behauptet kein „Im Mietvertrag“ (C6)', async ({
+  page,
+}) => {
+  await haushaltAOhne(page);
+  await page.getByRole('button', { name: /^Haustiere/ }).click();
+  await expect(page.getByText('Ziehen Haustiere mit ein?').first()).toBeVisible();
+  await expect(page.locator('main')).not.toContainText('Habt ihr');
+  await page.getByRole('radio', { name: 'Je Person eine PDF' }).check();
+  const dateien: string[] = [];
+  page.on('download', async (d) => dateien.push((await d.path())!));
+  await page.getByRole('button', { name: 'PDF erstellen' }).click();
+  await expect.poll(() => dateien.length).toBe(3);
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const { readFileSync } = await import('node:fs');
+  const texte: string[] = [];
+  for (const d of dateien) {
+    const dok = await pdfjs.getDocument({ data: new Uint8Array(readFileSync(d)) }).promise;
+    const inhalt = await (await dok.getPage(1)).getTextContent();
+    texte.push(inhalt.items.map((i) => ('str' in i ? i.str : '')).join(' '));
+  }
+  const imVertrag = texte.filter((x) => x.includes('Im Mietvertrag'));
+  expect(imVertrag).toEqual([]);
+  // Wer im Vertrag steht, hat unter dem Titel nur den Musterbogen; Hiltrud bürgt und steht so da.
+  expect(texte.filter((x) => x.includes('Nach dem Musterbogen'))).toHaveLength(2);
+});
+
+test('DP150 C8, C9: Zähler auf derselben Kante wie Haustiere und Ort, Sätze 13/18; Satz im Kopf wie der Untertitel', async ({
+  page,
+}) => {
+  await haushaltAOhne(page);
+  for (const breite of [390, 1920]) {
+    await page.setViewportSize({ width: breite, height: 900 });
+    const m = await page.evaluate(() => {
+      const links = (sel: string) => document.querySelector(sel)!.getBoundingClientRect().left;
+      const stil = (sel: string) => getComputedStyle(document.querySelector(sel)!);
+      return {
+        zaehler: links('main .zaehler .lab'),
+        haustiere: links('main .zeile.knopf .tx'),
+        satz: `${stil('main .zaehler .lab small').fontSize}/${stil('main .zaehler .lab small').lineHeight}`,
+        kopf: `${stil('main .haushalt-satz').fontSize}/${stil('main .haushalt-satz').lineHeight}`,
+        lead: `${stil('main .lead').fontSize}/${stil('main .lead').lineHeight}`,
+      };
+    });
+    expect(Math.abs(m.zaehler - m.haustiere), `${breite}`).toBeLessThanOrEqual(1);
+    expect(m.satz).toBe('13px/18px');
+    expect(m.kopf).toBe(m.lead);
+  }
 });

@@ -290,4 +290,46 @@ describe('Personen ohne Haushalt (PC214, Weg A)', () => {
     };
     expect(sammelplaetzeVereinen(daten)).toBe(daten);
   });
+
+  it('DP150 C1: „Ja, Angaben übernehmen“ mit nur dem Namen lässt die Angaben im Haushalt stehen', async () => {
+    const db = await neueDb();
+    const a = await haushaltA(db);
+    const jarne = (await haushaltLaden(db, a.id))!.mitglieder[0]!.person;
+    await personAendern(db, jarne.id, {
+      beruf: 'Logistikplaner',
+      nettoeinkommen: 2800,
+      kontakt: {
+        telefon: '0171 3920011',
+        telefonLand: 'DE',
+        telefonE164: '+491713920011',
+        email: 'jarne.ostendorp@example.com',
+      },
+    });
+    const lose = await ohneHaushaltAnlegen(db, {
+      vorname: 'Jarne',
+      nachname: 'Ostendorp',
+      rolle: 'vertrag',
+    });
+    await ohneHaushaltUebernehmen(
+      db,
+      { art: 'bestehend', haushaltId: a.id },
+      { [lose]: { fach: 'vertrag', dieselbe: jarne.id } },
+    );
+    const nach = (await db.get('personen', jarne.id))!;
+    expect(nach.beruf).toBe('Logistikplaner');
+    expect(nach.nettoeinkommen).toBe(2800);
+    expect(nach.kontakt.telefon).toBe('0171 3920011');
+    expect(nach.kontakt.email).toBe('jarne.ostendorp@example.com');
+  });
+
+  it('PC215 H1: Mit der letzten Person ohne Haushalt geht der Sammelplatz; Gegenprobe: bei zweien bleibt er', async () => {
+    const db = await neueDb();
+    const { selin, hiltrud } = await zwei(db);
+    await haushaltAendern(db, (await sammelplatz(db))!.id, { haustiere: 'nein', ort: 'Lüneburg' });
+    await personGanzLoeschen(db, selin);
+    expect(await sammelplatz(db)).not.toBeNull();
+    await personGanzLoeschen(db, hiltrud);
+    expect(await sammelplatz(db)).toBeNull();
+    expect(await db.getAll('haushalte')).toEqual([]);
+  });
 });

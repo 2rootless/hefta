@@ -53,7 +53,23 @@
   function haushaltAnlegen() {
     gehe(homescreenFragen(daten.einstellungen) ? '/homescreen/einrichtung' : '/einrichtung');
   }
+
+  // DP150 C3 (PC215): Ohne Haushalt nennt die Karte „Wer zieht ein?“, für wen es schon eine Selbstauskunft gibt; der
+  // Satz führt zu ihr. Gibt es niemanden ohne Haushalt, steht er nicht da.
+  const ohneNamen = $derived(
+    new Intl.ListFormat('de', { type: 'conjunction' }).format(
+      (daten.ohne?.mitglieder ?? []).map((m) => m.person.rufname || m.person.vorname),
+    ),
+  );
 </script>
+
+{#snippet ohneSatz()}
+  {#if daten.ohne?.mitglieder.length}
+    <a class="ohne-satz" href="#/selbstauskunft"
+      >{t('ohneHaushalt.schonSelbstauskunft', { namen: ohneNamen })}</a
+    >
+  {/if}
+{/snippet}
 
 <main class="seite">
   <HinweisKasten />
@@ -80,6 +96,7 @@
           ><b>{t('wohnungen.wegHaushalt')}</b><span>{t('wohnungen.wegHaushaltText')}</span></span
         >
       </button>
+      {@render ohneSatz()}
     {/if}
     <HeftUebersicht {hefte} {jetzt} />
     {#if !mitHaushalt && istApp()}
@@ -129,6 +146,7 @@
           ><b>{t('wohnungen.wegHaushalt')}</b><span>{t('wohnungen.wegHaushaltText')}</span></span
         >
       </button>
+      {@render ohneSatz()}
     </div>
     <GrafikPlatz name="erster-start" />
     <!-- W37, P5: wechselt einmal am Tag. -->
@@ -169,6 +187,16 @@
 {/snippet}
 
 <style>
+  .ohne-satz {
+    display: block;
+    margin: 8px 0 0;
+    padding: 0 var(--space-1);
+    color: var(--ink);
+    font-size: calc(15 * var(--px));
+    line-height: calc(22 * var(--px));
+    text-decoration: underline;
+  }
+
   .anleitung-kopf {
     /* DP35 R3: Aktion in Tinte; Rot nur für Zurück und Warnungen. */
     display: inline-flex;

@@ -23,7 +23,6 @@
     <div class="titelblock">
       <h1 class="display">{t('buergschaft.titel')}</h1>
       <p class="lead">{t('ohneHaushalt.buergeLead')}</p>
-      <p class="haushalt-satz">{t('ohneHaushalt.kopf')}</p>
     </div>
     <section>
       <PersonOhneAnlegen
@@ -50,12 +49,6 @@
 
   .titelblock {
     padding: 6px var(--space-1) 0;
-  }
-
-  .haushalt-satz {
-    margin: 8px 0 0;
-    color: var(--ink-muted);
-    font-size: calc(15 * var(--px));
   }
 
   section {

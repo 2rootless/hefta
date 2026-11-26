@@ -88,6 +88,7 @@
 
   .lab small {
     font-size: calc(13 * var(--px));
+    line-height: calc(18 * var(--px));
     font-weight: 400;
     color: var(--ink-muted);
   }

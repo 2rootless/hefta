@@ -353,7 +353,9 @@
   .haushalt-satz {
     margin: 8px 0 0;
     color: var(--ink-muted);
-    font-size: calc(15 * var(--px));
+    /* DP150 C9: wie der Untertitel, 16/22. */
+    font-size: calc(16 * var(--px));
+    line-height: calc(22 * var(--px));
   }
 
   .titelblock {

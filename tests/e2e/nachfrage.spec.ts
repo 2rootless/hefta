@@ -133,21 +133,18 @@ test('NF8: 320 px mit 130 %: Der Satz braucht zwei Zeilen, ihr Platz ist vorher 
   expect(await k.email.evaluate(imDokument)).toBe(emailVor);
 });
 
-test('NF12: Mit „Bewegung reduzieren“ steht das Feld ohne Überblenden (DP148, K3); der Satz blendet ruhig', async ({
+test('NF12: Bei reduzierter Bewegung stehen Prüfzustand und Satz sofort, ohne Überblenden (DP150)', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const k = await kontakt(page);
-  const dauer = await k.telefon.evaluate((e) => getComputedStyle(e).transitionDuration);
-  expect(dauer).toBe('0s');
-  // Gegenprobe: ohne „Bewegung reduzieren“ blendet nur die Fläche, nie der Rand.
+  expect(await k.telefon.evaluate((e) => getComputedStyle(e).transitionDuration)).toBe('0s');
+  const satz = page.locator('.nachfrage .sichtbar').first();
+  expect(await satz.evaluate((e) => getComputedStyle(e).transitionDuration)).toBe('0s');
+  // Gegenprobe: ohne „Bewegung reduzieren“ blendet die Fläche ruhig über, nie der Rand, und der Satz auch.
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   expect(await k.telefon.evaluate((e) => getComputedStyle(e).transitionProperty)).toBe(
     'background-color',
   );
-  const satz = await page
-    .locator('.nachfrage .sichtbar')
-    .first()
-    .evaluate((e) => getComputedStyle(e).transitionDuration);
-  expect(satz).toBe('0.3s');
+  expect(await satz.evaluate((e) => getComputedStyle(e).transitionDuration)).toBe('0.3s');
 });

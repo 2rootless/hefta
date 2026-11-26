@@ -34,6 +34,7 @@
   import { heftAendern, personAendern } from '../storage/speicher';
   import { browserZurueck } from '../ui/browserZurueck';
   import UebernehmenKasten from '../ui/UebernehmenKasten.svelte';
+  import UebernommenSatz, { type Uebernommen } from '../ui/UebernommenSatz.svelte';
   import Aktionsleiste from '../ui/Aktionsleiste.svelte';
   import { einstiegText } from '../ui/einstieg';
   import { erklaerungHeft } from '../ui/erklaerungHeft.svelte';
@@ -214,7 +215,7 @@
     await teilen([d]);
   }
 
-  let uebernommen = $state<{ namen: string; anzahl: number; ansprech: string | null } | null>(null);
+  let uebernommen = $state<Uebernommen | null>(null);
 
   async function hinzufuegen() {
     if (!heftId) return;
@@ -491,15 +492,7 @@
       </section>
     {/if}
     {#if uebernommen}
-      <div class="kasten erledigt" role="status">
-        <p>
-          {t('ohneHaushalt.gehoert', { namen: uebernommen.namen, anzahl: uebernommen.anzahl })}
-          {#if uebernommen.ansprech}{t('ohneHaushalt.ansprech', {
-              name: uebernommen.ansprech,
-            })}{/if}
-        </p>
-        <a class="textlink" href="#/haushalt">{t('ohneHaushalt.zumHaushalt')}</a>
-      </div>
+      <UebernommenSatz r={uebernommen} />
     {/if}
     {#if fertig && !ohne && heftId}
       <section class="danach">
@@ -561,18 +554,9 @@
   .haushalt-satz {
     margin: 8px 0 0;
     color: var(--ink-muted);
-    font-size: calc(15 * var(--px));
-  }
-
-  .erledigt {
-    display: grid;
-    gap: 6px;
-    margin-top: 12px;
-    padding: 16px;
-  }
-
-  .erledigt p {
-    margin: 0;
+    /* DP150 C9: wie der Untertitel, 16/22. */
+    font-size: calc(16 * var(--px));
+    line-height: calc(22 * var(--px));
   }
 
   .titelblock {

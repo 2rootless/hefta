@@ -37,6 +37,8 @@ function inhaltFuer(
   return {
     name: nameText(nameImPdf(person)),
     rolle: rollenText(rolle, platz?.bezeichnung ?? 'neutral'),
+    // DP150 C6: Ohne Haushalt hat niemand „Im Mietvertrag“ gewählt; unter dem Titel steht nur der Musterbogen.
+    ohneRolle: !!ansicht.haushalt.ohneHaushalt && rolle !== 'buerge',
     buerge: rolle === 'buerge',
     farbe: deckFarbe(
       ansicht.haushalt.mappeAussehen ?? AUSSEHEN_STANDARD,

@@ -385,6 +385,15 @@
     return vonName ? t('selbstauskunft.von', { name: vonName, text }) : text;
   }
 
+  // DP150: Ohne Haushalt „Ziehen Haustiere mit ein?“, bei jeder Zahl von Personen; so steht kein „ihr“ neben „du“.
+  const haustiereFrage = $derived(
+    einziehen
+      ? t('ohneHaushalt.haustiereFrage')
+      : allein
+        ? t('selbstauskunft.haustiereDu')
+        : t('selbstauskunft.haustiereIhr'),
+  );
+
   /** PC213: Ohne Haushalt heißt der vierte Teil „Für alle hier“, wie in der Liste; es gibt keinen Haushalt. */
   function teilTitel(id: TeilId): string {
     return einziehen && id === 'haushalt'
@@ -828,7 +837,7 @@
         {/if}
         <p class="hinweis w30" data-w30="feld">{t('angabeSatz.einziehen')}</p>
         <div class="frage">
-          <b>{allein ? t('selbstauskunft.haustiereDu') : t('selbstauskunft.haustiereIhr')}</b>
+          <b>{haustiereFrage}</b>
           <small class="w30" data-w30="frage">{t('angabeSatz.haustiere')}</small>
           {@render jaNein(
             eingabe.hh.haustiere,
@@ -838,7 +847,7 @@
                 () => (eingabe.hh.haustiere = w),
                 () => w === 'ja' && !eingabe.hh.haustiereText.trim(),
               ),
-            allein ? t('selbstauskunft.haustiereDu') : t('selbstauskunft.haustiereIhr'),
+            haustiereFrage,
           )}
           {#if eingabe.hh.haustiere === 'ja'}
             <label class="eingabe">
