@@ -50,7 +50,16 @@ aufnehmen() {
     I=0
     until grep -q "AUFNAHME BEREIT $NR" "$LOG" 2>/dev/null; do
       if grep -q "AUFNAHME FEHLER" "$LOG"; then echo "Fehler in der App:"; grep "AUFNAHME" "$LOG"; break 2; fi
-      I=$((I + 1)); if [ $I -gt 240 ]; then echo "Keine Meldung für $NR"; break 2; fi
+      if [ $I -gt 240 ]; then
+        # CP133: Am 26.11. (Laufzeit iOS 26.2) kam keine einzige Meldung der App. Für die Suche nach dem Grund: was
+        # auf dem Bildschirm steht und was das System über die App protokolliert hat.
+        echo "Keine Meldung für $NR"
+        xcrun simctl io "$UDID" screenshot --type=png "$ZIEL/diagnose-$NR.png" || true
+        xcrun simctl spawn "$UDID" log show --last 5m --style compact           --predicate "process == \"App\" OR subsystem CONTAINS \"capacitor\"" > "$ZIEL/diagnose-log.txt" 2>&1 || true
+        xcrun simctl listapps "$UDID" > "$ZIEL/diagnose-apps.txt" 2>&1 || true
+        break 2
+      fi
+      I=$((I + 1))
       sleep 0.5
     done
     xcrun simctl io "$UDID" screenshot --type=png "$ZIEL/$NR.png"
