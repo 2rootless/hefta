@@ -127,7 +127,9 @@ export async function aufnahmenStarten(): Promise<void> {
     const zuTief = Math.ceil(karteBuergt.getBoundingClientRect().bottom - unten);
     if (zuTief > 0) window.scrollTo({ top: zuTief, behavior: 'instant' });
     await warte(300);
-    melde(`HAUSHALT SCROLL ${Math.max(zuTief, 0)} KARTE-UNTEN ${Math.round(karteBuergt.getBoundingClientRect().bottom)} LEISTE ${Math.round(unten + 24)}`);
+    melde(
+      `HAUSHALT SCROLL ${Math.max(zuTief, 0)} KARTE-UNTEN ${Math.round(karteBuergt.getBoundingClientRect().bottom)} LEISTE ${Math.round(unten + 24)}`,
+    );
     melde(`UHR ${new Date().toISOString()}`);
     await bereit('06');
     globalThis.Date = echt;
