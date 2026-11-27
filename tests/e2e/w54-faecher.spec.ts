@@ -178,11 +178,15 @@ async function ziehe(page: Page, id: string, ziel: string, halt = false) {
     }
     await page.mouse.move(x1, frei);
     await page.waitForTimeout(150);
+  } else await weg(x1, y1, x0, y0);
+  // Die Vorschau verschiebt die Fächer, sobald der Platzhalter wandert: nachmessen, bis der Zeiger im Ziel steht.
+  for (let n = 0; n < 4; n++) {
     zb = (await page.locator(`[data-gruppe="${ziel}"]`).boundingBox())!;
+    if (y1 >= zb.y + 4 && y1 <= zb.y + zb.height - 4 && n > 0) break;
     y1 = Math.min(zb.y + zb.height / 2, frei);
     await page.mouse.move(x1, y1);
     await page.waitForTimeout(150);
-  } else await weg(x1, y1, x0, y0);
+  }
   if (halt) return;
   await page.mouse.up();
   await page.waitForTimeout(260);
@@ -1032,6 +1036,7 @@ async function g13(browser: Browser, ohneScroll = false) {
     (y) => document.querySelector('[data-gruppe="weg"]')!.getBoundingClientRect().top > y,
     unten,
   );
+  const vorher = await page.evaluate(() => window.scrollY);
   await page.mouse.move(x, y0);
   await page.mouse.down();
   // Erst ein Stück nach oben, damit der Zug sicher beginnt (die Zeile kann schon nah am Rand liegen).
@@ -1044,7 +1049,6 @@ async function g13(browser: Browser, ohneScroll = false) {
     await page.mouse.move(x, y0 - 32 + ((yRand - y0 + 32) * i) / 10);
     await page.waitForTimeout(15);
   }
-  const vorher = await page.evaluate(() => window.scrollY);
   // Halten, bis „Nicht mehr dabei“ über dem Finger steht (höchstens 4 s).
   let erreicht = false;
   for (let t = 0; t < 40 && !erreicht; t++) {
@@ -1067,12 +1071,17 @@ async function g13(browser: Browser, ohneScroll = false) {
   );
   // Ins Fach „Nicht mehr dabei“ führen und loslassen.
   const zb = (await page.locator('[data-gruppe="weg"]').boundingBox())!;
-  await page.mouse.move(x, Math.min(zb.y + 24, yRand));
+  let yz = Math.min(zb.y + 24, yRand);
+  await page.mouse.move(x, yz);
   await page.waitForTimeout(300);
-  // Die Vorschau verschiebt die Fächer; noch einmal messen und mitten ins Fach.
-  const zb2 = (await page.locator('[data-gruppe="weg"]').boundingBox())!;
-  await page.mouse.move(x, Math.min(zb2.y + zb2.height / 2, unten - 4));
-  await page.waitForTimeout(300);
+  // Die Vorschau verschiebt die Fächer; nachmessen, bis der Zeiger mitten im Fach steht.
+  for (let n = 0; n < 4; n++) {
+    const b = (await page.locator('[data-gruppe="weg"]').boundingBox())!;
+    if (n > 0 && yz >= b.y + 4 && yz <= b.y + b.height - 4) break;
+    yz = Math.min(b.y + b.height / 2, unten - 4);
+    await page.mouse.move(x, yz);
+    await page.waitForTimeout(200);
+  }
   await page.mouse.up();
   await page.waitForTimeout(300);
   await ruhe(page);
