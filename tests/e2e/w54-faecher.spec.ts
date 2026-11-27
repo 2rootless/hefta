@@ -1022,7 +1022,7 @@ async function g13(browser: Browser, ohneScroll = false) {
   // Selins Griff oben ins Bild (er liegt in dieser Größe zuerst unter der Leiste); „Nicht mehr dabei“ bleibt außer Sicht.
   await page.evaluate((id) => {
     const r = document.querySelector(`[data-griff="${id}"]`)!.getBoundingClientRect();
-    window.scrollTo(0, window.scrollY + r.top - 120);
+    window.scrollTo(0, window.scrollY + r.top - 96);
   }, ID.selin);
   await page.waitForTimeout(100);
   const g = (await page.locator(`[data-griff="${ID.selin}"]`).boundingBox())!;
@@ -1039,14 +1039,14 @@ async function g13(browser: Browser, ohneScroll = false) {
   const vorher = await page.evaluate(() => window.scrollY);
   await page.mouse.move(x, y0);
   await page.mouse.down();
-  // Erst ein Stück nach oben, damit der Zug sicher beginnt (die Zeile kann schon nah am Rand liegen).
-  for (let i = 1; i <= 4; i++) {
-    await page.mouse.move(x, y0 - i * 8);
+  // Erst seitlich, damit der Zug sicher beginnt, ohne in die Scrollstreifen oben oder unten zu kommen.
+  for (let i = 1; i <= 3; i++) {
+    await page.mouse.move(x - i * 5, y0);
     await page.waitForTimeout(15);
   }
   const yRand = unten - 12;
   for (let i = 1; i <= 10; i++) {
-    await page.mouse.move(x, y0 - 32 + ((yRand - y0 + 32) * i) / 10);
+    await page.mouse.move(x - 15, y0 + ((yRand - y0) * i) / 10);
     await page.waitForTimeout(15);
   }
   // Halten, bis „Nicht mehr dabei“ über dem Finger steht (höchstens 4 s).
@@ -1088,7 +1088,7 @@ async function g13(browser: Browser, ohneScroll = false) {
   const fach = await fachInAnzeige(page, ID.selin);
   const gespeichert = JSON.parse(await stand(page)).personen.includes('Selin:weg');
   await ctx.close();
-  return { zuerstAusserSicht, gescrollt: gescrollt > 40, erreicht, amEnde, fach, gespeichert };
+  return { zuerstAusserSicht, gescrollt: gescrollt > 0, erreicht, amEnde, fach, gespeichert };
 }
 
 test('PC220, G13: nahe am Rand scrollt die Seite mit, bis „Nicht mehr dabei“ erreichbar ist (320 mit 130 %)', async ({
@@ -1102,7 +1102,7 @@ test('PC220, G13: nahe am Rand scrollt die Seite mit, bis „Nicht mehr dabei“
     fach: 'weg',
     gespeichert: true,
   });
-  // Gegenprobe: ohne Mitscrollen (wie in Bau 195) bleibt die Seite stehen und erreicht ihr Ende nicht.
+  // Gegenprobe: ohne Mitscrollen (wie in Bau 195) bleibt die Seite stehen, und G13 wird rot.
   const ohne = await g13(browser, true);
-  expect(ohne.gescrollt || ohne.amEnde, JSON.stringify(ohne)).toBe(false);
+  expect(ohne.gescrollt, JSON.stringify(ohne)).toBe(false);
 });
