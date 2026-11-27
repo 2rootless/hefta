@@ -105,17 +105,29 @@ export async function aufnahmenStarten(): Promise<void> {
     await warteAuf(mitText('main h1', /^Bewerben mit wenigen Tipps/), 'Bewerben');
     await bereit('05');
 
-    // 06 Mappe, „Eure Mappe“ oben
+    // 06 Haushalt mit „Im Mietvertrag“, „Zieht mit ein“ und „Bürgt“
     // DP154: Mit der Uhr am 11. November, 10 Uhr, wie bei 08 (DP140). Am echten Tag der Aufnahme kann Selins
-    // Bonitätsnachweis (vom 25. August) schon zu alt sein; dann zeigt 06 „Noch ein Ding offen“ statt der fertigen
-    // Mappe. Danach läuft die Uhr wieder echt, damit 07 bleibt, wie es war.
+    // Bonitätsnachweis (vom 25. August) schon zu alt sein; dann stünde er als offen da. Danach läuft die Uhr wieder
+    // echt, damit 07 bleibt, wie es war.
     const echt = uhrStellen(new Date(2026, 10, 11, 10, 0));
     await neuLaden();
+    // DP155 (Entscheidung des Auftraggebers vom 27.11.): 06 zeigt die Seite des Haushalts mit allen drei Gruppen,
+    // nicht die Mappe; die ist schon der Grund von 08.
     gehe('/wohnungen');
     await warte(300);
-    gehe('/');
-    await warteAuf(mitText('main h1', /Mappe/), 'Mappe');
-    await warteAuf(() => document.querySelector('main .aufgaben.fertig'), 'fertige Mappe');
+    gehe('/haushalt');
+    const buergt = await warteAuf(mitText('main *', /^Bürgt$/), 'Gruppe „Bürgt“');
+    // Die Karte unter „Bürgt“ soll frei über der Leiste stehen (24 pt Luft). Im Simulator kommen oben und unten die
+    // sicheren Bereiche dazu; reicht der Platz nicht, scrollt die Aufnahme nur so weit wie nötig.
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    await warte(300);
+    const karteBuergt = buergt.closest('.kopf')?.nextElementSibling ?? buergt;
+    const leiste = document.querySelector('.leiste');
+    const unten = (leiste ? leiste.getBoundingClientRect().top : window.innerHeight) - 24;
+    const zuTief = Math.ceil(karteBuergt.getBoundingClientRect().bottom - unten);
+    if (zuTief > 0) window.scrollTo({ top: zuTief, behavior: 'instant' });
+    await warte(300);
+    melde(`HAUSHALT SCROLL ${Math.max(zuTief, 0)} KARTE-UNTEN ${Math.round(karteBuergt.getBoundingClientRect().bottom)} LEISTE ${Math.round(unten + 24)}`);
     melde(`UHR ${new Date().toISOString()}`);
     await bereit('06');
     globalThis.Date = echt;
