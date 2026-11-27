@@ -106,9 +106,20 @@ export async function aufnahmenStarten(): Promise<void> {
     await bereit('05');
 
     // 06 Mappe, „Eure Mappe“ oben
+    // DP154: Mit der Uhr am 11. November, 10 Uhr, wie bei 08 (DP140). Am echten Tag der Aufnahme kann Selins
+    // Bonitätsnachweis (vom 25. August) schon zu alt sein; dann zeigt 06 „Noch ein Ding offen“ statt der fertigen
+    // Mappe. Danach läuft die Uhr wieder echt, damit 07 bleibt, wie es war.
+    const echt = uhrStellen(new Date(2026, 10, 11, 10, 0));
+    await neuLaden();
+    gehe('/wohnungen');
+    await warte(300);
     gehe('/');
     await warteAuf(mitText('main h1', /Mappe/), 'Mappe');
+    await warteAuf(() => document.querySelector('main .aufgaben.fertig'), 'fertige Mappe');
+    melde(`UHR ${new Date().toISOString()}`);
     await bereit('06');
+    globalThis.Date = echt;
+    await neuLaden();
 
     // 07 Deckblatt für „Altbau mit Garten“
     gehe('/mappe/deckblatt');
