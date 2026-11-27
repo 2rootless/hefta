@@ -149,17 +149,40 @@ const ruhe = (page: Page) =>
 
 async function ziehe(page: Page, id: string, ziel: string, halt = false) {
   const g = (await page.locator(`[data-griff="${id}"]`).boundingBox())!;
-  const zb = (await page.locator(`[data-gruppe="${ziel}"]`).boundingBox())!;
+  let zb = (await page.locator(`[data-gruppe="${ziel}"]`).boundingBox())!;
   const x0 = g.x + g.width / 2;
   const y0 = g.y + g.height / 2;
   const x1 = zb.x + zb.width * 0.6;
-  const y1 = zb.y + zb.height - 10;
+  // PC220: Unten über der Leiste scrollt die Seite beim Ziehen mit (72 px). Liegt das Ziel dort, hält der Zug am Rand,
+  // bis das Fach hochgekommen ist, wie ein Mensch es täte; gehalten und losgelassen wird außerhalb der Zone.
+  const leiste = await page.evaluate(() => {
+    const l = document.querySelector<HTMLElement>('.leiste');
+    return l ? l.getBoundingClientRect().top : window.innerHeight;
+  });
+  const frei = leiste - 80;
+  const weg = async (x: number, y: number, xa: number, ya: number) => {
+    for (let i = 1; i <= 12; i++) {
+      await page.mouse.move(xa + ((x - xa) * i) / 12, ya + ((y - ya) * i) / 12);
+      await page.waitForTimeout(15);
+    }
+  };
   await page.mouse.move(x0, y0);
   await page.mouse.down();
-  for (let i = 1; i <= 12; i++) {
-    await page.mouse.move(x0 + ((x1 - x0) * i) / 12, y0 + ((y1 - y0) * i) / 12);
-    await page.waitForTimeout(15);
-  }
+  let y1 = Math.min(zb.y + zb.height - 10, frei);
+  if (zb.y + 20 > frei) {
+    await weg(x1, leiste - 16, x0, y0);
+    for (let t = 0; t < 40; t++) {
+      await page.waitForTimeout(100);
+      zb = (await page.locator(`[data-gruppe="${ziel}"]`).boundingBox())!;
+      if (zb.y + 20 < frei) break;
+    }
+    await page.mouse.move(x1, frei);
+    await page.waitForTimeout(150);
+    zb = (await page.locator(`[data-gruppe="${ziel}"]`).boundingBox())!;
+    y1 = Math.min(zb.y + zb.height / 2, frei);
+    await page.mouse.move(x1, y1);
+    await page.waitForTimeout(150);
+  } else await weg(x1, y1, x0, y0);
   if (halt) return;
   await page.mouse.up();
   await page.waitForTimeout(260);
@@ -928,4 +951,149 @@ test('wunsch-W54, G11 (DP130, B1): „Rückgängig“ steht nach dem Verschieben
     const ohne = await g11(browser, groesse, 'tipp', true);
     expect(ohne.frei && ohne.obenauf, `${groesse} ${JSON.stringify(ohne)}`).toBe(false);
   }
+});
+
+// ---------------------------------------------------------------- PC220: Flugkarte und Mitscrollen
+
+/** Mitten im Zug: steht die Flugkarte sichtbar unter dem Zeiger, mit dem Namen der Person, obenauf? */
+async function g12(browser: Browser, stoer?: string) {
+  const { ctx, page } = await neu(browser, 'A');
+  if (stoer) await page.addStyleTag({ content: stoer });
+  const g = (await page.locator(`[data-griff="${ID.selin}"]`).boundingBox())!;
+  const x = g.x + g.width / 2;
+  const y0 = g.y + g.height / 2;
+  await page.mouse.move(x, y0);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i++) {
+    await page.mouse.move(x, y0 + i * 12);
+    await page.waitForTimeout(15);
+  }
+  const zeiger = { x, y: y0 + 96 };
+  const m = await page.evaluate((p) => {
+    const f = document.querySelector<HTMLElement>('.flug');
+    if (!f) return { da: false };
+    const r = f.getBoundingClientRect();
+    const s = getComputedStyle(f);
+    const imBild = r.bottom > 0 && r.top < window.innerHeight && r.height > 0;
+    const unterZeiger = p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom;
+    // Obenauf: an der Stelle des Zeigers liegt nichts über der Karte (die Karte selbst lässt Zeiger durch).
+    f.style.pointerEvents = 'auto';
+    const oben = document.elementFromPoint(p.x, p.y);
+    f.style.pointerEvents = '';
+    return {
+      da: true,
+      imBild,
+      unterZeiger,
+      obenauf: !!oben && f.contains(oben),
+      deckend: Number(s.opacity) === 1 && s.backgroundColor !== 'rgba(0, 0, 0, 0)',
+      name: f.textContent?.includes('Selin') ?? false,
+    };
+  }, zeiger);
+  await page.mouse.up();
+  await ctx.close();
+  return m;
+}
+
+test('PC220, G12: beim Ziehen steht die Karte unter dem Finger (DP124), deckend und obenauf', async ({
+  browser,
+}) => {
+  const soll = {
+    da: true,
+    imBild: true,
+    unterZeiger: true,
+    obenauf: true,
+    deckend: true,
+    name: true,
+  };
+  expect(await g12(browser)).toEqual(soll);
+  // Gegenprobe: so, wie es in Bau 195 war (die Karte nur relativ am Ende der Seite), wird G12 rot.
+  const alt = await g12(browser, '.zeile.flug { position: relative !important; }');
+  expect(alt.imBild && alt.unterZeiger, JSON.stringify(alt)).toBe(false);
+});
+
+/** In 320 mit 130 % liegt „Nicht mehr dabei“ außer Sicht: Zug an den unteren Rand, halten, dann dort loslassen. */
+async function g13(browser: Browser, ohneScroll = false) {
+  const { ctx, page } = await neu(browser, 'A', { groesse: '320-130' });
+  if (ohneScroll) await page.evaluate(() => (window.scrollBy = () => undefined));
+  // Selins Griff oben ins Bild (er liegt in dieser Größe zuerst unter der Leiste); „Nicht mehr dabei“ bleibt außer Sicht.
+  await page.evaluate((id) => {
+    const r = document.querySelector(`[data-griff="${id}"]`)!.getBoundingClientRect();
+    window.scrollTo(0, window.scrollY + r.top - 120);
+  }, ID.selin);
+  await page.waitForTimeout(100);
+  const g = (await page.locator(`[data-griff="${ID.selin}"]`).boundingBox())!;
+  const x = g.x + g.width / 2;
+  const unten = await page.evaluate(() => {
+    const l = document.querySelector<HTMLElement>('.leiste');
+    return l ? l.getBoundingClientRect().top : window.innerHeight;
+  });
+  const y0 = g.y + g.height / 2;
+  const zuerstAusserSicht = await page.evaluate(
+    (y) => document.querySelector('[data-gruppe="weg"]')!.getBoundingClientRect().top > y,
+    unten,
+  );
+  await page.mouse.move(x, y0);
+  await page.mouse.down();
+  // Erst ein Stück nach oben, damit der Zug sicher beginnt (die Zeile kann schon nah am Rand liegen).
+  for (let i = 1; i <= 4; i++) {
+    await page.mouse.move(x, y0 - i * 8);
+    await page.waitForTimeout(15);
+  }
+  const yRand = unten - 12;
+  for (let i = 1; i <= 10; i++) {
+    await page.mouse.move(x, y0 - 32 + ((yRand - y0 + 32) * i) / 10);
+    await page.waitForTimeout(15);
+  }
+  const vorher = await page.evaluate(() => window.scrollY);
+  // Halten, bis „Nicht mehr dabei“ über dem Finger steht (höchstens 4 s).
+  let erreicht = false;
+  for (let t = 0; t < 40 && !erreicht; t++) {
+    await page.waitForTimeout(100);
+    erreicht = await page.evaluate((y) => {
+      const b = document.querySelector('[data-gruppe="weg"]')?.getBoundingClientRect();
+      return !!b && b.top < y - 30;
+    }, yRand);
+  }
+  const gescrollt = (await page.evaluate(() => window.scrollY)) - vorher;
+  // Weiter halten: am Seitenende hört das Scrollen auf und bleibt dort stehen.
+  await page.waitForTimeout(2500);
+  const s1 = await page.evaluate(() => window.scrollY);
+  await page.waitForTimeout(400);
+  const amEnde = await page.evaluate(
+    (s1) =>
+      window.scrollY === s1 &&
+      window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 1,
+    s1,
+  );
+  // Ins Fach „Nicht mehr dabei“ führen und loslassen.
+  const zb = (await page.locator('[data-gruppe="weg"]').boundingBox())!;
+  await page.mouse.move(x, Math.min(zb.y + 24, yRand));
+  await page.waitForTimeout(300);
+  // Die Vorschau verschiebt die Fächer; noch einmal messen und mitten ins Fach.
+  const zb2 = (await page.locator('[data-gruppe="weg"]').boundingBox())!;
+  await page.mouse.move(x, Math.min(zb2.y + zb2.height / 2, unten - 4));
+  await page.waitForTimeout(300);
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+  await ruhe(page);
+  const fach = await fachInAnzeige(page, ID.selin);
+  const gespeichert = JSON.parse(await stand(page)).personen.includes('Selin:weg');
+  await ctx.close();
+  return { zuerstAusserSicht, gescrollt: gescrollt > 40, erreicht, amEnde, fach, gespeichert };
+}
+
+test('PC220, G13: nahe am Rand scrollt die Seite mit, bis „Nicht mehr dabei“ erreichbar ist (320 mit 130 %)', async ({
+  browser,
+}) => {
+  expect(await g13(browser)).toEqual({
+    zuerstAusserSicht: true,
+    gescrollt: true,
+    erreicht: true,
+    amEnde: true,
+    fach: 'weg',
+    gespeichert: true,
+  });
+  // Gegenprobe: ohne Mitscrollen (wie in Bau 195) bleibt die Seite stehen und erreicht ihr Ende nicht.
+  const ohne = await g13(browser, true);
+  expect(ohne.gescrollt || ohne.amEnde, JSON.stringify(ohne)).toBe(false);
 });

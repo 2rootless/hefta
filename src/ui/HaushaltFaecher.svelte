@@ -155,6 +155,61 @@
     };
     window.addEventListener('pointermove', bewegen);
     window.addEventListener('pointerup', hoch, { once: true });
+    // iOS bricht einen Zug manchmal ab (etwa bei einer Systemgeste): wie Loslassen behandeln.
+    window.addEventListener('pointercancel', hoch, { once: true });
+  }
+
+  // PC220: Nahe am oberen oder unteren Rand scrollt die Seite mit, schneller, je näher der Finger am Rand ist; am
+  // Seitenende hört es auf. Unten zählt die Oberkante der festen Leiste, oben der sichere Bereich.
+  const RAND = 72;
+  const TEMPO = 18;
+  let letzter = { x: 0, y: 0 };
+  let scrollSchleife = 0;
+
+  function grenzen(): { oben: number; unten: number } {
+    const leiste = [...document.querySelectorAll<HTMLElement>('.leiste')].find((l) => {
+      const r = l.getBoundingClientRect();
+      return (
+        r.height > 0 && r.top < window.innerHeight && getComputedStyle(l).visibility !== 'hidden'
+      );
+    });
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;top:0;height:env(safe-area-inset-top)';
+    document.body.appendChild(probe);
+    const oben = probe.getBoundingClientRect().height;
+    probe.remove();
+    return { oben, unten: leiste ? leiste.getBoundingClientRect().top : window.innerHeight };
+  }
+
+  function mitScrollen() {
+    scrollSchleife = 0;
+    const z = zug;
+    if (!z?.los) return;
+    const { oben, unten } = grenzen();
+    const y = letzter.y;
+    let schritt = 0;
+    if (y < oben + RAND) schritt = -TEMPO * Math.min(1, (oben + RAND - y) / RAND);
+    else if (y > unten - RAND) schritt = TEMPO * Math.min(1, (y - (unten - RAND)) / RAND);
+    if (schritt) {
+      const vorher = window.scrollY;
+      window.scrollBy(0, Math.round(schritt) || Math.sign(schritt));
+      if (window.scrollY !== vorher) zielSetzen(z, letzter.x, letzter.y);
+    }
+    scrollSchleife = requestAnimationFrame(mitScrollen);
+  }
+
+  function zielSetzen(z: Zug, x: number, y: number) {
+    const ziel = zielBei(x, y);
+    if (ziel && (ziel.fach !== z.ziel || ziel.stelle !== z.stelle)) {
+      void mitFlip(() => {
+        zug = {
+          ...z,
+          ziel: ziel.fach,
+          stelle: ziel.stelle,
+          vorschau: vorschau(liste, z.id, ziel.fach, ziel.stelle),
+        };
+      });
+    }
   }
 
   function bewegen(ev: PointerEvent) {
@@ -179,21 +234,17 @@
       z.flug.style.left = `${ev.clientX - z.dx}px`;
       z.flug.style.top = `${ev.clientY - z.dy}px`;
     }
-    const ziel = zielBei(ev.clientX, ev.clientY);
-    if (ziel && (ziel.fach !== z.ziel || ziel.stelle !== z.stelle)) {
-      void mitFlip(() => {
-        zug = {
-          ...z,
-          ziel: ziel.fach,
-          stelle: ziel.stelle,
-          vorschau: vorschau(liste, z.id, ziel.fach, ziel.stelle),
-        };
-      });
-    }
+    letzter = { x: ev.clientX, y: ev.clientY };
+    if (!scrollSchleife) scrollSchleife = requestAnimationFrame(mitScrollen);
+    zielSetzen(z, ev.clientX, ev.clientY);
   }
 
   async function hoch() {
     window.removeEventListener('pointermove', bewegen);
+    window.removeEventListener('pointerup', hoch);
+    window.removeEventListener('pointercancel', hoch);
+    cancelAnimationFrame(scrollSchleife);
+    scrollSchleife = 0;
     const z = zug;
     if (!z) return;
     if (!z.los) {
@@ -560,8 +611,11 @@
   .platz {
     opacity: 0.35;
   }
-  :global(.flug) {
+  /* PC220: `.zeile` (mit Svelte-Klasse) setzt `position: relative`; ohne die höhere Gewichtung blieb die Flugkarte
+     relativ am Ende von <body> stehen, außerhalb des Bildes. */
+  .zeile:global(.flug) {
     position: fixed;
+    margin: 0;
     z-index: 20;
     pointer-events: none;
     box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
